@@ -1,305 +1,325 @@
-# Doback Soft - Sistema de Gestión de Flotas
+# 🚀 DobackSoft V3 - StabilSafe
 
-## 📋 Descripción
+**Sistema integral de gestión, análisis y monitorización de flotas de emergencia**
 
-Doback Soft es un sistema integral para la gestión y análisis de datos de flotas de vehículos. Procesa archivos de diferentes tipos (CAN, GPS, ESTABILIDAD, ROTATIVO) y los agrupa en sesiones completas para análisis posterior.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/hermoso92/dobackv2)
 
-## 🚀 Funcionalidades Principales
+---
 
-### ✅ **Procesador de Sesiones de Datos** (COMPLETADO)
-- **Agrupación automática** de archivos por proximidad temporal
-- **Extracción de fechas reales** del contenido interno de archivos
-- **Una sesión por archivo CAN** con correspondencia 1:1
-- **Búsqueda de archivos más cercanos** (GPS, ESTABILIDAD, ROTATIVO)
-- **Validación de sesiones completas** con los 4 tipos requeridos
-- **Reporte JSON detallado** con metadatos y métricas de calidad
+## 📋 **Descripción**
 
-### 🔄 **En Desarrollo**
-- **Reportes PDF** (F1): Generación de reportes con logo, tablas y gráficos
-- **Evaluación de Eventos** (F2): Evaluación manual y automática
-- **Auditoría** (F3): Registro de evaluaciones con acceso restringido
-- **Settings** (F5): Configuración de idioma, tema y zona horaria
-- **Zona Horaria** (F6): Formateo de fechas según zona del usuario
+DobackSoft V3 (StabilSafe) es una plataforma profesional diseñada para el análisis en tiempo real de vehículos de emergencia. Procesa datos de estabilidad, telemetría CAN/GPS, genera reportes inteligentes con IA y gestiona geocercas para optimizar operaciones.
 
-## 📊 Resultados del Procesador de Sesiones
+### **Características Principales**
 
-### **Métricas de Calidad**
-- **112 archivos procesados** en total
-- **6 sesiones completas** encontradas para doback022
-- **4 sesiones perfectas** (diferencia < 1 minuto)
-- **2 sesiones con desfases** (GPS desincronizado)
-- **67% de precisión temporal** perfecta
+✅ **Panel de Control** - KPIs en tiempo real con modo TV Wall  
+✅ **Módulo de Estabilidad** - Análisis de eventos críticos con exportación PDF  
+✅ **Telemetría CAN/GPS** - Monitoreo avanzado con mapas interactivos  
+✅ **Inteligencia Artificial** - Análisis predictivo y recomendaciones  
+✅ **Geofences** - Gestión de zonas con alertas automáticas  
+✅ **Operaciones** - Eventos, alertas y mantenimiento unificado  
+✅ **Reportes Profesionales** - Generación PDF en 1 clic  
+✅ **Multi-organización** - Aislamiento total de datos por empresa  
 
-### **Ejemplo de Sesión Encontrada**
-```
-Sesión 1: doback022 - 2025-07-07 17:21:42
-├── CAN: CAN_DOBACK022_20250707_0_TRADUCIDO.csv (17:21:42)
-├── GPS: GPS_DOBACK022_20250707_6.txt (17:21:37) - 0.08 min
-├── ESTABILIDAD: ESTABILIDAD_DOBACK022_20250707_7.txt (17:21:08) - 0.57 min
-└── ROTATIVO: ROTATIVO_DOBACK022_20250707_7.txt (17:21:35) - 0.12 min
-```
+---
 
-## 🏗️ Arquitectura del Sistema
+## 🏗️ **Arquitectura**
 
-### **Backend (Python)**
-```
-backend/
-├── correct_session_finder.py    # Procesador principal de sesiones
-├── data/datosDoback/           # Datos de vehículos organizados
-├── models/                     # Modelos de base de datos
-├── routes/                     # Endpoints de API
-├── services/                   # Lógica de negocio
-└── utils/                      # Utilidades y helpers
-```
+### **Stack Tecnológico**
 
-### **Frontend (React/TypeScript)**
-```
-frontend/
-├── src/
-│   ├── components/             # Componentes React
-│   ├── pages/                  # Páginas de la aplicación
-│   ├── services/               # Servicios de API
-│   └── utils/                  # Utilidades del frontend
-└── public/                     # Archivos estáticos
-```
+**Backend:**
+- TypeScript + Node.js + Express
+- PostgreSQL + PostGIS
+- Prisma ORM
+- Python (procesamiento de datos)
 
-## 🚀 Instalación y Configuración
+**Frontend:**
+- React 18 + TypeScript
+- Tailwind CSS
+- Leaflet + TomTom (mapas)
+- Recharts (gráficas)
+
+---
+
+## 🚀 **Inicio Rápido**
 
 ### **Requisitos Previos**
-- Python 3.8+
-- Node.js 16+
-- PostgreSQL 12+
 
-### **Instalación del Backend**
+- Node.js 18+
+- Python 3.9+
+- PostgreSQL 14+ con extensión PostGIS
+- Git
+
+### **Instalación**
+
 ```bash
+# Clonar repositorio
+git clone https://github.com/hermoso92/dobackv2.git
+cd dobackv2
+
+# Instalar dependencias backend
 cd backend
-pip install -r requirements.txt
-python correct_session_finder.py  # Probar procesador de sesiones
-```
-
-### **Instalación del Frontend**
-```bash
-cd frontend
 npm install
-npm start
+pip install -r requirements.txt
+
+# Instalar dependencias frontend
+cd ../frontend
+npm install
+
+# Configurar variables de entorno
+# Copiar .env.example a .env y configurar
 ```
 
-## 📁 Estructura de Datos
+### **Configuración de Base de Datos**
 
-### **Organización de Archivos**
-```
-backend/data/datosDoback/
-├── CMadrid/
-│   ├── doback022/
-│   │   ├── CAN/     # Archivos decodificados CAN
-│   │   ├── GPS/     # Datos de posicionamiento
-│   │   ├── ESTABILIDAD/  # Datos de estabilidad
-│   │   └── ROTATIVO/     # Datos de rotación
-│   ├── doback023/
-│   ├── doback025/
-│   └── doback012/
-```
-
-### **Formatos de Archivo Soportados**
-- **CAN**: CSV decodificado con timestamps
-- **GPS**: TXT con coordenadas y velocidad
-- **ESTABILIDAD**: TXT con datos de aceleración
-- **ROTATIVO**: TXT con estado de rotación
-
-## 🔧 Configuración
-
-### **Parámetros del Procesador**
-```python
-# Tolerancia temporal (minutos)
-TOLERANCE_MINUTES = 2
-
-# Tipos de archivo requeridos
-REQUIRED_TYPES = ['CAN', 'GPS', 'ESTABILIDAD', 'ROTATIVO']
-
-# Directorio base de datos
-BASE_DATA_DIR = Path('data/datosDoback')
-```
-
-### **Variables de Entorno**
 ```bash
-# Backend
-DATABASE_URL=postgresql://user:pass@localhost/dobacksoft
-JWT_SECRET=your-secret-key
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
+# Crear base de datos
+createdb dobacksoft
 
-# Frontend
-REACT_APP_API_URL=http://localhost:5000/api
-REACT_APP_WS_URL=ws://localhost:5000/ws
-```
-
-## 📈 Uso del Procesador de Sesiones
-
-### **Ejecución Básica**
-```bash
+# Aplicar migraciones
 cd backend
-python correct_session_finder.py
+npx prisma migrate deploy
+npx prisma db seed
 ```
 
-### **Salida del Procesador**
-```
-🚀 Iniciando análisis correcto de sesiones...
-📊 Escaneados 112 archivos totales
-✅ Encontradas 6 sesiones (una por archivo CAN)
-📊 Reporte guardado en: correct_sessions_report.json
-```
+### **Iniciar el Sistema**
 
-### **Estructura del Reporte JSON**
-```json
-{
-  "timestamp": "2025-07-09T23:36:45.677652",
-  "total_sessions_found": 6,
-  "sessions": [
-    {
-      "session_number": 1,
-      "vehicle": "doback022",
-      "date": "2025-07-07",
-      "start_time": "2025-07-07T17:21:42",
-      "max_time_diff": 0.57,
-      "time_diffs": {
-        "gps_diff": 0.08,
-        "estabilidad_diff": 0.57,
-        "rotativo_diff": 0.12
-      },
-      "files": {
-        "CAN": "CAN_DOBACK022_20250707_0_TRADUCIDO.csv",
-        "GPS": "GPS_DOBACK022_20250707_6.txt",
-        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250707_7.txt",
-        "ROTATIVO": "ROTATIVO_DOBACK022_20250707_7.txt"
-      }
-    }
-  ]
-}
+**Windows:**
+```powershell
+.\iniciar.ps1
 ```
 
-## 🔍 Testing y Validación
-
-### **Pruebas del Procesador**
+**Linux/Mac:**
 ```bash
-# Ejecutar procesador
-python correct_session_finder.py
-
-# Verificar reporte generado
-cat correct_sessions_report.json
-
-# Analizar logs
-tail -f session_processor.log
+./iniciar.sh
 ```
 
-### **Validación de Resultados**
-- **Verificación de fechas**: Comparar timestamps extraídos
-- **Correspondencia de archivos**: Confirmar archivos asociados correctos
-- **Análisis de desfases**: Identificar patrones de sincronización
-- **Cobertura de datos**: Verificar que no se pierden archivos válidos
+El script iniciará automáticamente:
+- Backend en `http://localhost:9998`
+- Frontend en `http://localhost:5174`
 
-## 📝 Documentación
+---
 
-### **Documentación Técnica**
-- [Procesador de Sesiones](docs/development/session-processor.md)
-- [Checklist de Implementación](docs/backend-implementation-checklist.md)
-- [API Documentation](docs/api/)
-- [Architecture](docs/architecture/)
+## 📁 **Estructura del Proyecto**
 
-### **Guías de Usuario**
-- [Manual de Usuario](docs/user/)
-- [Troubleshooting](docs/user/troubleshooting.md)
-- [FAQ](docs/user/faq.md)
-
-## 🔧 Desarrollo
-
-### **Estructura del Proyecto**
 ```
 DobackSoft/
-├── backend/           # Backend Python
-├── frontend/          # Frontend React
-├── docs/              # Documentación
-├── scripts/           # Scripts de automatización
-├── tests/             # Pruebas
-└── config/            # Configuraciones
+├── backend/                    # Backend TypeScript/Python
+│   ├── src/
+│   │   ├── controllers/        # Controladores de rutas
+│   │   ├── services/           # Lógica de negocio
+│   │   ├── middleware/         # Middlewares (auth, CORS, etc.)
+│   │   ├── routes/             # Definición de endpoints
+│   │   └── utils/              # Utilidades y helpers
+│   ├── prisma/                 # Schema y migraciones
+│   ├── processors/             # Procesadores de datos Python
+│   └── data/                   # Datos de vehículos
+│
+├── frontend/                   # Frontend React
+│   ├── src/
+│   │   ├── components/         # Componentes React
+│   │   ├── pages/              # Páginas principales
+│   │   ├── hooks/              # Custom hooks
+│   │   ├── services/           # Servicios de API
+│   │   ├── config/             # Configuraciones
+│   │   └── styles/             # Estilos CSS
+│   └── public/                 # Assets estáticos
+│
+├── config/                     # Configuraciones del sistema
+├── scripts/                    # Scripts de automatización
+└── docs/                       # Documentación
 ```
 
-### **Comandos de Desarrollo**
+---
+
+## 🎯 **Módulos del Sistema**
+
+### **1. Panel de Control**
+Dashboard con KPIs estratégicos:
+- Disponibilidad de flota
+- Tiempo con rotativo encendido
+- Kilómetros recorridos
+- Incidencias por severidad
+- Modo TV Wall para salas de control
+
+### **2. Estabilidad**
+Análisis de eventos de conducción:
+- Métricas de estabilidad (aceleraciones, frenadas)
+- Mapa de eventos GPS
+- Comparador entre sesiones
+- Exportación PDF profesional
+
+### **3. Telemetría**
+Monitoreo CAN/GPS unificado:
+- Visualización de datos CAN en tiempo real
+- Mapas GPS con trazado de rutas
+- Alarmas configurables
+- Comparador de sesiones
+
+### **4. Inteligencia Artificial**
+Copiloto inteligente:
+- Chat con análisis de datos
+- Detección de patrones
+- Recomendaciones automáticas
+- Generación de reportes con IA
+
+### **5. Geofences**
+Gestión de zonas geográficas:
+- CRUD completo de geocercas
+- Detección de entrada/salida
+- Alertas automáticas
+- Integración con mapas
+
+### **6. Operaciones**
+Gestión operativa unificada:
+- Registro de eventos
+- Sistema de alertas configurable
+- Mantenimiento preventivo/correctivo
+- Historial completo
+
+### **7. Reportes**
+Generación de informes:
+- PDF profesional en 1 clic
+- Reportes con gráficas y mapas
+- Análisis IA incluido
+- Exportación CSV/Excel
+
+### **8. Administración**
+Gestión del sistema (solo ADMIN):
+- Usuarios y roles
+- Empresas y flotas
+- Vehículos
+- Base de conocimiento
+
+---
+
+## 👥 **Roles de Usuario**
+
+### **ADMIN**
+- Acceso total al sistema
+- Gestión de múltiples organizaciones
+- Configuración avanzada
+
+### **MANAGER**
+- Acceso a su organización
+- Gestión de su flota
+- Reportes y análisis
+
+---
+
+## 🔐 **Seguridad**
+
+- ✅ **JWT con cookies httpOnly** - Autenticación segura
+- ✅ **Aislamiento por organización** - Filtrado automático `organizationId`
+- ✅ **Protección CSRF** implementada
+- ✅ **Rate limiting** en endpoints sensibles
+- ✅ **Validación estricta** de inputs
+- ✅ **Logs de auditoría** completos
+
+---
+
+## 📊 **Flujo de Datos**
+
+```
+1. Subida de archivos (FTP/Manual)
+   ↓
+2. Procesamiento automático
+   ↓
+3. Detección de eventos
+   ↓
+4. Almacenamiento en BD
+   ↓
+5. Visualización en dashboard
+   ↓
+6. Análisis IA
+   ↓
+7. Generación de reportes
+```
+
+---
+
+## 🛠️ **Configuración**
+
+### **Backend (.env)**
+```env
+DATABASE_URL=postgresql://user:pass@localhost:5432/dobacksoft
+JWT_SECRET=your-secret-key
+PORT=9998
+OPENAI_API_KEY=your-openai-key
+TOMTOM_API_KEY=your-tomtom-key
+RADAR_SECRET_KEY=your-radar-key
+```
+
+### **Frontend (.env)**
+```env
+VITE_API_URL=http://localhost:9998
+VITE_TOMTOM_API_KEY=your-tomtom-key
+VITE_RADAR_PUBLISHABLE_KEY=your-radar-pk
+```
+
+---
+
+## 🧪 **Testing**
+
 ```bash
 # Backend
 cd backend
-python -m pytest tests/          # Ejecutar pruebas
-python correct_session_finder.py # Procesar sesiones
-python -m flask run              # Servidor de desarrollo
+npm test
 
 # Frontend
 cd frontend
-npm test                         # Ejecutar pruebas
-npm run build                    # Build de producción
-npm start                        # Servidor de desarrollo
+npm test
+
+# E2E
+npm run test:e2e
 ```
 
-## 🚀 Despliegue
+---
 
-### **Producción**
-```bash
-# Backend
-cd backend
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+## 📦 **Despliegue**
 
-# Frontend
-cd frontend
-npm run build
-serve -s build -l 3000
-```
+### **Producción con Docker**
 
-### **Docker**
 ```bash
 docker-compose up -d
 ```
 
-## 📊 Monitoreo y Logs
+### **Manual**
 
-### **Logs del Procesador**
-- **INFO**: Progreso general del procesamiento
-- **DEBUG**: Detalles de extracción de fechas
-- **WARNING**: Archivos que no se pueden procesar
-- **ERROR**: Errores críticos del sistema
+```bash
+# Build frontend
+cd frontend
+npm run build
 
-### **Métricas de Performance**
-- **Velocidad de procesamiento**: ~2 sesiones/segundo
-- **Tiempo de escaneo**: ~0.3 segundos para 112 archivos
-- **Precisión temporal**: 67% de sesiones perfectas
-
-## 🤝 Contribución
-
-### **Proceso de Desarrollo**
-1. Crear rama feature: `git checkout -b feature/nueva-funcionalidad`
-2. Implementar cambios siguiendo estándares de código
-3. Ejecutar pruebas: `npm test` y `python -m pytest`
-4. Crear Pull Request con descripción detallada
-
-### **Estándares de Código**
-- **Python**: PEP 8, TypeScript estricto
-- **JavaScript**: ESLint + Prettier
-- **Documentación**: Comentarios en español
-- **Testing**: Cobertura mínima 80% backend, 60% frontend
-
-## 📞 Soporte
-
-### **Contacto**
-- **Email**: soporte@dobacksoft.com
-- **Documentación**: [docs.dobacksoft.com](https://docs.dobacksoft.com)
-- **Issues**: [GitHub Issues](https://github.com/dobacksoft/issues)
-
-### **Troubleshooting**
-- [Guía de Problemas Comunes](docs/user/troubleshooting.md)
-- [FAQ](docs/user/faq.md)
-- [Logs de Error](docs/monitoring/)
+# Iniciar backend
+cd ../backend
+npm run start:prod
+```
 
 ---
 
-**Doback Soft** - Sistema de Gestión de Flotas  
-*Versión: 1.0.0 | Última actualización: 2025-07-09*
-#   d o b a c k s o f t  
- #   d o b a c k s o f t  
- 
+## 📝 **Licencia**
+
+MIT License - Ver [LICENSE](LICENSE) para más detalles
+
+---
+
+## 👤 **Autor**
+
+**Antonio Hermoso**
+- GitHub: [@hermoso92](https://github.com/hermoso92)
+- Email: antoniohermoso92@gmail.com
+
+---
+
+## 🔗 **Enlaces**
+
+- **Repositorio**: https://github.com/hermoso92/dobackv2
+- **Documentación completa**: Ver carpeta `/docs`
+- **Issues**: https://github.com/hermoso92/dobackv2/issues
+
+---
+
+**DobackSoft V3** - *Innovación en gestión de flotas de emergencia*  
+© 2025 - Todos los derechos reservados
