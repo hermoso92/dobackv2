@@ -1,0 +1,62 @@
+[bandit]
+targets = src
+exclude = tests
+tests = B201,B301
+skips = B101,B601
+
+[bandit.assert_used]
+skips = tests
+
+[bandit.try_except_pass]
+skips = tests
+
+[bandit.hardcoded_tmp_directory]
+skips = tests
+
+[bandit.hardcoded_password_string]
+skips = tests
+
+[bandit.hardcoded_password_funcarg]
+skips = tests
+
+[bandit.hardcoded_password_default]
+skips = tests
+
+[bandit.hardcoded_bind_all_interfaces]
+skips = tests
+
+[bandit.hardcoded_sql_expressions]
+skips = tests
+
+[bandit.hardcoded_tmp_directory]
+skips = tests
+
+[bandit.jinja2_autoescape_false]
+skips = tests
+
+[bandit.linux_commands_wildcard_injection]
+skips = tests
+
+[bandit.request_with_no_cert_validation]
+skips = tests
+
+[bandit.ssl_with_bad_version]
+skips = tests
+
+[bandit.start_process_with_a_shell]
+skips = tests
+
+[bandit.subprocess_popen_with_shell_equals_true]
+skips = tests
+
+[bandit.subprocess_without_shell_equals_true]
+skips = tests
+
+[bandit.try_except_continue]
+skips = tests
+
+[bandit.try_except_pass]
+skips = tests
+
+[bandit.weak_cryptographic_key]
+skips = tests 

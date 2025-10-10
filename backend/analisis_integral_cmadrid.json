@@ -1,0 +1,1124 @@
+{
+  "summary": {
+    "totalVehicles": 3,
+    "totalFiles": 27,
+    "totalSessions": 147,
+    "totalMeasurements": 538361,
+    "analysisDate": "2025-10-03T14:44:23.691Z"
+  },
+  "vehicles": {
+    "DOBACK024": {
+      "vehicleId": "DOBACK024",
+      "files": {
+        "estabilidad": 3,
+        "gps": 3,
+        "rotativo": 3
+      },
+      "sessions": 35,
+      "measurements": 276676,
+      "sessionsByType": {
+        "estabilidad": 15,
+        "gps": 5,
+        "rotativo": 15
+      }
+    },
+    "DOBACK027": {
+      "vehicleId": "DOBACK027",
+      "files": {
+        "estabilidad": 3,
+        "gps": 3,
+        "rotativo": 3
+      },
+      "sessions": 45,
+      "measurements": 90187,
+      "sessionsByType": {
+        "estabilidad": 14,
+        "gps": 10,
+        "rotativo": 21
+      }
+    },
+    "DOBACK028": {
+      "vehicleId": "DOBACK028",
+      "files": {
+        "estabilidad": 3,
+        "gps": 3,
+        "rotativo": 3
+      },
+      "sessions": 67,
+      "measurements": 171498,
+      "sessionsByType": {
+        "estabilidad": 17,
+        "gps": 17,
+        "rotativo": 33
+      }
+    }
+  },
+  "files": [
+    {
+      "fileName": "ESTABILIDAD_DOBACK024_20250930.txt",
+      "vehicleId": "DOBACK024",
+      "type": "estabilidad",
+      "sessionsCount": 2,
+      "measurementsCount": 89118,
+      "fileSize": 15508756,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025 09:33:44",
+          "measurementsCount": 38759
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025 12:41:48",
+          "measurementsCount": 50359
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK024_20251001.txt",
+      "vehicleId": "DOBACK024",
+      "type": "estabilidad",
+      "sessionsCount": 7,
+      "measurementsCount": 91413,
+      "fileSize": 15960065,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025 09:36:54",
+          "measurementsCount": 16559
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025 11:06:18",
+          "measurementsCount": 759
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025 14:22:23",
+          "measurementsCount": 16399
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025 16:18:28",
+          "measurementsCount": 31399
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025 17:14:04",
+          "measurementsCount": 7249
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025 22:39:48",
+          "measurementsCount": 7639
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025 23:04:52",
+          "measurementsCount": 11409
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK024_20251002.txt",
+      "vehicleId": "DOBACK024",
+      "type": "estabilidad",
+      "sessionsCount": 6,
+      "measurementsCount": 90671,
+      "fileSize": 15793680,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025 00:30:05",
+          "measurementsCount": 38339
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025 09:02:00",
+          "measurementsCount": 508
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "02/10/2025 09:37:09",
+          "measurementsCount": 16957
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025 11:33:19",
+          "measurementsCount": 779
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "02/10/2025 18:59:09",
+          "measurementsCount": 27659
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "02/10/2025 19:50:53",
+          "measurementsCount": 6429
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK024_20250930.txt",
+      "vehicleId": "DOBACK024",
+      "type": "gps",
+      "sessionsCount": 1,
+      "measurementsCount": 1280,
+      "fileSize": 92028,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-09:33:37",
+          "measurementsCount": 1280
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK024_20251001.txt",
+      "vehicleId": "DOBACK024",
+      "type": "gps",
+      "sessionsCount": 3,
+      "measurementsCount": 1605,
+      "fileSize": 115830,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-09:36:47",
+          "measurementsCount": 1464
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-11:06:11",
+          "measurementsCount": 68
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-14:22:16",
+          "measurementsCount": 73
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK024_20251002.txt",
+      "vehicleId": "DOBACK024",
+      "type": "gps",
+      "sessionsCount": 1,
+      "measurementsCount": 763,
+      "fileSize": 54538,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-00:29:57",
+          "measurementsCount": 763
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK024_20250930.txt",
+      "vehicleId": "DOBACK024",
+      "type": "rotativo",
+      "sessionsCount": 2,
+      "measurementsCount": 597,
+      "fileSize": 13869,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-09:33:37",
+          "measurementsCount": 260
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025-12:41:43",
+          "measurementsCount": 337
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK024_20251001.txt",
+      "vehicleId": "DOBACK024",
+      "type": "rotativo",
+      "sessionsCount": 7,
+      "measurementsCount": 618,
+      "fileSize": 14697,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-09:36:47",
+          "measurementsCount": 112
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-11:06:11",
+          "measurementsCount": 6
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-14:22:16",
+          "measurementsCount": 111
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025-16:18:21",
+          "measurementsCount": 210
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025-17:13:58",
+          "measurementsCount": 50
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025-22:39:41",
+          "measurementsCount": 52
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025-23:04:45",
+          "measurementsCount": 77
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK024_20251002.txt",
+      "vehicleId": "DOBACK024",
+      "type": "rotativo",
+      "sessionsCount": 6,
+      "measurementsCount": 611,
+      "fileSize": 14467,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-00:29:57",
+          "measurementsCount": 257
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025-09:01:48",
+          "measurementsCount": 5
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "02/10/2025-09:37:06",
+          "measurementsCount": 114
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025-11:33:11",
+          "measurementsCount": 6
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "02/10/2025-18:59:02",
+          "measurementsCount": 185
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "02/10/2025-19:50:46",
+          "measurementsCount": 44
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK027_20250930.txt",
+      "vehicleId": "DOBACK027",
+      "type": "estabilidad",
+      "sessionsCount": 1,
+      "measurementsCount": 15099,
+      "fileSize": 2600157,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025 09:38:54",
+          "measurementsCount": 15099
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK027_20251001.txt",
+      "vehicleId": "DOBACK027",
+      "type": "estabilidad",
+      "sessionsCount": 10,
+      "measurementsCount": 51675,
+      "fileSize": 8859470,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025 09:52:32",
+          "measurementsCount": 12180
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025 10:13:25",
+          "measurementsCount": 10229
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025 11:59:33",
+          "measurementsCount": 8489
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025 12:53:08",
+          "measurementsCount": 569
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025 13:03:17",
+          "measurementsCount": 949
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025 22:42:58",
+          "measurementsCount": 4819
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025 22:52:14",
+          "measurementsCount": 467
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "01/10/2025 22:58:04",
+          "measurementsCount": 188
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "01/10/2025 22:58:04",
+          "measurementsCount": 13288
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "01/10/2025 23:22:58",
+          "measurementsCount": 497
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK027_20251002.txt",
+      "vehicleId": "DOBACK027",
+      "type": "estabilidad",
+      "sessionsCount": 3,
+      "measurementsCount": 16276,
+      "fileSize": 2815443,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025 09:50:14",
+          "measurementsCount": 772
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025 09:52:10",
+          "measurementsCount": 15326
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025 10:38:17",
+          "measurementsCount": 178
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK027_20250930.txt",
+      "vehicleId": "DOBACK027",
+      "type": "gps",
+      "sessionsCount": 2,
+      "measurementsCount": 1361,
+      "fileSize": 99230,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-09:38:54",
+          "measurementsCount": 1277
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025-10:03:43",
+          "measurementsCount": 84
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK027_20251001.txt",
+      "vehicleId": "DOBACK027",
+      "type": "gps",
+      "sessionsCount": 5,
+      "measurementsCount": 2766,
+      "fileSize": 197854,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-09:52:32",
+          "measurementsCount": 1058
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-10:12:58",
+          "measurementsCount": 908
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-11:59:26",
+          "measurementsCount": 0
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025-11:59:26",
+          "measurementsCount": 750
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025-12:53:02",
+          "measurementsCount": 50
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK027_20251002.txt",
+      "vehicleId": "DOBACK027",
+      "type": "gps",
+      "sessionsCount": 3,
+      "measurementsCount": 2360,
+      "fileSize": 172573,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-09:50:14",
+          "measurementsCount": 67
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025-09:52:00",
+          "measurementsCount": 2269
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025-10:38:07",
+          "measurementsCount": 24
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK027_20250930.txt",
+      "vehicleId": "DOBACK027",
+      "type": "rotativo",
+      "sessionsCount": 3,
+      "measurementsCount": 107,
+      "fileSize": 2736,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-09:38:56",
+          "measurementsCount": 98
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025-10:03:43",
+          "measurementsCount": 3
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "30/09/2025-10:05:35",
+          "measurementsCount": 6
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK027_20251001.txt",
+      "vehicleId": "DOBACK027",
+      "type": "rotativo",
+      "sessionsCount": 14,
+      "measurementsCount": 360,
+      "fileSize": 9251,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-09:52:34",
+          "measurementsCount": 82
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-10:12:58",
+          "measurementsCount": 71
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-11:59:26",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025-11:59:26",
+          "measurementsCount": 58
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025-12:53:02",
+          "measurementsCount": 5
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025-13:01:43",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025-13:03:09",
+          "measurementsCount": 7
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "01/10/2025-22:42:47",
+          "measurementsCount": 33
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "01/10/2025-22:52:04",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "01/10/2025-22:52:04",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 11,
+          "startTime": "01/10/2025-22:52:04",
+          "measurementsCount": 4
+        },
+        {
+          "sessionNumber": 12,
+          "startTime": "01/10/2025-22:57:53",
+          "measurementsCount": 2
+        },
+        {
+          "sessionNumber": 13,
+          "startTime": "01/10/2025-22:57:53",
+          "measurementsCount": 90
+        },
+        {
+          "sessionNumber": 14,
+          "startTime": "01/10/2025-23:22:52",
+          "measurementsCount": 4
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK027_20251002.txt",
+      "vehicleId": "DOBACK027",
+      "type": "rotativo",
+      "sessionsCount": 4,
+      "measurementsCount": 183,
+      "fileSize": 4575,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-09:50:17",
+          "measurementsCount": 6
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025-09:52:00",
+          "measurementsCount": 172
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025-10:36:58",
+          "measurementsCount": 3
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "02/10/2025-10:38:07",
+          "measurementsCount": 2
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK028_20250930.txt",
+      "vehicleId": "DOBACK028",
+      "type": "estabilidad",
+      "sessionsCount": 3,
+      "measurementsCount": 5407,
+      "fileSize": 933039,
+      "sessions": [
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025 14:00:33",
+          "measurementsCount": 418
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "30/09/2025 16:26:26",
+          "measurementsCount": 2301
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "30/09/2025 19:28:26",
+          "measurementsCount": 2688
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK028_20251001.txt",
+      "vehicleId": "DOBACK028",
+      "type": "estabilidad",
+      "sessionsCount": 10,
+      "measurementsCount": 98196,
+      "fileSize": 16932474,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025 01:48:52",
+          "measurementsCount": 4348
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025 01:57:19",
+          "measurementsCount": 33137
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025 10:17:36",
+          "measurementsCount": 14187
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025 14:11:12",
+          "measurementsCount": 897
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025 14:13:55",
+          "measurementsCount": 13158
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025 14:37:10",
+          "measurementsCount": 4927
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025 14:46:37",
+          "measurementsCount": 268
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "01/10/2025 22:48:58",
+          "measurementsCount": 1087
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "01/10/2025 22:52:11",
+          "measurementsCount": 21228
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "01/10/2025 23:32:20",
+          "measurementsCount": 4959
+        }
+      ]
+    },
+    {
+      "fileName": "ESTABILIDAD_DOBACK028_20251002.txt",
+      "vehicleId": "DOBACK028",
+      "type": "estabilidad",
+      "sessionsCount": 4,
+      "measurementsCount": 56152,
+      "fileSize": 9644935,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025 10:44:13",
+          "measurementsCount": 27237
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025 13:05:17",
+          "measurementsCount": 25918
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "02/10/2025 13:50:13",
+          "measurementsCount": 2889
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025 13:56:16",
+          "measurementsCount": 108
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK028_20250930.txt",
+      "vehicleId": "DOBACK028",
+      "type": "gps",
+      "sessionsCount": 1,
+      "measurementsCount": 242,
+      "fileSize": 16590,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-19:28:15",
+          "measurementsCount": 242
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK028_20251001.txt",
+      "vehicleId": "DOBACK028",
+      "type": "gps",
+      "sessionsCount": 14,
+      "measurementsCount": 8443,
+      "fileSize": 618812,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-01:46:08",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-01:48:41",
+          "measurementsCount": 388
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-01:57:09",
+          "measurementsCount": 2924
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025-10:14:53",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025-10:17:26",
+          "measurementsCount": 1245
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025-14:08:29",
+          "measurementsCount": 2
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025-14:11:02",
+          "measurementsCount": 84
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "01/10/2025-14:13:45",
+          "measurementsCount": 1147
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "01/10/2025-14:36:59",
+          "measurementsCount": 424
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "01/10/2025-14:46:26",
+          "measurementsCount": 33
+        },
+        {
+          "sessionNumber": 11,
+          "startTime": "01/10/2025-22:46:14",
+          "measurementsCount": 2
+        },
+        {
+          "sessionNumber": 12,
+          "startTime": "01/10/2025-22:48:48",
+          "measurementsCount": 105
+        },
+        {
+          "sessionNumber": 13,
+          "startTime": "01/10/2025-22:52:03",
+          "measurementsCount": 1833
+        },
+        {
+          "sessionNumber": 14,
+          "startTime": "01/10/2025-23:32:17",
+          "measurementsCount": 254
+        }
+      ]
+    },
+    {
+      "fileName": "GPS_DOBACK028_20251002.txt",
+      "vehicleId": "DOBACK028",
+      "type": "gps",
+      "sessionsCount": 2,
+      "measurementsCount": 1400,
+      "fileSize": 101794,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-10:41:26",
+          "measurementsCount": 5
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025-10:44:02",
+          "measurementsCount": 1395
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK028_20250930.txt",
+      "vehicleId": "DOBACK028",
+      "type": "rotativo",
+      "sessionsCount": 11,
+      "measurementsCount": 605,
+      "fileSize": 14676,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "30/09/2025-09:32:50",
+          "measurementsCount": 88
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "30/09/2025-09:56:01",
+          "measurementsCount": 5
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "30/09/2025-10:15:26",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "30/09/2025-10:54:10",
+          "measurementsCount": 83
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "30/09/2025-11:14:50",
+          "measurementsCount": 274
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "30/09/2025-12:53:04",
+          "measurementsCount": 4
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "30/09/2025-13:21:35",
+          "measurementsCount": 65
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "30/09/2025-13:46:52",
+          "measurementsCount": 45
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "30/09/2025-14:00:21",
+          "measurementsCount": 4
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "30/09/2025-16:26:12",
+          "measurementsCount": 17
+        },
+        {
+          "sessionNumber": 11,
+          "startTime": "30/09/2025-19:28:15",
+          "measurementsCount": 19
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK028_20251001.txt",
+      "vehicleId": "DOBACK028",
+      "type": "rotativo",
+      "sessionsCount": 14,
+      "measurementsCount": 670,
+      "fileSize": 16381,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "01/10/2025-01:46:08",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "01/10/2025-01:48:41",
+          "measurementsCount": 30
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "01/10/2025-01:57:09",
+          "measurementsCount": 222
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "01/10/2025-10:14:53",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "01/10/2025-10:17:26",
+          "measurementsCount": 96
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "01/10/2025-14:08:29",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "01/10/2025-14:11:02",
+          "measurementsCount": 7
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "01/10/2025-14:13:45",
+          "measurementsCount": 89
+        },
+        {
+          "sessionNumber": 9,
+          "startTime": "01/10/2025-14:36:59",
+          "measurementsCount": 34
+        },
+        {
+          "sessionNumber": 10,
+          "startTime": "01/10/2025-14:46:26",
+          "measurementsCount": 3
+        },
+        {
+          "sessionNumber": 11,
+          "startTime": "01/10/2025-22:46:14",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 12,
+          "startTime": "01/10/2025-22:48:48",
+          "measurementsCount": 8
+        },
+        {
+          "sessionNumber": 13,
+          "startTime": "01/10/2025-22:52:01",
+          "measurementsCount": 143
+        },
+        {
+          "sessionNumber": 14,
+          "startTime": "01/10/2025-23:32:17",
+          "measurementsCount": 34
+        }
+      ]
+    },
+    {
+      "fileName": "ROTATIVO_DOBACK028_20251002.txt",
+      "vehicleId": "DOBACK028",
+      "type": "rotativo",
+      "sessionsCount": 8,
+      "measurementsCount": 383,
+      "fileSize": 9361,
+      "sessions": [
+        {
+          "sessionNumber": 1,
+          "startTime": "02/10/2025-09:06:42",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 2,
+          "startTime": "02/10/2025-10:41:26",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 3,
+          "startTime": "02/10/2025-10:44:02",
+          "measurementsCount": 183
+        },
+        {
+          "sessionNumber": 4,
+          "startTime": "02/10/2025-13:00:31",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 5,
+          "startTime": "02/10/2025-13:02:33",
+          "measurementsCount": 1
+        },
+        {
+          "sessionNumber": 6,
+          "startTime": "02/10/2025-13:05:06",
+          "measurementsCount": 174
+        },
+        {
+          "sessionNumber": 7,
+          "startTime": "02/10/2025-13:50:02",
+          "measurementsCount": 20
+        },
+        {
+          "sessionNumber": 8,
+          "startTime": "02/10/2025-13:56:05",
+          "measurementsCount": 2
+        }
+      ]
+    }
+  ],
+  "sessions": [],
+  "metrics": {
+    "stability": {
+      "totalSessions": 46,
+      "totalMeasurements": 514007,
+      "avgMeasurementsPerSession": 11174,
+      "variables": [
+        "ax",
+        "ay",
+        "az",
+        "gx",
+        "gy",
+        "gz",
+        "roll",
+        "pitch",
+        "yaw",
+        "timeantwifi",
+        "usciclo1",
+        "usciclo2",
+        "usciclo3",
+        "usciclo4",
+        "usciclo5",
+        "si",
+        "accmag",
+        "microsds",
+        "k3"
+      ]
+    },
+    "gps": {
+      "totalSessions": 32,
+      "totalMeasurements": 20220,
+      "avgMeasurementsPerSession": 632,
+      "noFixCount": 7087,
+      "noFixPercentage": 35,
+      "variables": [
+        "timestamp",
+        "latitude",
+        "longitude",
+        "altitude",
+        "speed",
+        "satellites",
+        "quality",
+        "hdop",
+        "fix",
+        "heading",
+        "accuracy"
+      ]
+    },
+    "rotativo": {
+      "totalSessions": 69,
+      "totalMeasurements": 4134,
+      "avgMeasurementsPerSession": 60,
+      "onCount": 2313,
+      "offCount": 1819,
+      "onPercentage": 56,
+      "variables": [
+        "timestamp",
+        "state"
+      ]
+    }
+  }
+}

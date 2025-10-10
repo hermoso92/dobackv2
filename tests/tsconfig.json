@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "lib": [
+            "es2021",
+            "dom"
+        ],
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "../dist",
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "strict": true,
+        "baseUrl": ".",
+        "skipLibCheck": true,
+        "paths": {
+            "*": [
+                "../node_modules/*"
+            ]
+        },
+        "types": [
+            "node",
+            "@playwright/test"
+        ]
+    },
+    "include": [
+        "./**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

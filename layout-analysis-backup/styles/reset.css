@@ -1,0 +1,198 @@
+/* 
+ * DobackSoft V2 - CSS Reset & Normalization
+ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    /* overflow: hidden; - Comentado para evitar problemas en login */
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* overflow: hidden; - Comentado para evitar problemas en login */
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    overflow-wrap: break-word;
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul,
+ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* MUI Layout Fixes - DESACTIVADO para MainLayout */
+/* .MuiAppBar-root {
+    width: 100% !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1200 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+} */
+
+.MuiDrawer-root {
+    position: fixed !important;
+}
+
+.MuiDrawer-paper {
+    position: fixed !important;
+    top: 56px !important;
+    height: calc(100vh - 56px) !important;
+}
+
+.MuiToolbar-root {
+    min-height: 56px !important;
+    width: 100% !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+}
+
+/* Chart Container Fixes */
+.chart-container {
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+}
+
+/* Chart.js Legend Fixes */
+.chartjs-legend {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    padding: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.chartjs-legend-item {
+    display: flex !important;
+    align-items: center !important;
+    margin: 5px !important;
+    cursor: pointer !important;
+    padding: 4px 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 4px !important;
+}
+
+.chartjs-legend-item-box {
+    width: 12px !important;
+    height: 12px !important;
+    margin-right: 5px !important;
+    border: 1px solid currentColor !important;
+    display: inline-block !important;
+}
+
+.chartjs-legend-item-text {
+    font-size: 12px !important;
+    color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.chartjs-legend-item-text.strikethrough {
+    text-decoration: line-through !important;
+}
+
+/* Prevent MUI v5 Grid issues */
+[class*=MuiGrid-root] {
+    flex-grow: 0;
+}
+
+[class*=MuiBox-root] {
+    display: block;
+}
+
+/* Fix flex layout issues */
+[class*=MuiGrid-container] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+/* Fix for scroll issues */
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* main {
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 56px !important;
+} */
+
+/* Eliminar el espacio del contenido principal */
+.MuiBox-root {
+    padding-top: 0 !important;
+}
+
+/* Ajustar el espacio del contenido */
+.MuiContainer-root {
+    padding: 16px !important;
+    max-width: none !important;
+}
+
+/* Ajustar el espacio de las tarjetas */
+.MuiPaper-root {
+    margin: 8px !important;
+    padding: 16px !important;
+}
+
+/* Ajustar el espacio de los elementos de la lista */
+.MuiListItem-root {
+    padding: 8px 16px !important;
+}
+
+/* Ajustar el espacio de los iconos */
+.MuiListItemIcon-root {
+    min-width: 48px !important;
+}

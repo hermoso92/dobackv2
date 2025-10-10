@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Crear Super Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Crear Usuario Super Admin</h1>
+    <button onclick="createSuperAdmin()">Crear Super Admin</button>
+    <div id="result"></div>
+
+    <script>
+        async function createSuperAdmin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Creando usuario...';
+
+            try {
+                const response = await fetch('http://localhost:9998/create-superadmin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Usuario creado exitosamente!</h3>
+                            <p><strong>Email:</strong> ${data.credentials.email}</p>
+                            <p><strong>Password:</strong> ${data.credentials.password}</p>
+                            <p><strong>Nombre:</strong> ${data.user.name}</p>
+                            <p><strong>Rol:</strong> ${data.user.role}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error</h3>
+                            <p>${data.message}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error de conexión</h3>
+                        <p>${error.message}</p>
+                        <p>Asegúrate de que el servidor backend esté corriendo en http://localhost:9998</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

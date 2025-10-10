@@ -1,0 +1,95 @@
+{
+    "Fase 0": {
+        "0.1": {
+            "type": "command",
+            "command": "python --version",
+            "expected_output": "Python 3.9"
+        },
+        "0.2": {
+            "type": "package",
+            "packages": ["Flask", "SQLAlchemy", "psycopg2-binary", "python-jose", "bcrypt", "pandas", "numpy", "scikit-learn", "pytest", "pytest-cov"],
+            "versions": {
+                "Flask": "3.0.0",
+                "SQLAlchemy": "2.0.0",
+                "psycopg2-binary": "2.9.9",
+                "python-jose": "3.3.0",
+                "bcrypt": "4.0.1",
+                "pandas": "2.1.0",
+                "numpy": "1.24.0",
+                "scikit-learn": "1.3.0",
+                "pytest": "7.4.0",
+                "pytest-cov": "4.1.0"
+            }
+        },
+        "0.3": {
+            "type": "command",
+            "command": "psql --version",
+            "expected_output": "PostgreSQL 13"
+        },
+        "0.4": {
+            "type": "directory",
+            "paths": [
+                "logs",
+                "logs/daily_reports",
+                "logs/validation",
+                "logs/deviations"
+            ]
+        }
+    },
+    "Fase 1": {
+        "1.1": {
+            "type": "file",
+            "path": "src/app/core/auth/jwt.py",
+            "required_content": ["class JWTHandler", "def create_token", "def verify_token"]
+        },
+        "1.2": {
+            "type": "file",
+            "path": "src/app/core/auth/roles.py",
+            "required_content": ["class Role", "class Permission", "ROLE_PERMISSIONS"]
+        },
+        "1.3": {
+            "type": "file",
+            "path": "src/app/core/validation/file_validators.py",
+            "required_content": ["class FileValidator", "def validate_stability_file"]
+        }
+    },
+    "Fase 2": {
+        "2.1": {
+            "type": "file",
+            "path": "src/app/modules/stability/service.py",
+            "required_content": ["class StabilityService", "def calculate_metrics", "def detect_events"]
+        },
+        "2.2": {
+            "type": "file",
+            "path": "src/app/modules/telemetry/service.py",
+            "required_content": ["class TelemetryService", "def process_can_data", "def process_gps_data"]
+        }
+    },
+    "Fase 3": {
+        "3.1": {
+            "type": "file",
+            "path": "src/app/modules/ia/service.py",
+            "required_content": ["class IAService", "def detect_anomalies", "def predict_risks"]
+        },
+        "3.2": {
+            "type": "file",
+            "path": "src/app/modules/reports/service.py",
+            "required_content": ["class ReportService", "def generate_stability_report", "def generate_telemetry_report"]
+        }
+    },
+    "Fase 4": {
+        "4.1": {
+            "type": "command",
+            "command": "pytest --cov=app tests/",
+            "expected_output": "coverage: 80%"
+        },
+        "4.2": {
+            "type": "directory",
+            "paths": [
+                "docs",
+                "docs/api",
+                "docs/user_guides"
+            ]
+        }
+    }
+} 

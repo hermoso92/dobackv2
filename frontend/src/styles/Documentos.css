@@ -1,0 +1,121 @@
+.document-card {
+    transition: all 0.3s ease;
+}
+
+.document-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.document-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.document-type.manual {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #1976d2;
+}
+
+.document-type.report {
+    background-color: rgba(156, 39, 176, 0.1);
+    color: #7b1fa2;
+}
+
+.document-type.certificate {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.document-content {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.document-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+}
+
+.document-meta svg {
+    font-size: 1rem;
+}
+
+.document-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.document-actions button {
+    text-transform: none;
+    font-size: 0.875rem;
+}
+
+.document-preview {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.document-upload {
+    margin-top: 16px;
+    padding: 24px;
+    border: 2px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.document-upload:hover {
+    border-color: #1976d2;
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+.document-upload-icon {
+    font-size: 48px !important;
+    color: rgba(0, 0, 0, 0.38);
+    margin-bottom: 16px;
+}
+
+.document-upload-text {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+.document-upload-hint {
+    color: rgba(0, 0, 0, 0.38);
+    font-size: 0.75rem;
+    margin-top: 8px;
+}
+
+.document-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.document-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.document-filter {
+    min-width: 200px;
+}

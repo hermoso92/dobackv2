@@ -1,0 +1,63 @@
+.vehicle-card {
+    transition: all 0.3s ease;
+}
+
+.vehicle-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.vehicle-status.active {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.vehicle-status.maintenance {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #f57c00;
+}
+
+.vehicle-status.inactive {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #d32f2f;
+}
+
+.vehicle-details {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vehicle-details-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+.vehicle-details-item svg {
+    font-size: 1rem;
+}
+
+.vehicle-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.vehicle-actions button {
+    text-transform: none;
+    font-size: 0.875rem;
+}

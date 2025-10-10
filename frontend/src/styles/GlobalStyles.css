@@ -1,0 +1,197 @@
+/* GlobalStyles.css - Mejoras Visuales DobackSoft V2 - Modo Visión Total */
+
+/* Reducción global del tamaño de componentes en 25% */
+.card,
+.chart-container,
+.data-table,
+.metric-card,
+.selector,
+.info-card {
+    transform: scale(0.75);
+    transform-origin: top left;
+    margin-bottom: -25% !important;
+    /* Compensar la reducción */
+}
+
+/* Habilitar scrollbars verticales en todos los módulos */
+.content-container {
+    overflow-y: auto !important;
+}
+
+/* Aumentar contraste y modernizar apariencia */
+:root {
+    --primary-color: #1c4f9c;
+    --primary-dark: #0e3272;
+    --primary-light: #3a78d0;
+    --accent-color: #ff5722;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    --danger-color: #f44336;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --bg-primary: #f9f9f9;
+    --bg-secondary: #e9ecef;
+    --border-color: #d1d5db;
+    --card-bg: #ffffff;
+}
+
+/* Estilo técnico-militar-profesional */
+.card,
+.metric-card,
+.info-card {
+    border-radius: 4px !important;
+    border-left: 3px solid var(--primary-color) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    background: linear-gradient(to right, var(--card-bg), #f8f9fa) !important;
+}
+
+/* Encabezados de secciones */
+.section-header {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--primary-dark) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Eliminar textos redundantes bajo títulos */
+.module-subtitle {
+    display: none !important;
+}
+
+/* Mejorar selectores */
+select,
+.select-container {
+    height: 32px !important;
+    font-size: 0.875rem !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    background-color: #fff !important;
+}
+
+/* Compactar tablas */
+table {
+    font-size: 0.8rem !important;
+}
+
+table th,
+table td {
+    padding: 0.35rem !important;
+}
+
+/* Botones más modernos */
+button,
+.btn {
+    text-transform: uppercase !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 4px !important;
+    transition: all 0.2s !important;
+}
+
+button:hover,
+.btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Gráficos mejorados */
+.chart-container {
+    background: linear-gradient(to bottom, #ffffff, #f5f7fa) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Estructura de submenús internos */
+.submenu-tabs {
+    display: flex !important;
+    background-color: var(--bg-secondary) !important;
+    border-radius: 4px !important;
+    overflow: auto !important;
+    margin-bottom: 1rem !important;
+}
+
+.submenu-tab {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+.submenu-tab.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+/* Estilos específicos para módulo de Estabilidad */
+.stability-container .main-chart {
+    height: 300px !important;
+}
+
+.stability-container .metrics-row {
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+}
+
+.stability-container .metric-card {
+    flex: 1 !important;
+    min-width: 120px !important;
+    padding: 0.5rem !important;
+}
+
+/* Estilos específicos para módulo de Telemetría */
+.telemetry-container .selector-row {
+    display: flex !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Estilos específicos para módulo de IA */
+.ai-analysis-container .analysis-card {
+    border-left: 3px solid var(--accent-color) !important;
+}
+
+.ai-analysis-container .pattern-detected {
+    background-color: rgba(255, 87, 34, 0.1) !important;
+    border-left: 3px solid var(--accent-color) !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 500 !important;
+}
+
+/* Radar chart para análisis IA */
+.radar-chart-container {
+    max-width: 300px !important;
+    margin: 0 auto !important;
+}
+
+/* Mapas GPS */
+.map-container {
+    height: 300px !important;
+    border-radius: 4px !important;
+    overflow: auto !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Adaptaciones para componentes específicos */
+.dashboard-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 0.75rem !important;
+}
+
+/* Tarjetas destacadas */
+.highlight-card {
+    border-left: 3px solid var(--accent-color) !important;
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.05), transparent) !important;
+}

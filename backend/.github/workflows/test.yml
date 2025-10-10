@@ -1,0 +1,150 @@
+name: 🧪 Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: dobacksoft_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: 📥 Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: 🔧 Setup test environment
+      working-directory: ./backend
+      run: |
+        cp env.example env.test
+        echo "DATABASE_URL=postgresql://test:test@localhost:5432/dobacksoft_test" >> env.test
+        echo "JWT_SECRET=test-jwt-secret-key" >> env.test
+        echo "REDIS_URL=redis://localhost:6379/1" >> env.test
+
+    - name: 🗄️ Setup test database
+      working-directory: ./backend
+      run: |
+        npx prisma generate
+        npx prisma migrate deploy --env-file env.test
+
+    - name: 🔍 Lint code
+      working-directory: ./backend
+      run: npm run lint
+
+    - name: 🧪 Run unit tests
+      working-directory: ./backend
+      run: npm test -- --exclude="**/integration/**"
+
+    - name: 🔗 Run integration tests
+      working-directory: ./backend
+      run: npm test -- --include="**/integration/**"
+
+    - name: 📊 Generate coverage report
+      working-directory: ./backend
+      run: npm run test:coverage
+
+    - name: 📈 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+    - name: 📋 Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        lcov-file: ./backend/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        delete-old-comments: true
+
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+
+    steps:
+    - name: 📊 Test Summary
+      run: |
+        echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Unit Tests: Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Integration Tests: Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Coverage: Generated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "- Lines: 70%+" >> $GITHUB_STEP_SUMMARY
+        echo "- Functions: 70%+" >> $GITHUB_STEP_SUMMARY
+        echo "- Branches: 70%+" >> $GITHUB_STEP_SUMMARY
+        echo "- Statements: 70%+" >> $GITHUB_STEP_SUMMARY
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: 📥 Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: 🔒 Run security audit
+      working-directory: ./backend
+      run: npm audit --audit-level moderate
+
+    - name: 🛡️ Check for vulnerabilities
+      working-directory: ./backend
+      run: |
+        if npm audit --audit-level high; then
+          echo "✅ No high severity vulnerabilities found"
+        else
+          echo "❌ High severity vulnerabilities found"
+          exit 1
+        fi

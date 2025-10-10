@@ -1,0 +1,26 @@
+[run]
+source = app
+omit = 
+    */tests/*
+    */migrations/*
+    */config/*
+    */venv/*
+    */__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    except ImportError:
+    if 0:
+    if False:
+
+[html]
+directory = coverage_html
+
+[xml]
+output = coverage.xml 

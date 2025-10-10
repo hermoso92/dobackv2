@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    volumes:
+      - uploads:/app/uploads
+    environment:
+      - FLASK_ENV=staging
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db:5432/DobackSoft_staging
+      - CACHE_REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./src/app/static:/app/src/app/static
+      - uploads:/app/uploads
+    depends_on:
+      - web
+
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=DobackSoft_staging
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_staging_data:/data
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
+  uploads: 

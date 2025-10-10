@@ -1,0 +1,565 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  USER
+  OPERATOR
+  VIEWER
+}
+
+enum SessionType {
+  ROUTINE
+  MAINTENANCE
+  EMERGENCY
+  TEST
+  TRAINING
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ERROR
+  CANCELLED
+}
+
+enum VehicleType {
+  TRUCK
+  VAN
+  CAR
+  BUS
+  MOTORCYCLE
+  OTHER
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+  REPAIR
+}
+
+enum EventType {
+  STABILITY
+  CAN
+  GPS
+  SYSTEM
+  CUSTOM
+  COMBINED
+  MAINTENANCE
+}
+
+enum EventSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum EventStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+  ARCHIVED
+  EXPIRED
+}
+
+enum EventConditionType {
+  STABILITY
+  CAN
+  GPS
+  COMBINED
+}
+
+enum EventConditionOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  LESS_THAN
+  GREATER_EQUALS
+  LESS_EQUALS
+  BETWEEN
+  IN_RANGE
+}
+
+enum EventLogicOperator {
+  AND
+  OR
+}
+
+enum NotificationType {
+  EVENT
+  SYSTEM
+  MAINTENANCE
+  ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  IN_APP
+  SMS
+}
+
+enum ReportType {
+  STABILITY
+  CAN_GPS
+  AI
+  EVENT
+  COMPARATIVE
+  TRENDS
+  MAINTENANCE
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+  JSON
+}
+
+enum ReportSchedule {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  PREDICTIVE
+}
+
+enum MaintenanceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Models
+model Organization {
+  id            String   @id @default(uuid())
+  name          String
+  apiKey        String   @unique
+  users         User[]
+  vehicles      Vehicle[]
+  config        OrganizationConfig?
+  events        Event[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model OrganizationConfig {
+  id              String   @id @default(uuid())
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String   @unique
+  reportSchedule  ReportSchedule @default(MONTHLY)
+  notificationSettings Json
+  stabilityThresholds Json
+  telemetryThresholds Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  password       String
+  name           String
+  role           UserRole   @default(USER)
+  status         String     @default("ACTIVE")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  vehicles       Vehicle[]
+  sessions       Session[]
+  events         GestorDeEvento[]
+  notifications  Notification[]
+  auditLogs      LogAuditoria[]
+  config         UserConfig?
+  maintenanceRecords MaintenanceRecord[]
+  informesGenerados InformeGenerado[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model UserConfig {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @unique
+  notificationPreferences Json
+  reportPreferences Json
+  language        String   @default("es")
+  timezone        String   @default("UTC")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Vehicle {
+  id             String     @id @default(uuid())
+  name           String
+  model          String
+  licensePlate   String     @unique
+  identifier     String     @unique
+  brand          String?
+  type           VehicleType
+  status         VehicleStatus @default(ACTIVE)
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  user           User?      @relation(fields: [userId], references: [id])
+  userId         String?
+  sessions       Session[]
+  events         Event[]
+  eventExecutions EjecucionEvento[]
+  archivosSubidos ArchivoSubido[]
+  informes        InformeGenerado[]
+  sugerenciasIA   SugerenciaIA[]
+  maintenanceRecords MaintenanceRecord[]
+  configuration   VehicleConfiguration?
+  eventTypes     GestorDeEventoVehicle[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model VehicleConfiguration {
+  id              String   @id @default(uuid())
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicleId       String   @unique
+  stabilityThresholds Json
+  telemetryThresholds Json
+  maintenanceSchedule Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Session {
+  id           String     @id @default(uuid())
+  vehicle      Vehicle    @relation(fields: [vehicleId], references: [id])
+  vehicleId    String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  startTime    DateTime
+  endTime      DateTime?
+  sessionNumber Int
+  sequence     Int
+  type         SessionType @default(ROUTINE)
+  status       SessionStatus @default(ACTIVE)
+  weatherConditions Json?
+  stabilityMeasurements StabilityMeasurement[]
+  canMeasurements      CanMeasurement[]
+  gpsMeasurements      GpsMeasurement[]
+  eventExecutions      EjecucionEvento[]
+  archivosSubidos      ArchivoSubido[]
+  informes             InformeGenerado[]
+  sugerenciasIA        SugerenciaIA[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  @@unique([vehicleId, startTime, sessionNumber])
+}
+
+model StabilityMeasurement {
+  id           String   @id @default(uuid())
+  session      Session  @relation(fields: [sessionId], references: [id])
+  sessionId    String
+  timestamp    DateTime
+  ax           Float
+  ay           Float
+  az           Float
+  gx           Float
+  gy           Float
+  gz           Float
+  roll         Float?
+  pitch        Float?
+  yaw          Float?
+  timeantwifi  Float?
+  isDRSHigh    Boolean  @default(false)
+  isLTRCritical Boolean @default(false)
+  isLateralGForceHigh Boolean @default(false)
+  temperature  Float?
+  usciclo1     Float    @default(0)
+  usciclo2     Float    @default(0)
+  usciclo3     Float    @default(0)
+  usciclo4     Float    @default(0)
+  usciclo5     Float    @default(0)
+  usciclo6     Float    @default(0)
+  usciclo7     Float    @default(0)
+  usciclo8     Float    @default(0)
+  si           Float    @default(0)
+  accmag       Float    @default(0)
+  microsds     Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CanMeasurement {
+  id           String   @id @default(uuid())
+  session      Session  @relation(fields: [sessionId], references: [id])
+  sessionId    String
+  timestamp    DateTime
+  engineRpm    Float
+  vehicleSpeed Float
+  fuelSystemStatus Float
+  temperature  Float?
+  throttlePosition Float?
+  brakePressure Float?
+  steeringAngle Float?
+  gearPosition Int?
+  absActive    Boolean?
+  espActive    Boolean?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GpsMeasurement {
+  id           String   @id @default(uuid())
+  session      Session  @relation(fields: [sessionId], references: [id])
+  sessionId    String
+  timestamp    DateTime
+  latitude     Float
+  longitude    Float
+  altitude     Float
+  speed        Float
+  satellites   Int
+  hdop         Float?
+  quality      String?
+  heading      Float?
+  fix          String?
+  accuracy     Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GestorDeEvento {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  type            EventType
+  severity        EventSeverity
+  status          EventStatus @default(ACTIVE)
+  isPredefined    Boolean  @default(false)
+  conditions      EventCondition[]
+  logicOperator   EventLogicOperator @default(AND)
+  variablesVisibles EventoVariableVisible[]
+  timeWindowStart DateTime?
+  timeWindowEnd   DateTime?
+  vehicles        GestorDeEventoVehicle[]
+  executions      EjecucionEvento[]
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  version         String   @default("1.0.0")
+}
+
+model EventCondition {
+  id              String   @id @default(uuid())
+  event           GestorDeEvento @relation(fields: [eventId], references: [id])
+  eventId         String
+  type            EventConditionType
+  variable        String
+  operator        EventConditionOperator
+  value           Float
+  value2          Float?
+  unit            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EventoVariableVisible {
+  id        String   @id @default(uuid())
+  evento    GestorDeEvento @relation(fields: [eventoId], references: [id])
+  eventoId  String
+  nombre    String
+  orden     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EjecucionEvento {
+  id              String   @id @default(uuid())
+  event           GestorDeEvento @relation(fields: [eventId], references: [id])
+  eventId         String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicleId       String
+  session         Session? @relation(fields: [sessionId], references: [id])
+  sessionId       String?
+  triggeredAt     DateTime @default(now())
+  data            Json
+  displayData     Json
+  location        Json?
+  status          EventStatus @default(ACTIVE)
+  actions         AccionDisparada[]
+  informes        InformeGenerado[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AccionDisparada {
+  id            String   @id @default(uuid())
+  ejecucion     EjecucionEvento @relation(fields: [ejecucionId], references: [id])
+  ejecucionId   String
+  tipoAccion    String
+  resultado     String
+  ejecutadoEn   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  type         NotificationType
+  channel      NotificationChannel
+  message      String
+  status       NotificationStatus @default(PENDING)
+  sentAt       DateTime?
+  receivedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LogAuditoria {
+  id           String   @id @default(uuid())
+  user         User?    @relation(fields: [userId], references: [id])
+  userId       String?
+  action       String
+  entity       String
+  entityId     String?
+  details      String
+  createdAt    DateTime @default(now())
+}
+
+model ArchivoSubido {
+  id            String   @id @default(uuid())
+  nombre        String
+  tipo          String
+  session       Session? @relation(fields: [sessionId], references: [id])
+  sessionId     String?
+  vehiculo      Vehicle? @relation(fields: [vehiculoId], references: [id])
+  vehiculoId    String?
+  fechaSubida   DateTime @default(now())
+  errores       String?
+  extraMetadata Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model InformeGenerado {
+  id                String   @id @default(uuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String
+  sesion            Session? @relation(fields: [sessionId], references: [id])
+  sessionId         String?
+  vehiculo          Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId         String?
+  sugerenciaIA      SugerenciaIA? @relation(fields: [sugerenciaIAId], references: [id])
+  sugerenciaIAId    String?
+  ejecucionEvento   EjecucionEvento? @relation(fields: [ejecucionEventoId], references: [id])
+  ejecucionEventoId String?
+  tipo              ReportType
+  formato           ReportFormat
+  urlPdf            String
+  generadoEn        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SugerenciaIA {
+  id            String   @id @default(uuid())
+  session       Session? @relation(fields: [sessionId], references: [id])
+  sessionId     String?
+  vehiculo      Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId     String?
+  tipo          String
+  descripcion   String
+  sugerencia    String
+  generadoEn    DateTime @default(now())
+  informes      InformeGenerado[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MaintenanceRecord {
+  id            String   @id @default(uuid())
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicleId     String
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+  tipo          MaintenanceType
+  descripcion   String
+  fecha         DateTime
+  kilometraje   Float?
+  costo         Float?
+  estado        MaintenanceStatus @default(PENDING)
+  prioridad     MaintenancePriority @default(MEDIUM)
+  notas         String?
+  partes        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Event {
+    id             String        @id @default(uuid())
+    type           EventType
+    severity       EventSeverity
+    status         EventStatus
+    vehicleId      String
+    organizationId String
+    timestamp      DateTime
+    data           Json
+    displayData    Json
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+
+    vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
+    organization   Organization  @relation(fields: [organizationId], references: [id])
+
+    @@index([vehicleId])
+    @@index([organizationId])
+    @@index([timestamp])
+    @@index([type])
+    @@index([severity])
+    @@index([status])
+}
+
+model GestorDeEventoVehicle {
+  id              String   @id @default(uuid())
+  gestorDeEvento  GestorDeEvento @relation(fields: [gestorDeEventoId], references: [id])
+  gestorDeEventoId String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicleId       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([gestorDeEventoId, vehicleId])
+  @@index([gestorDeEventoId])
+  @@index([vehicleId])
+}

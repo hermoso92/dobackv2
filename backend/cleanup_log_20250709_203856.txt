@@ -1,0 +1,3 @@
+=== LIMPIEZA DE SESIONES DUPLICADAS ===
+Log guardado en: cleanup_log_20250709_203856.txt
+

@@ -1,0 +1,123 @@
+.upload-card {
+    transition: all 0.3s ease;
+}
+
+.upload-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.upload-status.completed {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.upload-status.in_progress {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #1976d2;
+}
+
+.upload-status.error {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #d32f2f;
+}
+
+.upload-content {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upload-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+}
+
+.upload-meta svg {
+    font-size: 1rem;
+}
+
+.upload-progress {
+    margin-top: 8px;
+}
+
+.upload-error {
+    margin-top: 8px;
+    color: #d32f2f;
+    font-size: 0.875rem;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.upload-actions button {
+    text-transform: none;
+    font-size: 0.875rem;
+}
+
+.upload-dropzone {
+    margin-top: 16px;
+    padding: 24px;
+    border: 2px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: #1976d2;
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+.upload-dropzone-icon {
+    font-size: 48px !important;
+    color: rgba(0, 0, 0, 0.38);
+    margin-bottom: 16px;
+}
+
+.upload-dropzone-text {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+.upload-dropzone-hint {
+    color: rgba(0, 0, 0, 0.38);
+    font-size: 0.75rem;
+    margin-top: 8px;
+}
+
+.upload-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.upload-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.upload-filter {
+    min-width: 200px;
+}

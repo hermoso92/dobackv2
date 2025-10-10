@@ -1,0 +1,227 @@
+/* 
+ * DobackSoft V2 - AI Analysis Module Specific Styles
+ * Technical-Military Style
+ */
+
+/* Main container */
+.ai-analysis-container {
+    background-color: rgba(44, 62, 80, 0.03);
+    border-radius: 4px;
+    border: 1px solid rgba(52, 73, 94, 0.1);
+}
+
+/* Module title styling */
+.ai-analysis-container .MuiTypography-h4 {
+    font-size: 1.2rem !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #2c3e50;
+    margin-bottom: 12px !important;
+}
+
+/* Control section */
+.ai-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: flex-end;
+}
+
+.ai-controls .MuiFormControl-root {
+    flex: 1;
+}
+
+.ai-controls .MuiButton-contained {
+    background-color: #2c3e50 !important;
+    color: white !important;
+    text-transform: uppercase;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.5px;
+    padding: 6px 16px !important;
+    height: auto !important;
+}
+
+/* Grid layout - more compact */
+.ai-analysis-container .MuiGrid-container {
+    margin: -4px !important;
+}
+
+.ai-analysis-container .MuiGrid-item {
+    padding: 4px !important;
+}
+
+/* Risk score visualization */
+.risk-score-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.risk-score-card .MuiTypography-h6 {
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px !important;
+}
+
+.risk-score-card .MuiTypography-h3 {
+    font-size: 2rem !important;
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+    margin-bottom: 8px !important;
+}
+
+.risk-score-card .MuiLinearProgress-root {
+    height: 6px !important;
+    border-radius: 3px;
+}
+
+.risk-score-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, transparent 50%, rgba(44, 62, 80, 0.1) 50%);
+}
+
+/* Prediction chart */
+.prediction-chart-card {
+    height: 300px;
+    /* 25% smaller */
+    display: flex;
+    flex-direction: column;
+}
+
+.prediction-chart-card .MuiTypography-h6 {
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px !important;
+}
+
+.prediction-chart-card .recharts-wrapper {
+    font-size: 0.65rem !important;
+}
+
+/* Pattern detection */
+.patterns-card .MuiTypography-h6 {
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px !important;
+}
+
+.patterns-card .MuiList-root {
+    padding: 0 !important;
+}
+
+.patterns-card .MuiListItem-root {
+    padding: 4px 0 !important;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1);
+}
+
+.patterns-card .MuiListItemText-primary {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.patterns-card .MuiListItemText-secondary {
+    font-size: 0.65rem !important;
+    color: #7f8c8d;
+}
+
+.patterns-card .MuiChip-root {
+    height: 20px !important;
+    font-size: 0.65rem !important;
+    font-weight: 600;
+}
+
+/* Recommendations */
+.recommendations-card .MuiTypography-h6 {
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px !important;
+}
+
+.recommendations-card .MuiList-root {
+    padding: 0 !important;
+}
+
+.recommendations-card .MuiListItem-root {
+    padding: 4px 0 !important;
+    margin-bottom: 4px;
+    display: flex;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1);
+}
+
+.recommendations-card .MuiListItem-root::before {
+    content: '→';
+    margin-right: 8px;
+    color: #3498db;
+    font-weight: bold;
+}
+
+.recommendations-card .MuiListItemText-primary {
+    font-size: 0.75rem !important;
+    color: #2c3e50;
+}
+
+/* Loading animation */
+.ai-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+}
+
+.ai-loading-spinner {
+    border: 3px solid rgba(52, 73, 94, 0.1);
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: ai-spinner 1.5s linear infinite;
+}
+
+@keyframes ai-spinner {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ai-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .prediction-chart-card {
+        height: 250px;
+    }
+
+    .ai-analysis-container .MuiTypography-h4 {
+        font-size: 1rem !important;
+    }
+
+    .risk-score-card .MuiTypography-h3 {
+        font-size: 1.5rem !important;
+    }
+}

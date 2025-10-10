@@ -1,0 +1,191 @@
+[
+  {
+    "vehicle": "DOBACK024",
+    "date": "20250930",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20250930.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20250930.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20250930.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251001",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251001.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251001.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251001.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251002",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251002.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251002.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251002.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251003",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251003.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251003.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251003.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251004",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251004.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251004.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251004.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251005",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251005.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251005.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251005.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK024",
+    "date": "20251006",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\estabilidad\\ESTABILIDAD_DOBACK024_20251006.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\GPS\\GPS_DOBACK024_20251006.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback024\\ROTATIVO\\ROTATIVO_DOBACK024_20251006.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20250930",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20250930.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20250930.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20250930.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251001",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251001.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251001.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251001.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251002",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251002.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251002.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251002.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251003",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251003.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251003.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251003.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251004",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251004.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251004.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251004.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251005",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251005.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251005.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251005.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK027",
+    "date": "20251006",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\estabilidad\\ESTABILIDAD_DOBACK027_20251006.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\GPS\\GPS_DOBACK027_20251006.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback027\\ROTATIVO\\ROTATIVO_DOBACK027_20251006.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20250930",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20250930.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20250930.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20250930.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251001",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251001.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251001.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251001.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251002",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251002.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251002.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251002.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251003",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251003.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251003.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251003.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251004",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251004.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251004.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251004.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251005",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251005.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251005.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251005.txt"
+    }
+  },
+  {
+    "vehicle": "DOBACK028",
+    "date": "20251006",
+    "files": {
+      "estabilidad": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\estabilidad\\ESTABILIDAD_DOBACK028_20251006.txt",
+      "gps": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\GPS\\GPS_DOBACK028_20251006.txt",
+      "rotativo": "C:\\Users\\Cosigein SL\\Desktop\\DobackSoft\\backend\\data\\CMadrid\\doback028\\ROTATIVO\\ROTATIVO_DOBACK028_20251006.txt"
+    }
+  }
+]

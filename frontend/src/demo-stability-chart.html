@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Demostración de Icono de Configuración de Gráfica</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: 20px auto;
+            width: 800px;
+            height: 500px;
+            background-color: white;
+            border: 3px solid #f50057;
+            border-radius: 8px;
+            box-shadow: 0 0 15px 5px rgba(255, 0, 87, 0.5);
+            overflow: hidden;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #666;
+        }
+
+        .config-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 60px;
+            height: 60px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            color: white;
+            box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.7);
+            border: 3px solid yellow;
+            animation: pulse 1.5s infinite, spin 3s infinite;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        .pointer-arrow {
+            position: absolute;
+            top: 15px;
+            right: 85px;
+            font-size: 40px;
+            color: #ff0000;
+            animation: bounce 1s infinite;
+            transform: translateX(40%) rotate(45deg);
+            z-index: 100;
+        }
+
+        .tooltip {
+            position: absolute;
+            top: 50px;
+            right: 85px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            animation: blink 1s infinite;
+            z-index: 102;
+        }
+
+        .alert-banner {
+            background-color: #ff0000;
+            color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            animation: blink 0.5s infinite;
+        }
+
+        .title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 0, 87, 0.7);
+            }
+
+            70% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 10px rgba(255, 0, 87, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 0, 87, 0);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(45deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(45deg);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .load-button {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 25px;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="title">Visualización del Icono de Configuración en la Gráfica de Estabilidad</h1>
+    <p class="subtitle">Esta demostración muestra cómo debería verse el icono de configuración en la página de
+        Estabilidad</p>
+
+    <div class="alert-banner">
+        ¡IMPORTANTE! Para ver todas las opciones de configuración: Haz clic en el icono de engranaje (⚙️) en la esquina
+        superior derecha de la gráfica.
+    </div>
+
+    <button class="load-button">
+        <span style="font-size: 24px;">📊</span>
+        <span>CARGAR DATOS Y MOSTRAR CONFIGURACIÓN <span style="font-size: 24px;">⚙️</span></span>
+    </button>
+
+    <div class="chart-container">
+        <div class="chart-placeholder">
+            [Esta área representaría la gráfica de estabilidad]
+        </div>
+
+        <div class="pointer-arrow">↗️</div>
+
+        <div class="tooltip">¡HAZ CLIC AQUÍ PARA CONFIGURAR!</div>
+
+        <div class="config-icon">⚙️</div>
+    </div>
+
+    <script>
+        document.querySelector('.config-icon').addEventListener('click', function () {
+            alert('Has hecho clic en el icono de configuración. Aquí se abriría el panel de configuración de la gráfica.');
+        });
+
+        document.querySelector('.load-button').addEventListener('click', function () {
+            alert('Datos cargados. El icono de configuración (⚙️) está en la esquina superior derecha de la gráfica.');
+        });
+    </script>
+</body>
+
+</html>

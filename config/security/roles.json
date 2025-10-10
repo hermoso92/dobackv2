@@ -1,0 +1,136 @@
+{
+    "roles": [
+        {
+            "id": "admin",
+            "name": "Administrador",
+            "description": "Administrador del sistema con acceso total",
+            "permissions": [
+                {
+                    "id": "admin_all",
+                    "name": "Administración Total",
+                    "resource": "*",
+                    "action": "*"
+                }
+            ]
+        },
+        {
+            "id": "company_admin",
+            "name": "Administrador de Compañía",
+            "description": "Administrador con acceso total a su compañía",
+            "permissions": [
+                {
+                    "id": "company_manage",
+                    "name": "Gestión de Compañía",
+                    "resource": "company",
+                    "action": "*"
+                },
+                {
+                    "id": "user_manage",
+                    "name": "Gestión de Usuarios",
+                    "resource": "user",
+                    "action": "*"
+                },
+                {
+                    "id": "vehicle_manage",
+                    "name": "Gestión de Vehículos",
+                    "resource": "vehicle",
+                    "action": "*"
+                },
+                {
+                    "id": "report_manage",
+                    "name": "Gestión de Reportes",
+                    "resource": "report",
+                    "action": "*"
+                }
+            ]
+        },
+        {
+            "id": "operator",
+            "name": "Operador",
+            "description": "Usuario operativo con acceso a funciones básicas",
+            "permissions": [
+                {
+                    "id": "vehicle_view",
+                    "name": "Ver Vehículos",
+                    "resource": "vehicle",
+                    "action": "read"
+                },
+                {
+                    "id": "stability_view",
+                    "name": "Ver Datos de Estabilidad",
+                    "resource": "stability",
+                    "action": "read"
+                },
+                {
+                    "id": "telemetry_view",
+                    "name": "Ver Telemetría",
+                    "resource": "telemetry",
+                    "action": "read"
+                },
+                {
+                    "id": "report_view",
+                    "name": "Ver Reportes",
+                    "resource": "report",
+                    "action": "read"
+                }
+            ]
+        },
+        {
+            "id": "viewer",
+            "name": "Visualizador",
+            "description": "Usuario con acceso solo de lectura",
+            "permissions": [
+                {
+                    "id": "vehicle_list",
+                    "name": "Listar Vehículos",
+                    "resource": "vehicle",
+                    "action": "list"
+                },
+                {
+                    "id": "stability_list",
+                    "name": "Listar Datos de Estabilidad",
+                    "resource": "stability",
+                    "action": "list"
+                },
+                {
+                    "id": "telemetry_list",
+                    "name": "Listar Telemetría",
+                    "resource": "telemetry",
+                    "action": "list"
+                }
+            ]
+        }
+    ],
+    "resources": [
+        {
+            "id": "company",
+            "name": "Compañía",
+            "actions": ["create", "read", "update", "delete", "list"]
+        },
+        {
+            "id": "user",
+            "name": "Usuario",
+            "actions": ["create", "read", "update", "delete", "list"]
+        },
+        {
+            "id": "vehicle",
+            "name": "Vehículo",
+            "actions": ["create", "read", "update", "delete", "list"]
+        },
+        {
+            "id": "stability",
+            "name": "Estabilidad",
+            "actions": ["create", "read", "list"]
+        },
+        {
+            "id": "telemetry",
+            "name": "Telemetría",
+            "actions": ["create", "read", "list"]
+        },
+        {
+            "id": "report",
+            "name": "Reporte",
+            "actions": ["create", "read", "list", "export"]
+        }
+    ]
+} 

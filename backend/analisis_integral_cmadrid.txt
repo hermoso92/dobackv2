@@ -1,0 +1,391 @@
+ANÁLISIS INTEGRAL ARCHIVOS CMADRID
+=====================================
+Fecha de análisis: 3/10/2025, 16:44:26
+
+RESUMEN GENERAL
+--------------
+Total vehículos: 3
+Total archivos: 27
+Total sesiones: 147
+Total mediciones: 538.361
+
+MÉTRICAS POR TIPO DE ARCHIVO
+----------------------------
+
+ESTABILIDAD:
+- Sesiones: 46
+- Mediciones: 514.007
+- Promedio mediciones/sesión: 11174
+- Variables: ax, ay, az, gx, gy, gz, roll, pitch, yaw, timeantwifi, usciclo1, usciclo2, usciclo3, usciclo4, usciclo5, si, accmag, microsds, k3
+
+GPS:
+- Sesiones: 32
+- Mediciones: 20.220
+- Promedio mediciones/sesión: 632
+- Registros sin fix: 7087 (35%)
+- Variables: timestamp, latitude, longitude, altitude, speed, satellites, quality, hdop, fix, heading, accuracy
+
+ROTATIVO:
+- Sesiones: 69
+- Mediciones: 4134
+- Promedio mediciones/sesión: 60
+- Estado ON: 2313 (56%)
+- Estado OFF: 1819
+- Variables: timestamp, state
+
+DETALLE POR VEHÍCULO
+-------------------
+DOBACK024:
+  Archivos: Estabilidad=3, GPS=3, Rotativo=3
+  Sesiones: 35 (Estabilidad=15, GPS=5, Rotativo=15)
+  Mediciones: 276.676
+
+DOBACK027:
+  Archivos: Estabilidad=3, GPS=3, Rotativo=3
+  Sesiones: 45 (Estabilidad=14, GPS=10, Rotativo=21)
+  Mediciones: 90.187
+
+DOBACK028:
+  Archivos: Estabilidad=3, GPS=3, Rotativo=3
+  Sesiones: 67 (Estabilidad=17, GPS=17, Rotativo=33)
+  Mediciones: 171.498
+
+
+DETALLE POR ARCHIVO
+------------------
+ESTABILIDAD_DOBACK024_20250930.txt (DOBACK024):
+  Tipo: ESTABILIDAD
+  Sesiones: 2
+  Mediciones: 89.118
+  Tamaño: 15145.27 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025 09:33:44 (38759 mediciones)
+    - Sesión 2: 30/09/2025 12:41:48 (50359 mediciones)
+
+ESTABILIDAD_DOBACK024_20251001.txt (DOBACK024):
+  Tipo: ESTABILIDAD
+  Sesiones: 7
+  Mediciones: 91.413
+  Tamaño: 15586.00 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025 09:36:54 (16559 mediciones)
+    - Sesión 2: 01/10/2025 11:06:18 (759 mediciones)
+    - Sesión 3: 01/10/2025 14:22:23 (16399 mediciones)
+    - Sesión 4: 01/10/2025 16:18:28 (31399 mediciones)
+    - Sesión 5: 01/10/2025 17:14:04 (7249 mediciones)
+    - Sesión 6: 01/10/2025 22:39:48 (7639 mediciones)
+    - Sesión 7: 01/10/2025 23:04:52 (11409 mediciones)
+
+ESTABILIDAD_DOBACK024_20251002.txt (DOBACK024):
+  Tipo: ESTABILIDAD
+  Sesiones: 6
+  Mediciones: 90.671
+  Tamaño: 15423.52 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025 00:30:05 (38339 mediciones)
+    - Sesión 2: 02/10/2025 09:02:00 (508 mediciones)
+    - Sesión 3: 02/10/2025 09:37:09 (16957 mediciones)
+    - Sesión 4: 02/10/2025 11:33:19 (779 mediciones)
+    - Sesión 5: 02/10/2025 18:59:09 (27659 mediciones)
+    - Sesión 6: 02/10/2025 19:50:53 (6429 mediciones)
+
+GPS_DOBACK024_20250930.txt (DOBACK024):
+  Tipo: GPS
+  Sesiones: 1
+  Mediciones: 1280
+  Tamaño: 89.87 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-09:33:37 (1280 mediciones)
+
+GPS_DOBACK024_20251001.txt (DOBACK024):
+  Tipo: GPS
+  Sesiones: 3
+  Mediciones: 1605
+  Tamaño: 113.12 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-09:36:47 (1464 mediciones)
+    - Sesión 2: 01/10/2025-11:06:11 (68 mediciones)
+    - Sesión 3: 01/10/2025-14:22:16 (73 mediciones)
+
+GPS_DOBACK024_20251002.txt (DOBACK024):
+  Tipo: GPS
+  Sesiones: 1
+  Mediciones: 763
+  Tamaño: 53.26 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-00:29:57 (763 mediciones)
+
+ROTATIVO_DOBACK024_20250930.txt (DOBACK024):
+  Tipo: ROTATIVO
+  Sesiones: 2
+  Mediciones: 597
+  Tamaño: 13.54 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-09:33:37 (260 mediciones)
+    - Sesión 2: 30/09/2025-12:41:43 (337 mediciones)
+
+ROTATIVO_DOBACK024_20251001.txt (DOBACK024):
+  Tipo: ROTATIVO
+  Sesiones: 7
+  Mediciones: 618
+  Tamaño: 14.35 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-09:36:47 (112 mediciones)
+    - Sesión 2: 01/10/2025-11:06:11 (6 mediciones)
+    - Sesión 3: 01/10/2025-14:22:16 (111 mediciones)
+    - Sesión 4: 01/10/2025-16:18:21 (210 mediciones)
+    - Sesión 5: 01/10/2025-17:13:58 (50 mediciones)
+    - Sesión 6: 01/10/2025-22:39:41 (52 mediciones)
+    - Sesión 7: 01/10/2025-23:04:45 (77 mediciones)
+
+ROTATIVO_DOBACK024_20251002.txt (DOBACK024):
+  Tipo: ROTATIVO
+  Sesiones: 6
+  Mediciones: 611
+  Tamaño: 14.13 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-00:29:57 (257 mediciones)
+    - Sesión 2: 02/10/2025-09:01:48 (5 mediciones)
+    - Sesión 3: 02/10/2025-09:37:06 (114 mediciones)
+    - Sesión 4: 02/10/2025-11:33:11 (6 mediciones)
+    - Sesión 5: 02/10/2025-18:59:02 (185 mediciones)
+    - Sesión 6: 02/10/2025-19:50:46 (44 mediciones)
+
+ESTABILIDAD_DOBACK027_20250930.txt (DOBACK027):
+  Tipo: ESTABILIDAD
+  Sesiones: 1
+  Mediciones: 15.099
+  Tamaño: 2539.22 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025 09:38:54 (15099 mediciones)
+
+ESTABILIDAD_DOBACK027_20251001.txt (DOBACK027):
+  Tipo: ESTABILIDAD
+  Sesiones: 10
+  Mediciones: 51.675
+  Tamaño: 8651.83 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025 09:52:32 (12180 mediciones)
+    - Sesión 2: 01/10/2025 10:13:25 (10229 mediciones)
+    - Sesión 3: 01/10/2025 11:59:33 (8489 mediciones)
+    - Sesión 4: 01/10/2025 12:53:08 (569 mediciones)
+    - Sesión 5: 01/10/2025 13:03:17 (949 mediciones)
+    - Sesión 6: 01/10/2025 22:42:58 (4819 mediciones)
+    - Sesión 7: 01/10/2025 22:52:14 (467 mediciones)
+    - Sesión 8: 01/10/2025 22:58:04 (188 mediciones)
+    - Sesión 9: 01/10/2025 22:58:04 (13288 mediciones)
+    - Sesión 10: 01/10/2025 23:22:58 (497 mediciones)
+
+ESTABILIDAD_DOBACK027_20251002.txt (DOBACK027):
+  Tipo: ESTABILIDAD
+  Sesiones: 3
+  Mediciones: 16.276
+  Tamaño: 2749.46 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025 09:50:14 (772 mediciones)
+    - Sesión 2: 02/10/2025 09:52:10 (15326 mediciones)
+    - Sesión 4: 02/10/2025 10:38:17 (178 mediciones)
+
+GPS_DOBACK027_20250930.txt (DOBACK027):
+  Tipo: GPS
+  Sesiones: 2
+  Mediciones: 1361
+  Tamaño: 96.90 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-09:38:54 (1277 mediciones)
+    - Sesión 2: 30/09/2025-10:03:43 (84 mediciones)
+
+GPS_DOBACK027_20251001.txt (DOBACK027):
+  Tipo: GPS
+  Sesiones: 5
+  Mediciones: 2766
+  Tamaño: 193.22 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-09:52:32 (1058 mediciones)
+    - Sesión 2: 01/10/2025-10:12:58 (908 mediciones)
+    - Sesión 3: 01/10/2025-11:59:26 (0 mediciones)
+    - Sesión 4: 01/10/2025-11:59:26 (750 mediciones)
+    - Sesión 5: 01/10/2025-12:53:02 (50 mediciones)
+
+GPS_DOBACK027_20251002.txt (DOBACK027):
+  Tipo: GPS
+  Sesiones: 3
+  Mediciones: 2360
+  Tamaño: 168.53 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-09:50:14 (67 mediciones)
+    - Sesión 2: 02/10/2025-09:52:00 (2269 mediciones)
+    - Sesión 4: 02/10/2025-10:38:07 (24 mediciones)
+
+ROTATIVO_DOBACK027_20250930.txt (DOBACK027):
+  Tipo: ROTATIVO
+  Sesiones: 3
+  Mediciones: 107
+  Tamaño: 2.67 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-09:38:56 (98 mediciones)
+    - Sesión 2: 30/09/2025-10:03:43 (3 mediciones)
+    - Sesión 4: 30/09/2025-10:05:35 (6 mediciones)
+
+ROTATIVO_DOBACK027_20251001.txt (DOBACK027):
+  Tipo: ROTATIVO
+  Sesiones: 14
+  Mediciones: 360
+  Tamaño: 9.03 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-09:52:34 (82 mediciones)
+    - Sesión 2: 01/10/2025-10:12:58 (71 mediciones)
+    - Sesión 3: 01/10/2025-11:59:26 (1 mediciones)
+    - Sesión 4: 01/10/2025-11:59:26 (58 mediciones)
+    - Sesión 5: 01/10/2025-12:53:02 (5 mediciones)
+    - Sesión 6: 01/10/2025-13:01:43 (1 mediciones)
+    - Sesión 7: 01/10/2025-13:03:09 (7 mediciones)
+    - Sesión 8: 01/10/2025-22:42:47 (33 mediciones)
+    - Sesión 9: 01/10/2025-22:52:04 (1 mediciones)
+    - Sesión 10: 01/10/2025-22:52:04 (1 mediciones)
+    - Sesión 11: 01/10/2025-22:52:04 (4 mediciones)
+    - Sesión 12: 01/10/2025-22:57:53 (2 mediciones)
+    - Sesión 13: 01/10/2025-22:57:53 (90 mediciones)
+    - Sesión 14: 01/10/2025-23:22:52 (4 mediciones)
+
+ROTATIVO_DOBACK027_20251002.txt (DOBACK027):
+  Tipo: ROTATIVO
+  Sesiones: 4
+  Mediciones: 183
+  Tamaño: 4.47 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-09:50:17 (6 mediciones)
+    - Sesión 2: 02/10/2025-09:52:00 (172 mediciones)
+    - Sesión 4: 02/10/2025-10:36:58 (3 mediciones)
+    - Sesión 5: 02/10/2025-10:38:07 (2 mediciones)
+
+ESTABILIDAD_DOBACK028_20250930.txt (DOBACK028):
+  Tipo: ESTABILIDAD
+  Sesiones: 3
+  Mediciones: 5407
+  Tamaño: 911.17 KB
+  Detalle sesiones:
+    - Sesión 2: 30/09/2025 14:00:33 (418 mediciones)
+    - Sesión 3: 30/09/2025 16:26:26 (2301 mediciones)
+    - Sesión 4: 30/09/2025 19:28:26 (2688 mediciones)
+
+ESTABILIDAD_DOBACK028_20251001.txt (DOBACK028):
+  Tipo: ESTABILIDAD
+  Sesiones: 10
+  Mediciones: 98.196
+  Tamaño: 16535.62 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025 01:48:52 (4348 mediciones)
+    - Sesión 2: 01/10/2025 01:57:19 (33137 mediciones)
+    - Sesión 3: 01/10/2025 10:17:36 (14187 mediciones)
+    - Sesión 4: 01/10/2025 14:11:12 (897 mediciones)
+    - Sesión 5: 01/10/2025 14:13:55 (13158 mediciones)
+    - Sesión 6: 01/10/2025 14:37:10 (4927 mediciones)
+    - Sesión 7: 01/10/2025 14:46:37 (268 mediciones)
+    - Sesión 8: 01/10/2025 22:48:58 (1087 mediciones)
+    - Sesión 9: 01/10/2025 22:52:11 (21228 mediciones)
+    - Sesión 10: 01/10/2025 23:32:20 (4959 mediciones)
+
+ESTABILIDAD_DOBACK028_20251002.txt (DOBACK028):
+  Tipo: ESTABILIDAD
+  Sesiones: 4
+  Mediciones: 56.152
+  Tamaño: 9418.88 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025 10:44:13 (27237 mediciones)
+    - Sesión 2: 02/10/2025 13:05:17 (25918 mediciones)
+    - Sesión 3: 02/10/2025 13:50:13 (2889 mediciones)
+    - Sesión 4: 02/10/2025 13:56:16 (108 mediciones)
+
+GPS_DOBACK028_20250930.txt (DOBACK028):
+  Tipo: GPS
+  Sesiones: 1
+  Mediciones: 242
+  Tamaño: 16.20 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-19:28:15 (242 mediciones)
+
+GPS_DOBACK028_20251001.txt (DOBACK028):
+  Tipo: GPS
+  Sesiones: 14
+  Mediciones: 8443
+  Tamaño: 604.31 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-01:46:08 (1 mediciones)
+    - Sesión 2: 01/10/2025-01:48:41 (388 mediciones)
+    - Sesión 3: 01/10/2025-01:57:09 (2924 mediciones)
+    - Sesión 4: 01/10/2025-10:14:53 (1 mediciones)
+    - Sesión 5: 01/10/2025-10:17:26 (1245 mediciones)
+    - Sesión 6: 01/10/2025-14:08:29 (2 mediciones)
+    - Sesión 7: 01/10/2025-14:11:02 (84 mediciones)
+    - Sesión 8: 01/10/2025-14:13:45 (1147 mediciones)
+    - Sesión 9: 01/10/2025-14:36:59 (424 mediciones)
+    - Sesión 10: 01/10/2025-14:46:26 (33 mediciones)
+    - Sesión 11: 01/10/2025-22:46:14 (2 mediciones)
+    - Sesión 12: 01/10/2025-22:48:48 (105 mediciones)
+    - Sesión 13: 01/10/2025-22:52:03 (1833 mediciones)
+    - Sesión 14: 01/10/2025-23:32:17 (254 mediciones)
+
+GPS_DOBACK028_20251002.txt (DOBACK028):
+  Tipo: GPS
+  Sesiones: 2
+  Mediciones: 1400
+  Tamaño: 99.41 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-10:41:26 (5 mediciones)
+    - Sesión 2: 02/10/2025-10:44:02 (1395 mediciones)
+
+ROTATIVO_DOBACK028_20250930.txt (DOBACK028):
+  Tipo: ROTATIVO
+  Sesiones: 11
+  Mediciones: 605
+  Tamaño: 14.33 KB
+  Detalle sesiones:
+    - Sesión 1: 30/09/2025-09:32:50 (88 mediciones)
+    - Sesión 2: 30/09/2025-09:56:01 (5 mediciones)
+    - Sesión 3: 30/09/2025-10:15:26 (1 mediciones)
+    - Sesión 4: 30/09/2025-10:54:10 (83 mediciones)
+    - Sesión 5: 30/09/2025-11:14:50 (274 mediciones)
+    - Sesión 6: 30/09/2025-12:53:04 (4 mediciones)
+    - Sesión 7: 30/09/2025-13:21:35 (65 mediciones)
+    - Sesión 8: 30/09/2025-13:46:52 (45 mediciones)
+    - Sesión 9: 30/09/2025-14:00:21 (4 mediciones)
+    - Sesión 10: 30/09/2025-16:26:12 (17 mediciones)
+    - Sesión 11: 30/09/2025-19:28:15 (19 mediciones)
+
+ROTATIVO_DOBACK028_20251001.txt (DOBACK028):
+  Tipo: ROTATIVO
+  Sesiones: 14
+  Mediciones: 670
+  Tamaño: 16.00 KB
+  Detalle sesiones:
+    - Sesión 1: 01/10/2025-01:46:08 (1 mediciones)
+    - Sesión 2: 01/10/2025-01:48:41 (30 mediciones)
+    - Sesión 3: 01/10/2025-01:57:09 (222 mediciones)
+    - Sesión 4: 01/10/2025-10:14:53 (1 mediciones)
+    - Sesión 5: 01/10/2025-10:17:26 (96 mediciones)
+    - Sesión 6: 01/10/2025-14:08:29 (1 mediciones)
+    - Sesión 7: 01/10/2025-14:11:02 (7 mediciones)
+    - Sesión 8: 01/10/2025-14:13:45 (89 mediciones)
+    - Sesión 9: 01/10/2025-14:36:59 (34 mediciones)
+    - Sesión 10: 01/10/2025-14:46:26 (3 mediciones)
+    - Sesión 11: 01/10/2025-22:46:14 (1 mediciones)
+    - Sesión 12: 01/10/2025-22:48:48 (8 mediciones)
+    - Sesión 13: 01/10/2025-22:52:01 (143 mediciones)
+    - Sesión 14: 01/10/2025-23:32:17 (34 mediciones)
+
+ROTATIVO_DOBACK028_20251002.txt (DOBACK028):
+  Tipo: ROTATIVO
+  Sesiones: 8
+  Mediciones: 383
+  Tamaño: 9.14 KB
+  Detalle sesiones:
+    - Sesión 1: 02/10/2025-09:06:42 (1 mediciones)
+    - Sesión 2: 02/10/2025-10:41:26 (1 mediciones)
+    - Sesión 3: 02/10/2025-10:44:02 (183 mediciones)
+    - Sesión 4: 02/10/2025-13:00:31 (1 mediciones)
+    - Sesión 5: 02/10/2025-13:02:33 (1 mediciones)
+    - Sesión 6: 02/10/2025-13:05:06 (174 mediciones)
+    - Sesión 7: 02/10/2025-13:50:02 (20 mediciones)
+    - Sesión 8: 02/10/2025-13:56:05 (2 mediciones)
+

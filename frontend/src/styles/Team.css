@@ -1,0 +1,135 @@
+.team-card {
+    transition: all 0.3s ease;
+}
+
+.team-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.team-member-avatar {
+    width: 64px;
+    height: 64px;
+    margin-right: 16px;
+}
+
+.team-member-info {
+    flex: 1;
+}
+
+.team-member-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.team-member-role {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+}
+
+.team-member-contact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+.team-member-contact svg {
+    font-size: 1rem;
+}
+
+.team-member-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.team-member-actions button {
+    text-transform: none;
+    font-size: 0.875rem;
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.team-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.team-filter {
+    min-width: 200px;
+}
+
+.team-member-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.team-member-status.active {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.team-member-status.inactive {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #d32f2f;
+}
+
+.team-member-status.away {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #f57c00;
+}
+
+.team-member-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.team-member-skill {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.6);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.team-member-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.team-member-stat {
+    text-align: center;
+}
+
+.team-member-stat-value {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1976d2;
+}
+
+.team-member-stat-label {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+}

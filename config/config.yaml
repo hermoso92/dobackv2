@@ -1,0 +1,29 @@
+# Database Configuration
+database:
+  host: localhost
+  port: 5432
+  database: DobackSoft
+  user: postgres
+  password: cosigein
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  file: logs/automation.log
+
+# Testing Configuration
+testing:
+  test_dir: tests/
+  coverage: true
+  verbose: true
+
+# Automation Configuration
+automation:
+  max_retries: 3
+  timeout: 300
+  parallel_execution: false
+
+app:
+  debug: true
+  secret_key: DobackSoft_secret_key_2024 

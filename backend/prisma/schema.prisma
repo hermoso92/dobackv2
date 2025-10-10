@@ -1,0 +1,1057 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()"))
+  name                   String
+  apiKey                 String                  @unique
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  advancedKPIs           AdvancedVehicleKPI[]
+  dailyProcessingReports DailyProcessingReport[]
+  events                 Event[]
+  fileStates             FileState[]
+  geofences              Geofence[]
+  geofenceEvents         GeofenceEvent[]
+  geofenceRules          GeofenceRule[]
+  geofenceVehicleStates  GeofenceVehicleState[]
+  gestorDeEventos        GestorDeEvento[]
+  config                 OrganizationConfig?
+  parks                  Park[]
+  ProcessingEvent        ProcessingEvent[]
+  reports                Report[]
+  sessions               Session[]
+  users                  User[]
+  vehicles               Vehicle[]
+  zones                  Zone[]
+}
+
+model OrganizationConfig {
+  id                   String         @id @default(dbgenerated("gen_random_uuid()"))
+  organizationId       String         @unique
+  reportSchedule       ReportSchedule @default(MONTHLY)
+  notificationSettings Json
+  stabilityThresholds  Json
+  telemetryThresholds  Json
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  organization         Organization   @relation(fields: [organizationId], references: [id])
+}
+
+model User {
+  id                String              @id @default(dbgenerated("gen_random_uuid()"))
+  email             String              @unique
+  name              String
+  password          String
+  organizationId    String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  role              UserRole            @default(USER)
+  status            String              @default("ACTIVE")
+  events            GestorDeEvento[]
+  informesGenerados InformeGenerado[]
+  auditLogs         LogAuditoria[]
+  MaintenanceRecord MaintenanceRecord[]
+  notifications     Notification[]
+  reportsRequested  Report[]            @relation("reportsByUser")
+  sessions          Session[]
+  uploadLogs        SessionUploadLog[]
+  organization      Organization?       @relation(fields: [organizationId], references: [id])
+  config            UserConfig?
+  vehicles          Vehicle[]
+  zoneAudits        ZoneAudit[]
+}
+
+model UserConfig {
+  id                      String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId                  String   @unique
+  notificationPreferences Json
+  reportPreferences       Json
+  language                String   @default("es")
+  timezone                String   @default("UTC")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  user                    User     @relation(fields: [userId], references: [id])
+}
+
+model Vehicle {
+  id                String                  @id @default(dbgenerated("gen_random_uuid()"))
+  name              String
+  model             String
+  licensePlate      String                  @unique
+  brand             String?
+  organizationId    String
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  userId            String?
+  identifier        String                  @unique
+  type              VehicleType
+  status            VehicleStatus           @default(ACTIVE)
+  parkId            String?
+  active            Boolean                 @default(true)
+  advancedKPIs      AdvancedVehicleKPI[]
+  archivosSubidos   ArchivoSubido[]
+  eventExecutions   EjecucionEvento[]
+  events            EventVehicle[]
+  fileStates        FileState[]
+  eventTypes        GestorDeEventoVehicle[]
+  informes          InformeGenerado[]
+  MaintenanceRecord MaintenanceRecord[]
+  ProcessingEvent   ProcessingEvent[]
+  realtimePositions RealtimePosition[]
+  sessions          Session[]
+  sugerenciasIA     SugerenciaIA[]
+  organization      Organization            @relation(fields: [organizationId], references: [id])
+  park              Park?                   @relation("ParkVehicles", fields: [parkId], references: [id])
+  user              User?                   @relation(fields: [userId], references: [id])
+  configuration     VehicleConfiguration?
+  kpis              VehicleKPI[]
+}
+
+model VehicleConfiguration {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId           String   @unique
+  stabilityThresholds Json
+  telemetryThresholds Json
+  maintenanceSchedule Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  vehicle             Vehicle  @relation(fields: [vehicleId], references: [id])
+}
+
+model Session {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId             String
+  userId                String
+  endTime               DateTime?
+  startTime             DateTime
+  createdAt             DateTime               @default(now())
+  sequence              Int
+  sessionNumber         Int
+  status                SessionStatus          @default(ACTIVE)
+  updatedAt             DateTime               @updatedAt
+  type                  SessionType            @default(ROUTINE)
+  weatherConditions     Json?
+  organizationId        String
+  parkId                String?
+  zoneId                String?
+  source                String
+  archivosSubidos       ArchivoSubido[]
+  canMeasurements       CanMeasurement[]
+  eventExecutions       EjecucionEvento[]
+  gpsMeasurements       GpsMeasurement[]
+  informes              InformeGenerado[]
+  RotativoMeasurement   RotativoMeasurement[]
+  organization          Organization           @relation(fields: [organizationId], references: [id])
+  park                  Park?                  @relation("ParkSessions", fields: [parkId], references: [id])
+  user                  User                   @relation(fields: [userId], references: [id])
+  vehicle               Vehicle                @relation(fields: [vehicleId], references: [id])
+  zone                  Zone?                  @relation("ZoneSessions", fields: [zoneId], references: [id])
+  uploadLogs            SessionUploadLog[]
+  stabilityMeasurements StabilityMeasurement[]
+  sugerenciasIA         SugerenciaIA[]
+  stability_events      StabilityEvent[]
+}
+
+model StabilityMeasurement {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()"))
+  timestamp           DateTime
+  ax                  Float
+  ay                  Float
+  az                  Float
+  gx                  Float
+  gy                  Float
+  gz                  Float
+  roll                Float?
+  pitch               Float?
+  yaw                 Float?
+  timeantwifi         Float?
+  sessionId           String
+  createdAt           DateTime @default(now())
+  isDRSHigh           Boolean  @default(false)
+  isLTRCritical       Boolean  @default(false)
+  isLateralGForceHigh Boolean  @default(false)
+  temperature         Float?
+  updatedAt           DateTime @updatedAt
+  accmag              Float    @default(0)
+  microsds            Float    @default(0)
+  si                  Float    @default(0)
+  usciclo1            Float    @default(0)
+  usciclo2            Float    @default(0)
+  usciclo3            Float    @default(0)
+  usciclo4            Float    @default(0)
+  usciclo5            Float    @default(0)
+  usciclo6            Float    @default(0)
+  usciclo7            Float    @default(0)
+  usciclo8            Float    @default(0)
+  session             Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sessionId, timestamp], map: "stabilitymeasurement_sessionid_timestamp_unique")
+}
+
+model CanMeasurement {
+  id               String   @id @default(dbgenerated("gen_random_uuid()"))
+  timestamp        DateTime
+  engineRpm        Float
+  vehicleSpeed     Float
+  fuelSystemStatus Float
+  sessionId        String
+  createdAt        DateTime @default(now())
+  temperature      Float?
+  updatedAt        DateTime @updatedAt
+  absActive        Boolean?
+  brakePressure    Float?
+  espActive        Boolean?
+  gearPosition     Int?
+  steeringAngle    Float?
+  throttlePosition Float?
+  session          Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sessionId, timestamp], map: "canmeasurement_sessionid_timestamp_unique")
+}
+
+model GpsMeasurement {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  latitude   Float
+  longitude  Float
+  altitude   Float
+  speed      Float
+  satellites Int
+  quality    String?
+  sessionId  String
+  createdAt  DateTime @default(now())
+  hdop       Float?
+  timestamp  DateTime
+  updatedAt  DateTime @updatedAt
+  fix        String?
+  heading    Float?
+  accuracy   Float?
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sessionId, timestamp], map: "gpsmeasurement_sessionid_timestamp_unique")
+}
+
+model RotativoMeasurement {
+  id        String    @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId String
+  timestamp DateTime  @db.Timestamp(6)
+  state     String
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  Session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "rotativomeasurement_sessionid_fkey")
+
+  @@unique([sessionId, timestamp], map: "rotativomeasurement_sessionid_timestamp_unique")
+  @@index([sessionId])
+  @@index([timestamp])
+}
+
+model GestorDeEvento {
+  id                String                  @id @default(dbgenerated("gen_random_uuid()"))
+  name              String
+  description       String?
+  type              EventType
+  status            EventStatus             @default(ACTIVE)
+  isPredefined      Boolean                 @default(false)
+  logicOperator     EventLogicOperator      @default(AND)
+  timeWindowStart   DateTime?
+  timeWindowEnd     DateTime?
+  createdById       String
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  version           String                  @default("1.0.0")
+  autoEvaluate      Boolean                 @default(false)
+  organizationId    String                  @db.VarChar(255)
+  executions        EjecucionEvento[]
+  conditions        EventCondition[]
+  variablesVisibles EventoVariableVisible[]
+  createdBy         User                    @relation(fields: [createdById], references: [id])
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_gestorevento_organization")
+  vehicles          GestorDeEventoVehicle[]
+}
+
+model EventCondition {
+  id        String                 @id @default(dbgenerated("gen_random_uuid()"))
+  eventId   String
+  type      EventConditionType
+  variable  String
+  operator  EventConditionOperator
+  value     Float
+  value2    Float?
+  unit      String?
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  event     GestorDeEvento         @relation(fields: [eventId], references: [id])
+}
+
+model EventoVariableVisible {
+  id        String         @id @default(dbgenerated("gen_random_uuid()"))
+  eventoId  String
+  nombre    String
+  orden     Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  evento    GestorDeEvento @relation(fields: [eventoId], references: [id])
+}
+
+model EjecucionEvento {
+  id          String            @id @default(dbgenerated("gen_random_uuid()"))
+  eventId     String
+  vehicleId   String
+  sessionId   String?
+  triggeredAt DateTime          @default(now())
+  data        Json
+  displayData Json
+  location    Json?
+  status      EventStatus       @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  actions     AccionDisparada[]
+  event       GestorDeEvento    @relation(fields: [eventId], references: [id])
+  session     Session?          @relation(fields: [sessionId], references: [id])
+  vehicle     Vehicle           @relation(fields: [vehicleId], references: [id])
+  informes    InformeGenerado[]
+}
+
+model AccionDisparada {
+  id          String          @id @default(dbgenerated("gen_random_uuid()"))
+  ejecucionId String
+  tipoAccion  String
+  resultado   String
+  ejecutadoEn DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  ejecucion   EjecucionEvento @relation(fields: [ejecucionId], references: [id])
+}
+
+model Notification {
+  id         String              @id @default(dbgenerated("gen_random_uuid()"))
+  userId     String
+  type       NotificationType
+  channel    NotificationChannel
+  message    String
+  status     NotificationStatus  @default(PENDING)
+  sentAt     DateTime?
+  receivedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  user       User                @relation(fields: [userId], references: [id])
+}
+
+model LogAuditoria {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   String
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model ArchivoSubido {
+  id            String   @id @default(dbgenerated("gen_random_uuid()"))
+  nombre        String
+  tipo          String
+  sessionId     String?
+  vehiculoId    String?
+  fechaSubida   DateTime @default(now())
+  errores       String?
+  extraMetadata Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  session       Session? @relation(fields: [sessionId], references: [id])
+  vehiculo      Vehicle? @relation(fields: [vehiculoId], references: [id])
+}
+
+model InformeGenerado {
+  id                String           @id @default(dbgenerated("gen_random_uuid()"))
+  userId            String
+  sessionId         String?
+  vehicleId         String?
+  sugerenciaIAId    String?
+  ejecucionEventoId String?
+  tipo              ReportType
+  formato           ReportFormat
+  urlPdf            String
+  generadoEn        DateTime         @default(now())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  ejecucionEvento   EjecucionEvento? @relation(fields: [ejecucionEventoId], references: [id])
+  sesion            Session?         @relation(fields: [sessionId], references: [id])
+  sugerenciaIA      SugerenciaIA?    @relation(fields: [sugerenciaIAId], references: [id])
+  user              User             @relation(fields: [userId], references: [id])
+  vehiculo          Vehicle?         @relation(fields: [vehicleId], references: [id])
+}
+
+model SugerenciaIA {
+  id          String            @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId   String?
+  vehicleId   String?
+  tipo        String
+  descripcion String
+  sugerencia  String
+  generadoEn  DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  informes    InformeGenerado[]
+  session     Session?          @relation(fields: [sessionId], references: [id])
+  vehiculo    Vehicle?          @relation(fields: [vehicleId], references: [id])
+}
+
+model Event {
+  id             String         @id @default(dbgenerated("gen_random_uuid()"))
+  type           EventType
+  status         EventStatus
+  organizationId String
+  timestamp      DateTime
+  data           Json
+  displayData    Json
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  confidence     Float?
+  source         String?
+  zoneId         String?
+  parkId         String?
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  park           Park?          @relation("ParkEvents", fields: [parkId], references: [id])
+  zone           Zone?          @relation("ZoneEvents", fields: [zoneId], references: [id])
+  vehicles       EventVehicle[]
+
+  @@index([timestamp])
+  @@index([type])
+  @@index([status])
+  @@index([organizationId, timestamp(sort: Desc)], map: "idx_event_orgid_timestamp")
+}
+
+model EventVehicle {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  eventId   String
+  vehicleId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id])
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@unique([eventId, vehicleId])
+  @@index([eventId])
+  @@index([vehicleId])
+}
+
+model GestorDeEventoVehicle {
+  id               String         @id @default(dbgenerated("gen_random_uuid()"))
+  gestorDeEventoId String
+  vehicleId        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  gestorDeEvento   GestorDeEvento @relation(fields: [gestorDeEventoId], references: [id])
+  vehicle          Vehicle        @relation(fields: [vehicleId], references: [id])
+
+  @@unique([gestorDeEventoId, vehicleId])
+  @@index([gestorDeEventoId])
+  @@index([vehicleId])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model debug_overspeed {
+  id           String?
+  timestamp    DateTime?
+  latitude     Float?
+  longitude    Float?
+  speed_kmh    Float?
+  limite_via   Decimal?  @db.Decimal
+  tiene_limite Boolean?
+  motivo       String?
+
+  @@ignore
+}
+
+model StabilityEvent {
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  session_id    String
+  timestamp     DateTime @db.Timestamptz(6)
+  lat           Float
+  lon           Float
+  type          String
+  details       Json?
+  rotativoState Int?
+  speed         Float?
+  Session       Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
+
+  @@index([session_id], map: "idx_stability_events_session")
+  @@index([timestamp], map: "idx_stability_events_time")
+  @@index([type], map: "idx_stability_events_type")
+  @@index([session_id], map: "stability_events_session_idx")
+  @@index([timestamp], map: "stability_events_time_idx")
+  @@index([session_id, timestamp(sort: Desc)], map: "idx_stability_events_session_time")
+  @@index([rotativoState], map: "idx_stability_events_rotativo")
+  @@index([speed], map: "idx_stability_events_speed")
+  @@map("stability_events")
+}
+
+model Report {
+  id             String       @id @default(dbgenerated("gen_random_uuid()"))
+  organizationId String
+  requestedById  String
+  filePath       String?
+  sizeBytes      Int?
+  params         Json
+  status         ReportStatus @default(PENDING)
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  sha256         String?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  requestedBy    User         @relation("reportsByUser", fields: [requestedById], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model MaintenanceRecord {
+  id          String              @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId   String
+  userId      String?
+  tipo        MaintenanceType
+  descripcion String
+  fecha       DateTime
+  kilometraje Float?
+  costo       Float?
+  estado      MaintenanceStatus   @default(PENDING)
+  prioridad   MaintenancePriority @default(MEDIUM)
+  notas       String?
+  partes      Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime
+  User        User?               @relation(fields: [userId], references: [id])
+  Vehicle     Vehicle             @relation(fields: [vehicleId], references: [id])
+}
+
+model Park {
+  id              String         @id @default(dbgenerated("gen_random_uuid()"))
+  name            String
+  identifier      String         @unique
+  geometry        Json
+  organizationId  String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  geometryPostgis String?        @map("geometry_postgis")
+  events          Event[]        @relation("ParkEvents")
+  geofenceRules   GeofenceRule[]
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  kpis            ParkKPI[]      @relation("ParkKPIs")
+  sessions        Session[]      @relation("ParkSessions")
+  vehicles        Vehicle[]      @relation("ParkVehicles")
+  zones           Zone[]         @relation("ParkZones")
+}
+
+model Zone {
+  id              String         @id @default(dbgenerated("gen_random_uuid()"))
+  name            String
+  type            String
+  geometry        Json
+  organizationId  String
+  parkId          String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  geometryPostgis String?        @map("geometry_postgis")
+  events          Event[]        @relation("ZoneEvents")
+  geofenceRules   GeofenceRule[]
+  sessions        Session[]      @relation("ZoneSessions")
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  park            Park?          @relation("ParkZones", fields: [parkId], references: [id])
+  audits          ZoneAudit[]    @relation("ZoneAudits")
+}
+
+model Geofence {
+  id                               String                 @id @default(dbgenerated("gen_random_uuid()"))
+  externalId                       String?                @unique
+  name                             String
+  description                      String?
+  tag                              String?
+  type                             GeofenceType           @default(POLYGON)
+  mode                             GeofenceMode           @default(CAR)
+  enabled                          Boolean                @default(true)
+  live                             Boolean                @default(true)
+  geometry                         Json
+  geometryCenter                   Json?
+  geometryRadius                   Float?
+  disallowedPrecedingTagSubstrings Json?
+  ip                               Json?
+  organizationId                   String
+  createdAt                        DateTime               @default(now())
+  updatedAt                        DateTime               @updatedAt
+  organization                     Organization           @relation(fields: [organizationId], references: [id])
+  events                           GeofenceEvent[]
+  vehicleStates                    GeofenceVehicleState[]
+
+  @@index([organizationId])
+  @@index([externalId])
+  @@index([enabled])
+}
+
+model VehicleKPI {
+  id               String   @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId        String
+  date             DateTime
+  clave2Minutes    Int
+  clave5Minutes    Int
+  outOfParkMinutes Int
+  eventsHigh       Int
+  eventsModerate   Int
+  timeInWorkshop   Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  vehicle          Vehicle  @relation(fields: [vehicleId], references: [id])
+}
+
+model ParkKPI {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()"))
+  parkId              String
+  date                DateTime
+  totalClave2         Int
+  totalClave5         Int
+  totalEventsHigh     Int
+  totalEventsModerate Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  park                Park     @relation("ParkKPIs", fields: [parkId], references: [id])
+}
+
+model AdvancedVehicleKPI {
+  id                                   String       @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId                            String
+  date                                 DateTime
+  organizationId                       String
+  tiempoEnParque                       Int          @default(0)
+  tiempoEnTaller                       Int          @default(0)
+  tiempoFueraParque                    Int          @default(0)
+  tiempoEnZonaSensible                 Int          @default(0)
+  tiempoEnParqueConRotativo            Int          @default(0)
+  tiempoEnParqueSinRotativo            Int          @default(0)
+  tiempoFueraParqueConRotativo         Int          @default(0)
+  tiempoFueraParqueSinRotativo         Int          @default(0)
+  tiempoEnTallerConRotativo            Int          @default(0)
+  tiempoEnTallerSinRotativo            Int          @default(0)
+  eventosCriticos                      Int          @default(0)
+  eventosPeligrosos                    Int          @default(0)
+  eventosModerados                     Int          @default(0)
+  eventosLeves                         Int          @default(0)
+  eventosCriticosEnParque              Int          @default(0)
+  eventosCriticosFueraParque           Int          @default(0)
+  eventosCriticosEnTaller              Int          @default(0)
+  eventosPeligrososEnParque            Int          @default(0)
+  eventosPeligrososFueraParque         Int          @default(0)
+  eventosPeligrososEnTaller            Int          @default(0)
+  tiempoExcediendoVelocidad            Int          @default(0)
+  tiempoExcediendoVelocidadEnParque    Int          @default(0)
+  tiempoExcediendoVelocidadFueraParque Int          @default(0)
+  tiempoExcediendoVelocidadEnTaller    Int          @default(0)
+  maxVelocidadAlcanzada                Decimal      @default(0)
+  velocidadPromedio                    Decimal      @default(0)
+  excesosVelocidadLeves                Int          @default(0)
+  excesosVelocidadModerados            Int          @default(0)
+  excesosVelocidadGraves               Int          @default(0)
+  excesosVelocidadMuyGraves            Int          @default(0)
+  totalPuntosGPS                       Int          @default(0)
+  totalTiempo                          Int          @default(0)
+  distanciaRecorrida                   Decimal      @default(0)
+  tiempoEnMovimiento                   Int          @default(0)
+  tiempoDetenido                       Int          @default(0)
+  clave2Minutes                        Int          @default(0)
+  clave5Minutes                        Int          @default(0)
+  outOfParkMinutes                     Int          @default(0)
+  timeInWorkshop                       Int          @default(0)
+  eventsHigh                           Int          @default(0)
+  eventsModerate                       Int          @default(0)
+  createdAt                            DateTime     @default(now())
+  updatedAt                            DateTime     @updatedAt
+  calculatedAt                         DateTime     @default(now())
+  isValid                              Boolean      @default(true)
+  calculationVersion                   String       @default("1.0")
+  organization                         Organization @relation(fields: [organizationId], references: [id])
+  vehicle                              Vehicle      @relation(fields: [vehicleId], references: [id])
+
+  @@unique([vehicleId, date])
+  @@index([vehicleId, date])
+  @@index([organizationId, date])
+  @@index([date])
+  @@index([calculatedAt])
+  @@map("AdvancedVehicleKPI")
+}
+
+model SessionUploadLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId String
+  userId    String
+  timestamp DateTime @default(now())
+  status    String
+  error     String?
+  source    String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ZoneAudit {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  zoneId     String
+  userId     String
+  timestamp  DateTime @default(now())
+  changeType String
+  oldValue   Json?
+  newValue   Json?
+  user       User     @relation(fields: [userId], references: [id])
+  zone       Zone     @relation("ZoneAudits", fields: [zoneId], references: [id])
+}
+
+model QualityReport {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  date      DateTime
+  metrics   Json
+  createdAt DateTime @default(now())
+}
+
+model RealtimePosition {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId String
+  timestamp DateTime
+  lat       Float
+  lon       Float
+  alt       Float?
+  speed     Float?
+  hdop      Float?
+  source    String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+}
+
+model GeofenceRule {
+  id             String       @id
+  name           String
+  description    String?
+  organizationId String
+  zoneId         String?
+  parkId         String?
+  conditions     Json         @default("[]")
+  actions        Json         @default("[]")
+  isActive       Boolean      @default(true)
+  priority       Int          @default(1)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  park           Park?        @relation(fields: [parkId], references: [id], onDelete: Cascade)
+  zone           Zone?        @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@map("GeofenceRule")
+}
+
+model GeofenceVehicleState {
+  id             String       @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId      String
+  organizationId String
+  geofenceId     String?
+  currentZones   String[]     @default([])
+  currentParks   String[]     @default([])
+  lastUpdate     DateTime     @default(now())
+  ruleStates     Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  geofence       Geofence?    @relation(fields: [geofenceId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, organizationId])
+  @@map("GeofenceVehicleState")
+}
+
+model GeofenceEvent {
+  id             String              @id @default(dbgenerated("gen_random_uuid()"))
+  geofenceId     String
+  vehicleId      String
+  organizationId String
+  type           GeofenceEventType
+  status         GeofenceEventStatus @default(ACTIVE)
+  timestamp      DateTime
+  latitude       Float
+  longitude      Float
+  speed          Float?
+  heading        Float?
+  data           Json?
+  processed      Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  geofence       Geofence            @relation(fields: [geofenceId], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+
+  @@index([geofenceId])
+  @@index([vehicleId])
+  @@index([organizationId])
+  @@index([timestamp])
+  @@index([type])
+  @@index([status])
+}
+
+model DailyProcessingReport {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()"))
+  organizationId     String
+  processingDate     DateTime
+  totalVehicles      Int
+  successfulVehicles Int
+  failedVehicles     Int
+  totalDataPoints    Int
+  status             String
+  details            Json?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("DailyProcessingReport")
+}
+
+model FileState {
+  id               String       @id @default(dbgenerated("gen_random_uuid()"))
+  fileName         String
+  filePath         String
+  fileHash         String
+  fileSize         Int
+  vehicleId        String
+  organizationId   String
+  fileType         String
+  processingStatus String
+  decodedStatus    String?
+  dataPointsCount  Int?
+  lastProcessedAt  DateTime?
+  processingErrors String[]
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle          Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([fileHash, organizationId])
+  @@map("FileState")
+}
+
+model ProcessingEvent {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()"))
+  fileName            String
+  filePath            String
+  fileType            ProcessingFileType
+  vehicleId           String
+  organizationId      String
+  status              ProcessingStatus
+  dataPointsProcessed Int?
+  processingTime      Int?
+  errorMessage        String?
+  errorCode           String?
+  metadata            Json?
+  timestamp           DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime
+  Organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Vehicle             Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, timestamp])
+  @@index([status, timestamp])
+  @@index([vehicleId, timestamp])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  OPERATOR
+  VIEWER
+}
+
+enum SessionType {
+  ROUTINE
+  MAINTENANCE
+  EMERGENCY
+  TEST
+  TRAINING
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  ERROR
+  PAUSED
+}
+
+enum VehicleType {
+  TRUCK
+  VAN
+  CAR
+  BUS
+  MOTORCYCLE
+  OTHER
+  ESCALA
+  BRP
+  FORESTAL
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+  REPAIR
+}
+
+enum EventType {
+  STABILITY
+  CAN
+  COMBINED
+  GPS
+  SYSTEM
+  MAINTENANCE
+  CUSTOM
+}
+
+enum EventStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+  EXPIRED
+  ARCHIVED
+}
+
+enum EventConditionType {
+  STABILITY
+  CAN
+  GPS
+  COMBINED
+}
+
+enum EventConditionOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  LESS_THAN
+  GREATER_EQUALS
+  LESS_EQUALS
+  BETWEEN
+  IN_RANGE
+}
+
+enum EventLogicOperator {
+  AND
+  OR
+}
+
+enum NotificationType {
+  EVENT
+  SYSTEM
+  MAINTENANCE
+  ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  IN_APP
+  SMS
+}
+
+enum ReportType {
+  STABILITY
+  CAN_GPS
+  AI
+  EVENT
+  COMPARATIVE
+  TRENDS
+  MAINTENANCE
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+  JSON
+}
+
+enum ReportSchedule {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+/// Estado del reporte PDF
+enum ReportStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MaintenanceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  PREDICTIVE
+}
+
+enum GeofenceType {
+  POLYGON
+  CIRCLE
+  RECTANGLE
+}
+
+enum GeofenceMode {
+  CAR
+  FOOT
+  BIKE
+  ALL
+}
+
+enum GeofenceEventType {
+  ENTER
+  EXIT
+  INSIDE
+  OUTSIDE
+}
+
+enum GeofenceEventStatus {
+  ACTIVE
+  PROCESSED
+  ARCHIVED
+}
+
+enum ProcessingFileType {
+  CAN
+  ESTABILIDAD
+  GPS
+  ROTATIVO
+}
+
+enum ProcessingStatus {
+  STARTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
+}

@@ -1,0 +1,69 @@
+# 📐 REGLAS CURSOR DOBACKSOFT (StabilSafe V3)
+
+## 🎭 COMPORTAMIENTO OBLIGATORIO
+
+**Actúa como programador en pareja especializado en DobackSoft.**
+
+### **Reglas de Comunicación:**
+- ✅ **Siempre explicar ANTES de hacer cambios** - "Voy a modificar X porque Y"
+- ✅ **Pedir confirmación explícita** antes de ejecutar comandos
+- ✅ **Reportar progreso** durante procesos largos
+- ✅ **Explicar errores** con contexto y solución propuesta
+
+### **Reglas de Inicio del Sistema:**
+- ❌ **NUNCA iniciar backend/frontend** (ya corren en 2º plano)
+- ✅ **Usar SIEMPRE `iniciar.ps1`** para inicio completo del sistema
+- ✅ **Backend SIEMPRE en puerto 9998** - no cambiar nunca
+- ✅ **Frontend SIEMPRE en puerto 5174** - no cambiar nunca
+
+### **Reglas de Código:**
+- ✅ **Un archivo por turno** - nunca múltiples archivos simultáneamente
+- ✅ **Un diff agrupado** - todas las modificaciones en un bloque
+- ✅ **Formato obligatorio:**
+  ```typescript
+  // ... existing code ...
+  // cambio aquí
+  // ... existing code ...
+  ```
+- ✅ **Antes de editar → leer contexto cercano** (imports, funciones relacionadas)
+
+### **Reglas Técnicas:**
+- ✅ **NUNCA hardcodear URLs** - usar `frontend/src/config/api.ts`
+- ✅ **NUNCA usar console.log** - usar `logger` de `utils/logger`
+- ✅ **Siempre incluir filtro `organizationId`** en requests
+- ✅ **Siempre usar TypeScript estricto** - no `any` sin justificación
+
+### **Reglas de Comandos:**
+- ✅ **Siempre proponer y pedir confirmación** antes de ejecutar comandos
+- ✅ **Añadir `| cat` en comandos de salida** (git log, head, less)
+- ✅ **Procesos largos → ejecutar en segundo plano**
+
+### **Reglas de Windows:**
+- ✅ **Scripts PowerShell como `iniciar.ps1`** - no bash ni otros
+- ✅ **Usar rutas Windows** (`\` no `/`)
+- ✅ **Comandos compatibles con PowerShell**
+
+## 🚨 REGLAS CRÍTICAS (NO VIOLAR NUNCA)
+
+1. **NUNCA iniciar backend/frontend** - usar `iniciar.ps1`
+2. **NUNCA hardcodear URLs** - usar `config/api.ts`
+3. **NUNCA usar console.log** - usar `logger`
+4. **NUNCA cambiar puertos** - 9998 backend, 5174 frontend
+5. **NUNCA crear módulos fuera del menú oficial**
+6. **NUNCA exponer datos entre organizaciones**
+
+## 📋 MÉTODO DE INICIO ÚNICO
+
+### **Script Oficial: `iniciar.ps1`**
+- ✅ **Script único y oficial** para iniciar todo el sistema
+- ✅ **Libera puertos automáticamente** (9998, 5174)
+- ✅ **Verifica archivos necesarios** antes de iniciar
+- ✅ **Inicia backend y frontend** en ventanas separadas
+- ✅ **Verifica que ambos servicios funcionen** antes de continuar
+- ✅ **Abre navegador automáticamente**
+- ✅ **Muestra credenciales de login**
+
+---
+
+**ESTAS REGLAS SON OBLIGATORIAS Y NO NEGOCIABLES**
+**CUALQUIER VIOLACIÓN REQUIERE CORRECCIÓN INMEDIATA**

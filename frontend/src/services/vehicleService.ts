@@ -1,0 +1,1 @@
+// Este archivo es redundante con vehicles.ts y debe eliminarse o unificarse para evitar confusión. 

@@ -1,0 +1,452 @@
+{
+  "fecha": "2025-07-16T06:37:39.381862",
+  "descartes": {
+    "CAN": [],
+    "GPS": [],
+    "ESTABILIDAD": [
+      [
+        11,
+        "Línea incompleta"
+      ],
+      [
+        22,
+        "Línea incompleta"
+      ],
+      [
+        33,
+        "Línea incompleta"
+      ],
+      [
+        44,
+        "Línea incompleta"
+      ],
+      [
+        55,
+        "Línea incompleta"
+      ],
+      [
+        66,
+        "Línea incompleta"
+      ],
+      [
+        77,
+        "Línea incompleta"
+      ],
+      [
+        88,
+        "Línea incompleta"
+      ],
+      [
+        99,
+        "Línea incompleta"
+      ],
+      [
+        110,
+        "Línea incompleta"
+      ],
+      [
+        121,
+        "Línea incompleta"
+      ],
+      [
+        132,
+        "Línea incompleta"
+      ],
+      [
+        143,
+        "Línea incompleta"
+      ],
+      [
+        154,
+        "Línea incompleta"
+      ],
+      [
+        165,
+        "Línea incompleta"
+      ],
+      [
+        176,
+        "Línea incompleta"
+      ],
+      [
+        187,
+        "Línea incompleta"
+      ],
+      [
+        198,
+        "Línea incompleta"
+      ],
+      [
+        209,
+        "Línea incompleta"
+      ],
+      [
+        220,
+        "Línea incompleta"
+      ],
+      [
+        231,
+        "Línea incompleta"
+      ],
+      [
+        242,
+        "Línea incompleta"
+      ],
+      [
+        253,
+        "Línea incompleta"
+      ],
+      [
+        264,
+        "Línea incompleta"
+      ],
+      [
+        275,
+        "Línea incompleta"
+      ],
+      [
+        286,
+        "Línea incompleta"
+      ],
+      [
+        297,
+        "Línea incompleta"
+      ],
+      [
+        308,
+        "Línea incompleta"
+      ],
+      [
+        319,
+        "Línea incompleta"
+      ],
+      [
+        330,
+        "Línea incompleta"
+      ],
+      [
+        341,
+        "Línea incompleta"
+      ],
+      [
+        352,
+        "Línea incompleta"
+      ],
+      [
+        363,
+        "Línea incompleta"
+      ],
+      [
+        374,
+        "Línea incompleta"
+      ],
+      [
+        385,
+        "Línea incompleta"
+      ],
+      [
+        396,
+        "Línea incompleta"
+      ],
+      [
+        407,
+        "Línea incompleta"
+      ],
+      [
+        418,
+        "Línea incompleta"
+      ],
+      [
+        429,
+        "Línea incompleta"
+      ],
+      [
+        440,
+        "Línea incompleta"
+      ],
+      [
+        451,
+        "Línea incompleta"
+      ],
+      [
+        462,
+        "Línea incompleta"
+      ],
+      [
+        473,
+        "Línea incompleta"
+      ],
+      [
+        484,
+        "Línea incompleta"
+      ],
+      [
+        495,
+        "Línea incompleta"
+      ],
+      [
+        506,
+        "Línea incompleta"
+      ],
+      [
+        517,
+        "Línea incompleta"
+      ],
+      [
+        528,
+        "Línea incompleta"
+      ],
+      [
+        539,
+        "Línea incompleta"
+      ],
+      [
+        550,
+        "Línea incompleta"
+      ],
+      [
+        561,
+        "Línea incompleta"
+      ],
+      [
+        572,
+        "Línea incompleta"
+      ],
+      [
+        583,
+        "Línea incompleta"
+      ],
+      [
+        594,
+        "Línea incompleta"
+      ],
+      [
+        605,
+        "Línea incompleta"
+      ],
+      [
+        616,
+        "Línea incompleta"
+      ],
+      [
+        627,
+        "Línea incompleta"
+      ],
+      [
+        638,
+        "Línea incompleta"
+      ],
+      [
+        649,
+        "Línea incompleta"
+      ],
+      [
+        660,
+        "Línea incompleta"
+      ],
+      [
+        671,
+        "Línea incompleta"
+      ],
+      [
+        682,
+        "Línea incompleta"
+      ],
+      [
+        693,
+        "Línea incompleta"
+      ],
+      [
+        704,
+        "Línea incompleta"
+      ],
+      [
+        715,
+        "Línea incompleta"
+      ],
+      [
+        726,
+        "Línea incompleta"
+      ],
+      [
+        737,
+        "Línea incompleta"
+      ],
+      [
+        748,
+        "Línea incompleta"
+      ],
+      [
+        759,
+        "Línea incompleta"
+      ],
+      [
+        770,
+        "Línea incompleta"
+      ],
+      [
+        781,
+        "Línea incompleta"
+      ],
+      [
+        792,
+        "Línea incompleta"
+      ],
+      [
+        803,
+        "Línea incompleta"
+      ],
+      [
+        814,
+        "Línea incompleta"
+      ],
+      [
+        825,
+        "Línea incompleta"
+      ],
+      [
+        836,
+        "Línea incompleta"
+      ],
+      [
+        847,
+        "Línea incompleta"
+      ],
+      [
+        858,
+        "Línea incompleta"
+      ],
+      [
+        869,
+        "Línea incompleta"
+      ],
+      [
+        880,
+        "Línea incompleta"
+      ],
+      [
+        891,
+        "Línea incompleta"
+      ],
+      [
+        902,
+        "Línea incompleta"
+      ],
+      [
+        913,
+        "Línea incompleta"
+      ],
+      [
+        924,
+        "Línea incompleta"
+      ],
+      [
+        935,
+        "Línea incompleta"
+      ],
+      [
+        946,
+        "Línea incompleta"
+      ],
+      [
+        957,
+        "Línea incompleta"
+      ],
+      [
+        968,
+        "Línea incompleta"
+      ],
+      [
+        979,
+        "Línea incompleta"
+      ],
+      [
+        990,
+        "Línea incompleta"
+      ],
+      [
+        1001,
+        "Línea incompleta"
+      ],
+      [
+        1012,
+        "Línea incompleta"
+      ],
+      [
+        1023,
+        "Línea incompleta"
+      ],
+      [
+        1034,
+        "Línea incompleta"
+      ],
+      [
+        1045,
+        "Línea incompleta"
+      ],
+      [
+        1056,
+        "Línea incompleta"
+      ],
+      [
+        1067,
+        "Línea incompleta"
+      ],
+      [
+        1078,
+        "Línea incompleta"
+      ],
+      [
+        1089,
+        "Línea incompleta"
+      ],
+      [
+        1100,
+        "Línea incompleta"
+      ],
+      [
+        1111,
+        "Línea incompleta"
+      ],
+      [
+        1122,
+        "Línea incompleta"
+      ],
+      [
+        1133,
+        "Línea incompleta"
+      ],
+      [
+        1144,
+        "Línea incompleta"
+      ],
+      [
+        1155,
+        "Línea incompleta"
+      ],
+      [
+        1166,
+        "Línea incompleta"
+      ],
+      [
+        1177,
+        "Línea incompleta"
+      ],
+      [
+        1188,
+        "Línea incompleta"
+      ],
+      [
+        1199,
+        "Línea incompleta"
+      ]
+    ],
+    "ROTATIVO": []
+  },
+  "totales": {
+    "CAN": 0,
+    "GPS": 0,
+    "ESTABILIDAD": 109,
+    "ROTATIVO": 0
+  }
+}

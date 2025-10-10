@@ -1,0 +1,51 @@
+# Dockerfile para producción - Frontend DobackSoft
+FROM node:18-alpine AS builder
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci && npm cache clean --force
+
+# Copiar código fuente
+COPY . .
+
+# Construir aplicación
+RUN npm run build
+
+# Etapa de producción con Nginx
+FROM nginx:alpine AS production
+
+# Instalar dependencias adicionales
+RUN apk add --no-cache \
+    curl \
+    tzdata
+
+# Configurar zona horaria
+ENV TZ=Europe/Madrid
+
+# Copiar archivos construidos
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copiar configuración de Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Crear directorio para logs
+RUN mkdir -p /var/log/nginx
+
+# Configurar permisos
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/log/nginx
+
+# Exponer puerto
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80 || exit 1
+
+# Comando de inicio
+CMD ["nginx", "-g", "daemon off;"]

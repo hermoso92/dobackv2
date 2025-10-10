@@ -1,0 +1,447 @@
+import cantools
+import pandas as pd
+from datetime import datetime
+import os
+import csv
+import sys
+import time
+from pathlib import Path
+
+class DecodificadorCAN:
+    def __init__(self):
+        self.protocolos = {
+            'J1939': {
+                'dbc': 'doback_custom.dbc',  # Usar DBC personalizado
+                'identificador': lambda x: x.startswith('0x0CF') or x.startswith('0CF') or x.startswith('0x18') or x.startswith('18')
+            },
+            'OBD2': {
+                'dbc': 'CSS-Electronics-OBD2-v1.4.dbc',
+                'identificador': lambda x: x.startswith('7E') or x.startswith('0x7E')
+            }
+        }
+        self.db = None
+        self.protocolo_actual = None
+
+    def verificar_archivos_dbc(self):
+        """Verifica que los archivos DBC necesarios existan (ruta absoluta)."""
+        base_dir = Path(__file__).parent.resolve()
+        for protocolo, info in self.protocolos.items():
+            dbc_path = base_dir / info['dbc']
+            if not dbc_path.exists():
+                print(f"Error: No se encuentra el archivo DBC para {protocolo}: {dbc_path}")
+                return False
+        return True
+
+    def leer_archivo_mixto(self, archivo):
+        """Lee archivos CSV o TXT con formato mixto (cabeceras CAN y datos)."""
+        try:
+            with open(archivo, 'r', encoding='utf-8') as f:
+                lineas = f.readlines()
+            
+            datos_procesados = []
+            cabeceras = []
+            ultima_cabecera = None
+            
+            for linea in lineas:
+                linea = linea.strip()
+                if not linea:
+                    continue
+                    
+                # Detectar cabecera CAN
+                if linea.startswith('CAN;'):
+                    ultima_cabecera = linea
+                    cabeceras.append(linea)
+                    continue
+                
+                # Procesar línea de datos CAN
+                # Formato esperado: "08/07/2025 07:41:12AM   can0  0CF00400   [8]  F0 7D 84 59 16 FF FF 85"
+                if 'can0' in linea and '[' in linea and ']' in linea:
+                    try:
+                        # Dividir por espacios múltiples
+                        partes = linea.split()
+                        if len(partes) >= 6:
+                            timestamp = f"{partes[0]} {partes[1]}"
+                            id_can = partes[3]  # 0CF00400
+                            
+                            # Extraer datos hex después del [8]
+                            datos_hex = []
+                            for parte in partes[5:]:
+                                if len(parte) == 2 and all(c in '0123456789ABCDEFabcdef' for c in parte):
+                                    datos_hex.append(parte)
+                            
+                            if datos_hex:
+                                datos_procesados.append({
+                                    'ID': id_can,
+                                    'Timestamp': timestamp,
+                                    'Datos': ''.join(datos_hex),
+                                    'Cabecera': ultima_cabecera if ultima_cabecera else ''
+                                })
+                    except Exception as e:
+                        print(f"Error al procesar línea: {linea[:50]}... - {e}")
+                        continue
+                
+                # Formato CSV alternativo (compatibilidad)
+                elif ',' in linea:
+                    partes = linea.strip().split(',')
+                    if len(partes) >= 3:
+                        datos_procesados.append({
+                            'ID': partes[0],
+                            'Timestamp': partes[1],
+                            'Datos': partes[2].strip(),
+                            'Cabecera': ultima_cabecera if ultima_cabecera else ''
+                        })
+            
+            df = pd.DataFrame(datos_procesados)
+            if 'Cabecera' not in df.columns:
+                df['Cabecera'] = ''
+            return df, cabeceras
+        except Exception as e:
+            print(f"Error al leer el archivo {archivo}: {e}")
+            return None, []
+
+    def identificar_protocolo(self, df):
+        """Identifica el protocolo CAN basado en los IDs presentes."""
+        for protocolo, info in self.protocolos.items():
+            if any(df['ID'].apply(info['identificador'])):
+                return protocolo
+        return None
+
+    def cargar_dbc(self, protocolo):
+        """Carga el archivo DBC correspondiente al protocolo (ruta absoluta)."""
+        try:
+            base_dir = Path(__file__).parent.resolve()
+            dbc_path = base_dir / self.protocolos[protocolo]['dbc']
+            self.db = cantools.database.load_file(str(dbc_path))
+            self.protocolo_actual = protocolo
+            return True
+        except Exception as e:
+            print(f"Error al cargar el archivo DBC para {protocolo}: {e}")
+            return False
+
+    def decodificar_can(self, df):
+        """Decodifica los mensajes CAN usando la base de datos DBC cargada."""
+        if not self.db:
+            print("Error: No se ha cargado ninguna base de datos DBC")
+            return None
+
+        # Mapeo de IDs de 29 bits a IDs de 11 bits para J1939
+            mapeo_ids = {
+        0xCF00400: 1024,  # 0xcf00400 -> 0x400
+        0x18FEF100: 256,  # 0x18fef100 -> 0x100
+    }
+
+        mensajes_decodificados = []
+        errores_consecutivos = 0
+        max_errores_consecutivos = 10  # Máximo errores consecutivos antes de saltar
+        errores_mostrados = 0
+        max_errores_mostrar = 5  # Máximo errores a mostrar por archivo
+        
+        for _, fila in df.iterrows():
+            try:
+                # Convertir ID a entero
+                id_can = int(fila['ID'] if fila['ID'].startswith('0x') else '0x' + fila['ID'], 16)
+                
+                # Mapear ID de 29 bits a 11 bits si es necesario
+                id_dbc = mapeo_ids.get(id_can, id_can)
+                
+                # Buscar mensaje en DBC
+                mensaje = self.db.get_message_by_frame_id(id_dbc)
+                
+                if not mensaje:
+                    errores_consecutivos += 1
+                    continue
+                
+                # Convertir datos a bytes
+                datos = bytes.fromhex(fila['Datos'])
+                
+                # Verificar longitud de los datos
+                if len(datos) != mensaje.length:
+                    errores_consecutivos += 1
+                    continue
+                
+                # Decodificar mensaje
+                mensaje_decodificado = self.db.decode_message(id_dbc, datos)
+                
+                mensaje_decodificado_ordenado = {
+                    'Timestamp': fila['Timestamp'],
+                    'length': len(datos),
+                    'response': 4,
+                    'service': 'Show current data',
+                    'ParameterID_Service01': next(iter(mensaje_decodificado.keys()), ''),
+                    'Cabecera': fila.get('Cabecera', '')
+                }
+                
+                for clave, valor in mensaje_decodificado.items():
+                    if clave not in mensaje_decodificado_ordenado:
+                        mensaje_decodificado_ordenado[clave] = valor
+                
+                mensajes_decodificados.append(mensaje_decodificado_ordenado)
+                errores_consecutivos = 0  # Resetear contador de errores consecutivos
+                
+            except Exception as e:
+                errores_consecutivos += 1
+                
+                # Si hay muchos errores consecutivos, salir del procesamiento de este archivo
+                if errores_consecutivos >= max_errores_consecutivos:
+                    print(f"Demasiados errores consecutivos ({errores_consecutivos}). Saltando al siguiente archivo.")
+                    break
+                
+                # Solo mostrar algunos errores como ejemplo
+                if errores_mostrados < max_errores_mostrar:
+                    print(f"Error al decodificar mensaje con ID {fila['ID']}: {e}")
+                    errores_mostrados += 1
+                elif errores_mostrados == max_errores_mostrar:
+                    print(f"... (omitiendo más errores de decodificación)")
+                    errores_mostrados += 1
+        
+        # Mostrar resumen de errores si los hubo
+        if errores_consecutivos > 0 and errores_consecutivos < max_errores_consecutivos:
+            print(f"Total de errores de decodificación: {errores_consecutivos}")
+        
+        return pd.DataFrame(mensajes_decodificados)
+
+    def guardar_resultados(self, df_decodificado, archivo_original, cabeceras):
+        """Guarda los resultados decodificados en un archivo CSV."""
+        nombre_base = os.path.splitext(archivo_original)[0]
+        archivo_salida = f"{nombre_base}_TRADUCIDO.csv"
+        
+        columnas_orden = ['Timestamp', 'length', 'response', 'service', 'ParameterID_Service01']
+        columnas_adicionales = [col for col in df_decodificado.columns if col not in columnas_orden and col != 'Cabecera']
+        
+        for col in columnas_orden:
+            if col not in df_decodificado.columns:
+                df_decodificado[col] = ''
+
+        try:
+            with open(archivo_salida, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([f"# Fecha de decodificación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"])
+                writer.writerow([f"# Protocolo: {self.protocolo_actual}"])
+                writer.writerow([])
+
+                for cabecera in cabeceras:
+                    writer.writerow([cabecera])
+                    datos_cabecera = df_decodificado[df_decodificado['Cabecera'].fillna('') == cabecera].copy()
+                    if not datos_cabecera.empty:
+                        if 'Cabecera' in datos_cabecera.columns:
+                            datos_cabecera.drop(columns=['Cabecera'], inplace=True)
+                        columnas_finales = columnas_orden + columnas_adicionales
+                        datos_cabecera = datos_cabecera.reindex(columns=columnas_finales)
+                        datos_cabecera.to_csv(f, index=False, header=True)
+                        writer.writerow([])
+            
+            print(f"Archivo guardado: {archivo_salida}")
+            return True
+        except Exception as e:
+            print(f"Error al guardar el archivo {archivo_salida}: {e}")
+            return False
+
+    def procesar_archivo(self, archivo):
+        """Procesa un archivo CAN completo."""
+        archivo_path = Path(archivo)
+        print(f"\nProcesando: {archivo_path.name}")
+        
+        # Leer el archivo
+        df, cabeceras = self.leer_archivo_mixto(archivo)
+        if df is None or df.empty:
+            print(f"  ✗ No se pudieron leer datos válidos")
+            return False
+
+        print(f"  📊 Líneas leídas: {len(df)}")
+
+        # Identificar protocolo
+        protocolo = self.identificar_protocolo(df)
+        if not protocolo:
+            print(f"  ✗ No se pudo identificar el protocolo")
+            return False
+        print(f"  🔍 Protocolo: {protocolo}")
+
+        # Cargar DBC
+        if not self.cargar_dbc(protocolo):
+            print(f"  ✗ Error al cargar DBC para {protocolo}")
+            return False
+
+        # Decodificar mensajes
+        df_decodificado = self.decodificar_can(df)
+        if df_decodificado is None or df_decodificado.empty:
+            print(f"  ✗ No se pudieron decodificar mensajes")
+            return False
+
+        # Guardar resultados
+        if self.guardar_resultados(df_decodificado, archivo, cabeceras):
+            print(f"  ✓ Decodificados: {len(df_decodificado)} mensajes")
+            print(f"  ✓ Cabeceras: {len(cabeceras)}")
+            return True
+        else:
+            print(f"  ✗ Error al guardar resultados")
+            return False
+
+def buscar_archivos_can_recursivo(directorio_base):
+    """Busca recursivamente todos los archivos CAN en las subcarpetas de vehículos."""
+    archivos_can = []
+    directorio_base = Path(directorio_base)
+    
+    if not directorio_base.exists():
+        print(f"Error: El directorio {directorio_base} no existe")
+        return archivos_can
+    
+    # Buscar en todas las subcarpetas de vehículos (dobackXXX)
+    for vehiculo_dir in directorio_base.iterdir():
+        if vehiculo_dir.is_dir() and vehiculo_dir.name.startswith('doback'):
+            can_dir = vehiculo_dir / 'CAN'
+            if can_dir.exists() and can_dir.is_dir():
+                print(f"Explorando carpeta CAN del vehículo: {vehiculo_dir.name}")
+                
+                # Buscar archivos CAN sin procesar
+                for archivo in can_dir.iterdir():
+                    if archivo.is_file() and (archivo.suffix.lower() in ['.csv', '.txt']):
+                        # Solo procesar archivos que no estén ya traducidos
+                        if '_TRADUCIDO' not in archivo.name:
+                            archivos_can.append(str(archivo))
+                            print(f"  - Encontrado: {archivo.name}")
+    
+    return archivos_can
+
+def procesar_todos_vehiculos_cmadrid():
+    """Procesa todos los archivos CAN de todos los vehículos en CMadrid."""
+    print("Decodificador CAN Unificado - Procesamiento Masivo CMadrid")
+    print("=" * 60)
+    
+    # Verificar archivos DBC
+    print("Verificando archivos DBC...")
+    decodificador = DecodificadorCAN()
+    if not decodificador.verificar_archivos_dbc():
+        print("No se pueden encontrar los archivos DBC necesarios.")
+        return False
+    print("✓ Archivos DBC verificados correctamente")
+
+    # Directorio base de datos CMadrid
+    directorio_cmadrid = Path(__file__).parent.parent / 'datosDoback' / 'CMadrid'
+    print(f"Buscando archivos en: {directorio_cmadrid}")
+    
+    if not directorio_cmadrid.exists():
+        print(f"❌ Error: El directorio {directorio_cmadrid} no existe")
+        return False
+    
+    # Buscar todos los archivos CAN
+    print("Explorando estructura de directorios...")
+    archivos_can = buscar_archivos_can_recursivo(directorio_cmadrid)
+    
+    if not archivos_can:
+        print("No se encontraron archivos CAN sin procesar en CMadrid")
+        return False
+    
+    print(f"\nTotal de archivos CAN encontrados: {len(archivos_can)}")
+    print("Iniciando procesamiento...")
+    
+    # Procesar cada archivo
+    exitos = 0
+    errores = 0
+    vehiculos_procesados = set()
+    
+    for i, archivo in enumerate(archivos_can, 1):
+        archivo_path = Path(archivo)
+        vehiculo = archivo_path.parent.parent.name  # Extraer nombre del vehículo
+        vehiculos_procesados.add(vehiculo)
+        
+        print(f"\n[{i}/{len(archivos_can)}] Procesando {vehiculo}: {archivo_path.name}")
+        
+        try:
+            if decodificador.procesar_archivo(archivo):
+                exitos += 1
+                print(f"✓ Procesado exitosamente")
+            else:
+                errores += 1
+                print(f"✗ Error en el procesamiento")
+        except Exception as e:
+            errores += 1
+            print(f"✗ Error inesperado: {e}")
+    
+    # Mostrar resumen detallado
+    print("\n" + "=" * 60)
+    print("RESUMEN DEL PROCESAMIENTO MASIVO")
+    print("=" * 60)
+    print(f"Vehículos procesados: {len(vehiculos_procesados)}")
+    print(f"Archivos procesados exitosamente: {exitos}")
+    print(f"Archivos con errores: {errores}")
+    print(f"Total de archivos: {len(archivos_can)}")
+    
+    if vehiculos_procesados:
+        print(f"\nVehículos procesados:")
+        for vehiculo in sorted(vehiculos_procesados):
+            print(f"  - {vehiculo}")
+    
+    if exitos > 0:
+        print(f"\nLos archivos traducidos se guardan con el sufijo '_TRADUCIDO.csv'")
+    
+    return exitos > 0
+
+def mostrar_ayuda():
+    """Muestra la ayuda del programa."""
+    print("Decodificador CAN Unificado")
+    print("=" * 50)
+    print("Uso:")
+    print("  python decodificador_can_unificado.py [opciones] [archivos]")
+    print("\nOpciones:")
+    print("  --cmadrid, --masivo    Procesar todos los archivos CAN de CMadrid")
+    print("  --help                Mostrar esta ayuda")
+    print("\nEjemplos:")
+    print("  python decodificador_can_unificado.py --cmadrid")
+    print("  python decodificador_can_unificado.py archivo1.txt archivo2.csv")
+    print("  python decodificador_can_unificado.py")
+
+def main():
+    """Función principal con opciones de procesamiento."""
+    if len(sys.argv) > 1:
+        primer_arg = sys.argv[1]
+        
+        if primer_arg == '--help' or primer_arg == '-h':
+            mostrar_ayuda()
+            return
+        elif primer_arg == '--cmadrid' or primer_arg == '--masivo':
+            # Procesamiento masivo de CMadrid
+            procesar_todos_vehiculos_cmadrid()
+        else:
+            # Procesamiento de archivos específicos (comportamiento original)
+            print("Decodificador CAN Unificado")
+            print("=" * 50)
+            
+            decodificador = DecodificadorCAN()
+            if not decodificador.verificar_archivos_dbc():
+                print("No se pueden encontrar los archivos DBC necesarios.")
+                return
+
+            archivos = sys.argv[1:]
+            exitos = 0
+            for archivo in archivos:
+                if decodificador.procesar_archivo(archivo):
+                    exitos += 1
+
+            print(f"\nResumen: {exitos}/{len(archivos)} archivos procesados exitosamente")
+    else:
+        # Procesamiento del directorio actual (comportamiento original)
+        print("Decodificador CAN Unificado")
+        print("=" * 50)
+        
+        decodificador = DecodificadorCAN()
+        if not decodificador.verificar_archivos_dbc():
+            print("No se pueden encontrar los archivos DBC necesarios.")
+            return
+
+        archivos = [f for f in os.listdir('.') if (f.endswith('.csv') or f.endswith('.txt')) and '_TRADUCIDO' not in f]
+
+        if not archivos:
+            print("No se encontraron archivos CSV o TXT para procesar")
+            print("\nPara procesar todos los vehículos de CMadrid, usa:")
+            print("python decodificador_can_unificado.py --cmadrid")
+            return
+
+        exitos = 0
+        for archivo in archivos:
+            if decodificador.procesar_archivo(archivo):
+                exitos += 1
+
+        print(f"\nResumen: {exitos}/{len(archivos)} archivos procesados exitosamente")
+
+if __name__ == "__main__":
+    main() 

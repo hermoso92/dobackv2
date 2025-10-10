@@ -1,0 +1,721 @@
+/* 
+ * INCLI-SAFE V2 - Comprehensive UI Styling
+ * Technical-Military-Professional Design System
+ * 
+ * This file contains all UI improvements consolidated into a single file
+ * for easier maintenance and application-wide consistency.
+ */
+
+/******************************************
+ * ROOT VARIABLES - DESIGN TOKENS
+ ******************************************/
+:root {
+    /* Color Palette - Military Technical */
+    --color-primary: #2c3e50;
+    --color-primary-light: #34495e;
+    --color-primary-dark: #1a2530;
+    --color-accent: #3498db;
+    --color-accent-dark: #2980b9;
+    --color-success: #27ae60;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
+    --color-light: #ecf0f1;
+    --color-dark: #2c3e50;
+    --color-gray: #95a5a6;
+    --color-gray-light: #bdc3c7;
+    --color-gray-dark: #7f8c8d;
+    --color-background: #f5f7fa;
+
+    /* Typography */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-mono: 'Roboto Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    /* Font Sizes - Reduced by 25% */
+    --font-size-xs: 0.65rem;
+    --font-size-sm: 0.75rem;
+    --font-size-md: 0.85rem;
+    --font-size-lg: 1.05rem;
+    --font-size-xl: 1.2rem;
+    --font-size-2xl: 1.5rem;
+
+    /* Spacing - Reduced by 25% */
+    --spacing-xs: 0.375rem;
+    --spacing-sm: 0.525rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1.125rem;
+    --spacing-xl: 1.5rem;
+
+    /* Border Radius */
+    --border-radius-sm: 3px;
+    --border-radius-md: 4px;
+    --border-radius-lg: 6px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    /* Transitions */
+    --transition-fast: 0.1s ease-in-out;
+    --transition-normal: 0.2s ease-in-out;
+    --transition-slow: 0.3s ease-in-out;
+
+    /* Z-indices */
+    --z-index-dropdown: 1000;
+    --z-index-sticky: 1020;
+    --z-index-fixed: 1030;
+    --z-index-modal-backdrop: 1040;
+    --z-index-modal: 1050;
+    --z-index-popover: 1060;
+    --z-index-tooltip: 1070;
+}
+
+/******************************************
+ * GLOBAL RESETS & BASE STYLES
+ ******************************************/
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    font-family: var(--font-primary);
+    font-size: var(--font-size-md);
+    line-height: 1.5;
+    color: var(--color-dark);
+    background-color: var(--color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Permitir desplazamiento vertical si el contenido supera la ventana */
+    overflow-y: auto;
+}
+
+#root {
+    /* Ocupa exactamente el alto de la ventana */
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    overflow: auto;
+}
+
+a {
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--color-accent-dark);
+}
+
+/******************************************
+ * TYPOGRAPHY - REDUCED BY 25%
+ ******************************************/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-dark);
+}
+
+h1 {
+    font-size: var(--font-size-2xl);
+}
+
+h2 {
+    font-size: var(--font-size-xl);
+}
+
+h3 {
+    font-size: var(--font-size-lg);
+}
+
+h4 {
+    font-size: var(--font-size-md);
+}
+
+h5 {
+    font-size: var(--font-size-sm);
+}
+
+h6 {
+    font-size: var(--font-size-xs);
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+}
+
+.text-small {
+    font-size: var(--font-size-sm);
+}
+
+.text-xs {
+    font-size: var(--font-size-xs);
+}
+
+.text-uppercase {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.text-mono {
+    font-family: var(--font-mono);
+}
+
+/******************************************
+ * MATERIAL-UI COMPONENT OVERRIDES
+ ******************************************/
+
+/* MUI v5 Grid Compatibility Fixes */
+.MuiGrid-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    box-sizing: border-box !important;
+    width: calc(100% + 8px) !important;
+    margin: -4px !important;
+}
+
+.MuiGrid-item {
+    padding: 4px !important;
+    margin: 0 !important;
+}
+
+[class*=MuiGrid-root][class*=MuiGrid-container]>* {
+    padding: 4px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-12"] {
+    flex-basis: 100% !important;
+    max-width: 100% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-6"] {
+    flex-basis: 50% !important;
+    max-width: 50% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-4"] {
+    flex-basis: 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-sm-4"],
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-4"] {
+    flex-basis: 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-6"] {
+    flex-basis: 50% !important;
+    max-width: 50% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-8"] {
+    flex-basis: 66.666667% !important;
+    max-width: 66.666667% !important;
+}
+
+@media (max-width: 960px) {
+
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-4"],
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-6"],
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-8"] {
+        flex-basis: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 600px) {
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-sm-4"] {
+        flex-basis: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Layout Containers - 25% smaller */
+.MuiContainer-root,
+.MuiBox-root,
+.MuiPaper-root,
+.MuiCard-root,
+.MuiCardContent-root {
+    padding: var(--spacing-md) !important;
+    margin-bottom: var(--spacing-md) !important;
+}
+
+/* Typography Overrides */
+.MuiTypography-h4 {
+    font-size: var(--font-size-xl) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--color-primary) !important;
+}
+
+.MuiTypography-h5,
+.MuiTypography-h6 {
+    font-size: var(--font-size-md) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--color-primary) !important;
+}
+
+/* Form Elements */
+.MuiFormControl-root,
+.MuiOutlinedInput-root,
+.MuiInputBase-root {
+    font-size: var(--font-size-md) !important;
+    margin-top: 0 !important;
+    margin-bottom: var(--spacing-sm) !important;
+}
+
+.MuiInputLabel-root {
+    font-size: var(--font-size-md) !important;
+    transform: translate(14px, 10px) scale(1) !important;
+}
+
+.MuiInputLabel-shrink {
+    transform: translate(14px, -6px) scale(0.75) !important;
+}
+
+.MuiOutlinedInput-input {
+    padding: calc(var(--spacing-sm) + 2px) var(--spacing-md) !important;
+}
+
+/* Cards & Papers */
+.MuiCard-root {
+    border-radius: var(--border-radius-sm) !important;
+    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid rgba(52, 73, 94, 0.1) !important;
+    background: linear-gradient(to bottom, white, #f8f9fa) !important;
+    margin-bottom: var(--spacing-md) !important;
+}
+
+.MuiCardHeader-root {
+    background-color: rgba(44, 62, 80, 0.03) !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+}
+
+.MuiCardHeader-title {
+    font-size: var(--font-size-md) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.MuiCardHeader-subheader {
+    font-size: var(--font-size-xs) !important;
+}
+
+.MuiCardContent-root {
+    padding: var(--spacing-md) !important;
+}
+
+.MuiPaper-root {
+    border-radius: var(--border-radius-sm) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Buttons */
+.MuiButton-root {
+    font-size: var(--font-size-sm) !important;
+    padding: var(--spacing-xs) var(--spacing-md) !important;
+    height: auto !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    border-radius: var(--border-radius-sm) !important;
+}
+
+/* Progress bars */
+.MuiLinearProgress-root {
+    height: 6px !important;
+    border-radius: 3px !important;
+}
+
+.MuiLinearProgress-barColorPrimary {
+    background-color: var(--color-accent) !important;
+}
+
+.MuiLinearProgress-barColorError {
+    background-color: var(--color-danger) !important;
+}
+
+.MuiLinearProgress-barColorSuccess {
+    background-color: var(--color-success) !important;
+}
+
+/* Chips */
+.MuiChip-root {
+    height: 20px !important;
+    font-size: var(--font-size-xs) !important;
+    font-weight: 600 !important;
+    border-radius: var(--border-radius-sm) !important;
+}
+
+.MuiChip-colorWarning {
+    background-color: var(--color-warning) !important;
+    color: white !important;
+}
+
+.MuiChip-colorError {
+    background-color: var(--color-danger) !important;
+    color: white !important;
+}
+
+/* Tabs */
+.MuiTabs-root {
+    min-height: 32px !important;
+    border-radius: var(--border-radius-sm) !important;
+    overflow: auto !important;
+    background-color: rgba(44, 62, 80, 0.05) !important;
+}
+
+.MuiTab-root {
+    min-height: 32px !important;
+    padding: 6px 12px !important;
+    font-size: var(--font-size-xs) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.Mui-selected {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+}
+
+/* Lists */
+.MuiList-root {
+    padding: 0 !important;
+}
+
+.MuiListItem-root {
+    padding: var(--spacing-xs) 0 !important;
+    font-size: var(--font-size-sm) !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+}
+
+.MuiListItemText-primary {
+    font-size: var(--font-size-sm) !important;
+    font-weight: 600 !important;
+}
+
+.MuiListItemText-secondary {
+    font-size: var(--font-size-xs) !important;
+    color: var(--color-gray) !important;
+}
+
+/* Tables */
+.MuiTable-root {
+    border-collapse: collapse !important;
+}
+
+.MuiTableHead-root {
+    background-color: rgba(44, 62, 80, 0.9) !important;
+}
+
+.MuiTableCell-head {
+    color: white !important;
+    font-size: var(--font-size-xs) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: var(--spacing-sm) !important;
+}
+
+.MuiTableCell-body {
+    font-size: var(--font-size-sm) !important;
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+}
+
+.MuiTableRow-root:nth-of-type(even) {
+    background-color: rgba(44, 62, 80, 0.03) !important;
+}
+
+/* Charts */
+.recharts-wrapper {
+    font-size: 10px !important;
+}
+
+.recharts-legend-item {
+    margin-right: var(--spacing-sm) !important;
+}
+
+.recharts-default-legend {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/******************************************
+ * MODULE-SPECIFIC STYLING
+ ******************************************/
+
+/* General Layout */
+.modules-main-section,
+section:has(h2:contains("Módulos Principales")) {
+    display: none !important;
+}
+
+.menu-description,
+.module-description,
+.text-secondary {
+    display: none !important;
+}
+
+/* Control Panels */
+.controls-panel,
+.telemetry-controls {
+    background: linear-gradient(to right, var(--color-primary), var(--color-primary-light)) !important;
+    padding: var(--spacing-md) !important;
+    border-radius: var(--border-radius-md) !important;
+    margin-bottom: var(--spacing-md) !important;
+    color: white !important;
+}
+
+.controls-panel label,
+.telemetry-controls label,
+.controls-panel .MuiInputLabel-root,
+.telemetry-controls .MuiInputLabel-root,
+.controls-panel .MuiSelect-icon,
+.telemetry-controls .MuiSelect-icon {
+    color: white !important;
+}
+
+.controls-panel .MuiOutlinedInput-notchedOutline,
+.telemetry-controls .MuiOutlinedInput-notchedOutline {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.controls-panel .MuiSelect-select,
+.telemetry-controls .MuiSelect-select {
+    color: white !important;
+}
+
+/* Military-style buttons */
+.military-button {
+    background-color: rgba(52, 73, 94, 0.9) !important;
+    color: white !important;
+    text-transform: uppercase !important;
+    font-size: var(--font-size-xs) !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;
+    border-radius: var(--border-radius-sm) !important;
+}
+
+.military-button:hover {
+    background-color: var(--color-primary) !important;
+}
+
+/* Metric boxes */
+.metrics-card,
+.data-card,
+.info-card,
+.metric-box {
+    border-left: 3px solid var(--color-accent) !important;
+    background-color: #f8f9fa !important;
+    padding: var(--spacing-sm) !important;
+    margin-bottom: 6px !important;
+    border-radius: var(--border-radius-sm) !important;
+}
+
+.metric-box h4 {
+    font-size: var(--font-size-xs) !important;
+    text-transform: uppercase;
+    color: var(--color-gray);
+    margin-bottom: 2px !important;
+    letter-spacing: 0.5px;
+}
+
+.metric-box .value {
+    font-size: var(--font-size-lg) !important;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+}
+
+.metric-box .unit {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray);
+}
+
+/* Metric grids */
+.telemetry-metrics,
+.data-metrics,
+.metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: var(--spacing-md) !important;
+}
+
+/* Alerts panel */
+.telemetry-alerts {
+    background-color: rgba(44, 62, 80, 0.05) !important;
+    border: 1px solid rgba(52, 73, 94, 0.1) !important;
+    border-radius: var(--border-radius-md) !important;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+}
+
+.telemetry-alerts h3 {
+    font-size: var(--font-size-sm) !important;
+    text-transform: uppercase !important;
+    margin-bottom: var(--spacing-sm) !important;
+    color: var(--color-primary) !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 600 !important;
+}
+
+.telemetry-alert-item {
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
+    margin-bottom: 4px !important;
+    border-radius: var(--border-radius-sm) !important;
+    font-size: var(--font-size-xs) !important;
+    border-left: 3px solid transparent !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.telemetry-alert-item.warning {
+    background-color: rgba(243, 156, 18, 0.1) !important;
+    border-left-color: var(--color-warning) !important;
+}
+
+.telemetry-alert-item.critical {
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    border-left-color: var(--color-danger) !important;
+}
+
+.telemetry-alert-item .timestamp {
+    font-size: var(--font-size-xs) !important;
+    color: var(--color-gray) !important;
+}
+
+/* Chart containers */
+.telemetry-chart-container {
+    height: 250px !important;
+    margin-bottom: var(--spacing-md) !important;
+    padding: var(--spacing-sm) !important;
+}
+
+/* Chart type selector */
+.chart-type-selector {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--border-radius-sm) !important;
+    overflow: auto !important;
+    border: none !important;
+}
+
+.chart-type-selector .MuiToggleButton-root {
+    color: white !important;
+    font-size: var(--font-size-xs) !important;
+    padding: 4px 8px !important;
+    border: none !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.chart-type-selector .MuiToggleButton-root.Mui-selected {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: white !important;
+}
+
+/* Module-specific containers */
+.stability-container,
+.telemetry-container,
+.ai-analysis-container {
+    background-color: rgba(44, 62, 80, 0.03);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(52, 73, 94, 0.1);
+    padding: var(--spacing-md) !important;
+    height: 100%;
+    overflow: auto;
+}
+
+/* Risk score styling */
+.risk-score-card .MuiTypography-h3 {
+    font-size: 2rem !important;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+/* AI Analysis patterns */
+.pattern-detected {
+    background-color: rgba(255, 87, 34, 0.1) !important;
+    border-left: 3px solid var(--color-accent) !important;
+    padding: var(--spacing-sm) !important;
+    margin-bottom: var(--spacing-sm) !important;
+    font-weight: 500 !important;
+    border-radius: var(--border-radius-sm) !important;
+}
+
+/* Disable hover effects for military precision */
+.MuiButton-root:hover,
+.MuiListItem-root:hover,
+.MuiTab-root:hover {
+    background-color: inherit !important;
+    transition: none !important;
+}
+
+/******************************************
+ * RESPONSIVE ADJUSTMENTS
+ ******************************************/
+@media (max-width: 768px) {
+    :root {
+        /* Further reduce sizes on mobile */
+        --font-size-xs: 0.6rem;
+        --font-size-sm: 0.7rem;
+        --font-size-md: 0.8rem;
+        --font-size-lg: 0.9rem;
+        --font-size-xl: 1.1rem;
+        --font-size-2xl: 1.3rem;
+
+        --spacing-xs: 0.3rem;
+        --spacing-sm: 0.45rem;
+        --spacing-md: 0.6rem;
+        --spacing-lg: 0.9rem;
+        --spacing-xl: 1.2rem;
+    }
+
+    /* Single column layout on mobile */
+    .telemetry-metrics,
+    .data-metrics,
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Reduce chart heights on mobile */
+    .telemetry-chart-container {
+        height: 200px !important;
+    }
+}

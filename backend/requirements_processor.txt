@@ -1,0 +1,40 @@
+# Doback Soft - Procesador Completo de Datos
+# Requirements para el procesador de archivos de vehículos
+
+# Base de datos PostgreSQL
+psycopg2-binary>=2.9.0
+
+# Análisis de datos
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Utilidades de fecha y tiempo
+python-dateutil>=2.8.0
+
+# Logging y configuración
+colorlog>=6.0.0
+
+# Validación de datos
+pydantic>=1.10.0
+
+# Procesamiento de archivos
+pathlib2>=2.3.0; python_version < "3.4"
+
+# Codificación y caracteres especiales
+chardet>=4.0.0
+
+# Configuración desde archivos
+python-dotenv>=0.19.0
+
+# Testing (opcional, para desarrollo)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Linting y formateo (opcional, para desarrollo)
+black>=22.0.0
+flake8>=5.0.0
+mypy>=0.991
+
+# Documentación (opcional, para desarrollo)
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0 

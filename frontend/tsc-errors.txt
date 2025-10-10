@@ -1,0 +1,753 @@
+﻿src/components/AdvancedKPIDashboard.tsx(117,10): error TS6133: 'getThemeColor' is declared but its value is never read.
+src/components/AdvancedSensorChart.tsx(107,28): error TS6133: 'setShowThresholds' is declared but its value is never read.
+src/components/AdvancedSensorChart.tsx(377,31): error TS6133: 'event' is declared but its value is never read.
+src/components/AdvancedSensorChart.tsx(383,31): error TS6133: 'event' is declared but its value is never read.
+src/components/AdvancedTimeseriesChart.tsx(260,33): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(dp: DataPoint) => boolean' is not assignable to parameter of type 'ValueFn<BaseType, unknown, boolean>'.
+      Types of parameters 'dp' and 'datum' are incompatible.
+        Type 'unknown' is not assignable to type 'DataPoint'.
+src/components/BulkDataProcessor.tsx(139,11): error TS6133: 'getFileTypeColor' is declared but its value is never read.
+src/components/ConfigurableStabilityChart.tsx(73,11): error TS6196: 'SeriesInfo' is declared but never used.
+src/components/ConfigurableStabilityChart.tsx(211,48): error TS6133: 'label' is declared but its value is never read.
+src/components/ConfigurableStabilityChart.tsx(299,5): error TS6133: 'height' is declared but its value is never read.
+src/components/ConfigurableStabilityChart.tsx(300,5): error TS6133: 'title' is declared but its value is never read.
+src/components/ConfigurableStabilityChart.tsx(377,11): error TS6133: 'handleSettingsClick' is declared but its value is never read.
+src/components/ConfigurableStabilityChart.tsx(403,11): error TS6133: 'chartLines' is declared but its value is never read.
+src/components/Dashboard/StatsCard.tsx(4,1): error TS6133: 't' is declared but its value is never read.
+src/components/DateRangeSelector.tsx(145,29): error TS2322: Type '{ label: string; value: Date | undefined; onChange: (date: Date | null) => void; renderInput: (params: any) => Element; }' is not assignable to type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+  Property 'renderInput' does not exist on type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+src/components/DateRangeSelector.tsx(145,43): error TS7006: Parameter 'params' implicitly has an 'any' type.
+src/components/DateRangeSelector.tsx(158,33): error TS2322: Type '{ label: string; value: Date | undefined; onChange: (date: Date | null) => void; renderInput: (params: any) => Element; }' is not assignable to type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+  Property 'renderInput' does not exist on type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+src/components/DateRangeSelector.tsx(158,47): error TS7006: Parameter 'params' implicitly has an 'any' type.
+src/components/DateRangeSelector.tsx(164,33): error TS2322: Type '{ label: string; value: Date | undefined; onChange: (date: Date | null) => void; renderInput: (params: any) => Element; }' is not assignable to type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+  Property 'renderInput' does not exist on type 'IntrinsicAttributes & DatePickerProps<true> & RefAttributes<HTMLDivElement>'.
+src/components/DateRangeSelector.tsx(164,47): error TS7006: Parameter 'params' implicitly has an 'any' type.
+src/components/EnhancedStabilityChart.tsx(103,5): error TS6133: 'title' is declared but its value is never read.
+src/components/EnhancedStabilityChart.tsx(110,12): error TS6133: 'validationError' is declared but its value is never read.
+src/components/EventFilterToolbar.tsx(22,5): error TS6133: 'maxSpeed' is declared but its value is never read.
+src/components/EventFilterToolbar.tsx(33,5): error TS6133: 'sessionId' is declared but its value is never read.
+src/components/EventList.tsx(43,45): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/EventList.tsx(43,72): error TS2339: Property 'message' does not exist on type 'Event'.
+src/components/EventList.tsx(48,49): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(o: { [s: string]: unknown; } | ArrayLike<unknown>): [string, unknown][]', gave the following error.
+    Argument of type 'Record<string, unknown> | undefined' is not assignable to parameter of type '{ [s: string]: unknown; } | ArrayLike<unknown>'.
+      Type 'undefined' is not assignable to type '{ [s: string]: unknown; } | ArrayLike<unknown>'.
+  Overload 2 of 2, '(o: {}): [string, any][]', gave the following error.
+    Argument of type 'Record<string, unknown> | undefined' is not assignable to parameter of type '{}'.
+      Type 'undefined' is not assignable to type '{}'.
+src/components/events/GestorEventos.tsx(99,12): error TS6133: 'error' is declared but its value is never read.
+src/components/events/GestorEventos.tsx(253,87): error TS2345: Argument of type '{ organizationId: string | null | undefined; type: EventType; status: EventStatus; id?: string; name: string; description: string; estado: EventStatus; tipo: EventType; isPredefined: boolean; autoEvaluate: boolean; conditions: any[]; vehicles: string[]; }' is not assignable to parameter of type 'EventFormData'.
+  Types of property 'organizationId' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/events/GestorEventos.tsx(261,53): error TS2554: Expected 2 arguments, but got 1.
+src/components/events/GestorEventos.tsx(447,62): error TS2551: Property 'INACTIVE' does not exist on type 'typeof EventStatus'. Did you mean 'ACTIVE'?
+src/components/events/GestorEventos.tsx(448,62): error TS2339: Property 'TRIGGERED' does not exist on type 'typeof EventStatus'.
+src/components/EventTimeline.tsx(96,36): error TS6133: 'event' is declared but its value is never read.
+src/components/EventTimeline.tsx(188,44): error TS6133: 'index' is declared but its value is never read.
+src/components/GeometryMapEditor.tsx(19,7): error TS6133: 'DEFAULT_CENTER' is declared but its value is never read.
+src/components/GestorEventos.tsx(4,33): error TS2305: Module '"../types/events"' has no exported member 'EventSeverity'.
+src/components/GestorEventos.tsx(12,12): error TS6133: 'error' is declared but its value is never read.
+src/components/GestorEventos.tsx(20,9): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'CreateEventDTO | (() => CreateEventDTO)'.
+src/components/GestorEventos.tsx(27,12): error TS6133: 'isModalOpen' is declared but its value is never read.
+src/components/GestorEventos.tsx(61,57): error TS2339: Property 'severity' does not exist on type 'Event'.
+src/components/GestorEventos.tsx(62,62): error TS2339: Property 'severity' does not exist on type 'Event'.
+src/components/GestorEventos.tsx(67,13): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'SetStateAction<CreateEventDTO>'.
+src/components/GestorEventos.tsx(108,39): error TS2339: Property 'severity' does not exist on type 'CreateEventDTO'.
+src/components/GestorEventos.tsx(113,17): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'CreateEventDTO'.
+src/components/GestorEventos.tsx(122,65): error TS2345: Argument of type 'CreateEventDTO' is not assignable to parameter of type 'EventFormData'.
+  Type 'CreateEventDTO' is missing the following properties from type 'EventFormData': type, status, organizationId
+src/components/GestorEventos.tsx(142,17): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'SetStateAction<CreateEventDTO>'.
+src/components/GestorEventos.tsx(184,33): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'SetStateAction<CreateEventDTO>'.
+src/components/GestorEventos.tsx(247,81): error TS2339: Property 'severity' does not exist on type 'Event'.
+src/components/GestorEventos.tsx(248,52): error TS2339: Property 'severity' does not exist on type 'Event'.
+src/components/GestorEventos.tsx(254,76): error TS2339: Property 'PENDING' does not exist on type 'typeof EventStatus'.
+src/components/GestorEventos.tsx(286,53): error TS2339: Property 'severity' does not exist on type 'CreateEventDTO'.
+src/components/GestorEventos.tsx(287,81): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'SetStateAction<CreateEventDTO>'.
+src/components/GPSMap.tsx(77,7): error TS6133: 'formatEventValues' is declared but its value is never read.
+src/components/GPSMap.tsx(160,124): error TS6133: 'fallbackDesc' is declared but its value is never read.
+src/components/GPSMap.tsx(161,11): error TS6133: 'stabilityPairs' is declared but its value is never read.
+src/components/GPSMap.tsx(164,11): error TS6133: 'varLabels' is declared but its value is never read.
+src/components/GPSMap.tsx(171,11): error TS6133: 'formatValue' is declared but its value is never read.
+src/components/GPSMap.tsx(263,11): error TS6133: 'pretty' is declared but its value is never read.
+src/components/GPSMap.tsx(386,25): error TS6133: 'routeSegments' is declared but its value is never read.
+src/components/Header/index.tsx(21,31): error TS6133: 'setNotificationCount' is declared but its value is never read.
+src/components/LanguageSwitcher.tsx(9,11): error TS6133: 't' is declared but its value is never read.
+src/components/Layout/index.tsx(1,27): error TS2307: Cannot find module '@chakra-ui/react' or its corresponding type declarations.
+src/components/Layout/index.tsx(6,1): error TS6133: 't' is declared but its value is never read.
+src/components/Layout/index.tsx(11,14): error TS2739: Type '{}' is missing the following properties from type 'SidebarProps': open, onClose
+src/components/Layout/Layout.tsx(25,9): error TS6133: 'navigate' is declared but its value is never read.
+src/components/Layout/Navbar.tsx(10,52): error TS2339: Property 'auth' does not exist on type '{ alert: AlertState; telemetry: TelemetryState; }'.
+src/components/Layout/Sidebar.tsx(9,9): error TS6133: 'navigate' is declared but its value is never read.
+src/components/Layout/Sidebar.tsx(10,9): error TS6133: 'location' is declared but its value is never read.
+src/components/Login.tsx(8,11): error TS6133: 'navigate' is declared but its value is never read.
+src/components/ManagementDashboard.tsx(64,11): error TS6133: 'handleVehicleSelect' is declared but its value is never read.
+src/components/ManagementDashboard.tsx(120,48): error TS6133: 'idx' is declared but its value is never read.
+src/components/MultiVehicleSelector.tsx(48,30): error TS2339: Property 'authLoading' does not exist on type 'AuthContextType'.
+src/components/NotificationManager.tsx(17,57): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(23,53): error TS2339: Property 'id' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(34,25): error TS2339: Property 'message' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(34,49): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(34,87): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(34,125): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(42,87): error TS2339: Property 'id' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(46,91): error TS2339: Property 'id' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(47,52): error TS2339: Property 'resolved' does not exist on type 'StabilityEvent'.
+src/components/NotificationManager.tsx(47,96): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/OptimizedEventList.tsx(52,11): error TS6133: 'getLevelColor' is declared but its value is never read.
+src/components/OptimizedEventList.tsx(87,44): error TS2304: Cannot find name 'selectedIds'.
+src/components/OptimizedEventList.tsx(87,71): error TS2339: Property 'id' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(87,142): error TS2304: Cannot find name 'handleSelect'.
+src/components/OptimizedEventList.tsx(87,161): error TS2339: Property 'id' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(164,56): error TS2339: Property 'vehicleId' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(165,50): error TS2339: Property 'parkId' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(171,21): error TS2339: Property 'vehicleId' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(178,11): error TS6133: 'handleSelect' is declared but its value is never read.
+src/components/OptimizedEventList.tsx(183,57): error TS2339: Property 'id' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(187,101): error TS2339: Property 'id' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(221,27): error TS2339: Property 'vehicleId' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(222,24): error TS2339: Property 'parkId' does not exist on type 'StabilityIndexEvent'.
+src/components/OptimizedEventList.tsx(302,14): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: FixedSizeListProps<{ events: StabilityIndexEvent[]; onEventClick?: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId?: string | null | undefined; }>): FixedSizeList<...>', gave the following error.
+    Property 'width' is missing in type '{ children: FC<EventItemProps>; height: number; itemCount: number; itemSize: number; itemData: { events: StabilityIndexEvent[]; onEventClick: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId: string | ... 1 more ... | undefined; }; overscanCount: number; }' but required in type 'Readonly<FixedSizeListProps<{ events: StabilityIndexEvent[]; onEventClick?: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId?: string | null | undefined; }>>'.
+  Overload 2 of 2, '(props: FixedSizeListProps<{ events: StabilityIndexEvent[]; onEventClick?: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId?: string | null | undefined; }>, context: any): FixedSizeList<...>', gave the following error.
+    Property 'width' is missing in type '{ children: FC<EventItemProps>; height: number; itemCount: number; itemSize: number; itemData: { events: StabilityIndexEvent[]; onEventClick: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId: string | ... 1 more ... | undefined; }; overscanCount: number; }' but required in type 'Readonly<FixedSizeListProps<{ events: StabilityIndexEvent[]; onEventClick?: ((event: StabilityIndexEvent) => void) | undefined; selectedEventId?: string | null | undefined; }>>'.
+src/components/ParkKPIWidget.tsx(28,12): error TS6133: 'filters' is declared but its value is never read.
+src/components/ProcessingDashboard.tsx(624,29): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(props: { href: string; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<Omit<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, "ref"> & { ...; }, "children" | ... 24 more ... | "startIcon">): Element', gave the following error.
+    Type '"default" | "primary"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 2 of 3, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<...>): Element | null', gave the following error.
+    Type '"default" | "primary"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 3 of 3, '(props: DefaultComponentProps<ExtendButtonBaseTypeMap<ButtonTypeMap<{}, "button">>>): Element | null', gave the following error.
+    Type '"default" | "primary"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+src/components/ProcessingDashboard.tsx(632,29): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(props: { href: string; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<Omit<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, "ref"> & { ...; }, "children" | ... 24 more ... | "startIcon">): Element', gave the following error.
+    Type '"error" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 2 of 3, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<...>): Element | null', gave the following error.
+    Type '"error" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 3 of 3, '(props: DefaultComponentProps<ExtendButtonBaseTypeMap<ButtonTypeMap<{}, "button">>>): Element | null', gave the following error.
+    Type '"error" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+src/components/ProcessingDashboard.tsx(640,29): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(props: { href: string; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<Omit<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, "ref"> & { ...; }, "children" | ... 24 more ... | "startIcon">): Element', gave the following error.
+    Type '"info" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 2 of 3, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<...>): Element | null', gave the following error.
+    Type '"info" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+  Overload 3 of 3, '(props: DefaultComponentProps<ExtendButtonBaseTypeMap<ButtonTypeMap<{}, "button">>>): Element | null', gave the following error.
+    Type '"info" | "default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+      Type '"default"' is not assignable to type 'OverridableStringUnion<"info" | "success" | "error" | "inherit" | "primary" | "secondary" | "warning", ButtonPropsColorOverrides> | undefined'.
+src/components/RealTimeData.tsx(50,11): error TS6133: 'latestCANData' is declared but its value is never read.
+src/components/RealTimeData.tsx(65,11): error TS6133: 'latestGPSData' is declared but its value is never read.
+src/components/RealTimeData.tsx(76,11): error TS6133: 'formatValue' is declared but its value is never read.
+src/components/RealTimeMetrics.tsx(17,11): error TS6133: 'theme' is declared but its value is never read.
+src/components/RealTimeSensors.tsx(28,7): error TS6133: 'generateNoisyValue' is declared but its value is never read.
+src/components/RealTimeSensors.tsx(121,15): error TS6133: 'now' is declared but its value is never read.
+src/components/RealTimeSensors.tsx(251,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; threshold: { min: number; max: number; }; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/RealTimeSensors.tsx(264,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; threshold: { min: number; max: number; }; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/RealTimeSensors.tsx(279,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; threshold: { min: number; max: number; }; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/RealTimeSensors.tsx(292,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/RealTimeSensors.tsx(306,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/RealTimeSensors.tsx(318,21): error TS2322: Type '{ title: string; data: SimulatedDataPoint[]; sensorType: string; timeWindow: number; updateInterval: number; showDerivative: boolean; showFFT: boolean; tickInterval: number; decimationFactor: number; }' is not assignable to type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AdvancedSensorChartProps'.
+src/components/reports/ProfessionalReportGenerator.tsx(84,31): error TS6133: 'sessionLoading' is declared but its value is never read.
+src/components/reports/ProfessionalReportGenerator.tsx(154,41): error TS2339: Property 'blob' does not exist on type 'void'.
+src/components/sessions/SessionDetails.tsx(40,10): error TS2724: '"../../services/sessions"' has no exported member named 'getSession'. Did you mean 'Session'?
+src/components/sessions/SessionDetails.tsx(41,1): error TS6133: 'SessionWithDetails' is declared but its value is never read.
+src/components/sessions/SessionDetails.tsx(80,44): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/sessions/SessionDetails.tsx(86,46): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/sessions/SessionDetails.tsx(92,46): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/sessions/SessionDetails.tsx(98,46): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/sessions/SessionDetails.tsx(208,34): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/components/sessions/SessionList.tsx(21,14): error TS6133: 'WarningIcon' is declared but its value is never read.
+src/components/sessions/SessionList.tsx(26,1): error TS6133: 'StabilitySession' is declared but its value is never read.
+src/components/sessions/SessionList.tsx(44,39): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/sessions/SessionList.tsx(89,35): error TS2339: Property 'session_number' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(91,42): error TS2339: Property 'session_timestamp' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(94,37): error TS2339: Property 'session_duration' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(95,35): error TS2339: Property 'session_type' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(98,34): error TS2339: Property 'session_status' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(99,47): error TS2339: Property 'session_status' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionList.tsx(107,54): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/components/sessions/SessionSelector.tsx(74,50): error TS2339: Property 'date' does not exist on type 'StabilitySession'.
+src/components/sessions/SessionSelector.tsx(74,105): error TS2339: Property 'duration' does not exist on type 'StabilitySession'.
+src/components/Sidebar/index.tsx(1,55): error TS2307: Cannot find module '@chakra-ui/react' or its corresponding type declarations.
+src/components/Sidebar/index.tsx(5,1): error TS6133: 't' is declared but its value is never read.
+src/components/SmartControlPanel.tsx(152,11): error TS6133: 'getPriorityIcon' is declared but its value is never read.
+src/components/SmartControlPanel.tsx(282,73): error TS6133: 'index' is declared but its value is never read.
+src/components/SmartControlPanel.tsx(290,88): error TS2345: Argument of type 'string' is not assignable to parameter of type 'StabilityIndexEvent'.
+src/components/SmartControlPanel.tsx(374,5): error TS6133: 'events' is declared but its value is never read.
+src/components/SmartControlPanel.tsx(470,74): error TS2367: This comparison appears to be unintentional because the types '"moderate" | "danger"' and '"critico"' have no overlap.
+src/components/StabilityChart.tsx(49,5): error TS6133: 'initialZoom' is declared but its value is never read.
+src/components/StabilityChart.tsx(93,19): error TS6133: 'event' is declared but its value is never read.
+src/components/StabilityChart.tsx(118,38): error TS6133: 'chart' is declared but its value is never read.
+src/components/StabilityChart.tsx(145,27): error TS6133: 'e' is declared but its value is never read.
+src/components/StabilityChart.tsx(145,52): error TS6133: 'legend' is declared but its value is never read.
+src/components/StabilityComparison.tsx(86,11): error TS6133: 'theme' is declared but its value is never read.
+src/components/StabilityComparison.tsx(89,12): error TS6133: 'loading' is declared but its value is never read.
+src/components/StabilityComparison.tsx(89,21): error TS6133: 'setLoading' is declared but its value is never read.
+src/components/StabilityComparison.tsx(90,12): error TS6133: 'error' is declared but its value is never read.
+src/components/StabilityComparison.tsx(90,19): error TS6133: 'setError' is declared but its value is never read.
+src/components/StabilityComparison.tsx(115,61): error TS2339: Property 'speed' does not exist on type 'StabilityDataPoint'.
+src/components/StabilityComparison.tsx(121,15): error TS7022: 'primaryMetrics' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/StabilityComparison.tsx(129,24): error TS2448: Block-scoped variable 'primaryMetrics' used before its declaration.
+src/components/StabilityComparison.tsx(130,17): error TS2448: Block-scoped variable 'primaryMetrics' used before its declaration.
+src/components/StabilityComparison.tsx(135,67): error TS2339: Property 'speed' does not exist on type 'StabilityDataPoint'.
+src/components/StabilityComparison.tsx(141,15): error TS7022: 'comparisonMetrics' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/StabilityComparison.tsx(149,24): error TS2448: Block-scoped variable 'comparisonMetrics' used before its declaration.
+src/components/StabilityComparison.tsx(150,17): error TS2448: Block-scoped variable 'comparisonMetrics' used before its declaration.
+src/components/StabilityComparison.tsx(498,33): error TS2322: Type '{ title: string; variables: { key: string; label: string; unit: string; group: string; }[]; }[]' is not assignable to type 'VariableGroup[]'.
+  Type '{ title: string; variables: { key: string; label: string; unit: string; group: string; }[]; }' is not assignable to type 'VariableGroup'.
+    Types of property 'variables' are incompatible.
+      Type '{ key: string; label: string; unit: string; group: string; }[]' is not assignable to type 'Variable[]'.
+        Type '{ key: string; label: string; unit: string; group: string; }' is not assignable to type 'Variable'.
+          Types of property 'key' are incompatible.
+            Type 'string' is not assignable to type 'keyof StabilityDataPoint'.
+src/components/StabilityComparison.tsx(516,33): error TS2322: Type '{ title: string; variables: { key: string; label: string; unit: string; group: string; }[]; }[]' is not assignable to type 'VariableGroup[]'.
+  Type '{ title: string; variables: { key: string; label: string; unit: string; group: string; }[]; }' is not assignable to type 'VariableGroup'.
+    Types of property 'variables' are incompatible.
+      Type '{ key: string; label: string; unit: string; group: string; }[]' is not assignable to type 'Variable[]'.
+        Type '{ key: string; label: string; unit: string; group: string; }' is not assignable to type 'Variable'.
+          Types of property 'key' are incompatible.
+            Type 'string' is not assignable to type 'keyof StabilityDataPoint'.
+src/components/StabilityDashboard.tsx(40,12): error TS6133: 'dataSimulationEnabled' is declared but its value is never read.
+src/components/StabilityEvents.tsx(13,19): error TS2339: Property 'resolved' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(14,19): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(19,19): error TS2339: Property 'resolved' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(20,19): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(37,73): error TS2339: Property 'message' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(39,51): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(40,51): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/StabilityEvents.tsx(41,51): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/StabilityMetrics.tsx(46,40): error TS2339: Property 'rsc' does not exist on type 'StabilityMetrics'.
+src/components/StabilityMetrics.tsx(48,76): error TS2339: Property 'rsc' does not exist on type 'StabilityMetrics'.
+src/components/StabilitySession.tsx(15,11): error TS6196: 'StabilityMeasurement' is declared but never used.
+src/components/StabilitySession.tsx(93,19): error TS2339: Property 'resolved' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(94,19): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(99,19): error TS2339: Property 'resolved' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(100,19): error TS2339: Property 'acknowledged' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(274,85): error TS2339: Property 'message' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(276,63): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(277,63): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/StabilitySession.tsx(278,63): error TS2339: Property 'metrics' does not exist on type 'StabilityEvent'.
+src/components/TelemetryChart.tsx(46,5): error TS6133: 'handleVariableChange' is declared but its value is never read.
+src/components/TelemetryChart.tsx(50,12): error TS6133: 'zoom' is declared but its value is never read.
+src/components/TelemetryChart.tsx(124,19): error TS6133: 'event' is declared but its value is never read.
+src/components/TelemetryChart.tsx(144,13): error TS18048: 'ref.current.options.plugins' is possibly 'undefined'.
+src/components/TelemetryChart.tsx(144,13): error TS18048: 'ref.current.options.plugins.zoom' is possibly 'undefined'.
+src/components/TelemetryChart.tsx(144,13): error TS18048: 'ref.current.options.plugins.zoom.zoom' is possibly 'undefined'.
+src/components/TelemetryChart.tsx(145,33): error TS18047: 'ref.current' is possibly 'null'.
+src/components/TelemetryChart.tsx(146,25): error TS2345: Argument of type 'number' is not assignable to parameter of type 'SetStateAction<{ x: number; y: number; } | null>'.
+src/components/TelemetryChart.tsx(147,32): error TS2345: Argument of type 'number' is not assignable to parameter of type '{ x: number; y: number; }'.
+src/components/TelemetryChart.tsx(163,19): error TS2322: Type 'ForwardedRef<Chart<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint | null)[], unknown>>' is not assignable to type 'ForwardedRef<ChartJSOrUndefined<"line", (number | [number, number] | Point | BubbleDataPoint | null)[], unknown>> | undefined'.
+  Type '(instance: Chart<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null) => void' is not assignable to type 'ForwardedRef<ChartJSOrUndefined<"line", (number | [number, number] | Point | BubbleDataPoint | null)[], unknown>> | undefined'.
+    Type '(instance: Chart<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null) => void' is not assignable to type '(instance: ChartJSOrUndefined<"line", (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null) => void'.
+      Types of parameters 'instance' and 'instance' are incompatible.
+        Type 'ChartJSOrUndefined<"line", (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null' is not assignable to type 'Chart<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null'.
+          Type 'undefined' is not assignable to type 'Chart<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint | null)[], unknown> | null'.
+src/components/TelemetryChat.tsx(27,10): error TS2614: Module '"../config/constants"' has no exported member 'FEATURE_FLAGS'. Did you mean to use 'import FEATURE_FLAGS from "../config/constants"' instead?
+src/components/TelemetryChat.tsx(323,102): error TS2339: Property 'timezone' does not exist on type 'User'.
+src/components/TelemetryEvents.tsx(46,69): error TS2339: Property 'inclination' does not exist on type '{ speed: number; temperature: number; altitude: number; }'.
+src/components/TelemetryEvents.tsx(47,63): error TS2339: Property 'load' does not exist on type '{ speed: number; temperature: number; altitude: number; }'.
+src/components/TelemetryMetrics.tsx(16,40): error TS2339: Property 'speed' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(19,78): error TS2339: Property 'speed' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(27,40): error TS2339: Property 'inclination' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(30,84): error TS2339: Property 'inclination' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(38,40): error TS2339: Property 'load' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(41,77): error TS2339: Property 'load' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(49,40): error TS2551: Property 'temperature' does not exist on type 'TelemetryMetrics'. Did you mean 'maxTemperature'?
+src/components/TelemetryMetrics.tsx(52,84): error TS2551: Property 'temperature' does not exist on type 'TelemetryMetrics'. Did you mean 'maxTemperature'?
+src/components/TelemetryMetrics.tsx(60,40): error TS2339: Property 'altitude' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMetrics.tsx(63,81): error TS2339: Property 'altitude' does not exist on type 'TelemetryMetrics'.
+src/components/TelemetryMonitor.tsx(47,11): error TS6133: 'checkThresholds' is declared but its value is never read.
+src/components/TelemetryMonitor.tsx(85,40): error TS6133: 'level' is declared but its value is never read.
+src/components/TestLogin.tsx(11,56): error TS2551: Property 'access_token' does not exist on type 'AuthResponse'. Did you mean 'accessToken'?
+src/components/ui/Alert.tsx(3,1): error TS6133: 't' is declared but its value is never read.
+src/components/ui/Input.tsx(2,1): error TS6133: 't' is declared but its value is never read.
+src/components/ui/Modal.tsx(2,1): error TS6133: 't' is declared but its value is never read.
+src/components/ui/Select.tsx(2,1): error TS6133: 't' is declared but its value is never read.
+src/components/VehicleInfoPanel.tsx(34,28): error TS2554: Expected 2 arguments, but got 1.
+src/components/VehicleInfoPanel.tsx(35,59): error TS18046: 'v' is of type 'unknown'.
+src/components/VehicleInfoPanel.tsx(35,75): error TS18046: 'v' is of type 'unknown'.
+src/components/VehicleInfoPanel.tsx(48,76): error TS2339: Property 'licensePlate' does not exist on type 'Vehicle'.
+src/components/vehicles/SessionSelectDialog.tsx(40,5): error TS6133: 'loading' is declared but its value is never read.
+src/components/vehicles/VehicleCard.tsx(9,3): error TS6133: 'IconButton' is declared but its value is never read.
+src/components/vehicles/VehicleCard.tsx(19,1): error TS6133: 't' is declared but its value is never read.
+src/components/vehicles/VehicleCard.tsx(59,57): error TS2339: Property 'year' does not exist on type 'VehicleWithStats'.
+src/components/vehicles/VehicleCard.tsx(64,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ readonly active: "success"; readonly inactive: "default"; readonly maintenance: "warning"; }'.
+  No index signature with a parameter of type 'string' was found on type '{ readonly active: "success"; readonly inactive: "default"; readonly maintenance: "warning"; }'.
+src/components/vehicles/VehicleCard.tsx(73,50): error TS2551: Property 'total_sessions' does not exist on type 'VehicleStats'. Did you mean 'totalSessions'?
+src/components/vehicles/VehicleCard.tsx(81,24): error TS2551: Property 'total_distance' does not exist on type 'VehicleStats'. Did you mean 'totalDistance'?
+src/components/vehicles/VehicleCard.tsx(82,31): error TS2551: Property 'total_distance' does not exist on type 'VehicleStats'. Did you mean 'totalDistance'?
+src/components/vehicles/VehicleCard.tsx(82,54): error TS2551: Property 'total_duration' does not exist on type 'VehicleStats'. Did you mean 'totalDuration'?
+src/components/vehicles/VehicleCard.tsx(93,32): error TS2339: Property 'last_critical_event' does not exist on type 'VehicleStats'.
+src/components/vehicles/VehicleCard.tsx(98,24): error TS2551: Property 'sessions_with_events' does not exist on type 'VehicleStats'. Did you mean 'sessionsWithEvents'?
+src/components/vehicles/VehicleDetails.tsx(28,10): error TS2305: Module '"../../services/vehicles"' has no exported member 'getVehicleWithStats'.
+src/components/vehicles/VehicleList.tsx(41,36): error TS2339: Property 'licensePlate' does not exist on type 'Vehicle'.
+src/components/vehicles/VehicleList.tsx(97,34): error TS2339: Property 'licensePlate' does not exist on type 'Vehicle'.
+src/config/constants.ts(7,18): error TS2717: Subsequent property declarations must have the same type.  Property 'env' must be of type 'ImportMetaEnv', but here has type '{ readonly VITE_API_URL?: string | undefined; readonly VITE_LOG_LEVEL?: string | undefined; readonly NODE_ENV: "development" | "production" | "test"; }'.
+src/config/vehicles.ts(11,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(15,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(17,9): error TS2322: Type '"BOMBA_ESCALERA"' is not assignable to type 'VehicleType'.
+src/config/vehicles.ts(27,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(31,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(33,9): error TS2322: Type '"NODRIZA"' is not assignable to type 'VehicleType'.
+src/config/vehicles.ts(43,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(47,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(49,9): error TS2322: Type '"AUTOESCALA"' is not assignable to type 'VehicleType'.
+src/config/vehicles.ts(59,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(63,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(65,9): error TS2322: Type '"BOMBA_URBANA"' is not assignable to type 'VehicleType'.
+src/config/vehicles.ts(75,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(79,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/config/vehicles.ts(81,9): error TS2322: Type '"UNIDAD_RESCATE"' is not assignable to type 'VehicleType'.
+src/contexts/NotificationContext.tsx(22,58): error TS6133: 'duration' is declared but its value is never read.
+src/contexts/NotificationContext.tsx(27,24): error TS6133: 'event' is declared but its value is never read.
+src/contexts/ThemeContext.tsx(3,10): error TS2614: Module '"../theme"' has no exported member 'theme'. Did you mean to use 'import theme from "../theme"' instead?
+src/hooks/useAuth.ts(54,30): error TS2345: Argument of type '(prev: AuthState) => { isAuthenticated: true; user: ApiResponse<User>; isLoading: false; isInitialized: true; }' is not assignable to parameter of type 'SetStateAction<AuthState>'.
+  Type '(prev: AuthState) => { isAuthenticated: true; user: ApiResponse<User>; isLoading: false; isInitialized: true; }' is not assignable to type '(prevState: AuthState) => AuthState'.
+    Call signature return types '{ isAuthenticated: true; user: ApiResponse<User>; isLoading: false; isInitialized: true; }' and 'AuthState' are incompatible.
+      The types of 'user' are incompatible between these types.
+        Type 'ApiResponse<User>' is missing the following properties from type 'User': id, email, name, role, and 4 more.
+src/hooks/useCache.ts(15,24): error TS2304: Cannot find name 'T'.
+src/hooks/useDashboardData.ts(26,52): error TS2551: Property 'loadDashboardData' does not exist on type 'DataService'. Did you mean 'saveDashboardData'?
+src/hooks/useDashboardStats.ts(49,26): error TS2345: Argument of type '{ success: boolean; data: DashboardStats; }' is not assignable to parameter of type 'SetStateAction<DashboardStats | null>'.
+src/hooks/useMemoizedGPSData.ts(25,11): error TS6196: 'CANPoint' is declared but never used.
+src/hooks/useMemoizedGPSData.ts(89,11): error TS6133: 'filteredGPSData' is declared but its value is never read.
+src/hooks/useSimulatedEvents.ts(2,10): error TS2459: Module '"./useStabilityData"' declares 'TelemetryData' locally, but it is not exported.
+src/hooks/useSimulatedEvents.ts(18,7): error TS6133: 'EVENT_TYPES' is declared but its value is never read.
+src/hooks/useStabilityData.ts(83,11): error TS6196: 'Session' is declared but never used.
+src/hooks/useStabilityData.ts(131,60): error TS6133: 'sessionId' is declared but its value is never read.
+src/hooks/useStabilityData.ts(137,32): error TS6133: 'setAcknowledgedEvents' is declared but its value is never read.
+src/hooks/useStabilityData_backup.ts(74,11): error TS6196: 'Session' is declared but never used.
+src/hooks/useStabilityData_backup.ts(108,60): error TS6133: 'sessionId' is declared but its value is never read.
+src/hooks/useStabilityIndexEvents.ts(6,11): error TS6196: 'GPSPoint' is declared but never used.
+src/hooks/useStabilityIndexEvents.ts(13,11): error TS6196: 'CANPoint' is declared but never used.
+src/hooks/useStabilitySession.ts(51,32): error TS2339: Property 'metrics' does not exist on type '{ timestamp: string; ax: number; ay: number; az: number; gx: number; gy: number; gz: number; roll: number; pitch: number; yaw: number; timeantwifi: number; usciclo1: number; usciclo2: number; usciclo3: number; ... 4 more ...; microsds: number; }'.
+src/hooks/useStabilitySession.ts(52,32): error TS2339: Property 'metrics' does not exist on type '{ timestamp: string; ax: number; ay: number; az: number; gx: number; gy: number; gz: number; roll: number; pitch: number; yaw: number; timeantwifi: number; usciclo1: number; usciclo2: number; usciclo3: number; ... 4 more ...; microsds: number; }'.
+src/hooks/useStabilitySession.ts(53,32): error TS2339: Property 'metrics' does not exist on type '{ timestamp: string; ax: number; ay: number; az: number; gx: number; gy: number; gz: number; roll: number; pitch: number; yaw: number; timeantwifi: number; usciclo1: number; usciclo2: number; usciclo3: number; ... 4 more ...; microsds: number; }'.
+src/hooks/useTelemetryDashboard.ts(147,17): error TS2353: Object literal may only specify known properties, and 'vehicleId' does not exist in type 'AxiosRequestConfig<any>'.
+src/hooks/useTelemetryDashboard.ts(183,23): error TS2353: Object literal may only specify known properties, and 'organizationId' does not exist in type 'AxiosRequestConfig<any>'.
+src/hooks/useTelemetryData.ts(44,11): error TS6133: 'intervalRef' is declared but its value is never read.
+src/hooks/useVehicleKPI.ts(4,50): error TS6133: 'token' is declared but its value is never read.
+src/hooks/useVehicleKPI.ts(4,65): error TS6133: 'date' is declared but its value is never read.
+src/hooks/useVehicles.ts(14,44): error TS2345: Argument of type '{} | undefined' is not assignable to parameter of type 'SetStateAction<any[]>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<any[]>'.
+src/i18n/index.ts(2,32): error TS6133: 'options' is declared but its value is never read.
+src/pages/Admin.tsx(58,10): error TS6133: 'loading' is declared but its value is never read.
+src/pages/AdminSystem.tsx(73,12): error TS6133: 'loading' is declared but its value is never read.
+src/pages/AdminSystem.tsx(74,12): error TS6133: 'dialogOpen' is declared but its value is never read.
+src/pages/AdminSystem.tsx(74,24): error TS6133: 'setDialogOpen' is declared but its value is never read.
+src/pages/AdminSystem.tsx(75,12): error TS6133: 'dialogType' is declared but its value is never read.
+src/pages/AdminSystem.tsx(75,24): error TS6133: 'setDialogType' is declared but its value is never read.
+src/pages/AdminSystem.tsx(76,12): error TS6133: 'editingItem' is declared but its value is never read.
+src/pages/AdminSystem.tsx(76,25): error TS6133: 'setEditingItem' is declared but its value is never read.
+src/pages/AdminSystem.tsx(77,12): error TS6133: 'formData' is declared but its value is never read.
+src/pages/AdminSystem.tsx(77,22): error TS6133: 'setFormData' is declared but its value is never read.
+src/pages/AdminSystem.tsx(184,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/AIAnalysis.tsx(49,12): error TS6133: 'data' is declared but its value is never read.
+src/pages/AIStability.tsx(101,11): error TS6133: 'handleGenerateReport' is declared but its value is never read.
+src/pages/Alerts.tsx(11,65): error TS2551: Property 'alerts' does not exist on type '{ alert: AlertState; telemetry: TelemetryState; }'. Did you mean 'alert'?
+src/pages/Alerts.tsx(64,22): error TS7006: Parameter 'alert' implicitly has an 'any' type.
+src/pages/Analytics.tsx(48,26): error TS2322: Type '{ data: { date: string; value: number; type: string; }[]; xField: string; yField: string; seriesField: string; yAxis: { title: { text: string; }; }; xAxis: { title: { text: string; }; }; legend: { position: string; }; }' is not assignable to type 'LineConfig'.
+  Types of property 'legend' are incompatible.
+    Type '{ position: string; }' is not assignable to type 'Legend | undefined'.
+      Type '{ position: string; }' is not assignable to type 'LegendCfg'.
+        Types of property 'position' are incompatible.
+          Type 'string' is not assignable to type '"top" | "right" | "bottom" | "left" | "top-right" | "top-left" | "bottom-left" | "bottom-right" | "right-top" | "right-bottom" | "left-top" | "left-bottom" | undefined'.
+src/pages/auth/Login_backup.tsx(19,24): error TS2307: Cannot find module '../components/BackButton' or its corresponding type declarations.
+src/pages/auth/Login_backup.tsx(20,25): error TS2307: Cannot find module '../contexts/AuthContext' or its corresponding type declarations.
+src/pages/auth/Login_backup.tsx(21,24): error TS2307: Cannot find module '../utils/logger' or its corresponding type declarations.
+src/pages/CompareStability.tsx(262,11): error TS6133: 'getEventsData' is declared but its value is never read.
+src/pages/Dashboard.tsx(30,9): error TS6133: 'isAdmin' is declared but its value is never read.
+src/pages/Dashboard.tsx(31,10): error TS6133: 'regenLoading' is declared but its value is never read.
+src/pages/Dashboard.tsx(33,10): error TS6133: 'pdfLoading' is declared but its value is never read.
+src/pages/Dashboard.tsx(33,22): error TS6133: 'setPdfLoading' is declared but its value is never read.
+src/pages/Dashboard.tsx(34,23): error TS6133: 'setPdfFeedback' is declared but its value is never read.
+src/pages/Dashboard.tsx(36,9): error TS6133: 'handleRegenerarTodos' is declared but its value is never read.
+src/pages/Dashboard.tsx(101,24): error TS6133: 'setShowClusters' is declared but its value is never read.
+src/pages/Dashboard.tsx(117,26): error TS6133: 'setQualitySummary' is declared but its value is never read.
+src/pages/Dashboard.tsx(164,99): error TS6133: 'refetchLocations' is declared but its value is never read.
+src/pages/Dashboard.tsx(201,29): error TS6133: 'canTelemetryData' is declared but its value is never read.
+src/pages/Dashboard.tsx(201,58): error TS6133: 'maxSpeed' is declared but its value is never read.
+src/pages/Documentos.tsx(55,12): error TS6133: 'newDocument' is declared but its value is never read.
+src/pages/Documentos.tsx(66,9): error TS2304: Cannot find name 'get'.
+src/pages/Documentos.tsx(67,20): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/pages/Documentos.tsx(88,11): error TS6133: 'handleFileChange' is declared but its value is never read.
+src/pages/Documentos.tsx(97,11): error TS6133: 'handleUpload' is declared but its value is never read.
+src/pages/Documentos.tsx(198,33): error TS2552: Cannot find name 'handleAddDocumentSubmit'. Did you mean 'handleAddDocument'?
+src/pages/EnhancedDashboard.tsx(31,11): error TS6133: 'navigate' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(32,19): error TS6133: 'isAuthenticated' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(33,11): error TS6133: 'isAdmin' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(45,26): error TS6133: 'setShowClusters' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(63,51): error TS6133: 'locationsLoading' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(64,11): error TS6198: All destructured elements are unused.
+src/pages/EnhancedDashboard.tsx(65,37): error TS6133: 'stabilityLoading' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(66,47): error TS6133: 'eventsLoading' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(69,38): error TS2339: Property 'token' does not exist on type 'User'.
+src/pages/EnhancedDashboard.tsx(72,42): error TS6133: 'maxSpeed' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(125,11): error TS6133: 'handleError' is declared but its value is never read.
+src/pages/EnhancedDashboard.tsx(174,25): error TS2322: Type 'number' is not assignable to type '"events" | "general" | "analysis" | "timeline"'.
+src/pages/EnhancedDashboard.tsx(175,25): error TS2322: Type 'Dispatch<SetStateAction<number>>' is not assignable to type '(view: "events" | "general" | "analysis" | "timeline") => void'.
+  Types of parameters 'value' and 'view' are incompatible.
+    Type 'string' is not assignable to type 'SetStateAction<number>'.
+      Type 'string' is not assignable to type 'SetStateAction<number>'.
+src/pages/EnhancedDashboard.tsx(284,37): error TS2322: Type '{ events: StabilityIndexEvent[]; selectedVehicleId: string | null; selectedSession: any; onActionTaken: (actionId: any) => void; }' is not assignable to type 'IntrinsicAttributes & SmartControlPanelProps'.
+  Property 'selectedVehicleId' does not exist on type 'IntrinsicAttributes & SmartControlPanelProps'.
+src/pages/EnhancedDashboard.tsx(286,53): error TS7006: Parameter 'actionId' implicitly has an 'any' type.
+src/pages/Estabilidad.tsx(44,7): error TS6133: 'GPSMap' is declared but its value is never read.
+src/pages/Estabilidad.tsx(45,7): error TS6133: 'StabilityComparison' is declared but its value is never read.
+src/pages/Estabilidad.tsx(105,7): error TS6133: 'MainContainer' is declared but its value is never read.
+src/pages/Estabilidad.tsx(152,7): error TS6133: 'MetricsGrid' is declared but its value is never read.
+src/pages/Estabilidad.tsx(156,7): error TS6133: 'MetricCard' is declared but its value is never read.
+src/pages/Estabilidad.tsx(191,7): error TS6133: 'MapContainer' is declared but its value is never read.
+src/pages/Estabilidad.tsx(212,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/Estabilidad.tsx(213,11): error TS6133: 'navigate' is declared but its value is never read.
+src/pages/Estabilidad.tsx(222,12): error TS6133: 'selectedTab' is declared but its value is never read.
+src/pages/Estabilidad.tsx(245,12): error TS6133: 'comparisonSession' is declared but its value is never read.
+src/pages/Estabilidad.tsx(251,16): error TS6133: 'stabilityError' is declared but its value is never read.
+src/pages/Estabilidad.tsx(254,9): error TS2339: Property 'handleEventAcknowledged' does not exist on type '{ stabilityData: StabilityDataPoint[]; gpsData: GPSData[]; loading: boolean; error: string | null; criticalEvents: any[]; acknowledgedEvents: any[]; loadSessionData: (sessionId: string) => Promise<...>; }'.
+src/pages/Estabilidad.tsx(254,9): error TS6133: 'handleEventAcknowledged' is declared but its value is never read.
+src/pages/Estabilidad.tsx(259,11): error TS6198: All destructured elements are unused.
+src/pages/Estabilidad.tsx(263,29): error TS2339: Property 'lat' does not exist on type 'StabilityDataPoint'.
+src/pages/Estabilidad.tsx(264,30): error TS2339: Property 'lon' does not exist on type 'StabilityDataPoint'.
+src/pages/Estabilidad.tsx(265,26): error TS2339: Property 'speed' does not exist on type 'StabilityDataPoint'.
+src/pages/Estabilidad.tsx(279,11): error TS6133: 'stabilityMetrics' is declared but its value is never read.
+src/pages/Estabilidad.tsx(283,62): error TS2339: Property 'speed' does not exist on type 'StabilityDataPoint'.
+src/pages/Estabilidad.tsx(467,11): error TS6133: 'handleTabChange' is declared but its value is never read.
+src/pages/Estabilidad.tsx(467,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/Estabilidad.tsx(471,11): error TS6133: 'handleComparisonToggle' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(35,11): error TS6196: 'StabilityEvent' is declared but never used.
+src/pages/Estabilidadd.tsx(89,7): error TS6133: 'DRAWER_WIDTH' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(91,7): error TS6133: 'MainContainer' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(163,7): error TS6133: 'RealTimeDataContainer' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(174,7): error TS6133: 'DataBox' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(189,7): error TS6133: 'VariablePanel' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(201,7): error TS6133: 'VariableBox' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(223,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(231,12): error TS6133: 'hoveredPoint' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(252,12): error TS6133: 'updateCounter' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(253,12): error TS6133: 'lastUpdate' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(254,12): error TS6133: 'chartScale' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(255,12): error TS6133: 'chartOffset' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(260,12): error TS6133: 'selectionEnd' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(268,16): error TS6133: 'stabilityError' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(269,9): error TS6133: 'criticalEvents' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(270,9): error TS6133: 'acknowledgedEvents' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(271,9): error TS2339: Property 'handleEventAcknowledged' does not exist on type '{ stabilityData: StabilityDataPoint[]; gpsData: GPSData[]; loading: boolean; error: string | null; criticalEvents: any[]; acknowledgedEvents: any[]; loadSessionData: (sessionId: string) => Promise<...>; }'.
+src/pages/Estabilidadd.tsx(271,9): error TS6133: 'handleEventAcknowledged' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(273,9): error TS2554: Expected 2 arguments, but got 0.
+src/pages/Estabilidadd.tsx(275,11): error TS6133: 'navigate' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(374,11): error TS6133: 'handleExportData' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(400,11): error TS6133: 'handleMouseDown' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(417,11): error TS6133: 'handleMouseMove' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(446,11): error TS6133: 'handleMouseUp' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(470,11): error TS6133: 'handleDrawerToggle' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(474,11): error TS6133: 'handleZoomIn' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(482,11): error TS6133: 'handleZoomOut' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(490,11): error TS6133: 'handleResetZoom' is declared but its value is never read.
+src/pages/Estabilidadd.tsx(561,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(32,11): error TS6196: 'SessionComparison' is declared but never used.
+src/pages/EstabilidadInteligente.tsx(41,11): error TS6196: 'Vehicle' is declared but never used.
+src/pages/EstabilidadInteligente.tsx(59,12): error TS6133: 'data' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(60,12): error TS6133: 'patterns' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(65,32): error TS6133: 'vehiclesLoading' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(65,56): error TS6133: 'vehiclesError' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(168,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/EstabilidadInteligente.tsx(207,63): error TS2339: Property 'plateNumber' does not exist on type 'Vehicle'.
+src/pages/EstabilidadInteligente.tsx(374,114): error TS2339: Property 'session' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(375,134): error TS2339: Property 'ltrMedio' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(375,163): error TS2339: Property 'ltrMedio' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(376,134): error TS2339: Property 'drsMax' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(376,161): error TS2339: Property 'drsMax' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(377,134): error TS2339: Property 'eventosCriticos' does not exist on type 'Session'.
+src/pages/EstabilidadInteligente.tsx(378,134): error TS2339: Property 'rpmMedia' does not exist on type 'Session'.
+src/pages/Events.tsx(63,12): error TS6133: 'newEvent' is declared but its value is never read.
+src/pages/Events.tsx(63,22): error TS6133: 'setNewEvent' is declared but its value is never read.
+src/pages/Events.tsx(78,9): error TS2304: Cannot find name 'get'.
+src/pages/Events.tsx(79,20): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/pages/Events.tsx(86,18): error TS18046: 'list' is of type 'unknown'.
+src/pages/Events.tsx(86,45): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/pages/Events.tsx(105,11): error TS6133: 'handleTypeFilter' is declared but its value is never read.
+src/pages/Events.tsx(105,31): error TS6133: 'event' is declared but its value is never read.
+src/pages/Events.tsx(127,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddEventSubmit'.
+src/pages/Events.tsx(138,40): error TS2345: Argument of type '{ type: string; vehicleId: string; location: string; details: string; variables: {}; }' is not assignable to parameter of type 'FormEvent<HTMLFormElement>'.
+  Type '{ type: string; vehicleId: string; location: string; details: string; variables: {}; }' is missing the following properties from type 'FormEvent<HTMLFormElement>': nativeEvent, currentTarget, target, bubbles, and 10 more.
+src/pages/Events.tsx(144,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddEventSubmit'.
+src/pages/GestorEventos.tsx(204,25): error TS18046: 'data' is of type 'unknown'.
+src/pages/GestorEventos.tsx(490,33): error TS6133: 'type' is declared but its value is never read.
+src/pages/GestorEventos.tsx(653,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/GestorEventos.tsx(695,19): error TS6133: 'response' is declared but its value is never read.
+src/pages/KnowledgeBase.tsx(40,12): error TS6133: 'loading' is declared but its value is never read.
+src/pages/KPI7.tsx(3,24): error TS2307: Cannot find module 'react-helmet-async' or its corresponding type declarations.
+src/pages/KPI7.tsx(4,29): error TS2307: Cannot find module '../components/kpi/HeatmapView' or its corresponding type declarations.
+src/pages/KPI7.tsx(5,26): error TS2307: Cannot find module '../components/kpi/KpiCards' or its corresponding type declarations.
+src/pages/KPI7.tsx(6,30): error TS2307: Cannot find module '../components/kpi/SpeedingView' or its corresponding type declarations.
+src/pages/KPI7.tsx(7,33): error TS2307: Cannot find module '../components/layout/DashboardHeader' or its corresponding type declarations.
+src/pages/Notificaciones.tsx(53,12): error TS6133: 'newNotification' is declared but its value is never read.
+src/pages/Notificaciones.tsx(53,29): error TS6133: 'setNewNotification' is declared but its value is never read.
+src/pages/Notificaciones.tsx(92,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddNotificationSubmit'.
+src/pages/Notificaciones.tsx(102,47): error TS2345: Argument of type '{ title: string; message: string; type: string; priority: string; }' is not assignable to parameter of type 'FormEvent<HTMLFormElement>'.
+  Type '{ title: string; message: string; type: string; priority: string; }' is missing the following properties from type 'FormEvent<HTMLFormElement>': nativeEvent, currentTarget, target, bubbles, and 10 more.
+src/pages/Notificaciones.tsx(108,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddNotificationSubmit'.
+src/pages/Perfil.tsx(30,22): error TS2339: Property 'phone' does not exist on type 'User'.
+src/pages/Perfil.tsx(31,27): error TS2339: Property 'department' does not exist on type 'User'.
+src/pages/Perfil.tsx(32,25): error TS2339: Property 'position' does not exist on type 'User'.
+src/pages/Perfil.tsx(49,30): error TS2339: Property 'phone' does not exist on type 'User'.
+src/pages/Perfil.tsx(50,35): error TS2339: Property 'department' does not exist on type 'User'.
+src/pages/Perfil.tsx(51,33): error TS2339: Property 'position' does not exist on type 'User'.
+src/pages/ProcessingManagement.tsx(11,17): error TS2322: Type '{ title: string; subtitle: string; }' is not assignable to type 'IntrinsicAttributes & PageHeaderProps'.
+  Property 'subtitle' does not exist on type 'IntrinsicAttributes & PageHeaderProps'.
+src/pages/Reports.tsx(94,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/Reports.tsx(98,31): error TS6133: 'event' is declared but its value is never read.
+src/pages/Reports.tsx(107,53): error TS6133: 'fileName' is declared but its value is never read.
+src/pages/Settings.tsx(30,6): error TS6196: 'InputChangeHandler' is declared but never used.
+src/pages/Settings.tsx(51,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/Settings.tsx(67,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/Stability.tsx(31,11): error TS6196: 'Vehicle' is declared but never used.
+src/pages/Stability.tsx(65,11): error TS6196: 'SelectedVariables' is declared but never used.
+src/pages/Stability.tsx(127,12): error TS6133: 'events' is declared but its value is never read.
+src/pages/Stability.tsx(127,20): error TS6133: 'setEvents' is declared but its value is never read.
+src/pages/Stability.tsx(132,12): error TS6133: 'loadingSessions' is declared but its value is never read.
+src/pages/SubirSesion.tsx(40,16): error TS6133: 'analyzeGPSFile' is declared but its value is never read.
+src/pages/SubirSesion.tsx(95,12): error TS6133: 'descartes' is declared but its value is never read.
+src/pages/SubirSesion.tsx(96,12): error TS6133: 'diagnosticReport' is declared but its value is never read.
+src/pages/SubirSesion.tsx(110,12): error TS6133: 'pairing' is declared but its value is never read.
+src/pages/SubirSesion.tsx(110,21): error TS6133: 'setPairing' is declared but its value is never read.
+src/pages/SubirSesion.tsx(111,12): error TS6133: 'loadingPairing' is declared but its value is never read.
+src/pages/SubirSesion.tsx(111,28): error TS6133: 'setLoadingPairing' is declared but its value is never read.
+src/pages/SubirSesion.tsx(112,12): error TS6133: 'pairingError' is declared but its value is never read.
+src/pages/SubirSesion.tsx(112,26): error TS6133: 'setPairingError' is declared but its value is never read.
+src/pages/SubirSesion.tsx(123,12): error TS6133: 'loadingFiles' is declared but its value is never read.
+src/pages/SubirSesion.tsx(123,26): error TS6133: 'setLoadingFiles' is declared but its value is never read.
+src/pages/SubirSesion.tsx(132,12): error TS6133: 'loadingMassiveHeaders' is declared but its value is never read.
+src/pages/SubirSesion.tsx(138,11): error TS6133: 'navigate' is declared but its value is never read.
+src/pages/SubirSesion.tsx(230,11): error TS6133: 'groupFilesByBaseName' is declared but its value is never read.
+src/pages/SubirSesion.tsx(475,11): error TS6133: 'readServerFileHeaders' is declared but its value is never read.
+src/pages/SubirSesion.tsx(600,11): error TS6133: 'getFileTypeLabel' is declared but its value is never read.
+src/pages/SubirSesion.tsx(705,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/SubirSesion.tsx(717,24): error TS6133: 'err' is declared but its value is never read.
+src/pages/Telemetria.tsx(102,11): error TS6133: 'validSessions' is declared but its value is never read.
+src/pages/Telemetria.tsx(196,11): error TS6133: 'hasValidTemperatureData' is declared but its value is never read.
+src/pages/Telemetria.tsx(336,11): error TS6133: 'downsampleCAN' is declared but its value is never read.
+src/pages/Telemetria.tsx(503,79): error TS18048: 'metricsA.maxTemperature' is possibly 'undefined'.
+src/pages/Telemetria.tsx(504,79): error TS18048: 'metricsB.maxTemperature' is possibly 'undefined'.
+src/pages/Telemetria.tsx(584,7): error TS6133: 'AdvancedMetrics' is declared but its value is never read.
+src/pages/Telemetria.tsx(658,46): error TS2304: Cannot find name 'downsampleCAN'.
+src/pages/Telemetria.tsx(658,87): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/Telemetria.tsx(712,7): error TS6133: 'FileUpload' is declared but its value is never read.
+src/pages/Telemetria.tsx(937,11): error TS6196: 'ProcessedCANData' is declared but never used.
+src/pages/Telemetria.tsx(952,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/Telemetria.tsx(960,12): error TS6133: 'error' is declared but its value is never read.
+src/pages/Telemetria.tsx(968,12): error TS6133: 'refreshInterval' is declared but its value is never read.
+src/pages/Telemetria.tsx(968,29): error TS6133: 'setRefreshInterval' is declared but its value is never read.
+src/pages/Telemetria.tsx(969,20): error TS6133: 'setAlarms' is declared but its value is never read.
+src/pages/Telemetria.tsx(970,20): error TS6133: 'setEvents' is declared but its value is never read.
+src/pages/Telemetria.tsx(1160,11): error TS6133: 'latestGPSData' is declared but its value is never read.
+src/pages/Telemetria.tsx(1172,11): error TS6133: 'mapPoints' is declared but its value is never read.
+src/pages/Telemetria.tsx(1181,12): error TS6133: 'latestCANData' is declared but its value is never read.
+src/pages/Telemetria.tsx(1195,11): error TS6133: 'getAlarmColor' is declared but its value is never read.
+src/pages/Telemetria.tsx(1208,11): error TS6133: 'formatTimestamp' is declared but its value is never read.
+src/pages/Telemetria.tsx(1212,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/Telemetria.tsx(1216,11): error TS6133: 'handleVariableChange' is declared but its value is never read.
+src/pages/Telemetria.tsx(1242,11): error TS6133: 'hasValidTemperatureData' is declared but its value is never read.
+src/pages/Telemetria.tsx(1245,11): error TS6133: 'hasValidData' is declared but its value is never read.
+src/pages/TelemetryDashboard.tsx(125,30): error TS2339: Property 'simulateData' does not exist on type 'TelemetryService'.
+src/pages/TelemetryDashboard.tsx(180,39): error TS2322: Type 'number' is not assignable to type 'string'.
+src/pages/TelemetryDashboard.tsx(185,25): error TS2322: Type 'import("C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/types/index").Event[]' is not assignable to type 'import("C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/types/events").Event[]'.
+  Type 'Event' is missing the following properties from type 'Event': name, estado, tipo, isPredefined, and 2 more.
+src/pages/TelemetryDashboard.tsx(190,25): error TS2322: Type '(eventId: number, newStatus: string) => void' is not assignable to type '(status: string) => void'.
+  Target signature provides too few arguments. Expected 2 or more, but got 1.
+src/pages/TelemetryDashboard.tsx(196,25): error TS2322: Type 'import("C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/types/index").Alarm[]' is not assignable to type 'import("C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/types/alarm").Alarm[]'.
+  Type 'Alarm' is missing the following properties from type 'Alarm': description, createdAt, updatedAt
+src/pages/TelemetryDashboard.tsx(197,25): error TS2322: Type '(newAlarm: Omit<Alarm, "id">) => void' is not assignable to type '(alarm: Omit<Alarm, "id">) => Promise<void>'.
+  Types of parameters 'newAlarm' and 'alarm' are incompatible.
+    Type 'Omit<Alarm, "id">' is missing the following properties from type 'Omit<Alarm, "id">': severity, notifyEmail, notifySMS
+src/pages/TelemetryDashboard.tsx(198,25): error TS2322: Type '(editedAlarm: Alarm) => void' is not assignable to type '(alarm: Alarm) => Promise<void>'.
+  Types of parameters 'editedAlarm' and 'alarm' are incompatible.
+    Type 'Alarm' is missing the following properties from type 'Alarm': severity, notifyEmail, notifySMS
+src/pages/TelemetryDashboard.tsx(199,25): error TS2322: Type '(alarmId: number) => void' is not assignable to type '(alarmId: number) => Promise<void>'.
+  Type 'void' is not assignable to type 'Promise<void>'.
+src/pages/TelemetryKPIs.tsx(5,10): error TS2614: Module '"../config/constants"' has no exported member 'FEATURE_FLAGS'. Did you mean to use 'import FEATURE_FLAGS from "../config/constants"' instead?
+src/pages/TelemetryOverview.tsx(44,9): error TS6133: 'zones' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(48,9): error TS6133: 'loadingMap' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(56,11): error TS6133: 'selectedSession' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(67,11): error TS6133: 'selectedVehicleKpi' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(109,11): error TS6133: 'vehicleLocations' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(133,11): error TS6133: 'mapCenter' is declared but its value is never read.
+src/pages/TelemetryOverview.tsx(309,51): error TS2322: Type '{ token: string; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'token' does not exist on type 'IntrinsicAttributes'.
+src/pages/UploadData.tsx(67,30): error TS6133: 'event' is declared but its value is never read.
+src/pages/UploadData.tsx(82,11): error TS6133: 'handleBack' is declared but its value is never read.
+src/pages/UploadData.tsx(315,27): error TS6133: 'variant' is declared but its value is never read.
+src/pages/VehicleData.tsx(58,21): error TS2554: Expected 2 arguments, but got 4.
+src/pages/VehicleData.tsx(118,27): error TS2339: Property 'stability' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleData.tsx(121,44): error TS2339: Property 'stability' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleData.tsx(122,33): error TS2322: Type '{ data: any; title: string; sessionId: number; }' is not assignable to type 'IntrinsicAttributes & StabilityChartProps & RefAttributes<Chart<"line", (number | Point | null)[], unknown>>'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & StabilityChartProps & RefAttributes<Chart<"line", (number | Point | null)[], unknown>>'.
+src/pages/VehicleData.tsx(127,27): error TS2339: Property 'gps' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleData.tsx(130,33): error TS2322: Type '{ data: any; title: string; sessionId: number; }' is not assignable to type 'IntrinsicAttributes & GPSMapProps'.
+  Property 'data' does not exist on type 'IntrinsicAttributes & GPSMapProps'.
+src/pages/VehicleData.tsx(130,44): error TS2339: Property 'gps' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleData.tsx(136,27): error TS2339: Property 'can' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleData.tsx(139,44): error TS2339: Property 'can' does not exist on type 'VehicleDataResponse'.
+src/pages/VehicleDetails.tsx(14,59): error TS2339: Property 'vehicles' does not exist on type '{ alert: AlertState; telemetry: TelemetryState; }'.
+src/pages/VehicleDetails.tsx(89,29): error TS2322: Type '"danger"' is not assignable to type '"link" | "outline" | "primary" | "secondary" | "ghost" | undefined'.
+src/pages/VehicleDetails.tsx(178,29): error TS2322: Type '"danger"' is not assignable to type '"link" | "outline" | "primary" | "secondary" | "ghost" | undefined'.
+src/pages/Vehicles.tsx(49,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/Vehicles.tsx(50,11): error TS6133: 'user' is declared but its value is never read.
+src/pages/Vehicles.tsx(77,25): error TS18046: 'data' is of type 'unknown'.
+src/pages/VehicleSessions.tsx(53,11): error TS6133: 'theme' is declared but its value is never read.
+src/pages/VehicleSessions.tsx(56,11): error TS6133: 'user' is declared but its value is never read.
+src/pages/VehicleSessions.tsx(77,54): error TS2554: Expected 2 arguments, but got 1.
+src/pages/VehicleSessions.tsx(78,24): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<Vehicle | null>'.
+src/pages/VehicleSessions.tsx(398,51): error TS2339: Property 'plate' does not exist on type 'Vehicle'.
+src/pages/Vehiculos.tsx(60,9): error TS2304: Cannot find name 'get'.
+src/pages/Vehiculos.tsx(61,20): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/pages/Vehiculos.tsx(82,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddVehicleSubmit'.
+src/pages/Vehiculos.tsx(92,42): error TS2345: Argument of type '{ name: string; type: string; plateNumber: string; location: string; }' is not assignable to parameter of type 'FormEvent<HTMLFormElement>'.
+  Type '{ name: string; type: string; plateNumber: string; location: string; }' is missing the following properties from type 'FormEvent<HTMLFormElement>': nativeEvent, currentTarget, target, bubbles, and 10 more.
+src/pages/Vehiculos.tsx(98,11): error TS2451: Cannot redeclare block-scoped variable 'handleAddVehicleSubmit'.
+src/services/__tests__/StabilityAnalysisService.test.ts(1,1): error TS6133: 't' is declared but its value is never read.
+src/services/alert.service.ts(14,9): error TS2740: Type 'ApiResponse<unknown>' is missing the following properties from type 'Alert[]': length, pop, push, concat, and 29 more.
+src/services/alert.service.ts(18,9): error TS2739: Type 'ApiResponse<unknown>' is missing the following properties from type 'Alert': id, type, severity, timestamp, status
+src/services/alert.service.ts(22,9): error TS2322: Type 'ApiResponse<unknown>' is not assignable to type 'void'.
+src/services/alert.service.ts(26,9): error TS2322: Type 'ApiResponse<unknown>' is not assignable to type 'void'.
+src/services/api.ts(50,13): error TS2345: Argument of type '(config: ExtendedAxiosRequestConfig) => Promise<ExtendedAxiosRequestConfig>' is not assignable to parameter of type '(value: InternalAxiosRequestConfig<any>) => InternalAxiosRequestConfig<any> | Promise<InternalAxiosRequestConfig<any>>'.
+  Type 'Promise<ExtendedAxiosRequestConfig>' is not assignable to type 'InternalAxiosRequestConfig<any> | Promise<InternalAxiosRequestConfig<any>>'.
+    Type 'Promise<ExtendedAxiosRequestConfig>' is not assignable to type 'Promise<InternalAxiosRequestConfig<any>>'.
+      Type 'ExtendedAxiosRequestConfig' is not assignable to type 'InternalAxiosRequestConfig<any>'.
+        Types of property 'headers' are incompatible.
+          Type 'AxiosHeaders | (Partial<RawAxiosHeaders & { Accept: AxiosHeaderValue; "Content-Length": AxiosHeaderValue; "User-Agent": AxiosHeaderValue; "Content-Encoding": AxiosHeaderValue; Authorization: AxiosHeaderValue; } & { ...; }> & Partial<...>) | undefined' is not assignable to type 'AxiosRequestHeaders'.
+            Type 'undefined' is not assignable to type 'AxiosRequestHeaders'.
+              Type 'undefined' is not assignable to type 'Partial<RawAxiosHeaders & { Accept: AxiosHeaderValue; "Content-Length": AxiosHeaderValue; "User-Agent": AxiosHeaderValue; "Content-Encoding": AxiosHeaderValue; Authorization: AxiosHeaderValue; } & { ...; }>'.
+src/services/auth.ts(112,15): error TS2339: Property 'access_token' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(112,29): error TS2339: Property 'refresh_token' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(112,44): error TS2339: Property 'user' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(146,15): error TS2339: Property 'access_token' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(146,29): error TS2339: Property 'refresh_token' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(146,44): error TS2339: Property 'user' does not exist on type 'BackendResponse<LoginResponse>'.
+src/services/auth.ts(201,17): error TS2339: Property 'access_token' does not exist on type 'BackendResponse<RefreshResponse>'.
+src/services/auth.ts(201,31): error TS2339: Property 'refresh_token' does not exist on type 'BackendResponse<RefreshResponse>'.
+src/services/auth.ts(201,46): error TS2339: Property 'user' does not exist on type 'BackendResponse<RefreshResponse>'.
+src/services/auth.ts(232,46): error TS2339: Property 'valid' does not exist on type 'BackendResponse<{ valid: boolean; }>'.
+src/services/data.ts(21,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/data.ts(29,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/data.ts(37,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/data.ts(57,17): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'TelemetryData'.
+src/services/dataService.ts(21,22): error TS6133: 'baseURL' is declared but its value is never read.
+src/services/dataService.ts(196,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/dataService.ts(200,17): error TS2820: Type '"TRUCK"' is not assignable to type 'VehicleType'. Did you mean '"truck"'?
+src/services/dataService.ts(204,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/dataService.ts(208,17): error TS2820: Type '"VAN"' is not assignable to type 'VehicleType'. Did you mean '"van"'?
+src/services/events.ts(7,11): error TS6196: 'Vehicle' is declared but never used.
+src/services/fileService.ts(3,11): error TS6196: 'ApiResponse' is declared but never used.
+src/services/fileService.ts(35,13): error TS2322: Type 'ApiResponse<T>' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'ApiResponse<T>'.
+src/services/index.ts(9,15): error TS2306: File 'C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/services/vehicleService.ts' is not a module.
+src/services/sessions.ts(46,11): error TS6133: 'dataService' is declared but its value is never read.
+src/services/sessions.ts(306,5): error TS2740: Type 'ApiResponse<StabilitySession>' is missing the following properties from type 'StabilitySession': id, vehicleId, startTime, endTime, and 3 more.
+src/services/telemetryService.ts(74,5): error TS2740: Type 'ApiResponse<TelemetryData>' is missing the following properties from type 'TelemetryData': timestamp, speed, rpm, temperature, and 8 more.
+src/services/telemetryService.ts(81,5): error TS2740: Type 'ApiResponse<TelemetryData[]>' is missing the following properties from type 'TelemetryData[]': length, pop, push, concat, and 29 more.
+src/services/telemetryService.ts(85,5): error TS2740: Type 'ApiResponse<TelemetryData>' is missing the following properties from type 'TelemetryData': timestamp, speed, rpm, temperature, and 8 more.
+src/services/userService.ts(7,7): error TS2739: Type 'ApiResponse<AuthResponse>' is missing the following properties from type 'AuthResponse': user, access_token, refresh_token
+src/services/userService.ts(16,7): error TS2739: Type 'ApiResponse<AuthResponse>' is missing the following properties from type 'AuthResponse': user, access_token, refresh_token
+src/services/userService.ts(25,7): error TS2740: Type 'ApiResponse<User>' is missing the following properties from type 'User': id, email, name, role, and 2 more.
+src/services/userService.ts(34,7): error TS2740: Type 'ApiResponse<User[]>' is missing the following properties from type 'User[]': length, pop, push, concat, and 29 more.
+src/services/userService.ts(43,7): error TS2740: Type 'ApiResponse<User>' is missing the following properties from type 'User': id, email, name, role, and 2 more.
+src/services/userService.ts(52,7): error TS2740: Type 'ApiResponse<User>' is missing the following properties from type 'User': id, email, name, role, and 2 more.
+src/services/userService.ts(61,7): error TS2740: Type 'ApiResponse<User>' is missing the following properties from type 'User': id, email, name, role, and 2 more.
+src/services/vehicles.ts(39,11): error TS6196: 'ApiResponse' is declared but never used.
+src/services/vehicles.ts(45,38): error TS6133: 'token' is declared but its value is never read.
+src/services/vehicles.ts(54,50): error TS6133: 'token' is declared but its value is never read.
+src/services/vehicles.ts(60,48): error TS6133: 'token' is declared but its value is never read.
+src/services/vehicles.ts(66,60): error TS6133: 'token' is declared but its value is never read.
+src/services/vehicles.ts(72,49): error TS6133: 'token' is declared but its value is never read.
+src/services/websocket.ts(27,13): error TS6133: 'connected' is declared but its value is never read.
+src/services/websocket.ts(33,13): error TS6133: 'WS_URL' is declared but its value is never read.
+src/services/websocket.ts(34,13): error TS6133: 'wsHost' is declared but its value is never read.
+src/store/slices/alertSlice.ts(4,1): error TS6133: 't' is declared but its value is never read.
+src/store/slices/alertSlice.ts(89,17): error TS2740: Type 'ApiResponse<Alert[]>' is missing the following properties from type 'WritableDraft<AlertData>[]': length, pop, push, concat, and 29 more.
+src/store/slices/alertSlice.ts(101,17): error TS2740: Type 'ApiResponse<Alert>' is missing the following properties from type 'WritableDraft<Alert>': id, vehicleId, type, severity, and 4 more.
+src/store/slices/alertSlice.ts(108,83): error TS2339: Property 'id' does not exist on type 'ApiResponse<Alert>'.
+src/store/slices/alertSlice.ts(110,21): error TS2739: Type 'ApiResponse<Alert>' is missing the following properties from type 'WritableDraft<AlertData>': id, type, timestamp
+src/store/slices/alertSlice.ts(112,64): error TS2339: Property 'id' does not exist on type 'ApiResponse<Alert>'.
+src/store/slices/alertSlice.ts(113,21): error TS2740: Type 'ApiResponse<Alert>' is missing the following properties from type 'WritableDraft<Alert>': id, vehicleId, type, severity, and 4 more.
+src/store/slices/alertSlice.ts(117,83): error TS2339: Property 'id' does not exist on type 'ApiResponse<Alert>'.
+src/store/slices/alertSlice.ts(119,21): error TS2739: Type 'ApiResponse<Alert>' is missing the following properties from type 'WritableDraft<AlertData>': id, type, timestamp
+src/store/slices/alertSlice.ts(121,64): error TS2339: Property 'id' does not exist on type 'ApiResponse<Alert>'.
+src/store/slices/alertSlice.ts(122,21): error TS2740: Type 'ApiResponse<Alert>' is missing the following properties from type 'WritableDraft<Alert>': id, vehicleId, type, severity, and 4 more.
+src/store/slices/authSlice.ts(4,1): error TS6133: 't' is declared but its value is never read.
+src/store/slices/stabilitySlice.ts(3,1): error TS6133: 't' is declared but its value is never read.
+src/store/slices/stabilitySlice.ts(32,50): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/store/slices/stabilitySlice.ts(39,50): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/store/slices/stabilitySlice.ts(81,17): error TS2739: Type 'StabilitySession' is missing the following properties from type 'WritableDraft<StabilityData>': roll, pitch, yaw, timestamp
+src/store/slices/stabilitySlice.ts(93,17): error TS2322: Type 'StabilitySession[]' is not assignable to type 'WritableDraft<StabilityData>[]'.
+  Type 'StabilitySession' is missing the following properties from type 'WritableDraft<StabilityData>': roll, pitch, yaw, timestamp
+src/store/slices/stabilitySlice.ts(100,17): error TS2739: Type 'StabilitySession' is missing the following properties from type 'WritableDraft<StabilityData>': roll, pitch, yaw, timestamp
+src/store/slices/telemetrySlice.ts(4,1): error TS6133: 't' is declared but its value is never read.
+src/store/slices/telemetrySlice.ts(28,61): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Date'.
+src/store/slices/vehicleSlice.ts(2,32): error TS2306: File 'C:/Users/Cosigein SL/Desktop/DobackSoft/frontend/src/services/vehicleService.ts' is not a module.
+src/store/slices/vehicleSlice.ts(4,1): error TS6133: 't' is declared but its value is never read.
+src/test-auth.ts(1,10): error TS2305: Module '"./services/auth"' has no exported member 'auth'.
+src/test-auth.ts(3,1): error TS6133: 't' is declared but its value is never read.
+src/test-login.ts(2,1): error TS6133: 't' is declared but its value is never read.
+src/test-login.ts(10,48): error TS2551: Property 'access_token' does not exist on type 'AuthResponse'. Did you mean 'accessToken'?
+src/test-setup.ts(1,1): error TS6133: 't' is declared but its value is never read.
+src/test-setup.ts(5,15): error TS6133: 'key' is declared but its value is never read.
+src/test-setup.ts(6,15): error TS6133: 'key' is declared but its value is never read.
+src/test-setup.ts(6,28): error TS6133: 'value' is declared but its value is never read.
+src/test-setup.ts(7,18): error TS6133: 'key' is declared but its value is never read.
+src/test-setup.ts(9,11): error TS6133: 'index' is declared but its value is never read.
+src/theme.ts(2,1): error TS6133: 't' is declared but its value is never read.
+src/types/index.ts(20,1): error TS2308: Module './stability' has already exported a member named 'VariableGroup'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/index.ts(22,1): error TS2308: Module './domain' has already exported a member named 'Organization'. Consider explicitly re-exporting to resolve the ambiguity.
+src/types/stability.ts(288,36): error TS6133: 'dto' is declared but its value is never read.
+src/types/stability_backup.ts(277,36): error TS6133: 'dto' is declared but its value is never read.
+src/utils/createSuperAdmin.ts(26,53): error TS18046: 'authError' is of type 'unknown'.
+src/utils/createSuperAdmin.ts(45,68): error TS18046: 'authError' is of type 'unknown'.
+src/utils/createSuperAdmin.ts(45,98): error TS18046: 'directError' is of type 'unknown'.
+src/utils/eventTester.ts(42,19): error TS2741: Property 'autoEvaluate' is missing in type '{ name: string; description: string; estado: EventStatus.ACTIVE; tipo: EventType; isPredefined: false; conditions: never[]; vehicles: string[]; }' but required in type 'CreateEventDTO'.
+src/utils/eventTester.ts(85,19): error TS2741: Property 'autoEvaluate' is missing in type '{ name: string; description: string; estado: EventStatus.ACTIVE; tipo: EventType.STABILITY; isPredefined: false; conditions: never[]; vehicles: string[]; }' but required in type 'CreateEventDTO'.
+src/utils/eventTester.ts(124,19): error TS2741: Property 'autoEvaluate' is missing in type '{ name: string; description: string; estado: EventStatus.ACTIVE; tipo: EventType; isPredefined: false; conditions: never[]; vehicles: string[]; }' but required in type 'CreateEventDTO'.
+src/utils/eventTester.ts(155,21): error TS2551: Property 'INACTIVE' does not exist on type 'typeof EventStatus'. Did you mean 'ACTIVE'?
+src/utils/eventTester.ts(156,21): error TS2339: Property 'TRIGGERED' does not exist on type 'typeof EventStatus'.
+src/utils/eventTester.ts(164,19): error TS2741: Property 'autoEvaluate' is missing in type '{ name: string; description: string; estado: any; tipo: EventType.STABILITY; isPredefined: false; conditions: never[]; vehicles: string[]; }' but required in type 'CreateEventDTO'.
+src/utils/eventUtils.ts(1,10): error TS2305: Module '"../types/events"' has no exported member 'EventSeverity'.
+src/utils/exportData.ts(36,19): error TS2339: Property 'speed' does not exist on type 'StabilityDataPoint'.
+src/utils/stabilityCalculations.ts(162,9): error TS2353: Object literal may only specify known properties, and 'rsc' does not exist in type 'StabilityMetrics'.
+src/utils/stabilityCalculations.ts(185,15): error TS6133: 'ssf' is declared but its value is never read.
+src/utils/stabilityCalculations.ts(186,15): error TS6133: 'drs' is declared but its value is never read.
+src/utils/stabilityDataMapper.ts(37,9): error TS2353: Object literal may only specify known properties, and 'timeantwifi' does not exist in type 'StabilityDataPoint'.
+src/utils/stabilitySimulation.ts(2,46): error TS6133: 'StabilityEventType' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(18,7): error TS6133: 'generateTrendValue' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(86,7): error TS6133: 'generateTrafficEvent' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(115,21): error TS6133: 'type' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(145,11): error TS6133: 'baseDistance' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(178,26): error TS6133: 'time' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(178,55): error TS6133: 'progress' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(209,7): error TS6133: 'simulateDriverBehavior' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(209,33): error TS6133: 'time' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(232,7): error TS6133: 'getTargetSpeedForPhase' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(298,7): error TS6133: 'getPhaseParameters' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(365,7): error TS6133: 'baseSpeed' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(385,7): error TS6133: 'calculateNextStop' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(427,15): error TS6133: 'progress' is declared but its value is never read.
+src/utils/stabilitySimulation.ts(517,13): error TS2322: Type 'string' is not assignable to type 'number'.
+src/utils/stabilitySimulation.ts(539,17): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'StabilityEvent'.
+src/utils/stabilitySimulation.ts(540,23): error TS2693: 'StabilityEventType' only refers to a type, but is being used as a value here.
+src/utils/styled-components-config.ts(10,5): error TS2353: Object literal may only specify known properties, and 'compat' does not exist in type 'Options'.

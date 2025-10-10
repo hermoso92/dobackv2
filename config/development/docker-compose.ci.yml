@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/venv
+      - /app/__pycache__
+      - /app/.pytest_cache
+      - /app/.coverage
+      - /app/htmlcov
+      - /app/coverage.xml
+    environment:
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db:5432/DobackSoft_test
+      - CACHE_REDIS_URL=redis://redis:6379/0
+    command: >
+      sh -c "flask db upgrade &&
+             pytest --cov=src/app --cov-report=xml --cov-report=html &&
+             flake8 src/app &&
+             black --check src/app &&
+             isort --check-only src/app &&
+             mypy src/app &&
+             bandit -r src/app"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_ci_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=DobackSoft_test
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_ci_data:/data
+
+volumes:
+  postgres_ci_data:
+  redis_ci_data: 

@@ -1,0 +1,17 @@
+{
+  "name": "auto-import-service",
+  "version": "1.0.0",
+  "description": "Servicio de importación automática de datos de vehículos",
+  "main": "autoImport.ts",
+  "scripts": {
+    "start": "ts-node autoImport.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19"
+  }
+} 

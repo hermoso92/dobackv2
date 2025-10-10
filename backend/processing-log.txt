@@ -1,0 +1,95 @@
+[2025-09-16T12:46:01.462Z] 🚀 INICIANDO PROCESAMIENTO CON SEGUIMIENTO COMPLETO
+[2025-09-16T12:46:01.465Z] 📅 Fecha de inicio: 2025-09-16T12:46:01.461Z
+[2025-09-16T12:46:01.538Z] ✅ Organización encontrada: CMadrid (ID: 6c2bdfc3-01c1-4b2c-b0f0-a136563fa5f0)
+[2025-09-16T12:46:01.538Z] 📊 CONTANDO ARCHIVOS TOTALES...
+[2025-09-16T12:46:01.540Z]   📁 doback022/estabilidad: 21 archivos
+[2025-09-16T12:46:01.540Z]   📁 doback022/CAN: 36 archivos
+[2025-09-16T12:46:01.540Z]   📁 doback022/GPS: 44 archivos
+[2025-09-16T12:46:01.541Z]   📁 doback022/ROTATIVO: 48 archivos
+[2025-09-16T12:46:01.543Z]   📁 doback023/estabilidad: 3325 archivos
+[2025-09-16T12:46:01.544Z]   📁 doback023/GPS: 287 archivos
+[2025-09-16T12:46:01.545Z]   📁 doback023/ROTATIVO: 326 archivos
+[2025-09-16T12:46:01.546Z]   📁 doback024/estabilidad: 480 archivos
+[2025-09-16T12:46:01.547Z]   📁 doback024/CAN: 2 archivos
+[2025-09-16T12:46:01.547Z]   📁 doback024/GPS: 305 archivos
+[2025-09-16T12:46:01.548Z]   📁 doback024/ROTATIVO: 314 archivos
+[2025-09-16T12:46:01.550Z]   📁 doback025/estabilidad: 2122 archivos
+[2025-09-16T12:46:01.551Z]   📁 doback025/CAN: 10 archivos
+[2025-09-16T12:46:01.552Z]   📁 doback025/GPS: 778 archivos
+[2025-09-16T12:46:01.553Z]   📁 doback025/ROTATIVO: 1295 archivos
+[2025-09-16T12:46:01.554Z]   📁 doback027/estabilidad: 470 archivos
+[2025-09-16T12:46:01.555Z]   📁 doback027/CAN: 390 archivos
+[2025-09-16T12:46:01.556Z]   📁 doback027/GPS: 403 archivos
+[2025-09-16T12:46:01.557Z]   📁 doback027/ROTATIVO: 492 archivos
+[2025-09-16T12:46:01.558Z]   📁 doback028/estabilidad: 398 archivos
+[2025-09-16T12:46:01.559Z]   📁 doback028/ROTATIVO: 1120 archivos
+[2025-09-16T12:46:01.560Z] 📊 TOTAL DE ARCHIVOS A PROCESAR: 12666
+[2025-09-16T12:46:01.560Z] 
+🔧 PROCESANDO VEHÍCULO: doback022
+[2025-09-16T12:46:01.566Z] ✅ Vehículo encontrado: doback022 (ID: 31cd669b-8cd5-4ab2-988c-a4ea0df160e0)
+[2025-09-16T12:46:01.569Z] 📅 Fechas encontradas para doback022: 13
+[2025-09-16T12:46:01.569Z] 
+  📅 Procesando fecha: 20250707
+[2025-09-16T12:46:01.569Z]     📊 Archivos: Estabilidad(6), CAN(1), GPS(7), Rotativo(8)
+[2025-09-16T12:46:01.583Z]     ✅ Sesión creada: f36d7fe7-8767-4ddb-b368-943326d6fbf9
+[2025-09-16T12:46:03.355Z]       ✅ ESTABILIDAD_DOBACK022_20250707_0.txt: 6509 mediciones
+[2025-09-16T12:46:03.478Z]       ✅ ESTABILIDAD_DOBACK022_20250707_1.txt: 293 mediciones
+[2025-09-16T12:46:04.267Z]       ✅ ESTABILIDAD_DOBACK022_20250707_2.txt: 3812 mediciones
+[2025-09-16T12:46:04.967Z]       ✅ ESTABILIDAD_DOBACK022_20250707_4.txt: 3184 mediciones
+[2025-09-16T12:46:06.297Z]       ✅ ESTABILIDAD_DOBACK022_20250707_7.txt: 4213 mediciones
+[2025-09-16T12:46:08.187Z]       ✅ ROTATIVO_DOBACK022_20250707_0.txt: 45 mediciones
+[2025-09-16T12:46:08.191Z]       ✅ ROTATIVO_DOBACK022_20250707_1.txt: 3 mediciones
+[2025-09-16T12:46:08.196Z]       ✅ ROTATIVO_DOBACK022_20250707_2.txt: 27 mediciones
+[2025-09-16T12:46:08.200Z]       ✅ ROTATIVO_DOBACK022_20250707_3.txt: 22 mediciones
+[2025-09-16T12:46:08.205Z]       ✅ ROTATIVO_DOBACK022_20250707_4.txt: 23 mediciones
+[2025-09-16T12:46:08.208Z]       ✅ ROTATIVO_DOBACK022_20250707_5.txt: 1 mediciones
+[2025-09-16T12:46:08.212Z]       ✅ ROTATIVO_DOBACK022_20250707_6.txt: 27 mediciones
+[2025-09-16T12:46:08.217Z]       ✅ ROTATIVO_DOBACK022_20250707_7.txt: 30 mediciones
+[2025-09-16T12:46:08.218Z]   📊 Sesión 20250707: 18189 mediciones totales
+[2025-09-16T12:46:08.218Z] 
+  📅 Procesando fecha: 20250708
+[2025-09-16T12:46:08.219Z]     📊 Archivos: Estabilidad(4), CAN(4), GPS(4), Rotativo(6)
+[2025-09-16T12:46:08.224Z]     ✅ Sesión creada: 81ba8e92-f931-40a3-8fae-d07a2db61039
+[2025-09-16T12:46:08.245Z]       ✅ ESTABILIDAD_DOBACK022_20250708_0.txt: 95 mediciones
+[2025-09-16T12:46:11.614Z]       ✅ ESTABILIDAD_DOBACK022_20250708_2.txt: 15791 mediciones
+[2025-09-16T12:46:17.035Z]       ✅ ESTABILIDAD_DOBACK022_20250708_7.txt: 27802 mediciones
+[2025-09-16T12:46:17.492Z]       ✅ ESTABILIDAD_DOBACK022_20250708_9.txt: 2557 mediciones
+[2025-09-16T12:46:37.847Z]       ✅ ROTATIVO_DOBACK022_20250708_0.txt: 2 mediciones
+[2025-09-16T12:46:37.857Z]       ✅ ROTATIVO_DOBACK022_20250708_1.txt: 106 mediciones
+[2025-09-16T12:46:37.860Z]       ✅ ROTATIVO_DOBACK022_20250708_2.txt: 1 mediciones
+[2025-09-16T12:46:37.874Z]       ✅ ROTATIVO_DOBACK022_20250708_3.txt: 187 mediciones
+[2025-09-16T12:46:37.876Z]       ✅ ROTATIVO_DOBACK022_20250708_4.txt: 1 mediciones
+[2025-09-16T12:46:37.880Z]       ✅ ROTATIVO_DOBACK022_20250708_5.txt: 18 mediciones
+[2025-09-16T12:46:37.881Z]   📊 Sesión 20250708: 46560 mediciones totales
+[2025-09-16T12:46:37.881Z] 
+  📅 Procesando fecha: 20250709
+[2025-09-16T12:46:37.881Z]     📊 Archivos: Estabilidad(3), CAN(3), GPS(3), Rotativo(3)
+[2025-09-16T12:46:37.886Z]     ✅ Sesión creada: 9f594d81-e050-43a2-916c-1ee9a33babe2
+[2025-09-16T12:46:43.130Z]       ✅ ESTABILIDAD_DOBACK022_20250709_0.txt: 29553 mediciones
+[2025-09-16T12:46:44.507Z]       ✅ ESTABILIDAD_DOBACK022_20250709_1.txt: 8232 mediciones
+[2025-09-16T12:46:44.580Z]       ✅ ESTABILIDAD_DOBACK022_20250709_2.txt: 383 mediciones
+[2025-09-16T12:47:01.488Z]       ✅ ROTATIVO_DOBACK022_20250709_0.txt: 198 mediciones
+[2025-09-16T12:47:01.494Z]       ✅ ROTATIVO_DOBACK022_20250709_1.txt: 56 mediciones
+[2025-09-16T12:47:01.497Z]       ✅ ROTATIVO_DOBACK022_20250709_2.txt: 4 mediciones
+[2025-09-16T12:47:01.498Z]   📊 Sesión 20250709: 38426 mediciones totales
+[2025-09-16T12:47:01.498Z] 
+  📅 Procesando fecha: 20250710
+[2025-09-16T12:47:01.499Z]     📊 Archivos: Estabilidad(5), CAN(5), GPS(5), Rotativo(5)
+[2025-09-16T12:47:01.503Z]     ✅ Sesión creada: d3f50a38-35bc-4412-91f8-8b0d396432ab
+[2025-09-16T12:47:03.610Z]       ✅ ESTABILIDAD_DOBACK022_20250710_0.txt: 12768 mediciones
+[2025-09-16T12:47:06.874Z]       ✅ ESTABILIDAD_DOBACK022_20250710_1.txt: 20557 mediciones
+[2025-09-16T12:47:07.496Z]       ✅ ESTABILIDAD_DOBACK022_20250710_2.txt: 3886 mediciones
+[2025-09-16T12:47:07.851Z]       ✅ ESTABILIDAD_DOBACK022_20250710_4.txt: 2398 mediciones
+[2025-09-16T12:47:12.846Z]       ✅ ESTABILIDAD_DOBACK022_20250710_5.txt: 30464 mediciones
+[2025-09-16T12:47:54.468Z]       ✅ ROTATIVO_DOBACK022_20250710_0.txt: 86 mediciones
+[2025-09-16T12:47:54.485Z]       ✅ ROTATIVO_DOBACK022_20250710_1.txt: 138 mediciones
+[2025-09-16T12:47:54.493Z]       ✅ ROTATIVO_DOBACK022_20250710_2.txt: 27 mediciones
+[2025-09-16T12:47:54.497Z]       ✅ ROTATIVO_DOBACK022_20250710_3.txt: 17 mediciones
+[2025-09-16T12:47:54.520Z]       ✅ ROTATIVO_DOBACK022_20250710_4.txt: 204 mediciones
+[2025-09-16T12:47:54.522Z]   📊 Sesión 20250710: 70545 mediciones totales
+[2025-09-16T12:47:54.522Z] 
+  📅 Procesando fecha: 20250711
+[2025-09-16T12:47:54.523Z]     📊 Archivos: Estabilidad(2), CAN(3), GPS(3), Rotativo(3)
+[2025-09-16T12:47:54.530Z]     ✅ Sesión creada: 12d01b6c-68a9-46e7-8c99-234fa444471c
+[2025-09-16T12:48:14.838Z]       ✅ ESTABILIDAD_DOBACK022_20250711_1.txt: 73411 mediciones
+[2025-09-16T12:51:31.744Z]       ✅ ESTABILIDAD_DOBACK022_20250711_2.txt: 672749 mediciones

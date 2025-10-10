@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id              String           @id @default(uuid())
+  name            String
+  model           String
+  licensePlate    String           @unique
+  brand           String
+  type            String
+  status          String           @default("ACTIVE")
+  organizationId  String?
+  fleetId         String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userId          String?
+  sessions        Session[]
+}
+
+model Session {
+  id              String                 @id @default(uuid())
+  vehicleId       String
+  userId          String
+  endTime         DateTime?
+  startTime       DateTime               @default(now())
+  stabilityData   StabilityMeasurement[]
+  vehicle         Vehicle                @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId, endTime])
+  @@index([startTime])
+  @@index([vehicleId, startTime, endTime])
+}
+
+model StabilityMeasurement {
+  id          String   @id @default(uuid())
+  timestamp   DateTime
+  ax          Float
+  ay          Float
+  az          Float
+  gx          Float
+  gy          Float
+  gz          Float
+  roll        Float
+  pitch       Float
+  yaw         Float
+  timeantwifi Float
+  usciclo1    Float
+  usciclo2    Float
+  usciclo3    Float
+  usciclo4    Float
+  usciclo5    Float
+  si          Float
+  accmag      Float
+  microsds    Float
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([sessionId, timestamp])
+} 

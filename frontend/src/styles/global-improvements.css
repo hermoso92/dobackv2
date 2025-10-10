@@ -1,0 +1,525 @@
+/* 
+ * DobackSoft V2 - Global UI Improvements
+ * Technical-Military-Professional Style
+ */
+
+:root {
+    /* Main color palette - Military tech style */
+    --color-primary: #2c3e50;
+    --color-secondary: #34495e;
+    --color-accent: #3498db;
+    --color-accent-dark: #2980b9;
+    --color-success: #27ae60;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
+    --color-light: #ecf0f1;
+    --color-dark: #2c3e50;
+    --color-gray: #95a5a6;
+    --color-background: #f5f7fa;
+}
+
+/* ------------ Global Transformations ------------ */
+
+/* Reduce everything by 25% and enable vertical scrollbars */
+body {
+    font-size: 0.85rem;
+    overflow-y: auto;
+    background-color: var(--color-background);
+    color: var(--color-dark);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    transform: scale(0.75);
+    transform-origin: left;
+    margin-bottom: 8px !important;
+}
+
+/* Make all containers 25% smaller */
+.MuiContainer-root,
+.MuiBox-root,
+.MuiPaper-root,
+.MuiCard-root,
+.MuiCardContent-root,
+section,
+.container {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+/* Reduce all input heights */
+.MuiFormControl-root,
+.MuiOutlinedInput-root,
+.MuiInputBase-root {
+    font-size: 0.85rem !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+}
+
+.MuiInputLabel-root {
+    font-size: 0.85rem !important;
+    transform: translate(14px, 10px) scale(1) !important;
+}
+
+.MuiInputLabel-shrink {
+    transform: translate(14px, -6px) scale(0.75) !important;
+}
+
+.MuiOutlinedInput-input {
+    padding: 10px 14px !important;
+}
+
+/* Button size reductions */
+.MuiButton-root {
+    font-size: 0.75rem !important;
+    padding: 4px 12px !important;
+    height: auto !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Chart container reductions */
+.recharts-wrapper {
+    font-size: 10px !important;
+}
+
+.recharts-legend-item {
+    margin-right: 8px !important;
+}
+
+.recharts-default-legend {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Fix Grid spacing - MUI v5 Compatibility fix */
+.MuiGrid-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    box-sizing: border-box !important;
+    width: calc(100% + 8px) !important;
+    margin: -4px !important;
+}
+
+.MuiGrid-item {
+    padding: 4px !important;
+    margin: 0 !important;
+}
+
+/* Grid item v5 fix - make it work regardless of "item" prop */
+[class*=MuiGrid-root][class*=MuiGrid-container]>* {
+    padding: 4px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+/* Grid sizes - ensure these are applied regardless of "item" prop */
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-12"] {
+    flex-basis: 100% !important;
+    max-width: 100% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-6"] {
+    flex-basis: 50% !important;
+    max-width: 50% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-xs-4"] {
+    flex-basis: 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-sm-4"] {
+    flex-basis: 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-4"] {
+    flex-basis: 33.333333% !important;
+    max-width: 33.333333% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-6"] {
+    flex-basis: 50% !important;
+    max-width: 50% !important;
+}
+
+div[class*=MuiGrid-root][class*="MuiGrid-grid-md-8"] {
+    flex-basis: 66.666667% !important;
+    max-width: 66.666667% !important;
+}
+
+@media (max-width: 960px) {
+
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-4"],
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-6"],
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-md-8"] {
+        flex-basis: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 600px) {
+    div[class*=MuiGrid-root][class*="MuiGrid-grid-sm-4"] {
+        flex-basis: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* ------------ Technical-Military Styling ------------ */
+
+/* Navigation styling */
+.MuiAppBar-root {
+    background-color: var(--color-primary) !important;
+}
+
+/* Progress bars - more military styled */
+.MuiLinearProgress-root {
+    height: 6px !important;
+    border-radius: 3px !important;
+}
+
+.MuiLinearProgress-barColorPrimary {
+    background-color: var(--color-accent) !important;
+}
+
+.MuiLinearProgress-barColorError {
+    background-color: var(--color-danger) !important;
+}
+
+.MuiLinearProgress-barColorSuccess {
+    background-color: var(--color-success) !important;
+}
+
+/* Chips styled as military indicators */
+.MuiChip-root {
+    height: 20px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    border-radius: 3px !important;
+}
+
+.MuiChip-colorWarning {
+    background-color: var(--color-warning) !important;
+    color: white !important;
+}
+
+.MuiChip-colorError {
+    background-color: var(--color-danger) !important;
+    color: white !important;
+}
+
+/* Typography improvements for military-tech style */
+.MuiTypography-h4 {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--color-primary) !important;
+}
+
+.MuiTypography-h5,
+.MuiTypography-h6 {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--color-primary) !important;
+}
+
+/* Metric cards and data display elements */
+.metrics-card,
+.data-card,
+.info-card,
+.metric-box {
+    border-left: 3px solid var(--color-accent) !important;
+    background-color: #f8f9fa !important;
+    padding: 8px !important;
+    margin-bottom: 6px !important;
+    border-radius: 3px !important;
+}
+
+.metric-box h4 {
+    font-size: 0.65rem !important;
+    text-transform: uppercase;
+    color: var(--color-gray);
+    margin-bottom: 2px !important;
+    letter-spacing: 0.5px;
+}
+
+.metric-box .value {
+    font-size: 1rem !important;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: 'Roboto Mono', monospace;
+}
+
+.metric-box .unit {
+    font-size: 0.65rem;
+    color: var(--color-gray);
+}
+
+/* Table styles for military tech look */
+.MuiTable-root {
+    border-collapse: collapse !important;
+}
+
+.MuiTableHead-root {
+    background-color: rgba(44, 62, 80, 0.9) !important;
+}
+
+.MuiTableCell-head {
+    color: white !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 8px !important;
+}
+
+.MuiTableCell-body {
+    font-size: 0.75rem !important;
+    padding: 6px 8px !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+}
+
+.MuiTableRow-root:nth-of-type(even) {
+    background-color: rgba(44, 62, 80, 0.03) !important;
+}
+
+/* Remove redundant text under menu titles */
+.menu-description,
+.module-description,
+.text-secondary {
+    display: none !important;
+}
+
+/* Apply military-tech style to cards */
+.MuiCard-root {
+    border-radius: 3px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(52, 73, 94, 0.1) !important;
+    background: linear-gradient(to bottom, white, #f8f9fa) !important;
+}
+
+.MuiCardHeader-root {
+    background-color: rgba(44, 62, 80, 0.03) !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+    padding: 8px 12px !important;
+}
+
+.MuiCardHeader-title {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.MuiCardHeader-subheader {
+    font-size: 0.7rem !important;
+}
+
+.MuiCardContent-root {
+    padding: 12px !important;
+}
+
+/* Paper elements (panels) */
+.MuiPaper-root {
+    border-radius: 3px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Tabs styling */
+.MuiTabs-root {
+    min-height: 32px !important;
+    border-radius: 3px !important;
+    overflow: auto !important;
+    background-color: rgba(44, 62, 80, 0.05) !important;
+}
+
+.MuiTab-root {
+    min-height: 32px !important;
+    padding: 6px 12px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.Mui-selected {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+}
+
+/* Lists for technical data display */
+.MuiList-root {
+    padding: 0 !important;
+}
+
+.MuiListItem-root {
+    padding: 6px 0 !important;
+    font-size: 0.75rem !important;
+    border-bottom: 1px solid rgba(52, 73, 94, 0.1) !important;
+}
+
+.MuiListItemText-primary {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+}
+
+.MuiListItemText-secondary {
+    font-size: 0.65rem !important;
+    color: var(--color-gray) !important;
+}
+
+/* Grid layouts for metrics and data */
+.telemetry-metrics,
+.data-metrics,
+.metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+}
+
+/* Override for all section components - hide some entirely */
+.modules-main-section,
+section:has(h2:contains("Módulos Principales")) {
+    display: none !important;
+}
+
+/* Controls panel - telemetry and stability modules */
+.controls-panel,
+.telemetry-controls {
+    background: linear-gradient(to right, var(--color-primary), var(--color-secondary)) !important;
+    padding: 12px !important;
+    border-radius: 4px !important;
+    margin-bottom: 12px !important;
+    color: white !important;
+}
+
+.controls-panel label,
+.telemetry-controls label,
+.controls-panel .MuiInputLabel-root,
+.telemetry-controls .MuiInputLabel-root,
+.controls-panel .MuiSelect-icon,
+.telemetry-controls .MuiSelect-icon {
+    color: white !important;
+}
+
+.controls-panel .MuiOutlinedInput-notchedOutline,
+.telemetry-controls .MuiOutlinedInput-notchedOutline {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.controls-panel .MuiSelect-select,
+.telemetry-controls .MuiSelect-select {
+    color: white !important;
+}
+
+/* Military-style buttons */
+.military-button {
+    background-color: rgba(52, 73, 94, 0.9) !important;
+    color: white !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;
+    border-radius: 3px !important;
+}
+
+.military-button:hover {
+    background-color: var(--color-primary) !important;
+}
+
+/* Chart type selector */
+.chart-type-selector {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 3px !important;
+    overflow: auto !important;
+    border: none !important;
+}
+
+.chart-type-selector .MuiToggleButton-root {
+    color: white !important;
+    font-size: 0.65rem !important;
+    padding: 4px 8px !important;
+    border: none !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.chart-type-selector .MuiToggleButton-root.Mui-selected {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: white !important;
+}
+
+/* Chart containers */
+.telemetry-chart-container {
+    height: 250px !important;
+    margin-bottom: 12px !important;
+    padding: 8px !important;
+}
+
+/* Alerts panel */
+.telemetry-alerts {
+    background-color: rgba(44, 62, 80, 0.05) !important;
+    border: 1px solid rgba(52, 73, 94, 0.1) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+}
+
+.telemetry-alerts h3 {
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    margin-bottom: 8px !important;
+    color: var(--color-primary) !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 600 !important;
+}
+
+.telemetry-alert-item {
+    padding: 6px 8px !important;
+    margin-bottom: 4px !important;
+    border-radius: 3px !important;
+    font-size: 0.7rem !important;
+    border-left: 3px solid transparent !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.telemetry-alert-item.warning {
+    background-color: rgba(243, 156, 18, 0.1) !important;
+    border-left-color: var(--color-warning) !important;
+}
+
+.telemetry-alert-item.critical {
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    border-left-color: var(--color-danger) !important;
+}
+
+.telemetry-alert-item .timestamp {
+    font-size: 0.65rem !important;
+    color: var(--color-gray) !important;
+}
+
+/* AI Analysis container */
+.ai-analysis-container {
+    padding: 12px !important;
+}
+
+/* Disable hover effects to maintain military precision */
+.MuiButton-root:hover,
+.MuiListItem-root:hover,
+.MuiTab-root:hover {
+    background-color: inherit !important;
+    transition: none !important;
+}

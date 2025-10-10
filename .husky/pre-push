@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🧪 Running pre-push checks..."
+
+# Run tests for backend
+echo "🔬 Running backend tests..."
+cd backend
+npm run test:unit
+cd ..
+
+# Run tests for frontend
+echo "🔬 Running frontend tests..."
+cd frontend
+npm run test:unit
+cd ..
+
+# Run E2E tests (only if not in CI)
+if [ "$CI" != "true" ]; then
+    echo "🎭 Running E2E tests..."
+    npm run test:e2e
+fi
+
+echo "✅ Pre-push checks passed!"

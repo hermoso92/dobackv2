@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-07-21T01:12:29.686112",
+  "total_sessions_found": 4,
+  "gps_timezone_offset_hours": 2.0,
+  "tolerance_minutes": 30.0,
+  "sessions": [
+    {
+      "session_number": 1,
+      "vehicle": "doback022",
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T09:12:37",
+      "end_time": "2025-07-08T09:41:06",
+      "duration_minutes": 28,
+      "score": 0.2551020408163265,
+      "time_diffs": {
+        "gps_diff": 28.483333333333334,
+        "estabilidad_diff": 0.6,
+        "rotativo_diff": 0.11666666666666667
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_1.txt",
+        "GPS": "GPS_DOBACK022_20250708_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_2.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_1.txt"
+      }
+    },
+    {
+      "session_number": 2,
+      "vehicle": "doback022",
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T11:29:04",
+      "end_time": "2025-07-08T11:29:04",
+      "duration_minutes": 0,
+      "score": 0.36697247706422015,
+      "time_diffs": {
+        "gps_diff": 16.566666666666666,
+        "estabilidad_diff": 0.5666666666666667,
+        "rotativo_diff": 0.11666666666666667
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_2.txt",
+        "GPS": "GPS_DOBACK022_20250708_1.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_7.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_3.txt"
+      }
+    },
+    {
+      "session_number": 3,
+      "vehicle": "doback022",
+      "date": "2025-07-10",
+      "start_time": "2025-07-10T10:12:46",
+      "end_time": "2025-07-10T10:15:26",
+      "duration_minutes": 2,
+      "score": 0.7481296758104738,
+      "time_diffs": {
+        "gps_diff": 2.6666666666666665,
+        "estabilidad_diff": 0.5833333333333334,
+        "rotativo_diff": 0.11666666666666667
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250710_2.txt",
+        "GPS": "GPS_DOBACK022_20250710_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250710_2.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250710_2.txt"
+      }
+    },
+    {
+      "session_number": 4,
+      "vehicle": "doback022",
+      "date": "2025-07-10",
+      "start_time": "2025-07-10T11:30:35",
+      "end_time": "2025-07-10T11:30:35",
+      "duration_minutes": 0,
+      "score": 0.4930156121610518,
+      "time_diffs": {
+        "gps_diff": 9.533333333333333,
+        "estabilidad_diff": 0.6333333333333333,
+        "rotativo_diff": 0.11666666666666667
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250710_4.txt",
+        "GPS": "GPS_DOBACK022_20250710_1.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250710_5.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250710_4.txt"
+      }
+    }
+  ]
+}

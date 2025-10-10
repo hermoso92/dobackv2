@@ -1,0 +1,89 @@
+.event-card {
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.event-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.event-status.completed {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.event-status.in_progress {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #1976d2;
+}
+
+.event-status.scheduled {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #f57c00;
+}
+
+.event-status.cancelled {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #d32f2f;
+}
+
+.event-content {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.event-description {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.event-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+}
+
+.event-meta svg {
+    font-size: 1rem;
+}
+
+.event-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.event-actions button {
+    text-transform: none;
+    font-size: 0.875rem;
+}
+
+.event-scheduled {
+    border-left: 4px solid #f57c00;
+    background-color: rgba(245, 124, 0, 0.04);
+}
+
+.event-completed {
+    border-left: 4px solid #2e7d32;
+    background-color: rgba(46, 125, 50, 0.04);
+}
+
+.event-cancelled {
+    border-left: 4px solid #d32f2f;
+    background-color: rgba(211, 47, 47, 0.04);
+}

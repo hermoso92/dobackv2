@@ -1,0 +1,63 @@
+{
+  "timestamp": "2025-07-09T22:23:45.050780",
+  "total_sessions_found": 3,
+  "sessions": [
+    {
+      "session_number": 1,
+      "vehicle": "doback022",
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T07:41:12",
+      "end_time": "2025-07-08T07:41:12",
+      "score": 0.5769230769230769,
+      "time_diffs": {
+        "gps_diff": 0.1,
+        "estabilidad_diff": 0.6333333333333333,
+        "rotativo_diff": 461.2
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_0.txt",
+        "GPS": "GPS_DOBACK022_20250708_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_0.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_0.txt"
+      }
+    },
+    {
+      "session_number": 2,
+      "vehicle": "doback022",
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T09:12:37",
+      "end_time": "2025-07-08T09:12:37",
+      "score": 0.5882352941176471,
+      "time_diffs": {
+        "gps_diff": 0.1,
+        "estabilidad_diff": 0.6,
+        "rotativo_diff": 552.6166666666667
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_1.txt",
+        "GPS": "GPS_DOBACK022_20250708_1.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_2.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_1.txt"
+      }
+    },
+    {
+      "session_number": 3,
+      "vehicle": "doback022",
+      "date": "2025-07-09",
+      "start_time": "2025-07-09T09:15:42",
+      "end_time": "2025-07-09T09:15:42",
+      "score": 0.5714285714285714,
+      "time_diffs": {
+        "gps_diff": 0.13333333333333333,
+        "estabilidad_diff": 0.6166666666666667,
+        "rotativo_diff": 555.7
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250709_0.txt",
+        "GPS": "GPS_DOBACK022_20250709_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250709_0.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250709_0.txt"
+      }
+    }
+  ]
+}

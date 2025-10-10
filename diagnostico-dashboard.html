@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Diagnóstico Dashboard DobackSoft</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .section {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .warning {
+            color: orange;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Diagnóstico Dashboard DobackSoft</h1>
+
+    <div class="section">
+        <h2>1. Verificar Filtros Actuales</h2>
+        <button onclick="checkFilters()">Ver Filtros en LocalStorage</button>
+        <pre id="filters-output"></pre>
+    </div>
+
+    <div class="section">
+        <h2>2. Consultar Endpoint KPIs (Sin Filtros)</h2>
+        <button onclick="testKPIEndpoint()">GET /api/kpis/summary</button>
+        <pre id="kpi-output"></pre>
+    </div>
+
+    <div class="section">
+        <h2>3. Consultar Endpoint KPIs (Con Filtros)</h2>
+        <label>Desde: <input type="date" id="from-date" value="2025-01-01"></label>
+        <label>Hasta: <input type="date" id="to-date" value="2025-12-31"></label>
+        <br><br>
+        <button onclick="testKPIEndpointWithFilters()">GET /api/kpis/summary?from=...&to=...</button>
+        <pre id="kpi-filtered-output"></pre>
+    </div>
+
+    <div class="section">
+        <h2>4. Ver Vehículos Disponibles</h2>
+        <button onclick="getVehicles()">GET /api/vehicles</button>
+        <pre id="vehicles-output"></pre>
+    </div>
+
+    <div class="section">
+        <h2>5. Ver Sesiones</h2>
+        <button onclick="getSessions()">GET /api/sessions</button>
+        <pre id="sessions-output"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:9998';
+
+        async function fetchAPI(endpoint, method = 'GET') {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-organization-id': 'a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+
+        function checkFilters() {
+            const output = document.getElementById('filters-output');
+            const filters = localStorage.getItem('globalFilters');
+
+            if (!filters) {
+                output.textContent = '⚠️ No hay filtros guardados en localStorage';
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(filters);
+                output.textContent = JSON.stringify(parsed, null, 2);
+            } catch (error) {
+                output.textContent = '❌ Error parseando filtros: ' + error.message;
+            }
+        }
+
+        async function testKPIEndpoint() {
+            const output = document.getElementById('kpi-output');
+            output.textContent = '🔄 Consultando...';
+
+            const data = await fetchAPI('/api/kpis/summary');
+            output.textContent = JSON.stringify(data, null, 2);
+
+            // Análisis
+            if (data.error) {
+                output.textContent += '\n\n❌ ERROR: ' + data.error;
+            } else if (data.data) {
+                const analysis = analyzeKPIs(data.data);
+                output.textContent += '\n\n📊 ANÁLISIS:\n' + analysis;
+            }
+        }
+
+        async function testKPIEndpointWithFilters() {
+            const output = document.getElementById('kpi-filtered-output');
+            const from = document.getElementById('from-date').value;
+            const to = document.getElementById('to-date').value;
+
+            output.textContent = '🔄 Consultando...';
+
+            const data = await fetchAPI(`/api/kpis/summary?from=${from}&to=${to}`);
+            output.textContent = JSON.stringify(data, null, 2);
+
+            if (data.error) {
+                output.textContent += '\n\n❌ ERROR: ' + data.error;
+            } else if (data.data) {
+                const analysis = analyzeKPIs(data.data);
+                output.textContent += '\n\n📊 ANÁLISIS:\n' + analysis;
+            }
+        }
+
+        async function getVehicles() {
+            const output = document.getElementById('vehicles-output');
+            output.textContent = '🔄 Consultando...';
+
+            const data = await fetchAPI('/api/vehicles');
+            output.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function getSessions() {
+            const output = document.getElementById('sessions-output');
+            output.textContent = '🔄 Consultando...';
+
+            const data = await fetchAPI('/api/sessions?limit=10');
+            output.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function analyzeKPIs(data) {
+            let analysis = '';
+
+            // Analizar estados
+            if (data.states) {
+                analysis += '\n🔑 ESTADOS (Claves):\n';
+                const states = data.states.states || [];
+                states.forEach(s => {
+                    analysis += `   Clave ${s.key} (${s.name}): ${s.duration_formatted}\n`;
+                });
+                analysis += `   TOTAL: ${data.states.total_time_formatted}\n`;
+                analysis += `   Fuera de Parque (2+3+4+5): ${data.states.time_outside_formatted}\n`;
+            }
+
+            // Analizar actividad
+            if (data.activity) {
+                analysis += '\n🚗 ACTIVIDAD:\n';
+                analysis += `   Kilómetros: ${data.activity.km_total} km\n`;
+                analysis += `   Horas Conducción: ${data.activity.driving_hours_formatted}\n`;
+                analysis += `   % Rotativo: ${data.activity.rotativo_on_percentage}%\n`;
+
+                // Calcular velocidad promedio
+                const avgSpeed = data.activity.driving_hours > 0
+                    ? (data.activity.km_total / data.activity.driving_hours).toFixed(2)
+                    : 0;
+                analysis += `   Velocidad Promedio: ${avgSpeed} km/h\n`;
+
+                // Alertas
+                if (avgSpeed > 200) {
+                    analysis += `   ⚠️  ALERTA: Velocidad promedio imposible (>${avgSpeed} km/h)\n`;
+                }
+                if (data.activity.driving_hours < 0.1) {
+                    analysis += `   ⚠️  ALERTA: Muy pocas horas de conducción (<6 minutos)\n`;
+                }
+            }
+
+            // Analizar incidencias
+            if (data.stability) {
+                analysis += '\n⚠️  INCIDENCIAS:\n';
+                analysis += `   Total: ${data.stability.total_incidents}\n`;
+                analysis += `   Graves: ${data.stability.critical}\n`;
+                analysis += `   Moderadas: ${data.stability.moderate}\n`;
+                analysis += `   Leves: ${data.stability.light}\n`;
+
+                if (data.stability.critical === 0 && data.stability.moderate === 0 && data.stability.light > 0) {
+                    analysis += `   ⚠️  ALERTA: Todas las incidencias son leves - revisar clasificación\n`;
+                }
+            }
+
+            return analysis;
+        }
+    </script>
+</body>
+
+</html>

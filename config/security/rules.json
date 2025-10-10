@@ -1,0 +1,157 @@
+{
+    "version": "1.0.0",
+    "last_updated": "2025-04-24",
+    "rules": {
+        "directories": {
+            "untouchable": [
+                "/DobackSoft-V2/",
+                "/core_transformado/",
+                "legacy"
+            ],
+            "required": [
+                "modules",
+                "core",
+                "models",
+                "services",
+                "utils",
+                "templates"
+            ]
+        },
+        "database": {
+            "type": "postgresql",
+            "backup_frequency": "daily",
+            "compression": false,
+            "archiving": false
+        },
+        "authentication": {
+            "login_type": "basic",
+            "roles": [
+                "admin",
+                "user"
+            ],
+            "session_timeout": 3600
+        },
+        "workflow": {
+            "daily_check": {
+                "command": "python DobackSoft_master.py --check-day",
+                "frequency": "daily"
+            },
+            "weekly_check": {
+                "command": "python DobackSoft_master.py --weekly-check",
+                "frequency": "weekly"
+            }
+        },
+        "data_lifecycle": {
+            "file_upload": {
+                "validation": "basic",
+                "association": "simple",
+                "verification": "minimal"
+            },
+            "processing": {
+                "analysis": "basic",
+                "detection": "simple",
+                "graphs": "static"
+            },
+            "storage": {
+                "backup": "daily",
+                "compression": false,
+                "archiving": false
+            }
+        },
+        "modules": {
+            "panel_control": {
+                "cards": 4,
+                "update": "manual",
+                "actions": "basic"
+            },
+            "estabilidad": {
+                "graphs": "basic",
+                "events": "simple",
+                "export": "simple"
+            },
+            "telemetria": {
+                "data": "basic",
+                "gps": "simple",
+                "history": "basic"
+            }
+        },
+        "verification": {
+            "tests": {
+                "unit": "critical_functions",
+                "integration": "basic_flows",
+                "ui": false
+            },
+            "monitoring": {
+                "logs": "basic",
+                "metrics": "simple",
+                "alerts": "critical"
+            }
+        },
+        "deployment": {
+            "verification": {
+                "command": "python DobackSoft_master.py --verify-deploy"
+            },
+            "activation": {
+                "command": "python DobackSoft_master.py --activate"
+            }
+        },
+        "error_handling": {
+            "logging": {
+                "error": "critical_failures",
+                "info": "basic_operations"
+            },
+            "recovery": {
+                "backup": "daily",
+                "rollback": "simple"
+            }
+        },
+        "metrics": {
+            "performance": {
+                "load_time": "< 3s",
+                "cpu": "< 80%",
+                "memory": "< 85%"
+            },
+            "availability": {
+                "uptime": "> 95%",
+                "error_rate": "< 5%"
+            }
+        },
+        "security": {
+            "authentication": {
+                "login": "simple",
+                "roles": "basic",
+                "timeout": "simple"
+            },
+            "data": {
+                "https": "basic",
+                "validation": "simple"
+            }
+        },
+        "documentation": {
+            "code": {
+                "comments": "basic",
+                "types": "basic"
+            },
+            "api": {
+                "documentation": "basic",
+                "examples": "simple"
+            }
+        },
+        "performance": {
+            "optimization": {
+                "cache": "basic",
+                "queries": "simple"
+            }
+        },
+        "objectives": {
+            "code": {
+                "test_coverage": "> 70%",
+                "functionality": "basic_complete"
+            },
+            "user": {
+                "critical_functions": "operational",
+                "response_time": "acceptable"
+            }
+        }
+    }
+}

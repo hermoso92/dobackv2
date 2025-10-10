@@ -1,0 +1,115 @@
+{
+  "timestamp": "2025-07-09T22:27:24.809956",
+  "total_sessions_analyzed": 4356,
+  "best_sessions_count": 6,
+  "best_sessions": [
+    {
+      "rank": 1,
+      "can_file": "CAN_DOBACK022_20250708_1.txt",
+      "score": 0.9345794392523364,
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T09:12:37",
+      "time_diffs": {
+        "gps_diff": 0.1,
+        "estabilidad_diff": 0.6,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_1.txt",
+        "GPS": "GPS_DOBACK022_20250708_1.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_2.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_0.txt"
+      }
+    },
+    {
+      "rank": 2,
+      "can_file": "CAN_DOBACK022_20250708_0.txt",
+      "score": 0.9316770186335405,
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T07:41:12",
+      "time_diffs": {
+        "gps_diff": 0.1,
+        "estabilidad_diff": 0.6333333333333333,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_0.txt",
+        "GPS": "GPS_DOBACK022_20250708_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_0.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_0.txt"
+      }
+    },
+    {
+      "rank": 3,
+      "can_file": "CAN_DOBACK022_20250709_0.txt",
+      "score": 0.9302325581395349,
+      "date": "2025-07-09",
+      "start_time": "2025-07-09T09:15:42",
+      "time_diffs": {
+        "gps_diff": 0.13333333333333333,
+        "estabilidad_diff": 0.6166666666666667,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250709_0.txt",
+        "GPS": "GPS_DOBACK022_20250709_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250709_0.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250709_0.txt"
+      }
+    },
+    {
+      "rank": 4,
+      "can_file": "CAN_DOBACK022_20250708_2.txt",
+      "score": 0.1274697259400892,
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T11:29:04",
+      "time_diffs": {
+        "gps_diff": 67.88333333333334,
+        "estabilidad_diff": 0.5666666666666667,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_2.txt",
+        "GPS": "GPS_DOBACK022_20250708_3.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_7.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_0.txt"
+      }
+    },
+    {
+      "rank": 5,
+      "can_file": "CAN_DOBACK022_20250708_3.txt",
+      "score": 0.07655014034192396,
+      "date": "2025-07-08",
+      "start_time": "2025-07-08T12:21:16",
+      "time_diffs": {
+        "gps_diff": 120.08333333333333,
+        "estabilidad_diff": 0.55,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250708_3.txt",
+        "GPS": "GPS_DOBACK022_20250708_3.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250708_9.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250708_0.txt"
+      }
+    },
+    {
+      "rank": 6,
+      "can_file": "CAN_DOBACK022_20250707_0.txt",
+      "score": 0.018093543620518078,
+      "date": "2025-07-07",
+      "start_time": "2025-07-07T05:21:42",
+      "time_diffs": {
+        "gps_diff": 542.1166666666667,
+        "estabilidad_diff": 0.5666666666666667,
+        "rotativo_diff": 0
+      },
+      "files": {
+        "CAN": "CAN_DOBACK022_20250707_0.txt",
+        "GPS": "GPS_DOBACK022_20250707_0.txt",
+        "ESTABILIDAD": "ESTABILIDAD_DOBACK022_20250707_7.txt",
+        "ROTATIVO": "ROTATIVO_DOBACK022_20250707_0.txt"
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+# Configuración Global del Proyecto DobackSoft
+
+# Configuración del Entorno
+environment:
+  development:
+    debug: true
+    log_level: DEBUG
+    database_url: sqlite:///dev.db
+    frontend_url: http://localhost:3000
+    backend_url: http://localhost:5000
+  production:
+    debug: false
+    log_level: INFO
+    database_url: ${DATABASE_URL}
+    frontend_url: ${FRONTEND_URL}
+    backend_url: ${BACKEND_URL}
+
+# Configuración de la Base de Datos
+database:
+  pool_size: 20
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 1800
+
+# Configuración de Seguridad
+security:
+  jwt_secret: ${JWT_SECRET}
+  jwt_expiration: 86400  # 24 horas
+  password_min_length: 8
+  password_salt_rounds: 12
+  cors_origins:
+    - http://localhost:3000
+    - ${FRONTEND_URL}
+
+# Configuración de Logging
+logging:
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  file: logs/app.log
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+# Configuración de Monitoreo
+monitoring:
+  prometheus_port: 9090
+  metrics_interval: 15
+  health_check_interval: 30
+
+# Configuración de Testing
+testing:
+  coverage_threshold: 80
+  test_timeout: 30
+  parallel_tests: true
+  browser: chromium
+
+# Configuración de Despliegue
+deployment:
+  docker:
+    image_prefix: DobackSoft
+    registry: ${DOCKER_REGISTRY}
+  kubernetes:
+    namespace: DobackSoft
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+# Configuración de Documentación
+documentation:
+  api_version: v1
+  swagger_url: /api/docs
+  redoc_url: /api/redoc
+  markdown_dir: docs/markdown
+  api_dir: docs/api 

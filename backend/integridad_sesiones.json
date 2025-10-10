@@ -1,0 +1,558 @@
+[
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-07",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250707_0.txt",
+      "GPS_DOBACK022_20250707_0.txt",
+      "GPS_DOBACK022_20250707_1.txt",
+      "GPS_DOBACK022_20250707_2.txt",
+      "GPS_DOBACK022_20250707_3.txt",
+      "GPS_DOBACK022_20250707_4.txt",
+      "GPS_DOBACK022_20250707_5.txt",
+      "GPS_DOBACK022_20250707_6.txt",
+      "ROTATIVO_DOBACK022_20250707_0.txt",
+      "ROTATIVO_DOBACK022_20250707_1.txt",
+      "ROTATIVO_DOBACK022_20250707_2.txt",
+      "ROTATIVO_DOBACK022_20250707_3.txt",
+      "ROTATIVO_DOBACK022_20250707_4.txt",
+      "ROTATIVO_DOBACK022_20250707_5.txt",
+      "ROTATIVO_DOBACK022_20250707_6.txt",
+      "ROTATIVO_DOBACK022_20250707_7.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-08",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250708_0.txt",
+      "CAN_DOBACK022_20250708_1.txt",
+      "CAN_DOBACK022_20250708_2.txt",
+      "CAN_DOBACK022_20250708_3.txt",
+      "GPS_DOBACK022_20250708_0.txt",
+      "GPS_DOBACK022_20250708_1.txt",
+      "GPS_DOBACK022_20250708_2.txt",
+      "GPS_DOBACK022_20250708_3.txt",
+      "ROTATIVO_DOBACK022_20250708_0.txt",
+      "ROTATIVO_DOBACK022_20250708_1.txt",
+      "ROTATIVO_DOBACK022_20250708_2.txt",
+      "ROTATIVO_DOBACK022_20250708_3.txt",
+      "ROTATIVO_DOBACK022_20250708_4.txt",
+      "ROTATIVO_DOBACK022_20250708_5.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-09",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250709_0.txt",
+      "CAN_DOBACK022_20250709_1.txt",
+      "CAN_DOBACK022_20250709_2.txt",
+      "GPS_DOBACK022_20250709_0.txt",
+      "GPS_DOBACK022_20250709_1.txt",
+      "GPS_DOBACK022_20250709_2.txt",
+      "ROTATIVO_DOBACK022_20250709_0.txt",
+      "ROTATIVO_DOBACK022_20250709_1.txt",
+      "ROTATIVO_DOBACK022_20250709_2.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-10",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250710_0.txt",
+      "CAN_DOBACK022_20250710_1.txt",
+      "CAN_DOBACK022_20250710_2.txt",
+      "CAN_DOBACK022_20250710_3.txt",
+      "CAN_DOBACK022_20250710_4.txt",
+      "GPS_DOBACK022_20250710_0.txt",
+      "GPS_DOBACK022_20250710_1.txt",
+      "GPS_DOBACK022_20250710_2.txt",
+      "GPS_DOBACK022_20250710_3.txt",
+      "GPS_DOBACK022_20250710_4.txt",
+      "ROTATIVO_DOBACK022_20250710_0.txt",
+      "ROTATIVO_DOBACK022_20250710_1.txt",
+      "ROTATIVO_DOBACK022_20250710_2.txt",
+      "ROTATIVO_DOBACK022_20250710_3.txt",
+      "ROTATIVO_DOBACK022_20250710_4.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-11",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250711_0.txt",
+      "CAN_DOBACK022_20250711_1.txt",
+      "CAN_DOBACK022_20250711_2.txt",
+      "GPS_DOBACK022_20250711_0.txt",
+      "GPS_DOBACK022_20250711_1.txt",
+      "GPS_DOBACK022_20250711_2.txt",
+      "ROTATIVO_DOBACK022_20250711_0.txt",
+      "ROTATIVO_DOBACK022_20250711_1.txt",
+      "ROTATIVO_DOBACK022_20250711_2.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-12",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250712_0.txt",
+      "CAN_DOBACK022_20250712_1.txt",
+      "CAN_DOBACK022_20250712_2.txt",
+      "GPS_DOBACK022_20250712_0.txt",
+      "GPS_DOBACK022_20250712_1.txt",
+      "GPS_DOBACK022_20250712_2.txt",
+      "GPS_DOBACK022_20250712_3.txt",
+      "ROTATIVO_DOBACK022_20250712_0.txt",
+      "ROTATIVO_DOBACK022_20250712_1.txt",
+      "ROTATIVO_DOBACK022_20250712_2.txt",
+      "ROTATIVO_DOBACK022_20250712_3.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback022",
+    "date": "2025-07-13",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK022_20250713_0.txt",
+      "CAN_DOBACK022_20250713_1.txt",
+      "CAN_DOBACK022_20250713_2.txt",
+      "CAN_DOBACK022_20250713_3.txt",
+      "CAN_DOBACK022_20250713_4.txt",
+      "CAN_DOBACK022_20250713_5.txt",
+      "GPS_DOBACK022_20250713_0.txt",
+      "GPS_DOBACK022_20250713_1.txt",
+      "GPS_DOBACK022_20250713_2.txt",
+      "GPS_DOBACK022_20250713_3.txt",
+      "GPS_DOBACK022_20250713_4.txt",
+      "GPS_DOBACK022_20250713_5.txt",
+      "ROTATIVO_DOBACK022_20250713_0.txt",
+      "ROTATIVO_DOBACK022_20250713_1.txt",
+      "ROTATIVO_DOBACK022_20250713_2.txt",
+      "ROTATIVO_DOBACK022_20250713_3.txt",
+      "ROTATIVO_DOBACK022_20250713_4.txt",
+      "ROTATIVO_DOBACK022_20250713_5.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-08",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250708_1.txt",
+      "GPS_DOBACK023_20250708_7.txt",
+      "GPS_DOBACK023_20250708_8.txt",
+      "ROTATIVO_DOBACK023_20250708_10.txt",
+      "ROTATIVO_DOBACK023_20250708_11.txt",
+      "ROTATIVO_DOBACK023_20250708_4.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-09",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250709_0.txt",
+      "GPS_DOBACK023_20250709_1.txt",
+      "GPS_DOBACK023_20250709_2.txt",
+      "GPS_DOBACK023_20250709_3.txt",
+      "GPS_DOBACK023_20250709_4.txt",
+      "GPS_DOBACK023_20250709_5.txt",
+      "GPS_DOBACK023_20250709_6.txt",
+      "GPS_DOBACK023_20250709_7.txt",
+      "GPS_DOBACK023_20250709_8.txt",
+      "ROTATIVO_DOBACK023_20250709_0.txt",
+      "ROTATIVO_DOBACK023_20250709_1.txt",
+      "ROTATIVO_DOBACK023_20250709_2.txt",
+      "ROTATIVO_DOBACK023_20250709_3.txt",
+      "ROTATIVO_DOBACK023_20250709_4.txt",
+      "ROTATIVO_DOBACK023_20250709_5.txt",
+      "ROTATIVO_DOBACK023_20250709_6.txt",
+      "ROTATIVO_DOBACK023_20250709_7.txt",
+      "ROTATIVO_DOBACK023_20250709_8.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-10",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250710_0.txt",
+      "GPS_DOBACK023_20250710_1.txt",
+      "ROTATIVO_DOBACK023_20250710_0.txt",
+      "ROTATIVO_DOBACK023_20250710_1.txt",
+      "ROTATIVO_DOBACK023_20250710_2.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-11",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250711_0.txt",
+      "GPS_DOBACK023_20250711_1.txt",
+      "GPS_DOBACK023_20250711_2.txt",
+      "GPS_DOBACK023_20250711_3.txt",
+      "ROTATIVO_DOBACK023_20250711_0.txt",
+      "ROTATIVO_DOBACK023_20250711_1.txt",
+      "ROTATIVO_DOBACK023_20250711_2.txt",
+      "ROTATIVO_DOBACK023_20250711_3.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-12",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250712_0.txt",
+      "GPS_DOBACK023_20250712_1.txt",
+      "GPS_DOBACK023_20250712_2.txt",
+      "GPS_DOBACK023_20250712_3.txt",
+      "ROTATIVO_DOBACK023_20250712_0.txt",
+      "ROTATIVO_DOBACK023_20250712_1.txt",
+      "ROTATIVO_DOBACK023_20250712_2.txt",
+      "ROTATIVO_DOBACK023_20250712_3.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-13",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250713_0.txt",
+      "GPS_DOBACK023_20250713_1.txt",
+      "GPS_DOBACK023_20250713_2.txt",
+      "ROTATIVO_DOBACK023_20250713_0.txt",
+      "ROTATIVO_DOBACK023_20250713_1.txt",
+      "ROTATIVO_DOBACK023_20250713_2.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback023",
+    "date": "2025-07-14",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK023_20250714_0.txt",
+      "GPS_DOBACK023_20250714_1.txt",
+      "ROTATIVO_DOBACK023_20250714_0.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback025",
+    "date": "2025-07-09",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK025_20250709_0.txt",
+      "CAN_DOBACK025_20250709_1.txt",
+      "CAN_DOBACK025_20250709_2.txt",
+      "CAN_DOBACK025_20250709_3.txt",
+      "CAN_DOBACK025_20250709_4.txt",
+      "CAN_DOBACK025_20250709_5.txt",
+      "CAN_DOBACK025_20250709_6.txt",
+      "CAN_DOBACK025_20250709_7.txt",
+      "CAN_DOBACK025_20250709_8.txt",
+      "CAN_DOBACK025_20250709_9.txt",
+      "GPS_DOBACK025_20250709_0.txt",
+      "GPS_DOBACK025_20250709_1.txt",
+      "GPS_DOBACK025_20250709_2.txt",
+      "GPS_DOBACK025_20250709_3.txt",
+      "GPS_DOBACK025_20250709_4.txt",
+      "GPS_DOBACK025_20250709_5.txt",
+      "GPS_DOBACK025_20250709_6.txt",
+      "GPS_DOBACK025_20250709_7.txt",
+      "GPS_DOBACK025_20250709_8.txt",
+      "ROTATIVO_DOBACK025_20250709_0.txt",
+      "ROTATIVO_DOBACK025_20250709_1.txt",
+      "ROTATIVO_DOBACK025_20250709_10.txt",
+      "ROTATIVO_DOBACK025_20250709_11.txt",
+      "ROTATIVO_DOBACK025_20250709_12.txt",
+      "ROTATIVO_DOBACK025_20250709_13.txt",
+      "ROTATIVO_DOBACK025_20250709_14.txt",
+      "ROTATIVO_DOBACK025_20250709_15.txt",
+      "ROTATIVO_DOBACK025_20250709_16.txt",
+      "ROTATIVO_DOBACK025_20250709_2.txt",
+      "ROTATIVO_DOBACK025_20250709_3.txt",
+      "ROTATIVO_DOBACK025_20250709_4.txt",
+      "ROTATIVO_DOBACK025_20250709_5.txt",
+      "ROTATIVO_DOBACK025_20250709_6.txt",
+      "ROTATIVO_DOBACK025_20250709_7.txt",
+      "ROTATIVO_DOBACK025_20250709_8.txt",
+      "ROTATIVO_DOBACK025_20250709_9.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback025",
+    "date": "2025-07-10",
+    "tipos": [
+      "CAN",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "GPS",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK025_20250710_0.txt",
+      "CAN_DOBACK025_20250710_1.txt",
+      "CAN_DOBACK025_20250710_10.txt",
+      "CAN_DOBACK025_20250710_11.txt",
+      "CAN_DOBACK025_20250710_12.txt",
+      "CAN_DOBACK025_20250710_13.txt",
+      "CAN_DOBACK025_20250710_14.txt",
+      "CAN_DOBACK025_20250710_15.txt",
+      "CAN_DOBACK025_20250710_16.txt",
+      "CAN_DOBACK025_20250710_17.txt",
+      "CAN_DOBACK025_20250710_18.txt",
+      "CAN_DOBACK025_20250710_19.txt",
+      "CAN_DOBACK025_20250710_2.txt",
+      "CAN_DOBACK025_20250710_20.txt",
+      "CAN_DOBACK025_20250710_21.txt",
+      "CAN_DOBACK025_20250710_22.txt",
+      "CAN_DOBACK025_20250710_23.txt",
+      "CAN_DOBACK025_20250710_24.txt",
+      "CAN_DOBACK025_20250710_25.txt",
+      "CAN_DOBACK025_20250710_26.txt",
+      "CAN_DOBACK025_20250710_27.txt",
+      "CAN_DOBACK025_20250710_28.txt",
+      "CAN_DOBACK025_20250710_29.txt",
+      "CAN_DOBACK025_20250710_3.txt",
+      "CAN_DOBACK025_20250710_30.txt",
+      "CAN_DOBACK025_20250710_31.txt",
+      "CAN_DOBACK025_20250710_32.txt",
+      "CAN_DOBACK025_20250710_33.txt",
+      "CAN_DOBACK025_20250710_34.txt",
+      "CAN_DOBACK025_20250710_35.txt",
+      "CAN_DOBACK025_20250710_36.txt",
+      "CAN_DOBACK025_20250710_37.txt",
+      "CAN_DOBACK025_20250710_4.txt",
+      "CAN_DOBACK025_20250710_5.txt",
+      "CAN_DOBACK025_20250710_6.txt",
+      "CAN_DOBACK025_20250710_7.txt",
+      "CAN_DOBACK025_20250710_8.txt",
+      "CAN_DOBACK025_20250710_9.txt",
+      "ROTATIVO_DOBACK025_20250710_0.txt",
+      "ROTATIVO_DOBACK025_20250710_1.txt",
+      "ROTATIVO_DOBACK025_20250710_10.txt",
+      "ROTATIVO_DOBACK025_20250710_11.txt",
+      "ROTATIVO_DOBACK025_20250710_12.txt",
+      "ROTATIVO_DOBACK025_20250710_13.txt",
+      "ROTATIVO_DOBACK025_20250710_14.txt",
+      "ROTATIVO_DOBACK025_20250710_15.txt",
+      "ROTATIVO_DOBACK025_20250710_16.txt",
+      "ROTATIVO_DOBACK025_20250710_17.txt",
+      "ROTATIVO_DOBACK025_20250710_18.txt",
+      "ROTATIVO_DOBACK025_20250710_19.txt",
+      "ROTATIVO_DOBACK025_20250710_2.txt",
+      "ROTATIVO_DOBACK025_20250710_20.txt",
+      "ROTATIVO_DOBACK025_20250710_21.txt",
+      "ROTATIVO_DOBACK025_20250710_22.txt",
+      "ROTATIVO_DOBACK025_20250710_23.txt",
+      "ROTATIVO_DOBACK025_20250710_24.txt",
+      "ROTATIVO_DOBACK025_20250710_25.txt",
+      "ROTATIVO_DOBACK025_20250710_26.txt",
+      "ROTATIVO_DOBACK025_20250710_27.txt",
+      "ROTATIVO_DOBACK025_20250710_28.txt",
+      "ROTATIVO_DOBACK025_20250710_29.txt",
+      "ROTATIVO_DOBACK025_20250710_3.txt",
+      "ROTATIVO_DOBACK025_20250710_30.txt",
+      "ROTATIVO_DOBACK025_20250710_31.txt",
+      "ROTATIVO_DOBACK025_20250710_32.txt",
+      "ROTATIVO_DOBACK025_20250710_4.txt",
+      "ROTATIVO_DOBACK025_20250710_5.txt",
+      "ROTATIVO_DOBACK025_20250710_6.txt",
+      "ROTATIVO_DOBACK025_20250710_7.txt",
+      "ROTATIVO_DOBACK025_20250710_8.txt",
+      "ROTATIVO_DOBACK025_20250710_9.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback025",
+    "date": "2025-07-06",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK025_20250706_8.txt",
+      "ROTATIVO_DOBACK025_20250706_9.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback025",
+    "date": "2025-07-08",
+    "tipos": [
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "CAN",
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "GPS_DOBACK025_20250708_0.txt",
+      "GPS_DOBACK025_20250708_1.txt",
+      "GPS_DOBACK025_20250708_2.txt",
+      "ROTATIVO_DOBACK025_20250708_0.txt",
+      "ROTATIVO_DOBACK025_20250708_1.txt",
+      "ROTATIVO_DOBACK025_20250708_2.txt",
+      "ROTATIVO_DOBACK025_20250708_3.txt"
+    ],
+    "estado": "incompleta"
+  },
+  {
+    "vehicle": "doback027",
+    "date": "2025-07-11",
+    "tipos": [
+      "CAN",
+      "GPS",
+      "ROTATIVO"
+    ],
+    "faltantes": [
+      "ESTABILIDAD"
+    ],
+    "archivos": [
+      "CAN_DOBACK027_20250711_1.txt",
+      "GPS_DOBACK027_20250711_5.txt",
+      "ROTATIVO_DOBACK027_20250711_25.txt",
+      "ROTATIVO_DOBACK027_20250711_26.txt",
+      "ROTATIVO_DOBACK027_20250711_27.txt",
+      "ROTATIVO_DOBACK027_20250711_28.txt",
+      "ROTATIVO_DOBACK027_20250711_29.txt",
+      "ROTATIVO_DOBACK027_20250711_30.txt",
+      "ROTATIVO_DOBACK027_20250711_31.txt"
+    ],
+    "estado": "incompleta"
+  }
+]

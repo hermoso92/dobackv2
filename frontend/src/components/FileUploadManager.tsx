@@ -1,0 +1,1122 @@
+import {
+    Add as AddIcon,
+    Error as AlertCircleIcon,
+    AutoAwesome as AutoAwesomeIcon,
+    BarChart as BarChartIcon,
+    CheckCircle as CheckCircleIcon,
+    Delete as DeleteIcon,
+    Download as DownloadIcon,
+    Description as FileTextIcon,
+    PlayArrow as PlayArrowIcon,
+    CloudUpload as UploadIcon
+} from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Divider,
+    Grid,
+    IconButton,
+    LinearProgress,
+    List,
+    ListItem,
+    ListItemSecondaryAction,
+    ListItemText,
+    Paper,
+    Tab,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Tabs,
+    Typography
+} from '@mui/material';
+import React, { useRef, useState } from 'react';
+import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
+
+interface UploadedFile {
+    name: string;
+    size: number;
+    uploadDate: string;
+    type: string;
+}
+
+interface FileGroup {
+    vehicleId: string;
+    date: string;
+    files: {
+        [key: string]: {
+            fileName: string;
+            sessionsCount: number;
+            measurementsCount: number;
+            fileSize: number;
+        };
+    };
+    sessions: {
+        [key: string]: Array<{
+            sessionNumber: number;
+            startTime: string;
+            measurementsCount: number;
+        }>;
+    };
+    totalSessions: number;
+    totalMeasurements: number;
+}
+
+interface UploadResult {
+    totalFiles: number;
+    vehicleGroups: number;
+    results: FileGroup[];
+    errors?: Array<{
+        file: string;
+        error: string;
+    }>;
+}
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`upload-tabpanel-${index}`}
+            aria-labelledby={`upload-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
+
+const FileUploadManager: React.FC = () => {
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+    const [analysisData, setAnalysisData] = useState<any>(null);
+    const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+    const [recentSessions, setRecentSessions] = useState<any[]>([]);
+
+    // Estados para pestañas y procesamiento automático
+    const [currentTab, setCurrentTab] = useState(0);
+    const [isProcessingAuto, setIsProcessingAuto] = useState(false);
+    const [autoProcessProgress, setAutoProcessProgress] = useState(0);
+    const [autoProcessResults, setAutoProcessResults] = useState<any>(null);
+    const [autoProcessError, setAutoProcessError] = useState<string | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length > 0) {
+            // Validar formato de archivos
+            const validFiles: File[] = [];
+            const errors: string[] = [];
+
+            files.forEach(file => {
+                const fileNamePattern = /^(ESTABILIDAD|GPS|ROTATIVO|CAN)_DOBACK\d+_\d{8}\.txt$/;
+                if (fileNamePattern.test(file.name)) {
+                    validFiles.push(file);
+                } else {
+                    errors.push(`Formato inválido: ${file.name}`);
+                }
+            });
+
+            if (errors.length > 0) {
+                setUploadError(errors.join(', '));
+            } else {
+                setSelectedFiles(prev => [...prev, ...validFiles]);
+                setUploadError(null);
+            }
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const clearAllFiles = () => {
+        setSelectedFiles([]);
+        setUploadResult(null);
+        setUploadError(null);
+    };
+
+    const handleMultipleUpload = async () => {
+        if (selectedFiles.length === 0) return;
+
+        setUploading(true);
+        setUploadError(null);
+
+        try {
+            // PASO 1: Limpiar base de datos antes de subir (para testing)
+            logger.info('🧹 Limpiando base de datos antes de subir archivos...');
+            try {
+                const cleanResponse = await apiService.post('/api/clean-all-sessions', {});
+                if (cleanResponse.success) {
+                    logger.info('✅ Base de datos limpiada correctamente', cleanResponse.data);
+                } else {
+                    logger.warn('⚠️ No se pudo limpiar la base de datos, continuando con la subida...');
+                }
+            } catch (cleanError) {
+                logger.warn('⚠️ Error al limpiar base de datos, continuando con la subida...', cleanError);
+            }
+
+            // PASO 2: Subir archivos
+            logger.info('📤 Subiendo archivos...');
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            const response = await apiService.post('/api/upload/multiple', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                timeout: 120000 // 2 minutos para uploads grandes
+            });
+
+            if (response.success) {
+                setUploadResult(response.data as UploadResult);
+                setSelectedFiles([]);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                fetchUploadedFiles();
+                logger.info('✅ Archivos subidos correctamente');
+            } else {
+                setUploadError(response.error || 'Error subiendo archivos');
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error de conexión al subir archivos';
+            setUploadError(errorMessage);
+            logger.error('Error al subir archivos:', error);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const fetchUploadedFiles = async () => {
+        try {
+            const response = await apiService.get('/api/upload/files');
+            if (response.success) {
+                setUploadedFiles((response.data as any).files);
+            }
+        } catch (error) {
+            console.error('Error obteniendo archivos:', error);
+            // Mostrar mensaje de error más claro al usuario
+            setUploadError('El servidor backend no está respondiendo correctamente. Por favor, verifica que el servidor esté ejecutándose.');
+        }
+    };
+
+    const analyzeCMadrid = async () => {
+        setLoadingAnalysis(true);
+        try {
+            const response = await apiService.get('/api/upload/analyze-cmadrid');
+            if (response.success) {
+                setAnalysisData((response.data as any).analysis);
+            } else {
+                setUploadError(response.error || 'Error analizando archivos');
+            }
+        } catch (error) {
+            setUploadError('Error de conexión al analizar archivos');
+        } finally {
+            setLoadingAnalysis(false);
+        }
+    };
+
+    const fetchRecentSessions = async () => {
+        try {
+            const response = await apiService.get('/api/upload/recent-sessions');
+            if (response.success) {
+                setRecentSessions((response.data as any).sessions);
+            }
+        } catch (error) {
+            console.error('Error obteniendo sesiones recientes:', error);
+        }
+    };
+
+    // Funciones para procesamiento automático
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setCurrentTab(newValue);
+        setAutoProcessError(null);
+        setAutoProcessResults(null);
+    };
+
+    const handleAutoProcess = async () => {
+        setIsProcessingAuto(true);
+        setAutoProcessError(null);
+        setAutoProcessResults(null);
+        setAutoProcessProgress(0);
+
+        try {
+            logger.info('🚀 Iniciando procesamiento automático de todos los vehículos...');
+
+            // Simular progreso inicial
+            setAutoProcessProgress(10);
+
+            // Llamar al endpoint de procesamiento automático
+            const response = await apiService.post('/api/upload/process-all-cmadrid', {}, {
+                timeout: 300000 // 5 minutos para procesamiento completo
+            });
+
+            setAutoProcessProgress(100);
+
+            if (response.success) {
+                setAutoProcessResults(response.data);
+                logger.info('✅ Procesamiento automático completado', response.data);
+
+                // Actualizar datos
+                fetchRecentSessions();
+            } else {
+                setAutoProcessError(response.error || 'Error en el procesamiento automático');
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error de conexión durante el procesamiento';
+            setAutoProcessError(errorMessage);
+            logger.error('Error en procesamiento automático:', error);
+        } finally {
+            setIsProcessingAuto(false);
+        }
+    };
+
+    const handleCleanDatabase = async () => {
+        try {
+            logger.info('🧹 Limpiando base de datos...');
+            const response = await apiService.post('/api/clean-all-sessions', {});
+
+            if (response.success) {
+                logger.info('✅ Base de datos limpiada correctamente', response.data);
+                fetchRecentSessions();
+            } else {
+                setAutoProcessError('Error limpiando la base de datos');
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error limpiando base de datos';
+            setAutoProcessError(errorMessage);
+            logger.error('Error limpiando base de datos:', error);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchUploadedFiles();
+        fetchRecentSessions();
+    }, []);
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleString('es-ES');
+    };
+
+    const getFileTypeColor = (type: string) => {
+        switch (type.toLowerCase()) {
+            case 'estabilidad': return 'primary';
+            case 'gps': return 'success';
+            case 'rotativo': return 'secondary';
+            case 'can': return 'warning';
+            default: return 'default';
+        }
+    };
+
+    const groupFilesByVehicle = (files: File[]) => {
+        const groups: { [key: string]: File[] } = {};
+        files.forEach(file => {
+            const match = file.name.match(/^(ESTABILIDAD|GPS|ROTATIVO|CAN)_DOBACK(\d+)_(\d{8})\.txt$/);
+            if (match) {
+                const vehicleId = `DOBACK${match[2]}`;
+                if (!groups[vehicleId]) {
+                    groups[vehicleId] = [];
+                }
+                groups[vehicleId].push(file);
+            }
+        });
+        return groups;
+    };
+
+    const fileGroups = groupFilesByVehicle(selectedFiles);
+
+    return (
+        <Box sx={{ p: 3, maxWidth: '1400px', mx: 'auto', overflowY: 'auto', height: 'calc(100vh - 100px)' }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+                Gestión de Datos de Vehículos
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Sube archivos individuales o procesa automáticamente todos los vehículos de CMadrid
+            </Typography>
+
+            {/* Pestañas */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                <Tabs value={currentTab} onChange={handleTabChange} aria-label="upload tabs">
+                    <Tab
+                        icon={<UploadIcon />}
+                        label="Subida Manual"
+                        id="upload-tab-0"
+                        aria-controls="upload-tabpanel-0"
+                    />
+                    <Tab
+                        icon={<AutoAwesomeIcon />}
+                        label="Procesamiento Automático"
+                        id="upload-tab-1"
+                        aria-controls="upload-tabpanel-1"
+                    />
+                </Tabs>
+            </Box>
+
+            {/* Pestaña 1: Subida Manual */}
+            <TabPanel value={currentTab} index={0}>
+                <Typography variant="h5" gutterBottom>
+                    Subida Manual de Archivos
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                    Sube múltiples archivos de datos de vehículos (Estabilidad, GPS, Rotativo, CAN) para procesamiento manual
+                </Typography>
+
+                {/* Zona de subida múltiple */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <UploadIcon sx={{ mr: 1 }} />
+                            <Typography variant="h6">Subir Múltiples Archivos</Typography>
+                        </Box>
+
+                        {uploadError && (
+                            <Alert severity="error" sx={{ mb: 3 }}>
+                                {uploadError}
+                            </Alert>
+                        )}
+
+                        <Box
+                            sx={{
+                                border: '2px dashed',
+                                borderColor: 'grey.300',
+                                borderRadius: 2,
+                                p: 4,
+                                textAlign: 'center',
+                                bgcolor: 'grey.50'
+                            }}
+                        >
+                            <FileTextIcon sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".txt"
+                                onChange={handleFileSelect}
+                                multiple
+                                style={{ display: 'none' }}
+                                id="file-upload"
+                            />
+                            <label htmlFor="file-upload">
+                                <Button
+                                    variant="contained"
+                                    component="span"
+                                    startIcon={<AddIcon />}
+                                    sx={{ mb: 2 }}
+                                >
+                                    Seleccionar Archivos
+                                </Button>
+                            </label>
+
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Puedes seleccionar múltiples archivos a la vez
+                            </Typography>
+
+                            {selectedFiles.length > 0 && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Archivos seleccionados ({selectedFiles.length}):
+                                    </Typography>
+                                    <List dense>
+                                        {selectedFiles.map((file, index) => (
+                                            <ListItem key={index} sx={{ py: 0.5 }}>
+                                                <ListItemText
+                                                    primary={file.name}
+                                                    secondary={`${formatFileSize(file.size)}`}
+                                                />
+                                                <ListItemSecondaryAction>
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => removeFile(index)}
+                                                        color="error"
+                                                        size="small"
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </ListItemSecondaryAction>
+                                            </ListItem>
+                                        ))}
+                                    </List>
+
+                                    <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                                        <Button
+                                            variant="outlined"
+                                            onClick={clearAllFiles}
+                                            size="small"
+                                        >
+                                            Limpiar Todo
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            onClick={handleMultipleUpload}
+                                            disabled={uploading}
+                                            startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+                                        >
+                                            {uploading ? 'Subiendo...' : `Subir ${selectedFiles.length} Archivos`}
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* Vista previa de grupos */}
+                        {Object.keys(fileGroups).length > 0 && (
+                            <Box sx={{ mt: 3 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Archivos agrupados por vehículo:
+                                </Typography>
+                                {Object.entries(fileGroups).map(([vehicleId, files]) => (
+                                    <Card key={vehicleId} variant="outlined" sx={{ mb: 1 }}>
+                                        <CardContent sx={{ py: 1 }}>
+                                            <Typography variant="subtitle2" color="primary">
+                                                {vehicleId} ({files.length} archivos)
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                                {files.map((file, index) => {
+                                                    const match = file.name.match(/^(ESTABILIDAD|GPS|ROTATIVO|CAN)_/);
+                                                    const type = match?.[1]?.toLowerCase() || 'unknown';
+                                                    return (
+                                                        <Chip
+                                                            key={index}
+                                                            label={type.toUpperCase()}
+                                                            size="small"
+                                                            color={getFileTypeColor(type) as any}
+                                                        />
+                                                    );
+                                                })}
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </Box>
+                        )}
+
+                        {/* Formato esperado */}
+                        <Alert severity="info" sx={{ mt: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Formatos de archivo esperados:
+                            </Typography>
+                            <Typography variant="body2">
+                                <strong>Estabilidad:</strong> ESTABILIDAD_DOBACK###_YYYYMMDD.txt<br />
+                                <strong>GPS:</strong> GPS_DOBACK###_YYYYMMDD.txt<br />
+                                <strong>Rotativo:</strong> ROTATIVO_DOBACK###_YYYYMMDD.txt<br />
+                                <strong>CAN:</strong> CAN_DOBACK###_YYYYMMDD.txt
+                            </Typography>
+                        </Alert>
+                    </CardContent>
+                </Card>
+
+                {/* Resultado de subida múltiple */}
+                {uploadResult && (
+                    <Alert severity="success" sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <CheckCircleIcon sx={{ mr: 1 }} />
+                            <Typography variant="h6">
+                                {uploadResult.totalFiles} Archivos Procesados Exitosamente
+                            </Typography>
+                        </Box>
+
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="body2">
+                                    <strong>Archivos procesados:</strong> {uploadResult.totalFiles}
+                                </Typography>
+                                <Typography variant="body2">
+                                    <strong>Grupos de vehículos:</strong> {uploadResult.vehicleGroups}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="body2">
+                                    <strong>Sesiones totales:</strong> {uploadResult.results.reduce((sum, r) => sum + r.totalSessions, 0)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    <strong>Mediciones totales:</strong> {uploadResult.results.reduce((sum, r) => sum + r.totalMeasurements, 0).toLocaleString()}
+                                </Typography>
+                            </Grid>
+                        </Grid>
+
+                        {/* Detalles por grupo */}
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Detalles por grupo:
+                            </Typography>
+                            {uploadResult.results.map((group, index) => (
+                                <Card key={index} variant="outlined" sx={{ mb: 2 }}>
+                                    <CardContent>
+                                        <Typography variant="subtitle2" color="primary" gutterBottom>
+                                            {group.vehicleId} - {group.date}
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography variant="body2">
+                                                    <strong>Archivos:</strong> {Object.keys(group.files || {}).length}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    <strong>Sesiones:</strong> {group.totalSessions}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography variant="body2">
+                                                    <strong>Mediciones:</strong> {group.totalMeasurements.toLocaleString()}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+
+                                        {/* Detalle de archivos */}
+                                        <Box sx={{ mt: 1 }}>
+                                            {Object.entries(group.files || {}).map(([type, file]) => (
+                                                <Chip
+                                                    key={type}
+                                                    label={`${type.toUpperCase()}: ${file.sessionsCount} sesiones`}
+                                                    size="small"
+                                                    color={getFileTypeColor(type) as any}
+                                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </Box>
+
+                        {/* Errores si los hay */}
+                        {uploadResult.errors && uploadResult.errors.length > 0 && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" color="error" gutterBottom>
+                                    Errores encontrados:
+                                </Typography>
+                                {uploadResult.errors.map((error, index) => (
+                                    <Typography key={index} variant="body2" color="error">
+                                        {error.file}: {error.error}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        )}
+                    </Alert>
+                )}
+
+                {/* Error de subida */}
+                {uploadError && (
+                    <Alert severity="error" sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <AlertCircleIcon sx={{ mr: 1 }} />
+                            <Typography variant="h6">Error</Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                            {uploadError}
+                        </Typography>
+                    </Alert>
+                )}
+
+                {/* Análisis CMadrid */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <BarChartIcon sx={{ mr: 1 }} />
+                                <Typography variant="h6">Análisis Integral CMadrid</Typography>
+                            </Box>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={analyzeCMadrid}
+                                disabled={loadingAnalysis}
+                                startIcon={loadingAnalysis ? <CircularProgress size={20} /> : <BarChartIcon />}
+                            >
+                                {loadingAnalysis ? 'Analizando...' : 'Analizar Archivos'}
+                            </Button>
+                        </Box>
+
+                        {analysisData && (
+                            <Box>
+                                {/* Resumen general */}
+                                <Grid container spacing={2} sx={{ mb: 4 }}>
+                                    <Grid item xs={6} md={3}>
+                                        <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
+                                            <Typography variant="h4" color="primary">
+                                                {Object.keys(analysisData?.vehicles || {}).length}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Vehículos
+                                            </Typography>
+                                        </Card>
+                                    </Grid>
+                                    <Grid item xs={6} md={3}>
+                                        <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
+                                            <Typography variant="h4" color="success.main">
+                                                {analysisData?.totalFiles || 0}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Archivos
+                                            </Typography>
+                                        </Card>
+                                    </Grid>
+                                    <Grid item xs={6} md={3}>
+                                        <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
+                                            <Typography variant="h4" color="warning.main">
+                                                {analysisData?.totalSessions || 0}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Sesiones
+                                            </Typography>
+                                        </Card>
+                                    </Grid>
+                                    <Grid item xs={6} md={3}>
+                                        <Card variant="outlined" sx={{ textAlign: 'center', p: 2 }}>
+                                            <Typography variant="h4" color="secondary">
+                                                {(analysisData?.totalMeasurements || 0).toLocaleString()}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Mediciones
+                                            </Typography>
+                                        </Card>
+                                    </Grid>
+                                </Grid>
+
+                                {/* Tipos de archivo */}
+                                {analysisData?.fileTypes && (
+                                    <Box sx={{ mb: 3 }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            Tipos de Archivo
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                            {Object.entries(analysisData.fileTypes).map(([type, count]) => (
+                                                <Chip
+                                                    key={type}
+                                                    label={`${type.toUpperCase()}: ${count}`}
+                                                    color={getFileTypeColor(type) as any}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
+
+                                {/* Detalle por vehículo */}
+                                <Typography variant="h6" gutterBottom>
+                                    Detalle por Vehículo
+                                </Typography>
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Vehículo</TableCell>
+                                                <TableCell>Estabilidad</TableCell>
+                                                <TableCell>GPS</TableCell>
+                                                <TableCell>Rotativo</TableCell>
+                                                <TableCell>CAN</TableCell>
+                                                <TableCell>Sesiones</TableCell>
+                                                <TableCell>Mediciones</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {Object.values(analysisData.vehicles).map((vehicle: any) => (
+                                                <TableRow key={vehicle.vehicleId}>
+                                                    <TableCell>
+                                                        <Typography variant="subtitle2" fontWeight="bold">
+                                                            {vehicle.vehicleId}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>{vehicle.files.estabilidad}</TableCell>
+                                                    <TableCell>{vehicle.files.gps}</TableCell>
+                                                    <TableCell>{vehicle.files.rotativo}</TableCell>
+                                                    <TableCell>{vehicle.files.can || 0}</TableCell>
+                                                    <TableCell>{vehicle.sessions}</TableCell>
+                                                    <TableCell>{vehicle.measurements.toLocaleString()}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Lista de archivos subidos */}
+                <Card>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <DownloadIcon sx={{ mr: 1 }} />
+                            <Typography variant="h6">Archivos Subidos</Typography>
+                        </Box>
+
+                        {uploadedFiles.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                                No hay archivos subidos
+                            </Typography>
+                        ) : (
+                            <TableContainer component={Paper} variant="outlined">
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Archivo</TableCell>
+                                            <TableCell>Tipo</TableCell>
+                                            <TableCell>Vehículo</TableCell>
+                                            <TableCell>Fecha Subida</TableCell>
+                                            <TableCell>Sesiones</TableCell>
+                                            <TableCell>Mediciones</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {uploadedFiles.map((file, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontWeight="medium">
+                                                        {file.name}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={(file.type || 'unknown').toUpperCase()}
+                                                        size="small"
+                                                        color={getFileTypeColor(file.type || 'unknown') as any}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    {file.name.match(/DOBACK(\d+)/)?.[0] || 'N/A'}
+                                                </TableCell>
+                                                <TableCell>{formatDate(file.uploadDate)}</TableCell>
+                                                <TableCell>0</TableCell>
+                                                <TableCell>{file.size.toLocaleString()}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        )}
+
+                        {/* Sesiones Recientes */}
+                        {recentSessions.length > 0 && (
+                            <Card sx={{ mb: 4 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                        <BarChartIcon sx={{ mr: 1 }} />
+                                        <Typography variant="h6">Sesiones Recién Creadas</Typography>
+                                    </Box>
+                                    <TableContainer component={Paper}>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>Vehículo</TableCell>
+                                                    <TableCell>Tipo</TableCell>
+                                                    <TableCell>Sesión</TableCell>
+                                                    <TableCell>Inicio</TableCell>
+                                                    <TableCell>Mediciones</TableCell>
+                                                    <TableCell>Estado</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {recentSessions.map((session, index) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>
+                                                            <Typography variant="body2" fontWeight="medium">
+                                                                {session.licensePlate}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={session.sessionType || 'N/A'}
+                                                                size="small"
+                                                                color={getFileTypeColor((session.sessionType || 'unknown').toLowerCase()) as any}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>{session.sessionNumber}</TableCell>
+                                                        <TableCell>
+                                                            {new Date(session.startTime).toLocaleString()}
+                                                        </TableCell>
+                                                        <TableCell>{(session.totalMeasurements || 0).toLocaleString()}</TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={session.status || 'N/A'}
+                                                                size="small"
+                                                                color={session.status === 'completed' ? 'success' : 'warning'}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabPanel>
+
+            {/* Pestaña 2: Procesamiento Automático */}
+            <TabPanel value={currentTab} index={1}>
+                <Typography variant="h5" gutterBottom>
+                    Procesamiento Automático de CMadrid
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                    Procesa automáticamente todos los archivos de los 3 vehículos (DOBACK024, DOBACK027, DOBACK028) con detección de eventos y filtrado inteligente
+                </Typography>
+
+                {/* Información del sistema */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <AutoAwesomeIcon sx={{ mr: 1, color: 'primary.main' }} />
+                            <Typography variant="h6">
+                                Sistema Automático
+                            </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            El sistema procesará automáticamente:
+                        </Typography>
+                        <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                            <li><strong>21 conjuntos completos</strong> (3 vehículos × 7 fechas)</li>
+                            <li><strong>Filtrado inteligente</strong>: Solo sesiones ≥5 min con GPS válido</li>
+                            <li><strong>Detección de eventos</strong>: Estable (≥60%), Correcta (50-60%), Inestable (&lt;50%)</li>
+                            <li><strong>Correlación GPS</strong>: Eventos con ubicación exacta</li>
+                            <li><strong>Callejeado 300m</strong>: Rutas realistas sin saltos GPS</li>
+                        </Box>
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            <strong>Tiempo estimado:</strong> 5-10 minutos para procesar todos los archivos
+                        </Alert>
+                    </CardContent>
+                </Card>
+
+                {/* Controles */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                            Controles de Procesamiento
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                            <Button
+                                variant="outlined"
+                                color="warning"
+                                onClick={handleCleanDatabase}
+                                disabled={isProcessingAuto}
+                                startIcon={<DeleteIcon />}
+                            >
+                                Limpiar Base de Datos
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleAutoProcess}
+                                disabled={isProcessingAuto}
+                                startIcon={isProcessingAuto ? <CircularProgress size={20} /> : <PlayArrowIcon />}
+                                size="large"
+                            >
+                                {isProcessingAuto ? 'Procesando...' : 'Iniciar Procesamiento Automático'}
+                            </Button>
+                        </Box>
+
+                        {/* Barra de progreso */}
+                        {isProcessingAuto && (
+                            <Box sx={{ mb: 3 }}>
+                                <Typography variant="body2" gutterBottom>
+                                    Procesando archivos... {autoProcessProgress}%
+                                </Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={autoProcessProgress}
+                                    sx={{ height: 8, borderRadius: 4 }}
+                                />
+                            </Box>
+                        )}
+
+                        {/* Errores */}
+                        {autoProcessError && (
+                            <Alert severity="error" sx={{ mb: 3 }}>
+                                <strong>Error:</strong> {autoProcessError}
+                            </Alert>
+                        )}
+
+                        {/* Resultados */}
+                        {autoProcessResults && (
+                            <Card variant="outlined">
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom color="success.main">
+                                        ✅ Procesamiento Completado
+                                    </Typography>
+
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                <Typography variant="h4" color="success.main">
+                                                    {autoProcessResults.totalSaved}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Sesiones Guardadas
+                                                </Typography>
+                                            </Paper>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <Paper sx={{ p: 2, textAlign: 'center' }}>
+                                                <Typography variant="h4" color="warning.main">
+                                                    {autoProcessResults.totalSkipped}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Sesiones Descartadas
+                                                </Typography>
+                                            </Paper>
+                                        </Grid>
+                                    </Grid>
+
+                                    <Divider sx={{ my: 3 }} />
+
+                                    <Typography variant="h6" gutterBottom>
+                                        Detalle por Vehículo
+                                    </Typography>
+                                    <TableContainer component={Paper} variant="outlined">
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>Vehículo</TableCell>
+                                                    <TableCell>Fecha</TableCell>
+                                                    <TableCell>Guardadas</TableCell>
+                                                    <TableCell>Descartadas</TableCell>
+                                                    <TableCell>Estado</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {autoProcessResults.results.map((result: any, index: number) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>
+                                                            <Typography variant="subtitle2" fontWeight="bold">
+                                                                {result.vehicle}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>{result.date}</TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={result.savedSessions || 0}
+                                                                color="success"
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={result.skippedSessions || 0}
+                                                                color="warning"
+                                                                size="small"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {result.error ? (
+                                                                <Chip
+                                                                    label="Error"
+                                                                    color="error"
+                                                                    size="small"
+                                                                    title={result.error}
+                                                                />
+                                                            ) : (
+                                                                <Chip
+                                                                    label="Completado"
+                                                                    color="success"
+                                                                    size="small"
+                                                                />
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Sesiones Recientes */}
+                {recentSessions.length > 0 && (
+                    <Card>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <BarChartIcon sx={{ mr: 1 }} />
+                                <Typography variant="h6">Sesiones Recién Creadas</Typography>
+                            </Box>
+                            <TableContainer component={Paper}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Vehículo</TableCell>
+                                            <TableCell>Tipo</TableCell>
+                                            <TableCell>Sesión</TableCell>
+                                            <TableCell>Inicio</TableCell>
+                                            <TableCell>Mediciones</TableCell>
+                                            <TableCell>Estado</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {recentSessions.slice(0, 10).map((session, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontWeight="medium">
+                                                        {session.licensePlate}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={session.sessionType || 'N/A'}
+                                                        size="small"
+                                                        color={getFileTypeColor((session.sessionType || 'unknown').toLowerCase()) as any}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>{session.sessionNumber}</TableCell>
+                                                <TableCell>
+                                                    {new Date(session.startTime).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>{(session.totalMeasurements || 0).toLocaleString()}</TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={session.status || 'N/A'}
+                                                        size="small"
+                                                        color={session.status === 'completed' ? 'success' : 'default'}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </CardContent>
+                    </Card>
+                )}
+            </TabPanel>
+        </Box>
+    );
+};
+
+export default FileUploadManager;

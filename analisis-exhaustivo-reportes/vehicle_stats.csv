@@ -1,0 +1,6 @@
+Vehicle,TotalFiles,TotalSessions,OperationHours,DaysWithData,CAN_Files,GPS_Files,Estabilidad_Files,Rotativo_Files,ErrorRate
+DOBACK023,6,23,0.53,2,0,2,2,2,0.00%
+DOBACK024,28,137,27.90,10,0,10,9,9,0.00%
+DOBACK026,12,28,3.84,2,6,2,3,1,0.00%
+DOBACK027,40,298,51.24,10,10,10,10,10,0.00%
+DOBACK028,28,478,21.46,9,0,10,9,9,0.00%

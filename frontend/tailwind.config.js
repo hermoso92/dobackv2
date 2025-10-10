@@ -1,0 +1,88 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#e6f1ff',
+          100: '#cce3ff',
+          200: '#99c7ff',
+          300: '#66abff',
+          400: '#338fff',
+          500: '#0073ff',
+          600: '#005ccc',
+          700: '#004599',
+          800: '#002e66',
+          900: '#001733',
+        },
+        secondary: {
+          50: '#f5e9ff',
+          100: '#ead3ff',
+          200: '#d6a7ff',
+          300: '#c17bff',
+          400: '#ad4fff',
+          500: '#9823ff',
+          600: '#7a1ccc',
+          700: '#5b1599',
+          800: '#3d0e66',
+          900: '#1e0733',
+        },
+        success: {
+          50: '#e6f7ed',
+          100: '#cdf0dc',
+          200: '#9be1b9',
+          300: '#68d295',
+          400: '#36c372',
+          500: '#04b44f',
+          600: '#03903f',
+          700: '#026c2f',
+          800: '#02481f',
+          900: '#01240f',
+        },
+        danger: {
+          50: '#feebeb',
+          100: '#fcd6d6',
+          200: '#f9adad',
+          300: '#f58585',
+          400: '#f25c5c',
+          500: '#ef3333',
+          600: '#bf2929',
+          700: '#8f1f1f',
+          800: '#601414',
+          900: '#300a0a',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      borderRadius: {
+        'sm': '0.25rem',
+        DEFAULT: '0.375rem',
+        'md': '0.5rem',
+        'lg': '0.75rem',
+        'xl': '1rem',
+        '2xl': '1.5rem',
+      },
+      boxShadow: {
+        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        DEFAULT: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      },
+      height: {
+        'screen-navbar': 'calc(100vh - 64px)',
+      },
+    },
+  },
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'),
+  ],
+}

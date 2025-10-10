@@ -1,0 +1,225 @@
+# Deployment configuration for DobackSoft
+
+# Environment configuration
+environments:
+  development:
+    host: localhost
+    port: 5000
+    debug: true
+    workers: 1
+    threads: 2
+    timeout: 120
+    max_requests: 1000
+    max_requests_jitter: 50
+    
+  staging:
+    host: staging.DobackSoft.com
+    port: 5000
+    debug: false
+    workers: 2
+    threads: 4
+    timeout: 60
+    max_requests: 5000
+    max_requests_jitter: 100
+    
+  production:
+    host: DobackSoft.com
+    port: 5000
+    debug: false
+    workers: 4
+    threads: 8
+    timeout: 30
+    max_requests: 10000
+    max_requests_jitter: 200
+
+# Database configuration
+database:
+  backup:
+    enabled: true
+    retention_days: 7
+    compression: true
+    schedule: "0 0 * * *"  # Daily at midnight
+  
+  migration:
+    auto_migrate: true
+    backup_before_migrate: true
+    rollback_on_failure: true
+  
+  replication:
+    enabled: true
+    master:
+      host: db-master
+      port: 5432
+    slaves:
+      - host: db-slave-1
+        port: 5432
+      - host: db-slave-2
+        port: 5432
+
+# Redis configuration
+redis:
+  backup:
+    enabled: true
+    retention_days: 7
+    schedule: "0 1 * * *"  # Daily at 1 AM
+  
+  replication:
+    enabled: true
+    master:
+      host: redis-master
+      port: 6379
+    slaves:
+      - host: redis-slave-1
+        port: 6379
+      - host: redis-slave-2
+        port: 6379
+
+# Docker configuration
+docker:
+  registry: docker.io
+  repository: DobackSoft
+  tag: latest
+  
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      - BUILD_ENV=production
+      - NODE_ENV=production
+  
+  compose:
+    version: '3.8'
+    services:
+      web:
+        image: ${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${DOCKER_TAG}
+        ports:
+          - "${PORT}:5000"
+        environment:
+          - FLASK_APP=app
+          - FLASK_ENV=${FLASK_ENV}
+          - DATABASE_URL=${DATABASE_URL}
+          - REDIS_URL=${REDIS_URL}
+        depends_on:
+          - db
+          - redis
+        deploy:
+          replicas: ${WORKERS}
+          resources:
+            limits:
+              cpus: '1'
+              memory: 1G
+            reservations:
+              cpus: '0.5'
+              memory: 512M
+      
+      db:
+        image: postgres:13
+        environment:
+          - POSTGRES_USER=${DB_USER}
+          - POSTGRES_PASSWORD=${DB_PASSWORD}
+          - POSTGRES_DB=${DB_NAME}
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
+        deploy:
+          resources:
+            limits:
+              cpus: '2'
+              memory: 2G
+            reservations:
+              cpus: '1'
+              memory: 1G
+      
+      redis:
+        image: redis:6
+        volumes:
+          - redis_data:/data
+        deploy:
+          resources:
+            limits:
+              cpus: '1'
+              memory: 1G
+            reservations:
+              cpus: '0.5'
+              memory: 512M
+    
+    volumes:
+      postgres_data:
+      redis_data:
+
+# Monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    path: /metrics
+    scrape_interval: 15s
+  
+  grafana:
+    enabled: true
+    port: 3000
+    admin_user: admin
+    admin_password: ${GRAFANA_PASSWORD}
+  
+  alertmanager:
+    enabled: true
+    port: 9093
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['alertname', 'cluster', 'service']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        receiver: 'email-notifications'
+      receivers:
+        - name: 'email-notifications'
+          email_configs:
+            - to: 'alerts@DobackSoft.com'
+              from: 'alertmanager@DobackSoft.com'
+              smarthost: 'smtp.gmail.com:587'
+              auth_username: '${SMTP_USER}'
+              auth_password: '${SMTP_PASSWORD}'
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 0 * * *"  # Daily at midnight
+  retention_days: 30
+  compression: true
+  encryption: true
+  storage:
+    type: s3
+    bucket: DobackSoft-backups
+    region: us-east-1
+    prefix: ${FLASK_ENV}
+
+# Security configuration
+security:
+  ssl:
+    enabled: true
+    provider: letsencrypt
+    email: admin@DobackSoft.com
+    domains:
+      - DobackSoft.com
+      - www.DobackSoft.com
+  
+  firewall:
+    enabled: true
+    rules:
+      - port: 80
+        protocol: tcp
+        action: allow
+      - port: 443
+        protocol: tcp
+        action: allow
+      - port: 22
+        protocol: tcp
+        action: allow
+        source: ${ADMIN_IP}
+  
+  fail2ban:
+    enabled: true
+    max_retries: 3
+    ban_time: 3600
+    find_time: 600 

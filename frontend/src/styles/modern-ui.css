@@ -1,0 +1,293 @@
+/* 
+ * DobackSoft V2 - Modern UI Improvements
+ * Technical-Military-Professional Style
+ */
+
+:root {
+    /* Main color palette - Military tech style */
+    --color-primary: #2c3e50;
+    --color-secondary: #34495e;
+    --color-accent: #3498db;
+    --color-accent-dark: #2980b9;
+    --color-success: #27ae60;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
+    --color-light: #ecf0f1;
+    --color-dark: #2c3e50;
+    --color-gray: #95a5a6;
+    --color-background: #f5f7fa;
+
+    /* Font sizes - Reduced by 25% */
+    --font-size-xs: 0.65rem;
+    --font-size-sm: 0.75rem;
+    --font-size-md: 0.85rem;
+    --font-size-lg: 1.05rem;
+    --font-size-xl: 1.2rem;
+    --font-size-2xl: 1.5rem;
+
+    /* Spacing - Reduced by 25% */
+    --spacing-xs: 0.375rem;
+    --spacing-sm: 0.525rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1.125rem;
+    --spacing-xl: 1.5rem;
+
+    /* Border radius - Slightly more squared for military look */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.375rem;
+    --border-radius-lg: 0.5rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ------------ Global Resets ------------ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-dark);
+    font-size: var(--font-size-md);
+    line-height: 1.5;
+}
+
+/* Disable vertical scrollbars on the main container */
+.h-screen {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ------------ Layout and Navigation ------------ */
+
+/* Main layout container - with compact sizing */
+.flex-1 {
+    flex: 1;
+}
+
+/* Main content area - reduce padding by 25% */
+main.flex-1 {
+    padding: var(--spacing-md) !important;
+}
+
+/* Card containers - more compact */
+.bg-white {
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Horizontal Navigation Bar */
+nav.bg-gray-800 {
+    background-color: var(--color-primary) !important;
+    padding: 0 !important;
+}
+
+/* Navigation links - more compact with military-style indicators */
+nav a {
+    padding: var(--spacing-md) var(--spacing-lg) !important;
+    font-size: var(--font-size-sm) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Active nav link - stronger military-style indicator */
+nav a.border-blue-400 {
+    border-color: var(--color-accent) !important;
+    border-width: 3px !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ------------ Dashboard ------------ */
+
+/* Section headers - more compact */
+h1.text-2xl,
+h2.text-lg {
+    font-size: var(--font-size-xl) !important;
+    margin-bottom: var(--spacing-sm) !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--color-primary);
+}
+
+/* Hide "Módulos principales" section */
+section.modules-main-section {
+    display: none !important;
+}
+
+/* Make metric cards more compact */
+.p-4 {
+    padding: var(--spacing-md) !important;
+}
+
+/* Card title text - smaller */
+.text-sm {
+    font-size: var(--font-size-xs) !important;
+}
+
+/* Card value numbers - more prominent */
+.text-2xl {
+    font-size: var(--font-size-xl) !important;
+    font-weight: 700;
+}
+
+/* Make action buttons more compact */
+.px-4.py-2 {
+    padding: var(--spacing-xs) var(--spacing-md) !important;
+    font-size: var(--font-size-xs) !important;
+}
+
+/* ------------ Stability Module ------------ */
+
+/* Tab styling for stability analysis */
+.MuiTabs-root {
+    background-color: var(--color-background);
+    border-radius: var(--border-radius-sm);
+    min-height: 40px !important;
+}
+
+.MuiTab-root {
+    min-height: 40px !important;
+    text-transform: uppercase;
+    font-size: var(--font-size-xs) !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Charts and visualization areas */
+.recharts-wrapper {
+    font-size: var(--font-size-xs) !important;
+}
+
+.recharts-legend-item {
+    font-size: var(--font-size-xs) !important;
+}
+
+/* Vehicle and session selectors */
+.MuiFormControl-root {
+    margin-bottom: var(--spacing-md) !important;
+}
+
+.MuiInputLabel-root {
+    font-size: var(--font-size-sm) !important;
+}
+
+.MuiSelect-root {
+    font-size: var(--font-size-sm) !important;
+}
+
+/* ------------ Telemetry Module ------------ */
+
+/* Telemetry cards */
+.MuiCard-root {
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm) !important;
+    margin-bottom: var(--spacing-md);
+    overflow: hidden;
+}
+
+.MuiCardContent-root {
+    padding: var(--spacing-md) !important;
+}
+
+/* Telemetry data display */
+.MuiTypography-h6 {
+    font-size: var(--font-size-md) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs) !important;
+}
+
+/* Telemetry values */
+.MuiTypography-h3 {
+    font-size: var(--font-size-xl) !important;
+    font-weight: 700;
+}
+
+/* Telemetry chart toggle buttons */
+.MuiToggleButtonGroup-root {
+    height: 32px;
+}
+
+.MuiToggleButton-root {
+    font-size: var(--font-size-xs) !important;
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
+}
+
+/* ------------ AI Analysis Module ------------ */
+
+/* AI Analysis cards */
+.grid.grid-cols-1>div,
+.MuiGrid-item {
+    padding: var(--spacing-xs) !important;
+}
+
+/* Risk score display */
+.MuiLinearProgress-root {
+    height: 6px !important;
+    border-radius: 3px;
+}
+
+/* AI Analysis lists */
+.MuiList-root {
+    padding: 0 !important;
+}
+
+.MuiListItem-root {
+    padding: var(--spacing-xs) 0 !important;
+}
+
+.MuiListItemText-primary {
+    font-size: var(--font-size-sm) !important;
+    font-weight: 600;
+}
+
+.MuiListItemText-secondary {
+    font-size: var(--font-size-xs) !important;
+}
+
+/* AI Chip styling */
+.MuiChip-root {
+    height: 24px !important;
+    font-size: var(--font-size-xs) !important;
+}
+
+/* ------------ Responsive Adjustments ------------ */
+
+@media (max-width: 768px) {
+    :root {
+        /* Further reduce sizes on mobile */
+        --font-size-xs: 0.6rem;
+        --font-size-sm: 0.7rem;
+        --font-size-md: 0.8rem;
+        --font-size-lg: 0.9rem;
+        --font-size-xl: 1.1rem;
+        --font-size-2xl: 1.3rem;
+
+        --spacing-xs: 0.3rem;
+        --spacing-sm: 0.45rem;
+        --spacing-md: 0.6rem;
+        --spacing-lg: 0.9rem;
+        --spacing-xl: 1.2rem;
+    }
+
+    /* Adjust grid layouts for mobile */
+    .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}

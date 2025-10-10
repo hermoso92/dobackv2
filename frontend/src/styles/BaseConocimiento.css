@@ -1,0 +1,64 @@
+.knowledge-base-container {
+    padding: 20px;
+}
+
+.knowledge-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.knowledge-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.knowledge-content {
+    white-space: pre-line;
+    line-height: 1.6;
+}
+
+.knowledge-content p {
+    margin: 0.5em 0;
+}
+
+/* Estilos para los chips de etiquetas */
+.MuiChip-root {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+}
+
+.MuiChip-root:hover {
+    background-color: #e0e0e0;
+}
+
+/* Estilos para el campo de búsqueda */
+.MuiTextField-root {
+    background-color: white;
+    border-radius: 8px;
+}
+
+/* Estilos para el botón de expandir/colapsar */
+.MuiIconButton-root {
+    transition: transform 0.3s ease;
+}
+
+.MuiIconButton-root:hover {
+    background-color: #f5f5f5;
+}
+
+/* Estilos para el contenido expandido */
+.MuiCollapse-root {
+    background-color: #fafafa;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Estilos para el divisor */
+.MuiDivider-root {
+    margin: 16px 0;
+}
+
+/* Estilos para la fecha de actualización */
+.MuiTypography-caption {
+    font-style: italic;
+    color: #666;
+}

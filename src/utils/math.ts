@@ -1,0 +1,10 @@
+/**
+ * Redondea un número a un número específico de decimales
+ * @param value Valor a redondear
+ * @param decimals Número de decimales (por defecto 2)
+ * @returns Número redondeado
+ */
+export function round(value: number, decimals: number = 2): number {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
+} 
