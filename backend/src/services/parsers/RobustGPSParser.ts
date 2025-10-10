@@ -1,0 +1,314 @@
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('RobustGPSParser');
+
+export interface GPSPoint {
+    timestamp: Date;
+    latitude: number;
+    longitude: number;
+    altitude: number;
+    hdop: number;
+    fix: string;
+    satellites: number;
+    speed: number;
+    horaRaspberry: string;
+    horaGPS: string;
+}
+
+export interface GPSParsingResult {
+    puntos: GPSPoint[];
+    problemas: Array<{ tipo: string; linea: number; descripcion: string }>;
+    estadisticas: {
+        total: number;
+        validas: number;
+        sinSenal: number;
+        coordenadasInvalidas: number;
+        timestampsCorruptos: number;
+        porcentajeValido: number;
+    };
+}
+
+/**
+ * Parser robusto de archivos GPS que maneja:
+ * - Líneas "sin datos GPS"
+ * - Timestamps corruptos
+ * - Coordenadas inválidas (0,0 o truncadas)
+ * - Diferencia entre Hora Raspberry y Hora GPS
+ */
+export function parseGPSRobust(buffer: Buffer, fechaSesion?: Date): GPSParsingResult {
+    const contenido = buffer.toString('utf-8');
+    const lineas = contenido.split('\n');
+
+    const puntos: GPSPoint[] = [];
+    const problemas: Array<{ tipo: string; linea: number; descripcion: string }> = [];
+
+    let contadores = {
+        total: 0,
+        validas: 0,
+        sinSenal: 0,
+        coordenadasInvalidas: 0,
+        timestampsCorruptos: 0
+    };
+
+    // Detectar cabecera y fecha de sesión
+    let fechaSesionDetectada: Date | null = fechaSesion || null;
+    let ultimoTimestamp: Date | null = null;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i].trim();
+
+        // Saltar líneas vacías o cabeceras
+        if (!linea || linea.startsWith('GPS;') || linea.startsWith('HoraRaspberry')) {
+            // Intentar extraer fecha de cabecera
+            if (linea.startsWith('GPS;')) {
+                const match = linea.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                if (match && !fechaSesionDetectada) {
+                    const [_, dia, mes, año] = match;
+                    fechaSesionDetectada = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+                }
+            }
+            continue;
+        }
+
+        contadores.total++;
+
+        // Detectar "sin datos GPS"
+        if (linea.includes('sin datos GPS')) {
+            contadores.sinSenal++;
+            problemas.push({
+                tipo: 'GPS_SIN_SENAL',
+                linea: i + 1,
+                descripcion: 'Línea sin señal GPS'
+            });
+            continue;
+        }
+
+        // Parsear línea con datos
+        const partes = linea.split(',');
+
+        if (partes.length < 10) {
+            problemas.push({
+                tipo: 'FORMATO_INVALIDO',
+                linea: i + 1,
+                descripcion: `Esperadas 10 columnas, encontradas ${partes.length}`
+            });
+            continue;
+        }
+
+        try {
+            // Extraer campos
+            const horaRaspberry = partes[0].replace('Hora Raspberry-', '').trim();
+            const fecha = partes[1].trim();
+            const horaGPS = partes[2].replace('Hora GPS-', '').trim();
+            const lat = parseFloat(partes[3]);
+            const lon = parseFloat(partes[4]);
+            const altitude = parseFloat(partes[5]);
+            const hdop = parseFloat(partes[6]);
+            const fix = partes[7].trim();
+            const satellites = parseInt(partes[8]);
+            const speed = parseFloat(partes[9]);
+
+            // Validar coordenadas
+            if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+                contadores.coordenadasInvalidas++;
+                problemas.push({
+                    tipo: 'COORDENADAS_INVALIDAS',
+                    linea: i + 1,
+                    descripcion: `Coordenadas inválidas: ${lat}, ${lon}`
+                });
+                continue;
+            }
+
+            // Validar latitud (rango España: 36-44°N)
+            if (lat < 36 || lat > 44) {
+                contadores.coordenadasInvalidas++;
+                problemas.push({
+                    tipo: 'LATITUD_FUERA_RANGO',
+                    linea: i + 1,
+                    descripcion: `Latitud ${lat} fuera del rango esperado (36-44)`
+                });
+                continue;
+            }
+
+            // Validar longitud (rango España: -10 a 4°E)
+            if (lon < -10 || lon > 4) {
+                contadores.coordenadasInvalidas++;
+                problemas.push({
+                    tipo: 'LONGITUD_FUERA_RANGO',
+                    linea: i + 1,
+                    descripcion: `Longitud ${lon} fuera del rango esperado (-10 a 4)`
+                });
+                continue;
+            }
+
+            // ✅ USAR HORA RASPBERRY (no GPS, que está en UTC)
+            // ✅ Pasar ultimoTimestamp para detectar cruce de medianoche
+            const timestamp = parseTimestampRaspberry(horaRaspberry, fecha, fechaSesionDetectada, ultimoTimestamp);
+
+            if (!timestamp) {
+                contadores.timestampsCorruptos++;
+                problemas.push({
+                    tipo: 'TIMESTAMP_CORRUPTO',
+                    linea: i + 1,
+                    descripcion: `Timestamp inválido: ${horaRaspberry} ${fecha}`
+                });
+                continue;
+            }
+
+            ultimoTimestamp = timestamp;
+
+            // Punto válido
+            puntos.push({
+                timestamp,
+                latitude: lat,
+                longitude: lon,
+                altitude: isNaN(altitude) ? 0 : altitude,
+                hdop: isNaN(hdop) ? 99.9 : hdop,
+                fix,
+                satellites: isNaN(satellites) ? 0 : satellites,
+                speed: isNaN(speed) ? 0 : speed,
+                horaRaspberry,
+                horaGPS
+            });
+
+            contadores.validas++;
+
+        } catch (error: any) {
+            problemas.push({
+                tipo: 'ERROR_PARSEADO',
+                linea: i + 1,
+                descripcion: `Error al parsear: ${error.message}`
+            });
+        }
+    }
+
+    const porcentajeValido = contadores.total > 0
+        ? (contadores.validas / contadores.total) * 100
+        : 0;
+
+    logger.info('GPS parseado', {
+        total: contadores.total,
+        validas: contadores.validas,
+        sinSenal: contadores.sinSenal,
+        porcentajeValido: porcentajeValido.toFixed(2)
+    });
+
+    return {
+        puntos,
+        problemas,
+        estadisticas: {
+            ...contadores,
+            porcentajeValido
+        }
+    };
+}
+
+/**
+ * Parsea timestamp usando HORA RASPBERRY (no GPS que está en UTC)
+ * 
+ * CORRECCIONES:
+ * - Zona horaria: Europe/Madrid
+ * - Maneja cruce de medianoche (si hora actual < hora anterior, incrementa día)
+ */
+function parseTimestampRaspberry(
+    horaRaspberry: string,
+    fecha: string,
+    fechaBase?: Date | null,
+    ultimoTimestamp?: Date | null
+): Date | null {
+    try {
+        // Hora Raspberry puede venir en formato HH:MM:SS o corrupto (HH:MM:.)
+        const horaMatch = horaRaspberry.match(/(\d{2}):(\d{2}):(\d{2})/);
+        if (!horaMatch) {
+            return null;
+        }
+
+        const [_, horas, minutos, segundos] = horaMatch;
+        const horaActual = parseInt(horas);
+
+        // Fecha puede venir en formato DD/MM/YYYY
+        let fechaParsed: Date;
+
+        if (fechaBase) {
+            fechaParsed = new Date(fechaBase);
+        } else {
+            const fechaMatch = fecha.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+            if (!fechaMatch) {
+                return null;
+            }
+
+            const [__, dia, mes, año] = fechaMatch;
+            fechaParsed = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+        }
+
+        // ✅ DETECTAR CRUCE DE MEDIANOCHE
+        if (ultimoTimestamp) {
+            const horaAnterior = ultimoTimestamp.getHours();
+
+            // Si hora actual < hora anterior, es probable que sea el día siguiente
+            if (horaActual < horaAnterior && (horaAnterior - horaActual) > 12) {
+                // Incrementar un día
+                fechaParsed.setDate(fechaParsed.getDate() + 1);
+                logger.info(`Cruce de medianoche detectado: ${horaAnterior}:XX → ${horaActual}:XX (día +1)`);
+            }
+        }
+
+        fechaParsed.setHours(parseInt(horas), parseInt(minutos), parseInt(segundos), 0);
+
+        // TODO: Convertir a Europe/Madrid si es necesario
+        // Por ahora asumimos que Hora Raspberry ya está en hora local
+
+        return fechaParsed;
+
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Interpola puntos GPS cuando hay gaps < 10 segundos
+ */
+export function interpolarGPS(puntos: GPSPoint[]): GPSPoint[] {
+    if (puntos.length < 2) return puntos;
+
+    const puntosCompletos: GPSPoint[] = [];
+    let interpolados = 0;
+
+    for (let i = 0; i < puntos.length - 1; i++) {
+        puntosCompletos.push(puntos[i]);
+
+        const siguiente = puntos[i + 1];
+        const diffSegundos = (siguiente.timestamp.getTime() - puntos[i].timestamp.getTime()) / 1000;
+
+        // Interpolar si hay gap entre 1 y 10 segundos
+        if (diffSegundos > 1 && diffSegundos <= 10) {
+            const numPuntosInterpolados = Math.floor(diffSegundos) - 1;
+
+            for (let j = 1; j <= numPuntosInterpolados; j++) {
+                const ratio = j / (numPuntosInterpolados + 1);
+
+                puntosCompletos.push({
+                    timestamp: new Date(puntos[i].timestamp.getTime() + diffSegundos * 1000 * ratio),
+                    latitude: puntos[i].latitude + (siguiente.latitude - puntos[i].latitude) * ratio,
+                    longitude: puntos[i].longitude + (siguiente.longitude - puntos[i].longitude) * ratio,
+                    altitude: puntos[i].altitude + (siguiente.altitude - puntos[i].altitude) * ratio,
+                    hdop: puntos[i].hdop,
+                    fix: '1',
+                    satellites: puntos[i].satellites,
+                    speed: puntos[i].speed + (siguiente.speed - puntos[i].speed) * ratio,
+                    horaRaspberry: `[INTERPOLADO]`,
+                    horaGPS: `[INTERPOLADO]`
+                });
+
+                interpolados++;
+            }
+        }
+    }
+
+    puntosCompletos.push(puntos[puntos.length - 1]);
+
+    logger.info(`GPS interpolado: ${interpolados} puntos agregados`);
+
+    return puntosCompletos;
+}
+

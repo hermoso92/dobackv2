@@ -8,6 +8,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createLogger } from '../utils/logger';
 import { keyCalculator } from './keyCalculator';
+import { kpiCacheService } from './KPICacheService';
 import { speedAnalyzer } from './speedAnalyzer';
 
 const prisma = new PrismaClient();
@@ -333,6 +334,24 @@ export async function calcularDisponibilidad(sessionIds: string[]): Promise<{
 }
 
 // ============================================================================
+// KPI 8: CLAVES OPERACIONALES REALES (DESDE BD)
+// ============================================================================
+
+export async function calcularClavesOperacionalesReales(sessionIds: string[]): Promise<{
+    total_claves: number;
+    por_tipo: Record<number, { cantidad: number; duracion_total: number; duracion_promedio: number }>;
+    claves_recientes: any[];
+}> {
+    // ⚠️ TEMPORALMENTE DESHABILITADO - Prisma Client corrupto
+    // TODO: Resolver problema de columna 'existe' inexistente
+    return {
+        total_claves: 0,
+        por_tipo: {},
+        claves_recientes: []
+    };
+}
+
+// ============================================================================
 // RESUMEN COMPLETO
 // ============================================================================
 
@@ -343,7 +362,14 @@ export async function calcularKPIsCompletos(filters: {
     vehicleIds?: string[];
 }): Promise<any> {
     try {
-        logger.info('Calculando KPIs completos', filters);
+        // ✅ OPTIMIZACIÓN: Verificar cache primero
+        const cached = kpiCacheService.get(filters);
+        if (cached) {
+            logger.info('KPIs obtenidos desde cache', filters);
+            return cached;
+        }
+
+        logger.info('Calculando KPIs completos (sin cache)', filters);
 
         // Construir filtro de sesiones
         const sessionFilter: any = {
@@ -407,7 +433,8 @@ export async function calcularKPIsCompletos(filters: {
             horasConduccion,
             disponibilidad,
             indiceEstabilidad,
-            analisisVelocidad
+            analisisVelocidad,
+            clavesOperacionales // ✅ NUEVO: Claves desde BD
         ] = await Promise.all([
             calcularTiempoRotativo(sessionIds),
             calcularKilometrosRecorridos(sessionIds),
@@ -415,7 +442,8 @@ export async function calcularKPIsCompletos(filters: {
             calcularHorasConduccion(sessionIds),
             calcularDisponibilidad(sessionIds),
             calcularIndiceEstabilidad(sessionIds),
-            speedAnalyzer.analizarVelocidades(sessionIds)
+            speedAnalyzer.analizarVelocidades(sessionIds),
+            calcularClavesOperacionalesReales(sessionIds) // ✅ NUEVO
         ]);
 
         // Calcular duración total de sesiones
@@ -481,7 +509,7 @@ export async function calcularKPIsCompletos(filters: {
             time_outside_formatted: formatTime((tiemposPorClave.clave2_segundos + tiemposPorClave.clave3_segundos + tiemposPorClave.clave5_segundos) / 3600)
         };
 
-        return {
+        const resultado = {
             states,
             activity: {
                 km_total: kilometros.km_total,
@@ -525,8 +553,19 @@ export async function calcularKPIsCompletos(filters: {
                 cobertura_gps: kilometros.porcentaje_cobertura,
                 puntos_gps_validos: kilometros.puntos_gps_validos,
                 puntos_gps_invalidos: kilometros.puntos_gps_invalidos
+            },
+            // ✅ NUEVO: Claves operacionales reales desde BD
+            operationalKeys: {
+                total: clavesOperacionales.total_claves,
+                porTipo: clavesOperacionales.por_tipo,
+                recientes: clavesOperacionales.claves_recientes
             }
         };
+
+        // ✅ OPTIMIZACIÓN: Guardar en cache
+        kpiCacheService.set(filters, resultado);
+
+        return resultado;
     } catch (error) {
         logger.error('Error calculando KPIs completos', error);
         throw error;

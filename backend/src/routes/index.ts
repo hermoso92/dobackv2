@@ -60,10 +60,12 @@ import alertEscalationRoutes from './alertEscalation';
 import emergencyDashboardRoutes from './emergencyDashboard';
 import emergencyReportsRoutes from './emergencyReports';
 import intelligentAlertsRoutes from './intelligentAlerts';
+import operationalKeysRoutes from './operationalKeys';
 import pushNotificationsRoutes from './pushNotifications';
 import telemetryRoutes from './telemetry';
 import telemetryV2Routes from './telemetry-v2';
 import uploadRoutes from './upload-simple';
+import uploadUnifiedRoutes from './upload-unified';
 import uploadsRoutes from './uploads';
 import vehicleRoutes from './vehicles';
 import zonesRoutes from './zones';
@@ -352,6 +354,7 @@ router.use('/reports', reportsRoutes);
 router.use('/simple-reports', simpleReportsRoutes);
 router.use('/uploads', uploadsRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/upload-unified', uploadUnifiedRoutes); // NUEVO: Sistema unificado de subida
 router.use('/ai', aiCacheMiddleware, aiRoutes);
 router.use('/admin', adminRoutes);
 router.use('/observability', observabilityRoutes);
@@ -472,6 +475,9 @@ router.get('/road-types', (req, res) => {
 router.use('/kpi', dashboardCacheMiddleware, kpiRoutes);
 router.use('/kpi-calculation', dashboardCacheMiddleware, kpiCalculationRoutes);
 router.use('/kpis', kpisOperationalRoutes); // KPIs operativos (claves 0-5)
+
+// Rutas de claves operacionales (NUEVO - FASE 4)
+router.use('/operational-keys', operationalKeysRoutes);
 
 // Rutas del Módulo de Operaciones (Eventos Críticos, Alertas, Mantenimiento)
 router.use('/operations', operationsRoutes);

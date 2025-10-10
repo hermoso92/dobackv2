@@ -1,0 +1,3 @@
+ROTATIVO RealTime;26/09/2025-14:42:49;Sesión:0
+Fecha-Hora;Estado
+26/09/2025-14:42:49;0

@@ -1,0 +1,1020 @@
+{
+  "archivo": "ROTATIVO_DOBACK024_20251008.txt",
+  "totalLineas": 775,
+  "lineasAnalizadas": 775,
+  "estadisticas": {
+    "cabecerasSesion": 7,
+    "cabecerasColumnas": 7,
+    "marcadoresTemporales": 0,
+    "lineasDatos": 760,
+    "lineasVacias": 1,
+    "lineasDesconocidas": 0,
+    "problemasDetectados": 0,
+    "camposPorLinea": {}
+  },
+  "primerasLineas": [
+    {
+      "numero": 1,
+      "contenido": "ROTATIVO;08/10/2025-04:43:29;DOBACK024;Sesión:1\r",
+      "tipo": "CABECERA_SESION",
+      "problemas": [],
+      "notas": [
+        "Fecha: 08/10/2025",
+        "Hora: 04:43:29",
+        "Vehículo: DOBACK024",
+        "Sesión: 1"
+      ]
+    },
+    {
+      "numero": 2,
+      "contenido": "Fecha-Hora;Estado\r",
+      "tipo": "CABECERA_COLUMNAS",
+      "problemas": [],
+      "notas": [
+        "Columnas: Fecha-Hora, Estado..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 3,
+      "contenido": "08/10/2025-04:43:29;0\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:43:29; 0..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 4,
+      "contenido": "08/10/2025-04:43:44;0\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:43:44; 0..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 5,
+      "contenido": "08/10/2025-04:43:59;0\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:43:59; 0..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 6,
+      "contenido": "08/10/2025-04:44:14;0\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:44:14; 0..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 7,
+      "contenido": "08/10/2025-04:44:29;0\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:44:29; 0..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 8,
+      "contenido": "08/10/2025-04:44:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:44:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 9,
+      "contenido": "08/10/2025-04:44:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:44:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 10,
+      "contenido": "08/10/2025-04:45:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:45:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 11,
+      "contenido": "08/10/2025-04:45:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:45:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 12,
+      "contenido": "08/10/2025-04:45:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:45:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 13,
+      "contenido": "08/10/2025-04:45:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:45:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 14,
+      "contenido": "08/10/2025-04:46:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:46:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 15,
+      "contenido": "08/10/2025-04:46:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:46:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 16,
+      "contenido": "08/10/2025-04:46:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:46:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 17,
+      "contenido": "08/10/2025-04:46:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:46:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 18,
+      "contenido": "08/10/2025-04:47:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:47:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 19,
+      "contenido": "08/10/2025-04:47:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:47:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 20,
+      "contenido": "08/10/2025-04:47:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:47:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 21,
+      "contenido": "08/10/2025-04:47:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:47:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 22,
+      "contenido": "08/10/2025-04:48:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:48:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 23,
+      "contenido": "08/10/2025-04:48:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:48:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 24,
+      "contenido": "08/10/2025-04:48:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:48:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 25,
+      "contenido": "08/10/2025-04:48:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:48:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 26,
+      "contenido": "08/10/2025-04:49:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:49:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 27,
+      "contenido": "08/10/2025-04:49:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:49:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 28,
+      "contenido": "08/10/2025-04:49:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:49:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 29,
+      "contenido": "08/10/2025-04:49:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:49:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 30,
+      "contenido": "08/10/2025-04:50:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:50:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 31,
+      "contenido": "08/10/2025-04:50:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:50:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 32,
+      "contenido": "08/10/2025-04:50:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:50:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 33,
+      "contenido": "08/10/2025-04:50:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:50:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 34,
+      "contenido": "08/10/2025-04:51:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:51:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 35,
+      "contenido": "08/10/2025-04:51:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:51:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 36,
+      "contenido": "08/10/2025-04:51:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:51:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 37,
+      "contenido": "08/10/2025-04:51:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:51:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 38,
+      "contenido": "08/10/2025-04:52:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:52:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 39,
+      "contenido": "08/10/2025-04:52:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:52:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 40,
+      "contenido": "08/10/2025-04:52:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:52:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 41,
+      "contenido": "08/10/2025-04:52:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:52:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 42,
+      "contenido": "08/10/2025-04:53:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:53:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 43,
+      "contenido": "08/10/2025-04:53:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:53:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 44,
+      "contenido": "08/10/2025-04:53:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:53:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 45,
+      "contenido": "08/10/2025-04:53:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:53:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 46,
+      "contenido": "08/10/2025-04:54:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:54:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 47,
+      "contenido": "08/10/2025-04:54:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:54:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 48,
+      "contenido": "08/10/2025-04:54:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:54:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 49,
+      "contenido": "08/10/2025-04:54:59;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:54:59; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 50,
+      "contenido": "08/10/2025-04:55:14;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:55:14; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 51,
+      "contenido": "08/10/2025-04:55:29;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:55:29; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 52,
+      "contenido": "08/10/2025-04:55:44;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:55:44; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 53,
+      "contenido": "08/10/2025-04:56:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:56:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 54,
+      "contenido": "08/10/2025-04:56:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:56:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 55,
+      "contenido": "08/10/2025-04:56:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:56:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 56,
+      "contenido": "08/10/2025-04:56:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:56:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 57,
+      "contenido": "08/10/2025-04:57:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:57:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 58,
+      "contenido": "08/10/2025-04:57:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:57:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 59,
+      "contenido": "08/10/2025-04:57:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:57:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 60,
+      "contenido": "08/10/2025-04:57:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:57:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 61,
+      "contenido": "08/10/2025-04:58:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:58:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 62,
+      "contenido": "08/10/2025-04:58:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:58:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 63,
+      "contenido": "08/10/2025-04:58:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:58:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 64,
+      "contenido": "08/10/2025-04:58:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:58:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 65,
+      "contenido": "08/10/2025-04:59:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:59:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 66,
+      "contenido": "08/10/2025-04:59:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:59:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 67,
+      "contenido": "08/10/2025-04:59:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:59:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 68,
+      "contenido": "08/10/2025-04:59:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-04:59:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 69,
+      "contenido": "08/10/2025-05:00:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:00:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 70,
+      "contenido": "08/10/2025-05:00:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:00:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 71,
+      "contenido": "08/10/2025-05:00:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:00:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 72,
+      "contenido": "08/10/2025-05:00:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:00:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 73,
+      "contenido": "08/10/2025-05:01:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:01:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 74,
+      "contenido": "08/10/2025-05:01:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:01:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 75,
+      "contenido": "08/10/2025-05:01:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:01:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 76,
+      "contenido": "08/10/2025-05:01:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:01:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 77,
+      "contenido": "08/10/2025-05:02:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:02:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 78,
+      "contenido": "08/10/2025-05:02:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:02:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 79,
+      "contenido": "08/10/2025-05:02:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:02:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 80,
+      "contenido": "08/10/2025-05:02:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:02:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 81,
+      "contenido": "08/10/2025-05:03:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:03:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 82,
+      "contenido": "08/10/2025-05:03:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:03:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 83,
+      "contenido": "08/10/2025-05:03:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:03:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 84,
+      "contenido": "08/10/2025-05:03:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:03:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 85,
+      "contenido": "08/10/2025-05:04:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:04:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 86,
+      "contenido": "08/10/2025-05:04:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:04:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 87,
+      "contenido": "08/10/2025-05:04:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:04:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 88,
+      "contenido": "08/10/2025-05:04:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:04:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 89,
+      "contenido": "08/10/2025-05:05:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:05:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 90,
+      "contenido": "08/10/2025-05:05:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:05:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 91,
+      "contenido": "08/10/2025-05:05:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:05:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 92,
+      "contenido": "08/10/2025-05:05:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:05:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 93,
+      "contenido": "08/10/2025-05:06:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:06:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 94,
+      "contenido": "08/10/2025-05:06:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:06:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 95,
+      "contenido": "08/10/2025-05:06:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:06:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 96,
+      "contenido": "08/10/2025-05:06:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:06:45; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 97,
+      "contenido": "08/10/2025-05:07:00;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:07:00; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 98,
+      "contenido": "08/10/2025-05:07:15;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:07:15; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 99,
+      "contenido": "08/10/2025-05:07:30;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:07:30; 1..."
+      ],
+      "campos": 2
+    },
+    {
+      "numero": 100,
+      "contenido": "08/10/2025-05:07:45;1\r",
+      "tipo": "DATOS",
+      "problemas": [],
+      "notas": [
+        "Muestra: 08/10/2025-05:07:45; 1..."
+      ],
+      "campos": 2
+    }
+  ],
+  "problemasAgrupados": []
+}

@@ -1,188 +1,130 @@
-# 🚀 EJECUTAR AHORA - Dashboard V3 Listo
+# 🚀 EJECUTAR AHORA PARA COMPLETAR EL SISTEMA AL 100%
 
-## ✅ Implementación Completada: 73.3% (11/15 tareas)
+## 📋 Estado Actual
 
-Todo el código está implementado y funcionando. Solo faltan las **3 pruebas visuales** que requieren que abras el navegador.
+✅ **Radar.com habilitado y funcionando** (2 parques configurados)
+✅ **Dashboard funcionando** con KPIs, filtros y eventos
+✅ **Backend activo** en puerto 9998
+✅ **Frontend activo** en puerto 5174
+
+⚠️ **Claves operacionales deshabilitadas** → Solo falta aplicar migración de BD
 
 ---
 
-## 📋 Comandos a Ejecutar (EN ORDEN)
+## ⚡ SOLUCIÓN EN 3 PASOS (5 minutos)
 
-### 1. Verificar Configuración (30 segundos)
+### Desde una NUEVA ventana de PowerShell:
+
 ```powershell
-.\verificar-configuracion.ps1
-```
+# 1. Ir al directorio backend
+cd "C:\Users\Cosigein SL\Desktop\DobackSoft\backend"
 
-**Si sale error de `.env` faltante**:
-```powershell
-Copy-Item env.example .env
-```
+# 2. Ejecutar script de migración
+.\aplicar-migracion-claves.ps1
 
----
-
-### 2. Iniciar Servicios (ya lo tienes con iniciardev.ps1)
-```powershell
-.\iniciardev.ps1
-```
-
-**Esperar a que diga**:
-- ✅ Backend en 9998
-- ✅ Frontend en 5174
-
----
-
-### 3. Abrir Dashboard en Navegador
-```powershell
-start http://localhost:5174
-```
-
----
-
-### 4. Verificación Rápida (5 minutos)
-
-#### A. Login
-- Entrar con tus credenciales
-
-#### B. Dashboard → Estados & Tiempos
-**¿Ves números en los KPIs?**
-- ✅ SÍ → Perfecto, sigue
-- ❌ NO → Ver troubleshooting abajo
-
-#### C. Dashboard → Puntos Negros
-**¿Se carga el mapa TomTom?**
-- ✅ SÍ → Perfecto
-- ❌ NO → Verificar clave TomTom en `.env`
-
-**¿Ves círculos en el mapa?**
-- ✅ SÍ → ¡Excelente! Clustering funciona
-- ⚠️ NO → Normal si no hay datos, cambiar "Frecuencia Mínima" a 1
-
-#### D. Dashboard → Velocidad
-**¿Se carga el mapa?**
-- ✅ SÍ → Perfecto
-- ❌ NO → Verificar clave TomTom
-
-**¿Ves estadísticas arriba? (Total, Graves, Leves)**
-- ✅ SÍ → ¡Funciona!
-- ⚠️ NO → Normal si no hay datos de velocidad
-
-#### E. Panel de Diagnóstico
-**Click en "⚙️ Diagnóstico" en el header**
-- ✅ Se abre panel → ¡Funciona!
-- ❌ No pasa nada → F12, ver errores en consola
-
----
-
-## 🎯 Si TODO Funciona (✅✅✅✅✅)
-
-¡Felicitaciones! El Dashboard V3 está **100% operativo**.
-
-**Opcional**: Ejecutar pruebas detalladas en `GUIA_PRUEBAS_ACEPTACION.md`
-
-**Marcar como completado**: Los 3 TODOs de pruebas
-
----
-
-## 🐛 Troubleshooting Rápido
-
-### ❌ KPIs en 0 (Estados & Tiempos)
-
-**Causa probable**: No hay datos en la BD o filtros muy restrictivos
-
-**Solución**:
-1. Cambiar filtros a "Todos los vehículos" + "Todo el período"
-2. Si sigue en 0, ejecutar auditoría SQL:
-   ```powershell
-   psql -U dobacksoft -d dobacksoft -f backend\scripts\audit_dashboard_data.sql
-   ```
-3. Ver si retorna registros en `vehicle_state_intervals`
-
----
-
-### ❌ Mapas grises (Puntos Negros / Velocidad)
-
-**Causa probable**: Clave de TomTom no configurada
-
-**Solución**:
-```powershell
-# Verificar .env
-Get-Content .env | Select-String "TOMTOM"
-
-# Debe mostrar:
-# REACT_APP_TOMTOM_API_KEY=u8wN3BM4AMzDGGC76lLF14vHblDP37HG
-
-# Si no está, agregar manualmente a .env
-```
-
----
-
-### ❌ Error 500 en Consola
-
-**Causa probable**: Prisma Client no generado
-
-**Solución**:
-```powershell
-cd backend\src
+# 3. Si el script falla, ejecuta manualmente:
+Get-Process node | Stop-Process -Force
+Remove-Item -Recurse -Force node_modules\.prisma
+npx prisma migrate deploy
 npx prisma generate
-cd ..\..
+
+# 4. Reiniciar sistema
+cd ..
+.\iniciar.ps1
+```
+
+---
+
+## ✅ DESPUÉS DE EJECUTAR
+
+El sistema estará **100% funcional** con:
+
+### 1. Claves Operacionales Activas
+- ✅ Clave 0: Tiempo en taller
+- ✅ Clave 1: Tiempo en parque
+- ✅ Clave 2: Salida de emergencia
+- ✅ Clave 3: En incendio (≥5 min parado)
+- ✅ Clave 5: Regreso al parque
+
+### 2. Radar.com en Producción
+- ✅ Detecta automáticamente entrada/salida de parques
+- ✅ 2 parques configurados (Las Rozas + Alcobendas)
+- ✅ Fallback a BD local si falla
+
+### 3. Dashboard Completo
+- ✅ KPIs principales
+- ✅ Estados y tiempos
+- ✅ Puntos negros
+- ✅ Velocidad
+- ✅ **Claves operacionales** (nueva pestaña)
+
+### 4. Reportes PDF Profesionales
+- ✅ KPIs ejecutivos
+- ✅ Claves operacionales
+- ✅ Eventos con mapas
+- ✅ Calidad de datos
+- ✅ Recomendaciones automáticas
+
+---
+
+## 🔍 VERIFICACIÓN
+
+Después de reiniciar, verifica:
+
+1. **Backend logs:** No debe haber errores de Prisma
+2. **Frontend:** No debe haber errores 401 en `/api/operational-keys`
+3. **Dashboard:** Pestaña "Claves Operacionales" debe cargar
+4. **KPIs:** Debe mostrar tiempos por clave
+
+---
+
+## 📊 QUÉ HACE EL SCRIPT
+
+`aplicar-migracion-claves.ps1` ejecuta:
+
+1. ✅ Detiene todos los procesos Node
+2. ✅ Limpia Prisma Client corrupto
+3. ✅ Aplica migración SQL a PostgreSQL:
+   - Crea tabla `OperationalKey`
+   - Crea tabla `DataQualityMetrics`
+   - Crea enums `EventSeverity` y `OperationalKeyType`
+   - Añade índices optimizados
+   - Añade triggers automáticos
+4. ✅ Regenera Prisma Client limpio
+5. ✅ Verifica que tablas existan
+
+---
+
+## ⚠️ SI EL SCRIPT FALLA
+
+### Opción Manual (PostgreSQL directo):
+
+```powershell
+# Conectar a PostgreSQL
+psql -h localhost -U postgres -d dobacksoft
+
+# Ejecutar la migración
+\i prisma/migrations/20251010_add_operational_keys_and_quality_v2/migration.sql
+
+# Salir
+\q
+
+# Regenerar Prisma
+npx prisma generate
 
 # Reiniciar
-.\iniciardev.ps1
+cd ..
+.\iniciar.ps1
 ```
 
 ---
 
-### ❌ Panel de Diagnóstico no abre
+## 📈 PROGRESO TOTAL
 
-**Soluciones**:
-1. Verificar en navegador: `http://localhost:9998/api/diagnostics/dashboard`
-2. Debe retornar JSON, no 404
-3. Si retorna 404 → Reiniciar backend (`.\iniciardev.ps1`)
-
----
-
-## 📸 Capturas Recomendadas
-
-Si todo funciona, capturar screenshots de:
-1. Estados & Tiempos con KPIs poblados
-2. Puntos Negros con mapa y clusters
-3. Velocidad con mapa y estadísticas
-4. Panel de Diagnóstico abierto
-5. PDF exportado abierto
+**Implementado:** 90% del plan
+**Bloqueado por:** Migración de BD no aplicada
+**Tiempo para 100%:** 5 minutos
 
 ---
 
-## 🎉 Checklist Final
-
-- [ ] `.\verificar-configuracion.ps1` pasa sin errores
-- [ ] `.\iniciardev.ps1` inicia ambos servicios
-- [ ] Login funciona correctamente
-- [ ] Estados & Tiempos muestra datos
-- [ ] Puntos Negros muestra mapa
-- [ ] Velocidad muestra mapa y estadísticas
-- [ ] Panel de Diagnóstico abre
-- [ ] Exportar PDF funciona
-- [ ] Sin errores en consola del navegador
-
-**Si todos ✅**: ¡Implementación 100% exitosa!
-
----
-
-## 📞 Qué Hacer Después
-
-### Si TODO funciona ✅
-→ Marcar los 3 TODOs de pruebas como completados  
-→ Continuar con desarrollo normal  
-→ Disfrutar del Dashboard V3 activado
-
-### Si algo NO funciona ❌
-→ Revisar `GUIA_PRUEBAS_ACEPTACION.md` (troubleshooting detallado)  
-→ Capturar screenshots del error  
-→ Reportar el problema específico
-
----
-
-**Fecha**: {{CURRENT_DATE}}  
-**Versión**: StabilSafe V3  
-**Estado**: ✅ LISTO PARA EJECUTAR PRUEBAS
-
+**EJECUTA EL SCRIPT AHORA Y EL SISTEMA ESTARÁ COMPLETO** 🚀

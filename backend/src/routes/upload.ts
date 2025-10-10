@@ -1,3 +1,22 @@
+/**
+ * ⚠️ DEPRECATED: Este controlador es antiguo
+ * 
+ * @deprecated Usar /api/upload-unified/unified en su lugar
+ * 
+ * PROBLEMAS:
+ * - No detecta sesiones múltiples (1-62 por archivo)
+ * - No valida calidad de datos
+ * - No interpola GPS
+ * - No guarda métricas de calidad
+ * 
+ * SISTEMA NUEVO:
+ * - POST /api/upload-unified/unified
+ * - UnifiedFileProcessor.ts
+ * - RobustGPSParser, RobustStabilityParser, RobustRotativoParser
+ * 
+ * Mantener solo por compatibilidad temporal
+ */
+
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';

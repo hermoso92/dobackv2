@@ -1,3 +1,14 @@
+/**
+ * ⚠️ DEPRECATED: Upload simple sin procesamiento
+ * 
+ * @deprecated Usar /api/upload-unified/unified para procesamiento completo
+ * 
+ * Este endpoint solo parsea archivos pero NO guarda datos en BD.
+ * Usar solo para validación rápida.
+ * 
+ * SISTEMA NUEVO: POST /api/upload-unified/unified
+ */
+
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';

@@ -1,0 +1,927 @@
+{
+  "archivo": "GPS_DOBACK024_20251008.txt",
+  "totalLineas": 8447,
+  "lineasAnalizadas": 1000,
+  "estadisticas": {
+    "cabecerasSesion": 1,
+    "cabecerasColumnas": 1,
+    "marcadoresTemporales": 0,
+    "lineasDatos": 0,
+    "lineasVacias": 0,
+    "lineasDesconocidas": 998,
+    "problemasDetectados": 998,
+    "camposPorLinea": {}
+  },
+  "primerasLineas": [
+    {
+      "numero": 1,
+      "contenido": "GPS;08/10/2025-04:43:30;DOBACK024;Sesión:1\r",
+      "tipo": "CABECERA_SESION",
+      "problemas": [],
+      "notas": [
+        "Fecha: 08/10/2025",
+        "Hora: 04:43:30",
+        "Vehículo: DOBACK024",
+        "Sesión: 1"
+      ]
+    },
+    {
+      "numero": 2,
+      "contenido": "HoraRaspberry,Fecha,Hora(GPS),Latitud,Longitud,Altitud,HDOP,Fix,NumSats,Velocidad(km/h)\r",
+      "tipo": "CABECERA_COLUMNAS",
+      "problemas": [],
+      "notas": [
+        "Columnas: HoraRaspberry,Fecha,Hora(GPS),Latitud,Longitud,Altitud,HDOP,Fix,NumSats,Velocidad(km/h)..."
+      ],
+      "campos": 1
+    },
+    {
+      "numero": 3,
+      "contenido": "Hora Raspberry-04:43:30,08/10/2025,Hora GPS-04:43:30,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 4,
+      "contenido": "Hora Raspberry-04:43:31,08/10/2025,Hora GPS-04:43:31,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 5,
+      "contenido": "Hora Raspberry-04:43:32,08/10/2025,Hora GPS-04:43:32,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 6,
+      "contenido": "Hora Raspberry-04:43:33,08/10/2025,Hora GPS-04:43:33,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 7,
+      "contenido": "Hora Raspberry-04:43:34,08/10/2025,Hora GPS-04:43:34,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 8,
+      "contenido": "Hora Raspberry-04:43:35,08/10/2025,Hora GPS-04:43:35,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 9,
+      "contenido": "Hora Raspberry-04:43:36,08/10/2025,Hora GPS-04:43:36,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 10,
+      "contenido": "Hora Raspberry-04:43:37,08/10/2025,Hora GPS-04:43:37,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 11,
+      "contenido": "Hora Raspberry-04:43:38,08/10/2025,Hora GPS-04:43:38,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 12,
+      "contenido": "Hora Raspberry-04:43:40,08/10/2025,Hora GPS-04:43:40,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 13,
+      "contenido": "Hora Raspberry-04:43:41,08/10/2025,Hora GPS-04:43:41,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 14,
+      "contenido": "Hora Raspberry-04:43:42,08/10/2025,Hora GPS-04:43:42,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 15,
+      "contenido": "Hora Raspberry-04:43:43,08/10/2025,Hora GPS-04:43:43,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 16,
+      "contenido": "Hora Raspberry-04:43:44,08/10/2025,Hora GPS-04:43:44,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 17,
+      "contenido": "Hora Raspberry-04:43:45,08/10/2025,Hora GPS-04:43:45,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 18,
+      "contenido": "Hora Raspberry-04:43:49,08/10/2025,Hora GPS-04:43:49,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 19,
+      "contenido": "Hora Raspberry-04:43:50,08/10/2025,Hora GPS-04:43:50,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 20,
+      "contenido": "Hora Raspberry-04:43:51,08/10/2025,Hora GPS-04:43:51,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 21,
+      "contenido": "Hora Raspberry-04:43:53,08/10/2025,Hora GPS-04:43:53,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 22,
+      "contenido": "Hora Raspberry-04:43:54,08/10/2025,Hora GPS-04:43:54,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 23,
+      "contenido": "Hora Raspberry-04:43:56,08/10/2025,Hora GPS-04:43:56,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 24,
+      "contenido": "Hora Raspberry-04:43:57,08/10/2025,Hora GPS-04:43:57,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 25,
+      "contenido": "Hora Raspberry-04:43:58,08/10/2025,Hora GPS-04:43:58,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 26,
+      "contenido": "Hora Raspberry-04:43:59,08/10/2025,Hora GPS-04:43:59,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 27,
+      "contenido": "Hora Raspberry-04:44:00,08/10/2025,Hora GPS-04:44:00,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 28,
+      "contenido": "Hora Raspberry-04:44:01,08/10/2025,Hora GPS-04:44:01,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 29,
+      "contenido": "Hora Raspberry-04:44:02,08/10/2025,Hora GPS-02:44:02,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 30,
+      "contenido": "Hora Raspberry-04:44:04,08/10/2025,Hora GPS-02:44:04,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 31,
+      "contenido": "Hora Raspberry-04:44:06,08/10/2025,Hora GPS-02:44:06,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 32,
+      "contenido": "Hora Raspberry-04:44:07,08/10/2025,Hora GPS-02:44:07,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 33,
+      "contenido": "Hora Raspberry-04:44:08,08/10/2025,Hora GPS-02:44:08,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 34,
+      "contenido": "Hora Raspberry-04:44:09,08/10/2025,Hora GPS-02:44:09,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 35,
+      "contenido": "Hora Raspberry-04:44:12,08/10/2025,Hora GPS-02:41:2.,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 36,
+      "contenido": "Hora Raspberry-04:44:13,08/10/2025,Hora GPS-02:44:13,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 37,
+      "contenido": "Hora Raspberry-04:44:14,08/10/2025,Hora GPS-02:44:14,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 38,
+      "contenido": "Hora Raspberry-04:44:15,08/10/2025,Hora GPS-02:44:15,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 39,
+      "contenido": "Hora Raspberry-04:44:16,08/10/2025,Hora GPS-02:44:16,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 40,
+      "contenido": "Hora Raspberry-04:44:17,08/10/2025,Hora GPS-02:44:17,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 41,
+      "contenido": "Hora Raspberry-04:44:18,08/10/2025,Hora GPS-24:41:8.,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 42,
+      "contenido": "Hora Raspberry-04:44:19,08/10/2025,Hora GPS-02:44:19,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 43,
+      "contenido": "Hora Raspberry-04:44:20,08/10/2025,Hora GPS-02:44:20,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 44,
+      "contenido": "Hora Raspberry-04:44:21,08/10/2025,Hora GPS-02:44:21,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 45,
+      "contenido": "Hora Raspberry-04:44:22,08/10/2025,Hora GPS-02:44:22,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 46,
+      "contenido": "Hora Raspberry-04:44:23,08/10/2025,Hora GPS-02:44:23,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 47,
+      "contenido": "Hora Raspberry-04:44:24,08/10/2025,Hora GPS-02:44:24,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 48,
+      "contenido": "Hora Raspberry-04:44:25,08/10/2025,Hora GPS-02:44:25,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 49,
+      "contenido": "Hora Raspberry-04:44:26,08/10/2025,Hora GPS-02:44:26,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 50,
+      "contenido": "Hora Raspberry-04:44:27,08/10/2025,Hora GPS-02:44:27,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 51,
+      "contenido": "Hora Raspberry-04:44:28,08/10/2025,Hora GPS-02:44:28,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 52,
+      "contenido": "Hora Raspberry-04:44:29,08/10/2025,Hora GPS-02:44:29,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 53,
+      "contenido": "Hora Raspberry-04:44:30,08/10/2025,Hora GPS-02:44:30,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 54,
+      "contenido": "Hora Raspberry-04:44:31,08/10/2025,Hora GPS-02:44:31,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 55,
+      "contenido": "Hora Raspberry-04:44:32,08/10/2025,Hora GPS-02:44:32,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 56,
+      "contenido": "Hora Raspberry-04:44:33,08/10/2025,Hora GPS-02:44:33,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 57,
+      "contenido": "Hora Raspberry-04:44:35,08/10/2025,Hora GPS-02:44:35,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 58,
+      "contenido": "Hora Raspberry-04:44:36,08/10/2025,Hora GPS-02:44:36,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 59,
+      "contenido": "Hora Raspberry-04:44:37,08/10/2025,Hora GPS-02:44:37,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 60,
+      "contenido": "Hora Raspberry-04:44:38,08/10/2025,Hora GPS-02:44:38,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 61,
+      "contenido": "Hora Raspberry-04:44:39,08/10/2025,Hora GPS-02:44:39,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 62,
+      "contenido": "Hora Raspberry-04:44:40,08/10/2025,Hora GPS-02:44:40,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 63,
+      "contenido": "Hora Raspberry-04:44:41,08/10/2025,Hora GPS-02:44:41,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 64,
+      "contenido": "Hora Raspberry-04:44:42,08/10/2025,Hora GPS-02:44:42,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 65,
+      "contenido": "Hora Raspberry-04:44:43,08/10/2025,Hora GPS-02:44:43,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 66,
+      "contenido": "Hora Raspberry-04:44:44,08/10/2025,Hora GPS-02:44:44,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 67,
+      "contenido": "Hora Raspberry-04:44:45,08/10/2025,Hora GPS-02:44:45,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 68,
+      "contenido": "Hora Raspberry-04:44:46,08/10/2025,Hora GPS-02:44:46,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 69,
+      "contenido": "Hora Raspberry-04:44:47,08/10/2025,Hora GPS-02:44:47,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 70,
+      "contenido": "Hora Raspberry-04:44:48,08/10/2025,Hora GPS-02:44:48,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 71,
+      "contenido": "Hora Raspberry-04:44:49,08/10/2025,Hora GPS-02:44:49,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 72,
+      "contenido": "Hora Raspberry-04:44:50,08/10/2025,Hora GPS-02:44:50,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 73,
+      "contenido": "Hora Raspberry-04:44:51,08/10/2025,Hora GPS-02:44:51,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 74,
+      "contenido": "Hora Raspberry-04:44:52,08/10/2025,Hora GPS-02:45:2.,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 75,
+      "contenido": "Hora Raspberry-04:44:53,08/10/2025,Hora GPS-02:44:53,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 76,
+      "contenido": "Hora Raspberry-04:44:54,08/10/2025,Hora GPS-02:44:54,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 77,
+      "contenido": "Hora Raspberry-04:44:55,08/10/2025,Hora GPS-02:44:55,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 78,
+      "contenido": "Hora Raspberry-04:44:56,08/10/2025,Hora GPS-02:44:56,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 79,
+      "contenido": "Hora Raspberry-04:44:57,08/10/2025,Hora GPS-02:44:57,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 80,
+      "contenido": "Hora Raspberry-04:44:58,08/10/2025,Hora GPS-02:44:58,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 81,
+      "contenido": "Hora Raspberry-04:44:59,08/10/2025,Hora GPS-02:44:59,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 82,
+      "contenido": "Hora Raspberry-04:45:03,08/10/2025,Hora GPS-02:45:03,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 83,
+      "contenido": "Hora Raspberry-04:45:04,08/10/2025,Hora GPS-02:45:04,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 84,
+      "contenido": "Hora Raspberry-04:45:06,08/10/2025,Hora GPS-02:45:06,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 85,
+      "contenido": "Hora Raspberry-04:45:07,08/10/2025,Hora GPS-02:45:07,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 86,
+      "contenido": "Hora Raspberry-04:45:08,08/10/2025,Hora GPS-02:45:08,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 87,
+      "contenido": "Hora Raspberry-04:45:09,08/10/2025,Hora GPS-02:45:09,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 88,
+      "contenido": "Hora Raspberry-04:45:10,08/10/2025,Hora GPS-04:51:0.,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 89,
+      "contenido": "Hora Raspberry-04:45:11,08/10/2025,Hora GPS-02:45:11,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 90,
+      "contenido": "Hora Raspberry-04:45:12,08/10/2025,Hora GPS-02:45:12,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 91,
+      "contenido": "Hora Raspberry-04:45:13,08/10/2025,Hora GPS-02:45:13,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 92,
+      "contenido": "Hora Raspberry-04:45:14,08/10/2025,Hora GPS-02:45:14,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 93,
+      "contenido": "Hora Raspberry-04:45:15,08/10/2025,Hora GPS-02:45:15,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 94,
+      "contenido": "Hora Raspberry-04:45:16,08/10/2025,Hora GPS-02:45:16,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 95,
+      "contenido": "Hora Raspberry-04:45:17,08/10/2025,Hora GPS-02:45:17,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 96,
+      "contenido": "Hora Raspberry-04:45:18,08/10/2025,Hora GPS-02:45:18,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 97,
+      "contenido": "Hora Raspberry-04:45:19,08/10/2025,Hora GPS-02:45:19,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 98,
+      "contenido": "Hora Raspberry-04:45:20,08/10/2025,Hora GPS-02:45:20,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 99,
+      "contenido": "Hora Raspberry-04:45:21,08/10/2025,Hora GPS-02:45:21,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    },
+    {
+      "numero": 100,
+      "contenido": "Hora Raspberry-04:45:22,08/10/2025,Hora GPS-02:45:22,sin datos GPS\r",
+      "tipo": "DESCONOCIDA",
+      "problemas": [
+        "Tipo de línea no reconocido"
+      ],
+      "notas": []
+    }
+  ],
+  "problemasAgrupados": [
+    [
+      "Tipo de línea no reconocido",
+      998
+    ]
+  ]
+}

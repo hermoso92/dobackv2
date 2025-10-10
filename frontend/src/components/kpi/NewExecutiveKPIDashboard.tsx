@@ -4,6 +4,7 @@ import {
     CpuChipIcon,
     DocumentTextIcon,
     ExclamationTriangleIcon,
+    KeyIcon,
     MapIcon,
     PowerIcon,
     TruckIcon
@@ -19,6 +20,7 @@ import { logger } from '../../utils/logger';
 import { AlertSystemManager } from '../alerts/AlertSystemManager';
 import DiagnosticPanel from '../DiagnosticPanel';
 import GlobalFiltersBar from '../filters/GlobalFiltersBar';
+import OperationalKeysTab from '../operations/OperationalKeysTab';
 import DeviceMonitoringPanel from '../panel/DeviceMonitoringPanel';
 import { ProcessingTrackingDashboard } from '../processing/ProcessingTrackingDashboard';
 import { DashboardReportsTab } from '../reports/DashboardReportsTab';
@@ -691,11 +693,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
         { label: 'Estados & Tiempos', icon: <ClockIcon className="h-5 w-5" /> },
         { label: 'Puntos Negros', icon: <MapIcon className="h-5 w-5" /> },
         { label: 'Velocidad', icon: <ChartBarIcon className="h-5 w-5" /> },
+        { label: 'Claves Operacionales', icon: <KeyIcon className="h-5 w-5" /> }, // ✅ NUEVO
         { label: 'Sesiones & Recorridos', icon: <TruckIcon className="h-5 w-5" /> },
         { label: 'Sistema de Alertas', icon: <ExclamationTriangleIcon className="h-5 w-5" /> },
         { label: 'Tracking de Procesamiento', icon: <CpuChipIcon className="h-5 w-5" /> },
         { label: 'Reportes', icon: <DocumentTextIcon className="h-5 w-5" /> }
-        // { label: 'Alertas Geocercas', icon: <HomeIcon className="h-5 w-5" /> } // DESACTIVADO - endpoint no existe
     ];
 
     if (loading) {
@@ -804,16 +806,26 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 )}
                 {activeTab === 3 && (
                     <div className="h-full w-full bg-white overflow-auto">
-                        <SessionsAndRoutesView />
+                        <OperationalKeysTab
+                            organizationId={user?.organizationId || 'default-org'}
+                            vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
+                            startDate={filters.dateRange?.start}
+                            endDate={filters.dateRange?.end}
+                        />
                     </div>
                 )}
                 {activeTab === 4 && (
+                    <div className="h-full w-full bg-white overflow-auto">
+                        <SessionsAndRoutesView />
+                    </div>
+                )}
+                {activeTab === 5 && (
                     <div className="h-full w-full bg-white p-4">
                         <h3 className="text-lg font-semibold text-slate-800 mb-4">Sistema de Alertas</h3>
                         <AlertSystemManager />
                     </div>
                 )}
-                {activeTab === 5 && (
+                {activeTab === 6 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <div className="p-4">
                             <h3 className="text-lg font-semibold text-slate-800 mb-4">Tracking de Procesamiento de Archivos</h3>
@@ -824,7 +836,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {activeTab === 6 && (
+                {activeTab === 7 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <DashboardReportsTab />
                     </div>
