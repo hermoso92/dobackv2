@@ -1,35 +1,35 @@
 # 📤 Cómo Subir Cambios a GitHub
 
-## 💬 **Opción 1: Con Mensaje Personalizado (Recomendado)**
-
-```powershell
-.\subir-con-mensaje.ps1
-```
-
-**Características:**
-- ✅ Muestra los archivos modificados
-- ✅ Pide el mensaje del commit siempre
-- ✅ Muestra ejemplos de mensajes
-- ✅ Validación de errores completa
-- ✅ Interfaz clara y visual
-
----
-
-## 🔄 **Opción 2: Script Interactivo**
+## 💬 **Opción 1: Con Mensaje Personalizado (RECOMENDADO)**
 
 ```powershell
 .\subir.ps1
 ```
 
 **Características:**
-- ✅ Muestra archivos modificados
-- ✅ Pide confirmación antes de subir
-- ✅ Mensaje personalizado o fecha automática
-- ✅ Control total del proceso
+- ✅ Muestra los archivos modificados
+- ✅ Pide el mensaje del commit
+- ✅ Muestra ejemplos de mensajes
+- ✅ Validación de errores completa
+- ✅ Interfaz clara y visual
+
+**Ejemplo de uso:**
+```
+Archivos modificados:
+M  frontend/src/pages/Dashboard.tsx
+A  backend/routes/reports.ts
+
+Escribe el mensaje del commit:
+  Ejemplos:
+  - feat: Añadido módulo de reportes
+  - fix: Corregido error en dashboard
+
+Mensaje: feat: Implementado sistema de reportes PDF
+```
 
 ---
 
-## ⚡ **Opción 3: Script Rápido (Sin Preguntas)**
+## ⚡ **Opción 2: Script Rápido (Sin Preguntas)**
 
 ```powershell
 .\subir-rapido.ps1
@@ -40,9 +40,11 @@
 - ✅ Mensaje automático con fecha y hora
 - ✅ Perfecto para actualizaciones rápidas
 
+**Mensaje automático:** `Actualización 10/10/2025 15:30`
+
 ---
 
-## 🛠️ **Opción 4: Comandos Manuales**
+## 🛠️ **Opción 3: Comandos Manuales**
 
 ```powershell
 # Ver qué archivos cambiaron (opcional)
