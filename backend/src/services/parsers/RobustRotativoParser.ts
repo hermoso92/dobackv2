@@ -5,6 +5,7 @@ const logger = createLogger('RobustRotativoParser');
 export interface RotativoMeasurement {
     timestamp: Date;
     state: string; // '0' o '1'
+    key?: number; // Clave operacional: 0=Taller, 1=Parque, 2=Emergencia, 3=Incendio, 5=Regreso
 }
 
 export interface RotativoParsingResult {
@@ -63,7 +64,7 @@ export function parseRotativoRobust(buffer: Buffer, fechaSesion?: Date): Rotativ
             continue;
         }
 
-        // Parsear línea de datos: DD/MM/YYYY-HH:MM:SS;Estado
+        // Parsear línea de datos: DD/MM/YYYY-HH:MM:SS;Estado[;Clave]
         if (linea.includes(';')) {
             contadores.total++;
 
@@ -73,7 +74,7 @@ export function parseRotativoRobust(buffer: Buffer, fechaSesion?: Date): Rotativ
                 problemas.push({
                     tipo: 'FORMATO_INVALIDO',
                     linea: i + 1,
-                    descripcion: `Esperadas 2 columnas, encontradas ${partes.length}`
+                    descripcion: `Esperadas al menos 2 columnas, encontradas ${partes.length}`
                 });
                 continue;
             }
@@ -116,10 +117,25 @@ export function parseRotativoRobust(buffer: Buffer, fechaSesion?: Date): Rotativ
                     continue;
                 }
 
+                // Extraer clave operacional si existe (columna 3)
+                let key: number | undefined = undefined;
+                if (partes.length >= 3) {
+                    const keyStr = partes[2].trim();
+                    const keyNum = parseInt(keyStr);
+
+                    // Validar que sea una clave válida (0,1,2,3,5)
+                    if ([0, 1, 2, 3, 5].includes(keyNum)) {
+                        key = keyNum;
+                    } else if (keyStr && keyStr !== '') {
+                        logger.warn(`Clave inválida en línea ${i + 1}: ${keyStr} (esperado: 0,1,2,3,5)`);
+                    }
+                }
+
                 // Medición válida
                 mediciones.push({
                     timestamp,
-                    state
+                    state,
+                    key
                 });
 
                 contadores.validas++;

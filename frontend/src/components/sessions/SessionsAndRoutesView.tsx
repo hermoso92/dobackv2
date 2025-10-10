@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
+import { getOrganizationId } from '../../config/organization';
+import { useAuth } from '../../hooks/useAuth';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
@@ -32,6 +34,7 @@ interface Session {
 }
 
 export const SessionsAndRoutesView: React.FC = () => {
+    const { user } = useAuth();
     const { useSessions } = useTelemetryData();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -69,7 +72,7 @@ export const SessionsAndRoutesView: React.FC = () => {
             logger.info('Cargando ranking de sesiones');
 
             const params = new URLSearchParams({
-                organizationId: 'default-org',
+                organizationId: getOrganizationId(user?.organizationId),
                 metric: rankingMetric,
                 limit: '10'
             });

@@ -112,6 +112,8 @@ model Vehicle {
   user              User?                   @relation(fields: [userId], references: [id])
   configuration     VehicleConfiguration?
   kpis              VehicleKPI[]
+
+  @@index([identifier, organizationId], map: "idx_vehicle_identifier")
 }
 
 model VehicleConfiguration {
@@ -144,9 +146,11 @@ model Session {
   source                String
   archivosSubidos       ArchivoSubido[]
   canMeasurements       CanMeasurement[]
+  dataQualityMetrics    DataQualityMetrics?
   eventExecutions       EjecucionEvento[]
   gpsMeasurements       GpsMeasurement[]
   informes              InformeGenerado[]
+  operationalKeys       OperationalKey[]
   RotativoMeasurement   RotativoMeasurement[]
   organization          Organization           @relation(fields: [organizationId], references: [id])
   park                  Park?                  @relation("ParkSessions", fields: [parkId], references: [id])
@@ -157,8 +161,8 @@ model Session {
   stabilityMeasurements StabilityMeasurement[]
   sugerenciasIA         SugerenciaIA[]
   stability_events      StabilityEvent[]
-  operationalKeys       OperationalKey[]
-  dataQualityMetrics    DataQualityMetrics?
+
+  @@index([vehicleId, startTime(sort: Desc)], map: "idx_session_vehicle_date")
 }
 
 model StabilityMeasurement {
@@ -195,6 +199,7 @@ model StabilityMeasurement {
   session             Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([sessionId, timestamp], map: "stabilitymeasurement_sessionid_timestamp_unique")
+  @@index([sessionId, timestamp], map: "idx_stability_timestamp")
 }
 
 model CanMeasurement {
@@ -237,6 +242,7 @@ model GpsMeasurement {
   session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([sessionId, timestamp], map: "gpsmeasurement_sessionid_timestamp_unique")
+  @@index([sessionId, timestamp], map: "idx_gps_timestamp")
 }
 
 model RotativoMeasurement {
@@ -246,11 +252,14 @@ model RotativoMeasurement {
   state     String
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   updatedAt DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  key       Int?
   Session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "rotativomeasurement_sessionid_fkey")
 
   @@unique([sessionId, timestamp], map: "rotativomeasurement_sessionid_timestamp_unique")
   @@index([sessionId])
   @@index([timestamp])
+  @@index([sessionId, state, timestamp], map: "idx_rotativo_state_time")
+  @@index([sessionId, key, timestamp], map: "idx_rotativo_key_time")
 }
 
 model GestorDeEvento {
@@ -365,13 +374,13 @@ model ArchivoSubido {
   fechaSubida         DateTime @default(now())
   errores             String?
   extraMetadata       Json?
-  lineasTotales       Int      @default(0)
-  lineasValidas       Int      @default(0)
-  lineasInvalidas     Int      @default(0)
-  porcentajeValido    Float    @default(0.0)
-  problemasDetectados Json     @default("[]")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  lineasTotales       Int?     @default(0)
+  lineasValidas       Int?     @default(0)
+  lineasInvalidas     Int?     @default(0)
+  porcentajeValido    Float?   @default(0.0)
+  problemasDetectados Json?    @default("[]")
   session             Session? @relation(fields: [sessionId], references: [id])
   vehiculo            Vehicle? @relation(fields: [vehiculoId], references: [id])
 }
@@ -479,19 +488,19 @@ model debug_overspeed {
 }
 
 model StabilityEvent {
-  id              String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   session_id      String
-  timestamp       DateTime       @db.Timestamptz(6)
+  timestamp       DateTime @db.Timestamptz(6)
   lat             Float
   lon             Float
   type            String
   details         Json?
   rotativoState   Int?
   speed           Float?
-  severity        EventSeverity  @default(LEVE)
+  severity        String?  @default("LEVE") @db.VarChar(20)
   keyType         Int?
-  interpolatedGPS Boolean        @default(false)
-  Session         Session        @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
+  interpolatedGPS Boolean? @default(false)
+  Session         Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
 
   @@index([session_id], map: "idx_stability_events_session")
   @@index([timestamp], map: "idx_stability_events_time")
@@ -503,16 +512,16 @@ model StabilityEvent {
   @@index([speed], map: "idx_stability_events_speed")
   @@index([severity, timestamp(sort: Desc)], map: "idx_stability_events_severity")
   @@index([keyType, timestamp(sort: Desc)], map: "idx_stability_events_key_type")
+  @@index([severity, timestamp(sort: Desc)], map: "idx_stability_events_severity_time")
   @@map("stability_events")
 }
 
 model OperationalKey {
-  id            String              @id @default(dbgenerated("gen_random_uuid()"))
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   sessionId     String
-  keyType       Int                 // 0,1,2,3,5 - Mantener como Int por compatibilidad
-  keyTypeName   OperationalKeyType? // Enum descriptivo
-  startTime     DateTime            @db.Timestamptz(6)
-  endTime       DateTime?           @db.Timestamptz(6)
+  keyType       Int
+  startTime     DateTime  @db.Timestamptz(6)
+  endTime       DateTime? @db.Timestamptz(6)
   duration      Int?
   startLat      Float?
   startLon      Float?
@@ -520,35 +529,38 @@ model OperationalKey {
   endLon        Float?
   rotativoState Boolean?
   geofenceId    String?
-  geofenceName  String?             // Nombre de la geocerca (parque/taller)
   details       Json?
-  createdAt     DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime            @updatedAt @db.Timestamptz(6)
-  session       Session             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  geofenceName  String?
+  keyTypeName   String?   @db.VarChar(20)
+  session       Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade, map: "fk_operational_key_session")
 
-  @@index([sessionId, keyType])
-  @@index([keyType, startTime(sort: Desc)])
-  @@index([startTime(sort: Desc)])
+  @@index([sessionId, keyType], map: "idx_operational_key_session")
+  @@index([sessionId, keyType], map: "idx_operational_key_session_type")
+  @@index([startTime(sort: Desc)], map: "idx_operational_key_time")
+  @@index([keyType, startTime(sort: Desc)], map: "idx_operational_key_type")
+  @@index([keyTypeName], map: "idx_operational_key_type_name")
 }
 
 model DataQualityMetrics {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()"))
-  sessionId           String   @unique
-  gpsTotal            Int      @default(0)
-  gpsValidas          Int      @default(0)
-  gpsSinSenal         Int      @default(0)
-  gpsInterpoladas     Int      @default(0)
-  porcentajeGPSValido Float    @default(0.0)
-  estabilidadTotal    Int      @default(0)
-  estabilidadValidas  Int      @default(0)
-  rotativoTotal       Int      @default(0)
-  rotativoValidas     Int      @default(0)
-  problemas           Json     @default("[]")
-  createdAt           DateTime @default(now()) @db.Timestamptz(6)
-  session             Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  sessionId           String    @unique
+  gpsTotal            Int       @default(0)
+  gpsValidas          Int       @default(0)
+  gpsSinSenal         Int       @default(0)
+  gpsInterpoladas     Int       @default(0)
+  porcentajeGPSValido Float     @default(0.0)
+  estabilidadTotal    Int       @default(0)
+  estabilidadValidas  Int       @default(0)
+  rotativoTotal       Int       @default(0)
+  rotativoValidas     Int       @default(0)
+  problemas           Json?     @default("[]")
+  createdAt           DateTime? @default(now()) @db.Timestamptz(6)
+  session             Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade, map: "fk_data_quality_session")
 
-  @@index([sessionId])
-  @@index([porcentajeGPSValido(sort: Desc)])
+  @@index([porcentajeGPSValido(sort: Desc)], map: "idx_data_quality_percentage")
+  @@index([sessionId], map: "idx_data_quality_session")
 }
 
 model Report {
@@ -1120,9 +1132,9 @@ enum EventSeverity {
 }
 
 enum OperationalKeyType {
-  TALLER       // 0
-  PARQUE       // 1
-  EMERGENCIA   // 2
-  INCENDIO     // 3
-  REGRESO      // 5
+  TALLER
+  PARQUE
+  EMERGENCIA
+  INCENDIO
+  REGRESO
 }

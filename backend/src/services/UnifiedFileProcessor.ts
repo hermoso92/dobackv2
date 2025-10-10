@@ -410,15 +410,18 @@ export class UnifiedFileProcessor {
         if (mediciones.length === 0) return;
 
         await prisma.rotativoMeasurement.createMany({
-            data: mediciones.map(m => ({
+            data: mediciones.map((m: any) => ({
                 sessionId,
                 timestamp: m.timestamp,
-                state: m.state
+                state: m.state,
+                key: m.key !== undefined && m.key !== null ? m.key : null // Guardar clave operacional si existe
             })),
             skipDuplicates: true
         });
 
-        logger.info(`ROTATIVO guardado: ${mediciones.length} mediciones`);
+        // Contar cuántas mediciones tienen clave
+        const conClave = mediciones.filter(m => m.key !== undefined).length;
+        logger.info(`ROTATIVO guardado: ${mediciones.length} mediciones (${conClave} con clave operacional)`);
     }
 
     /**

@@ -28,6 +28,7 @@ import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { apiService } from '../../services/api';
 
 // Fix para iconos de Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -107,29 +108,18 @@ export const OperationalKeysTab: React.FC<Props> = ({
             if (startDate) params.append('from', startDate);
             if (endDate) params.append('to', endDate);
 
-            // Cargar resumen y timeline en paralelo
-            const [resumenRes, timelineRes] = await Promise.all([
-                fetch(`/api/operational-keys/summary?${params.toString()}`, {
-                    credentials: 'include'
-                }),
-                fetch(`/api/operational-keys/timeline?${params.toString()}`, {
-                    credentials: 'include'
-                })
+            // Cargar resumen y timeline en paralelo usando apiService
+            const [resumenData, timelineData] = await Promise.all([
+                apiService.get(`/api/operational-keys/summary?${params.toString()}`),
+                apiService.get(`/api/operational-keys/timeline?${params.toString()}`)
             ]);
-
-            if (!resumenRes.ok || !timelineRes.ok) {
-                throw new Error('Error cargando datos de claves operacionales');
-            }
-
-            const resumenData = await resumenRes.json();
-            const timelineData = await timelineRes.json();
 
             setResumen(resumenData);
             setTimeline(timelineData.timeline || []);
 
         } catch (err: any) {
             console.error('Error cargando claves operacionales:', err);
-            setError(err.message);
+            setError(err.message || 'Error cargando datos de claves operacionales');
         } finally {
             setLoading(false);
         }

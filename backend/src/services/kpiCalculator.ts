@@ -342,13 +342,82 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
     por_tipo: Record<number, { cantidad: number; duracion_total: number; duracion_promedio: number }>;
     claves_recientes: any[];
 }> {
-    // ⚠️ TEMPORALMENTE DESHABILITADO - Prisma Client corrupto
-    // TODO: Resolver problema de columna 'existe' inexistente
-    return {
-        total_claves: 0,
-        por_tipo: {},
-        claves_recientes: []
-    };
+    try {
+        if (!sessionIds || sessionIds.length === 0) {
+            return {
+                total_claves: 0,
+                por_tipo: {},
+                claves_recientes: []
+            };
+        }
+
+        // Obtener claves operacionales de las sesiones
+        const claves = await prisma.operationalKey.findMany({
+            where: {
+                sessionId: { in: sessionIds }
+            },
+            orderBy: {
+                startTime: 'desc'
+            },
+            take: 100 // Últimas 100 claves
+        });
+
+        // Calcular estadísticas por tipo
+        const por_tipo: Record<number, { cantidad: number; duracion_total: number; duracion_promedio: number }> = {};
+
+        claves.forEach(clave => {
+            if (!por_tipo[clave.keyType]) {
+                por_tipo[clave.keyType] = {
+                    cantidad: 0,
+                    duracion_total: 0,
+                    duracion_promedio: 0
+                };
+            }
+
+            por_tipo[clave.keyType].cantidad++;
+            if (clave.duration) {
+                por_tipo[clave.keyType].duracion_total += clave.duration;
+            }
+        });
+
+        // Calcular promedios
+        Object.keys(por_tipo).forEach(tipo => {
+            const tipoNum = parseInt(tipo);
+            if (por_tipo[tipoNum].cantidad > 0) {
+                por_tipo[tipoNum].duracion_promedio =
+                    por_tipo[tipoNum].duracion_total / por_tipo[tipoNum].cantidad;
+            }
+        });
+
+        // Claves recientes (últimas 10)
+        const claves_recientes = claves.slice(0, 10).map(clave => ({
+            id: clave.id,
+            sessionId: clave.sessionId,
+            keyType: clave.keyType,
+            startTime: clave.startTime,
+            endTime: clave.endTime,
+            duration: clave.duration,
+            startLat: clave.startLat,
+            startLon: clave.startLon,
+            endLat: clave.endLat,
+            endLon: clave.endLon,
+            rotativoState: clave.rotativoState,
+            geofenceId: clave.geofenceId
+        }));
+
+        return {
+            total_claves: claves.length,
+            por_tipo,
+            claves_recientes
+        };
+    } catch (error: any) {
+        logger.error('Error calculando claves operacionales', { error: error.message });
+        return {
+            total_claves: 0,
+            por_tipo: {},
+            claves_recientes: []
+        };
+    }
 }
 
 // ============================================================================

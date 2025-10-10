@@ -464,9 +464,9 @@ router.get('/critical-zones', async (req, res) => {
 
         // Convertir a eventos de velocidad con clasificación
         const speedEvents = filteredGpsData
-            .filter((gps: any) => gps.speed !== null && gps.lat !== null && gps.lon !== null)
+            .filter((gps: any) => gps.speed !== null && gps.latitude !== null && gps.longitude !== null)
             .map((gps: any) => {
-                const inPark = isInPark(gps.lat!, gps.lon!);
+                const inPark = isInPark(gps.latitude, gps.longitude);
                 const roadType = getRoadType(gps.speed || 0, inPark);
                 const speedLimit = getSpeedLimit(
                     gps.Session?.vehicleId || '',
@@ -478,8 +478,8 @@ router.get('/critical-zones', async (req, res) => {
                 const excess = (gps.speed || 0) - speedLimit;
 
                 return {
-                    lat: gps.lat!,
-                    lng: gps.lon!,
+                    lat: gps.latitude,
+                    lng: gps.longitude,
                     speed: gps.speed || 0,
                     speedLimit,
                     violationType,
@@ -503,7 +503,19 @@ router.get('/critical-zones', async (req, res) => {
             events: typeof speedEvents;
         }> = [];
 
-        speedEvents.forEach((event: any) => {
+        // Filtrar eventos con coordenadas válidas antes del clustering
+        const validSpeedEvents = speedEvents.filter((event: any) =>
+            event.lat !== undefined &&
+            event.lat !== null &&
+            event.lng !== undefined &&
+            event.lng !== null &&
+            !isNaN(event.lat) &&
+            !isNaN(event.lng)
+        );
+
+        logger.info(`Eventos con coordenadas válidas: ${validSpeedEvents.length} de ${speedEvents.length}`);
+
+        validSpeedEvents.forEach((event: any) => {
             let addedToCluster = false;
 
             for (const cluster of clusters) {

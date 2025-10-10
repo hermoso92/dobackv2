@@ -10,6 +10,7 @@ import {
     TruckIcon
 } from '@heroicons/react/24/outline';
 import React, { useCallback, useEffect, useState } from 'react';
+import { getOrganizationId } from '../../config/organization';
 import { useAuth } from '../../hooks/useAuth';
 import { useGlobalFilters } from '../../hooks/useGlobalFilters';
 import { useKPIs } from '../../hooks/useKPIs';
@@ -678,7 +679,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 {/* Panel de Monitoreo de Dispositivos */}
                 <div className="mt-6">
                     <DeviceMonitoringPanel
-                        organizationId={user?.organizationId || 'default-org'}
+                        organizationId={getOrganizationId(user?.organizationId)}
                         onDeviceClick={(device) => {
                             logger.info(`Dispositivo seleccionado: ${device.vehicleId}`);
                         }}
@@ -787,7 +788,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 {activeTab === 1 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <BlackSpotsTab
-                            organizationId={user?.organizationId || 'default-org'}
+                            organizationId={getOrganizationId(user?.organizationId)}
                             vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
                             startDate={filters.dateRange?.start}
                             endDate={filters.dateRange?.end}
@@ -797,7 +798,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 {activeTab === 2 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <SpeedAnalysisTab
-                            organizationId={user?.organizationId || 'default-org'}
+                            organizationId={getOrganizationId(user?.organizationId)}
                             vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
                             startDate={filters.dateRange?.start}
                             endDate={filters.dateRange?.end}
@@ -807,7 +808,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 {activeTab === 3 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <OperationalKeysTab
-                            organizationId={user?.organizationId || 'default-org'}
+                            organizationId={getOrganizationId(user?.organizationId)}
                             vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
                             startDate={filters.dateRange?.start}
                             endDate={filters.dateRange?.end}

@@ -2,9 +2,12 @@
  * 🔑 ENDPOINTS API PARA CLAVES OPERACIONALES
  * 
  * Endpoints:
- * - GET /api/operational-keys/:sessionId - Claves de una sesión
  * - GET /api/operational-keys/summary - Resumen de claves por filtros
  * - GET /api/operational-keys/timeline - Timeline de claves
+ * - GET /api/operational-keys/:sessionId - Claves de una sesión
+ * 
+ * IMPORTANTE: Las rutas específicas (/summary, /timeline) deben ir ANTES
+ *             de la ruta dinámica (/:sessionId) para evitar conflictos
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -17,99 +20,12 @@ const prisma = new PrismaClient();
 const logger = createLogger('OperationalKeysAPI');
 
 // ============================================================================
-// GET /api/operational-keys/:sessionId
-// Obtener claves de una sesión específica
-// ============================================================================
-router.get('/:sessionId', authenticate, async (req: Request, res: Response) => {
-    try {
-        // ⚠️ TEMPORALMENTE DESHABILITADO - Prisma Client corrupto
-        // TODO: Resolver problema de Prisma operationalKey
-        const { sessionId } = req.params;
-        logger.warn(`Endpoint /:sessionId deshabilitado temporalmente para sesión ${sessionId}`);
-
-        return res.json({
-            sessionId,
-            vehicleId: null,
-            vehicleName: null,
-            startTime: null,
-            endTime: null,
-            claves: []
-        });
-
-        /* CÓDIGO ORIGINAL COMENTADO:
-        logger.info(`Obteniendo claves de sesión ${sessionId}`);
-
-        // Verificar que la sesión existe y pertenece a la organización
-        const sesion = await prisma.session.findUnique({
-            where: { id: sessionId },
-            include: { vehicle: true }
-        });
-
-        if (!sesion) {
-            return res.status(404).json({ error: 'Sesión no encontrada' });
-        }
-
-        if (sesion.organizationId !== req.user?.organizationId) {
-            return res.status(403).json({ error: 'Acceso denegado' });
-        }
-
-        // Obtener claves
-        const claves = await prisma.operationalKey.findMany({
-            where: { sessionId },
-            orderBy: { startTime: 'asc' }
-        });
-
-        logger.info(`Claves encontradas: ${claves.length}`);
-
-        res.json({
-            sessionId,
-            vehicleId: sesion.vehicleId,
-            vehicleName: sesion.vehicle.name,
-            startTime: sesion.startTime,
-            endTime: sesion.endTime,
-            claves: claves.map(c => ({
-                id: c.id,
-                tipo: c.keyType,
-                tipoNombre: c.keyTypeName,
-                inicio: c.startTime,
-                fin: c.endTime,
-                duracionSegundos: c.duration,
-                duracionMinutos: c.duration ? Math.round(c.duration / 60) : null,
-                rotativoEncendido: c.rotativoState,
-                geocerca: c.geofenceName,
-                coordenadasInicio: c.startLat && c.startLon ? { lat: c.startLat, lon: c.startLon } : null,
-                coordenadasFin: c.endLat && c.endLon ? { lat: c.endLat, lon: c.endLon } : null,
-                detalles: c.details
-            }))
-        });
-        */
-
-    } catch (error: any) {
-        logger.error('Error obteniendo claves de sesión', { error: error.message });
-        res.status(500).json({ error: 'Error obteniendo claves operacionales' });
-    }
-});
-
-// ============================================================================
 // GET /api/operational-keys/summary
 // Resumen de claves por filtros (vehículos, fechas)
+// ⚠️ DEBE IR ANTES DE /:sessionId
 // ============================================================================
 router.get('/summary', authenticate, async (req: Request, res: Response) => {
     try {
-        // ⚠️ TEMPORALMENTE DESHABILITADO - Prisma Client corrupto
-        // TODO: Resolver problema de Prisma operationalKey
-        logger.warn('Endpoint /summary deshabilitado temporalmente');
-
-        return res.json({
-            totalClaves: 0,
-            porTipo: [],
-            duracionTotal: 0,
-            duracionTotalMinutos: 0,
-            claveMasLarga: null,
-            claveMasCorta: null
-        });
-
-        /* CÓDIGO ORIGINAL COMENTADO:
         const organizationId = req.user?.organizationId || 'default-org';
         const from = req.query.from as string;
         const to = req.query.to as string;
@@ -151,8 +67,9 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         if (sessionIds.length === 0) {
             return res.json({
                 totalClaves: 0,
-                porTipo: {},
+                porTipo: [],
                 duracionTotal: 0,
+                duracionTotalMinutos: 0,
                 claveMasLarga: null,
                 claveMasCorta: null
             });
@@ -160,15 +77,60 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
 
         // Obtener claves de esas sesiones
         const claves = await prisma.operationalKey.findMany({
-            where: { sessionId: { in: sessionIds } },
-            include: {
-                session: {
-                    include: { vehicle: true }
+            where: { sessionId: { in: sessionIds } }
+        });
+
+        // Calcular estadísticas
+        const porTipo: Record<number, { cantidad: number; duracionTotal: number }> = {};
+        let duracionTotal = 0;
+        let claveMasLarga: any = null;
+        let claveMasCorta: any = null;
+
+        claves.forEach(clave => {
+            if (!porTipo[clave.keyType]) {
+                porTipo[clave.keyType] = { cantidad: 0, duracionTotal: 0 };
+            }
+
+            porTipo[clave.keyType].cantidad++;
+
+            if (clave.duration) {
+                porTipo[clave.keyType].duracionTotal += clave.duration;
+                duracionTotal += clave.duration;
+
+                if (!claveMasLarga || clave.duration > claveMasLarga.duration) {
+                    claveMasLarga = clave;
+                }
+
+                if (!claveMasCorta || clave.duration < claveMasCorta.duration) {
+                    claveMasCorta = clave;
                 }
             }
         });
 
-        */
+        // Formatear respuesta
+        const porTipoArray = Object.keys(porTipo).map(tipo => ({
+            tipo: parseInt(tipo),
+            cantidad: porTipo[parseInt(tipo)].cantidad,
+            duracionTotal: porTipo[parseInt(tipo)].duracionTotal,
+            duracionTotalMinutos: Math.round(porTipo[parseInt(tipo)].duracionTotal / 60)
+        }));
+
+        res.json({
+            totalClaves: claves.length,
+            porTipo: porTipoArray,
+            duracionTotal,
+            duracionTotalMinutos: Math.round(duracionTotal / 60),
+            claveMasLarga: claveMasLarga ? {
+                tipo: claveMasLarga.keyType,
+                duracionSegundos: claveMasLarga.duration,
+                duracionMinutos: Math.round(claveMasLarga.duration / 60)
+            } : null,
+            claveMasCorta: claveMasCorta ? {
+                tipo: claveMasCorta.keyType,
+                duracionSegundos: claveMasCorta.duration,
+                duracionMinutos: Math.round(claveMasCorta.duration / 60)
+            } : null
+        });
 
     } catch (error: any) {
         logger.error('Error obteniendo resumen de claves', { error: error.message });
@@ -179,16 +141,10 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
 // ============================================================================
 // GET /api/operational-keys/timeline
 // Timeline de claves para visualización (gráfica Gantt)
+// ⚠️ DEBE IR ANTES DE /:sessionId
 // ============================================================================
 router.get('/timeline', authenticate, async (req: Request, res: Response) => {
     try {
-        // ⚠️ TEMPORALMENTE DESHABILITADO - Prisma Client corrupto
-        // TODO: Resolver problema de Prisma operationalKey
-        logger.warn('Endpoint /timeline deshabilitado temporalmente');
-
-        return res.json({ timeline: [] });
-
-        /* CÓDIGO ORIGINAL COMENTADO:
         const organizationId = req.user?.organizationId || 'default-org';
         const from = req.query.from as string;
         const to = req.query.to as string;
@@ -238,23 +194,80 @@ router.get('/timeline', authenticate, async (req: Request, res: Response) => {
             vehiculo: c.session.vehicle.name,
             vehiculoId: c.session.vehicleId,
             tipo: c.keyType,
-            tipoNombre: c.keyTypeName,
             inicio: c.startTime,
             fin: c.endTime,
             duracionMinutos: c.duration ? Math.round(c.duration / 60) : null,
             rotativoOn: c.rotativoState,
-            geocerca: c.geofenceName,
+            geocerca: c.geofenceId,
             color: getColorPorTipo(c.keyType)
         }));
 
         logger.info(`Timeline generado: ${timeline.length} claves`);
 
         res.json({ timeline });
-        */
 
     } catch (error: any) {
         logger.error('Error generando timeline', { error: error.message });
         res.status(500).json({ error: 'Error generando timeline' });
+    }
+});
+
+// ============================================================================
+// GET /api/operational-keys/:sessionId
+// Obtener claves de una sesión específica
+// ⚠️ DEBE IR AL FINAL (después de /summary y /timeline)
+// ============================================================================
+router.get('/:sessionId', authenticate, async (req: Request, res: Response) => {
+    try {
+        const { sessionId } = req.params;
+        logger.info(`Obteniendo claves de sesión ${sessionId}`);
+
+        // Verificar que la sesión existe y pertenece a la organización
+        const sesion = await prisma.session.findUnique({
+            where: { id: sessionId },
+            include: { vehicle: true }
+        });
+
+        if (!sesion) {
+            return res.status(404).json({ error: 'Sesión no encontrada' });
+        }
+
+        if (sesion.organizationId !== req.user?.organizationId) {
+            return res.status(403).json({ error: 'Acceso denegado' });
+        }
+
+        // Obtener claves
+        const claves = await prisma.operationalKey.findMany({
+            where: { sessionId },
+            orderBy: { startTime: 'asc' }
+        });
+
+        logger.info(`Claves encontradas: ${claves.length}`);
+
+        res.json({
+            sessionId,
+            vehicleId: sesion.vehicleId,
+            vehicleName: sesion.vehicle.name,
+            startTime: sesion.startTime,
+            endTime: sesion.endTime,
+            claves: claves.map(c => ({
+                id: c.id,
+                tipo: c.keyType,
+                inicio: c.startTime,
+                fin: c.endTime,
+                duracionSegundos: c.duration,
+                duracionMinutos: c.duration ? Math.round(c.duration / 60) : null,
+                rotativoEncendido: c.rotativoState,
+                geocerca: c.geofenceId,
+                coordenadasInicio: c.startLat && c.startLon ? { lat: c.startLat, lon: c.startLon } : null,
+                coordenadasFin: c.endLat && c.endLon ? { lat: c.endLat, lon: c.endLon } : null,
+                detalles: c.details
+            }))
+        });
+
+    } catch (error: any) {
+        logger.error('Error obteniendo claves de sesión', { error: error.message });
+        res.status(500).json({ error: 'Error obteniendo claves operacionales' });
     }
 });
 
@@ -275,4 +288,3 @@ function getColorPorTipo(keyType: number): string {
 }
 
 export default router;
-
