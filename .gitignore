@@ -1,0 +1,136 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+logs/
+*.log
+application.log
+complete_processor.log
+database_validation.log
+processor.log
+salida_parser.log
+services.log
+session_debug.log
+setup.log
+start.log
+system_validation.log
+verification.log
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+frontend/dist/
+backend/dist/
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+test-login-screenshots/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads and temporary files
+uploads/
+temp_*.txt
+*.tmp
+reports/
+local-storage/
+local-logs/
+
+# Cache files
+all_files_cache.json
+*.cache
+
+# Reports and generated files
+complete_processor_report.json
+comprehensive_sessions_report.json
+correct_sessions_report.json
+vehicles_content.json
+vehicles.json
+
+# Screenshots and images (except documentation)
+*.png
+*.jpg
+*.jpeg
+*.gif
+!docs/**/*.png
+!docs/**/*.jpg
+screenshots/
+test-login-screenshots/
+
+# Backup files
+backups/
+*.bak
+*.backup
+
+# Instance and config files (sensitive)
+instance/
+config.json
+token.txt
+
+# Docker
+.dockerignore
+
+# Large data
+pbf/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.sql 
+backend/config.env 
+config.env 
+*.env 
