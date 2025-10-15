@@ -1,0 +1,35 @@
+{
+  "pestanasPrincipales": [
+    "Panel de Control",
+    "Estabilidad",
+    "Telemetría",
+    "Inteligencia Artificial",
+    "Geofences",
+    "Subir Archivos",
+    "Operaciones",
+    "Reportes",
+    "Gestión",
+    "Administración",
+    "Base de Conocimiento",
+    "Mi Cuenta",
+    "Generar Reportes",
+    "Historial de Reportes",
+    "Plantillas Avanzadas"
+  ],
+  "subPestanasPorModulo": {
+    "general": [
+      "Panel de Control",
+      "Estabilidad",
+      "Telemetría",
+      "Inteligencia Artificial",
+      "Geofences",
+      "Subir Archivos",
+      "Operaciones",
+      "Reportes",
+      "Gestión",
+      "Administración",
+      "Base de Conocimiento",
+      "Mi Cuenta"
+    ]
+  }
+}

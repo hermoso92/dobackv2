@@ -43,6 +43,43 @@
 - ✅ **Usar rutas Windows** (`\` no `/`)
 - ✅ **Comandos compatibles con PowerShell**
 
+### **Reglas de Documentación y Scripts:**
+- ✅ **NUNCA crear archivos .md en la raíz** - usar carpetas de `docs/`
+- ✅ **Documentación MODULAR en `docs/`** con estructura:
+  - `docs/00-INICIO/` - Guías de inicio y configuración
+  - `docs/00-GENERAL/` - Arquitectura y convenciones generales
+  - `docs/MODULOS/[modulo]/` - **Documentación por módulo funcional**
+    - `dashboard/` - Panel de control
+    - `estabilidad/` - Análisis de estabilidad
+    - `telemetria/` - Datos CAN + GPS
+    - `ia/` - Inteligencia artificial
+    - `geofences/` - Geocercas
+    - `operaciones/` - Eventos, alertas, mantenimiento
+    - `reportes/` - Generación de reportes
+    - `administracion/` - Gestión del sistema
+    - `upload/` - Sistema de subida
+    - `autenticacion/` - Seguridad y auth
+    - `vehiculos/` - Gestión de flota
+    - `base-conocimiento/` - Docs internas
+  - `docs/BACKEND/` - Documentación técnica backend
+  - `docs/FRONTEND/` - Documentación técnica frontend
+  - `docs/INFRAESTRUCTURA/` - Docker, CI/CD, deploy
+  - `docs/API/` - Documentación completa de APIs
+  - `docs/DESARROLLO/` - Guías de desarrollo
+  - `docs/CALIDAD/` - Auditorías y checklists
+  - `docs/HISTORICO/` - Versiones anteriores
+- ✅ **Scripts SIEMPRE en `scripts/`** con categorías:
+  - `scripts/analisis/` - Scripts de análisis de datos
+  - `scripts/testing/` - Scripts de testing
+  - `scripts/setup/` - Scripts de inicialización
+  - `scripts/utils/` - Scripts de utilidad
+  - `scripts/historico/` - Scripts obsoletos
+- ✅ **Archivos temporales en `temp/`** - logs, json, backups
+- ✅ **Archivos SQL en `database/`** - scripts y migraciones
+- ✅ **Solo README.md en la raíz** - único .md permitido
+- ✅ **Raíz limpia** - solo archivos esenciales (20 máximo)
+- ✅ **Cada módulo tiene su carpeta** en `docs/MODULOS/`
+
 ## 🚨 REGLAS CRÍTICAS (NO VIOLAR NUNCA)
 
 1. **NUNCA iniciar backend/frontend** - usar `iniciar.ps1`
@@ -51,6 +88,8 @@
 4. **NUNCA cambiar puertos** - 9998 backend, 5174 frontend
 5. **NUNCA crear módulos fuera del menú oficial**
 6. **NUNCA exponer datos entre organizaciones**
+7. **NUNCA crear archivos .md en la raíz** - usar `docs/`
+8. **NUNCA dejar scripts temporales en la raíz** - usar `scripts/`
 
 ## 📋 MÉTODO DE INICIO ÚNICO
 

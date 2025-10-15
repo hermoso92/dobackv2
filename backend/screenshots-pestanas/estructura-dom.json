@@ -1,0 +1,59 @@
+{
+  "tag": "BODY",
+  "id": "",
+  "classes": "",
+  "text": "Panel de ControlEstabilidadTelemetríaInteligencia ",
+  "visible": false,
+  "children": [
+    {
+      "tag": "DIV",
+      "id": "root",
+      "classes": "",
+      "text": "Panel de ControlEstabilidadTelemetríaInteligencia ",
+      "visible": true,
+      "children": [
+        {
+          "tag": "DIV",
+          "id": "",
+          "classes": "app-layout",
+          "text": "Panel de ControlEstabilidadTelemetríaInteligencia ",
+          "visible": true,
+          "children": [
+            {
+              "tag": "DIV",
+              "id": "",
+              "classes": "navigation-container",
+              "text": "Panel de ControlEstabilidadTelemetríaInteligencia ",
+              "visible": false,
+              "children": []
+            },
+            {
+              "tag": "DIV",
+              "id": "",
+              "classes": "main-content",
+              "text": "Gestión de GeocercasConfigura y gestiona las regla",
+              "visible": true,
+              "children": []
+            }
+          ]
+        },
+        {
+          "tag": "DIV",
+          "id": "_rht_toaster",
+          "classes": "",
+          "text": "",
+          "visible": false,
+          "children": []
+        }
+      ]
+    },
+    {
+      "tag": "SCRIPT",
+      "id": "",
+      "classes": "",
+      "text": "",
+      "visible": false,
+      "children": []
+    }
+  ]
+}

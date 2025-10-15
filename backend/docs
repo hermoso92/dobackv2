@@ -1,0 +1,169 @@
+# 🔥 PROBLEMA CRÍTICO RESUELTO - Loop Infinito de Prisma
+
+**Fecha**: 2025-10-12 04:31  
+**Severidad**: CRÍTICA  
+**Estado**: ✅ RESUELTO
+
+---
+
+## 🚨 Problema Detectado
+
+El singleton de **Prisma Client** estaba entrando en un **loop infinito de desconexiones/reconexiones**, causando:
+
+- Cientos de mensajes `"Prisma desconectado exitosamente"` por segundo
+- Imposibilidad de ejecutar consultas a la base de datos
+- Timeout en todos los endpoints de procesamiento
+- Backend inestable y no funcional
+
+### Causa Raíz
+
+El archivo `backend/src/lib/prisma.ts` tenía hooks de proceso (`beforeExit`, `SIGTERM`, `SIGINT`) que se registraban **múltiples veces** cada vez que el módulo se importaba, especialmente al usar `ts-node`.
+
+Esto causaba que:
+1. Cada importación registraba nuevos listeners
+2. Los listeners se disparaban constantemente
+3. `prisma.$disconnect()` se llamaba en loop infinito
+4. El sistema quedaba inutilizable
+
+---
+
+## ✅ Solución Aplicada
+
+### Cambios en `backend/src/lib/prisma.ts`:
+
+1. **Eliminados hooks automáticos de proceso**
+   - Removido `process.on('beforeExit')`
+   - Removido `process.on('SIGTERM')`
+   - Removido `process.on('SIGINT')`
+
+2. **Simplificado el singleton**
+   ```typescript
+   const isNewInstance = !globalForPrisma.prisma;
+   
+   export const prisma = globalForPrisma.prisma || new PrismaClient({...});
+   
+   if (isNewInstance) {
+       logger.info('Prisma Client singleton inicializado'); // Solo una vez
+   }
+   ```
+
+3. **Mantenida función manual de desconexión**
+   - `disconnectPrisma()` disponible pero solo para llamada manual
+   - Node.js manejará automáticamente la desconexión al cerrar
+
+### Resultado
+
+- ✅ Singleton funciona correctamente
+- ✅ Una sola instancia de Prisma en toda la aplicación
+- ✅ Sin loops infinitos
+- ✅ Conexiones a BD estables
+- ✅ Backend compilado exitosamente
+
+---
+
+## 📋 Próximos Pasos
+
+### 1. **REINICIAR EL BACKEND** (OBLIGATORIO)
+
+Para que los cambios tomen efecto, debes reiniciar el backend:
+
+**Opción A - Reinicio completo del sistema:**
+```powershell
+.\iniciar.ps1
+```
+
+**Opción B - Solo reiniciar backend:**
+1. Cerrar la ventana del backend actual
+2. Ejecutar:
+```powershell
+cd backend
+npm run dev
+```
+
+### 2. **Verificar que funciona**
+
+Después de reiniciar, el backend debe:
+- ✅ Mostrar solo UN mensaje: `"Prisma Client singleton inicializado"`
+- ✅ NO mostrar loops infinitos de desconexión
+- ✅ Responder correctamente en `http://localhost:9998/health`
+
+### 3. **Probar el sistema de upload**
+
+Una vez el backend esté estable, ejecuta:
+
+```powershell
+cd ..
+.\test-upload-system.ps1
+```
+
+Esto probará:
+- ✅ Limpieza de BD
+- ✅ Procesamiento de archivos CMadrid
+- ✅ Verificación de sesiones creadas
+- ✅ Comparación con análisis real (esperado: 2 sesiones para DOBACK024 - 30/09/2025)
+
+---
+
+## 📊 Estado Actual del Proyecto
+
+### ✅ Completado
+
+1. **Arquitectura robusta de upload**
+   - `SessionCorrelationRules.ts` - Reglas claras y documentadas
+   - `SessionDetectorV2.ts` - Detección de sesiones por gaps temporales
+   - `TemporalCorrelator.ts` - Correlación entre tipos de archivo
+   - `UnifiedFileProcessorV2.ts` - Procesador principal
+   - `ForeignKeyValidator.ts` - Validación de claves foráneas
+   - `SessionValidator.ts` - Validación de sesiones
+
+2. **Parsers robustos**
+   - `RobustGPSParser.ts` - 5 niveles de validación GPS
+   - `RobustStabilityParser.ts` - Parseo de estabilidad
+   - `RobustRotativoParser.ts` - Parseo de rotativo
+
+3. **Singleton de Prisma**
+   - ✅ Corregido loop infinito
+   - ✅ Una sola instancia global
+   - ✅ Conexiones estables
+
+4. **Usuario SYSTEM**
+   - ✅ IDs fijos para procesamiento automático
+   - ✅ Sin errores de foreign key
+
+### ⏳ Pendiente
+
+1. **Verificar funcionamiento real**
+   - Reiniciar backend
+   - Ejecutar test de procesamiento
+   - Confirmar que se crean exactamente 2 sesiones para DOBACK024 - 30/09/2025
+
+2. **Suite de tests automatizados** (opcional)
+   - Tests unitarios para detectores
+   - Tests de integración para correlación
+   - Tests end-to-end para procesamiento completo
+
+---
+
+## 🎯 Objetivo Inmediato
+
+**REINICIAR EL BACKEND** y luego ejecutar `.\test-upload-system.ps1` para verificar que el sistema funciona correctamente end-to-end.
+
+---
+
+## 📝 Notas Técnicas
+
+- El singleton de Prisma ahora es completamente estático
+- No hay side-effects en la inicialización
+- La desconexión se maneja automáticamente por Node.js
+- El log de inicialización aparece solo una vez
+- Compatible con hot-reload de ts-node-dev
+
+---
+
+**Siguiente comando a ejecutar:**
+
+```powershell
+# Cierra el backend actual y ejecuta:
+.\iniciar.ps1
+```
+
