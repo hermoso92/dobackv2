@@ -1,14 +1,39 @@
 /**
  * 🚨 SERVICIO DE DETECCIÓN DE EVENTOS DE ESTABILIDAD
  * Basado en tabla de eventos con índice SI
- * Última actualización: 10/Oct/2025 - Umbrales corregidos
+ * Última actualización: 14/Oct/2025 - Reglas de dominio + correlación GPS + deduplicación
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { createLogger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 const logger = createLogger('EventDetector');
+
+// ============================================================================
+// MANDAMIENTOS M3: UMBRALES Y CONFIGURACIÓN
+// ============================================================================
+
+/**
+ * MANDAMIENTO M3.1: Solo generar eventos si SI < 0.50
+ * MANDAMIENTO M3.2: Umbrales de severidad en [0,1]
+ */
+const UMBRALES = {
+    EVENTO_MAXIMO: 0.50,    // Solo generar eventos si SI < 0.50
+    GRAVE: 0.20,            // SI < 0.20
+    MODERADA: 0.35,         // 0.20 ≤ SI < 0.35
+    LEVE: 0.50              // 0.35 ≤ SI < 0.50
+};
+
+/**
+ * Clasificar severidad por SI según Mandamiento M3.2
+ * @param si - Índice de estabilidad en [0,1]
+ * @returns Severidad o null si SI ≥ 0.50 (condición normal)
+ */
+function clasificarSeveridadPorSI(si: number): Severidad | null {
+    if (si >= UMBRALES.EVENTO_MAXIMO) return null; // Sin evento
+    if (si < UMBRALES.GRAVE) return 'GRAVE';
+    if (si < UMBRALES.MODERADA) return 'MODERADA';
+    return 'LEVE';
+}
 
 // ============================================================================
 // TIPOS
@@ -57,49 +82,43 @@ export interface EventoDetectado {
 
 /**
  * Detectar evento: Riesgo de vuelco
- * Condición: si < 30% (pérdida general de estabilidad)
- * Criticidad: 🔴 < 20% | 🟠 20-35% | 🟡 35-50% | 🟢 > 50%
+ * Condición: SI < 0.50 (pérdida general de estabilidad)
+ * Criticidad: 🔴 < 0.20 | 🟠 0.20-0.35 | 🟡 0.35-0.50 | 🟢 ≥ 0.50
+ * MANDAMIENTO M3
  */
 function detectarRiesgoVuelco(measurement: any): EventoDetectado | null {
-    const si = (measurement.si || 0) * 100; // Convertir a porcentaje
+    const si = measurement.si || 0; // Ya en [0,1]
 
-    if (si < 30) {
-        let severidad: Severidad;
+    const severidad = clasificarSeveridadPorSI(si);
+    if (!severidad) return null; // SI ≥ 0.50 → sin evento
 
-        if (si < 20) severidad = 'GRAVE';
-        else if (si >= 20 && si < 35) severidad = 'MODERADA';
-        else if (si >= 35 && si < 50) severidad = 'LEVE';
-        else severidad = 'NORMAL';
-
-        return {
-            tipo: 'RIESGO_VUELCO',
-            severidad,
-            timestamp: measurement.timestamp,
-            valores: { si: measurement.si },
-            descripcion: `Pérdida general de estabilidad (SI=${si.toFixed(1)}%)`
-        };
-    }
-
-    return null;
+    return {
+        tipo: 'RIESGO_VUELCO',
+        severidad,
+        timestamp: measurement.timestamp,
+        valores: { si: measurement.si },
+        descripcion: `Pérdida general de estabilidad (SI=${(si * 100).toFixed(1)}%)`
+    };
 }
 
 /**
  * Detectar evento: Vuelco inminente
- * Condición: si < 10% AND (roll > 10° OR gx > 30°/s)
- * Criticidad: 🔴 Grave (fijo)
+ * Condición: SI < 0.10 AND (roll > 10° OR gx > 30°/s)
+ * Criticidad: 🔴 Grave (forzado independiente de SI)
+ * MANDAMIENTO M3.5
  */
 function detectarVuelcoInminente(measurement: any): EventoDetectado | null {
-    const si = (measurement.si || 0) * 100; // Convertir a porcentaje
+    const si = measurement.si || 0; // Ya en [0,1]
     const roll = measurement.roll || 0;
     const gx = measurement.gx || 0;
 
-    if (si < 10 && (Math.abs(roll) > 10 || Math.abs(gx) > 30)) {
+    if (si < 0.10 && (Math.abs(roll) > 10 || Math.abs(gx) > 30)) {
         return {
             tipo: 'VUELCO_INMINENTE',
-            severidad: 'GRAVE',
+            severidad: 'GRAVE', // Forzado
             timestamp: measurement.timestamp,
             valores: { si: measurement.si, roll, gx },
-            descripcion: `⚠️ VUELCO INMINENTE: SI=${si.toFixed(1)}%, Roll=${roll.toFixed(1)}°, gx=${gx.toFixed(1)}°/s`
+            descripcion: `⚠️ VUELCO INMINENTE: SI=${(si * 100).toFixed(1)}%, Roll=${roll.toFixed(1)}°, gx=${gx.toFixed(1)}°/s`
         };
     }
 
@@ -108,26 +127,26 @@ function detectarVuelcoInminente(measurement: any): EventoDetectado | null {
 
 /**
  * Detectar evento: Deriva peligrosa
- * Condición: abs(gx) > 45°/s AND si < 50% (CORREGIDO)
- * Criticidad: 🔴 si < 20% | 🟠 si 20-50%
+ * Condición: abs(gx) > 45°/s AND SI < 0.50
+ * Criticidad: Por SI (M3.2) o GRAVE si sostenido >2s (M3.5)
+ * MANDAMIENTO M3
  */
 function detectarDerivaPeligrosa(measurement: any, sostenido: boolean = false): EventoDetectado | null {
     const gx = measurement.gx || 0;
-    const si = (measurement.si || 0) * 100; // Convertir a porcentaje
+    const si = measurement.si || 0; // Ya en [0,1]
 
-    // DERIVA PELIGROSA: giro lateral fuerte + estabilidad BAJA (no alta)
-    if (Math.abs(gx) > 45 && si < 50) {
-        let severidad: Severidad;
-        if (si < 20) severidad = 'GRAVE';
-        else if (si >= 20 && si < 35) severidad = 'MODERADA';
-        else severidad = 'LEVE';
+    // DERIVA PELIGROSA: giro lateral fuerte + estabilidad BAJA
+    if (Math.abs(gx) > 45) {
+        // Clasificar por SI, pero forzar GRAVE si sostenido
+        let severidad = sostenido ? 'GRAVE' : clasificarSeveridadPorSI(si);
+        if (!severidad) return null; // SI ≥ 0.50 → sin evento
 
         return {
             tipo: 'DERIVA_PELIGROSA',
             severidad,
             timestamp: measurement.timestamp,
             valores: { gx, si: measurement.si },
-            descripcion: `Sobreviraje o pérdida de tracción: gx=${gx.toFixed(1)}°/s, SI=${si.toFixed(1)}%`
+            descripcion: `Sobreviraje o pérdida de tracción: gx=${gx.toFixed(1)}°/s, SI=${(si * 100).toFixed(1)}%`
         };
     }
 
@@ -136,25 +155,22 @@ function detectarDerivaPeligrosa(measurement: any, sostenido: boolean = false): 
 
 /**
  * Detectar evento: Maniobra brusca
- * Condición: d(gx)/dt > 100°/s² OR ay > 3 m/s² (300 mg)
- * Criticidad: 🔴 < 20% | 🟠 20-35% | 🟡 35-50% | 🟢 > 50%
+ * Condición: d(gx)/dt > 100°/s² OR |ay| > 3 m/s² (300 mg)
+ * Criticidad: Por SI según M3.2
+ * MANDAMIENTO M3
  */
 function detectarManiobraBrusca(measurement: any, gxAnterior?: number): EventoDetectado | null {
     const ay = measurement.ay || 0;
     const gx = measurement.gx || 0;
-    const si = (measurement.si || 0) * 100; // Convertir a porcentaje
+    const si = measurement.si || 0; // Ya en [0,1]
 
     // Cambio brusco en giroscopio o aceleración alta
     const cambioGx = gxAnterior !== undefined ? Math.abs(gx - gxAnterior) : 0;
     const aceleracionAlta = Math.abs(ay) > 300; // 300 mg = 3 m/s²
 
     if (cambioGx > 100 || aceleracionAlta) {
-        let severidad: Severidad;
-
-        if (si < 20) severidad = 'GRAVE';
-        else if (si >= 20 && si < 35) severidad = 'MODERADA';
-        else if (si >= 35 && si < 50) severidad = 'LEVE';
-        else severidad = 'NORMAL';
+        const severidad = clasificarSeveridadPorSI(si);
+        if (!severidad) return null; // SI ≥ 0.50 → sin evento
 
         return {
             tipo: 'MANIOBRA_BRUSCA',
@@ -337,6 +353,8 @@ export async function detectarEventosSesion(sessionId: string): Promise<EventoDe
 
     const eventos: EventoDetectado[] = [];
     const buffer: any[] = [];
+    // Para deduplicación: mantener último evento por tipo
+    const ultimoEventoPorTipo: Record<string, EventoDetectado | undefined> = {};
 
     for (let i = 0; i < measurements.length; i++) {
         const m = measurements[i];
@@ -371,35 +389,45 @@ export async function detectarEventosSesion(sessionId: string): Promise<EventoDe
             };
         };
 
-        // Prioridad: vuelco inminente > otros eventos graves
-        if (eventoVuelcoInminente) {
-            const enriquecido = enriquecerEvento(eventoVuelcoInminente);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoRiesgoVuelco && eventoRiesgoVuelco.severidad === 'GRAVE') {
-            const enriquecido = enriquecerEvento(eventoRiesgoVuelco);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoDerivaPeligrosa) {
-            const enriquecido = enriquecerEvento(eventoDerivaPeligrosa);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoManiobraBrusca && eventoManiobraBrusca.severidad !== 'NORMAL') {
-            const enriquecido = enriquecerEvento(eventoManiobraBrusca);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoCambioCarga) {
-            const enriquecido = enriquecerEvento(eventoCambioCarga);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoZonaInestable) {
-            const enriquecido = enriquecerEvento(eventoZonaInestable);
-            if (enriquecido) eventos.push(enriquecido);
-        } else if (eventoCurvaEstable) {
-            // Eventos positivos (conducción correcta)
-            // const enriquecido = enriquecerEvento(eventoCurvaEstable);
-            // if (enriquecido) eventos.push(enriquecido); // Comentado - no saturar con eventos normales
-        }
+        // Helper para deduplicar por tipo en ventana temporal
+        const pushDeduplicado = (ev: EventoDetectado | null) => {
+            const enriquecido = enriquecerEvento(ev);
+            if (!enriquecido) return;
+            const prev = ultimoEventoPorTipo[enriquecido.tipo];
+            if (!prev) {
+                ultimoEventoPorTipo[enriquecido.tipo] = enriquecido;
+                eventos.push(enriquecido);
+                return;
+            }
+            const dt = Math.abs(enriquecido.timestamp.getTime() - prev.timestamp.getTime());
+            if (dt <= 3000) {
+                // 3s: reemplazar si severidad es mayor
+                const orden: Record<Severidad, number> = { GRAVE: 3, MODERADA: 2, LEVE: 1, NORMAL: 0 };
+                if (orden[enriquecido.severidad] > orden[prev.severidad]) {
+                    // sustituir el último del mismo tipo
+                    const idx = eventos.lastIndexOf(prev);
+                    if (idx >= 0) eventos[idx] = enriquecido;
+                    ultimoEventoPorTipo[enriquecido.tipo] = enriquecido;
+                }
+            } else {
+                ultimoEventoPorTipo[enriquecido.tipo] = enriquecido;
+                eventos.push(enriquecido);
+            }
+        };
+
+        // Prioridad: vuelco inminente > otros graves; aplicar deduplicación
+        if (eventoVuelcoInminente) pushDeduplicado(eventoVuelcoInminente);
+        else if (eventoRiesgoVuelco && eventoRiesgoVuelco.severidad === 'GRAVE') pushDeduplicado(eventoRiesgoVuelco);
+        else if (eventoDerivaPeligrosa) pushDeduplicado(eventoDerivaPeligrosa);
+        else if (eventoManiobraBrusca && eventoManiobraBrusca.severidad !== 'NORMAL') pushDeduplicado(eventoManiobraBrusca);
+        else if (eventoCambioCarga) pushDeduplicado(eventoCambioCarga);
+        else if (eventoZonaInestable) pushDeduplicado(eventoZonaInestable);
+        // eventoCurvaEstable omitido para no saturar
     }
 
     logger.info(`Eventos detectados en sesión ${sessionId}: ${eventos.length}`);
 
-    // Correlacionar eventos con coordenadas GPS
+    // Correlacionar eventos con coordenadas GPS y velocidad
     if (eventos.length > 0) {
         const gpsData = await prisma.gpsMeasurement.findMany({
             where: { sessionId },
@@ -419,8 +447,19 @@ export async function detectarEventosSesion(sessionId: string): Promise<EventoDe
             if (gpsMatch) {
                 evento.lat = gpsMatch.latitude;
                 evento.lon = gpsMatch.longitude;
+                // Velocidad en km/h (datos vienen en km/h)
+                (evento.valores as any).velocity = gpsMatch.speed || 0;
             }
         }
+
+        // Filtro: descartar eventos que no tengan GPS correlacionado
+        const antes = eventos.length;
+        for (let i = eventos.length - 1; i >= 0; i--) {
+            if (eventos[i].lat === undefined || eventos[i].lon === undefined) {
+                eventos.splice(i, 1);
+            }
+        }
+        logger.info(`Eventos con GPS: ${eventos.length}/${antes}`);
     }
 
     return eventos;
@@ -478,9 +517,16 @@ async function detectarYGuardarEventos(sessionId: string): Promise<{ total: numb
             return { total: 0, guardados: 0 };
         }
 
-        // Guardar en BD
+        // Guardar en BD (modelo correcto: stabilityEvent)
+        // MANDAMIENTO M3.6: Persistir details.si SIEMPRE
         let guardados = 0;
         for (const evento of eventos) {
+            // ✅ Validar que SI existe antes de guardar
+            if (!evento.valores.si && evento.valores.si !== 0) {
+                logger.warn(`⚠️ Evento sin SI, no se guardará: ${evento.tipo} en ${evento.timestamp}`);
+                continue;
+            }
+
             try {
                 await prisma.stabilityEvent.create({
                     data: {
@@ -491,7 +537,21 @@ async function detectarYGuardarEventos(sessionId: string): Promise<{ total: numb
                         lon: evento.lon || 0,
                         speed: evento.valores.velocity || 0,
                         rotativoState: evento.rotativo ? 1 : 0,
-                        details: evento.valores
+                        // ✅ MANDAMIENTO M3.6: details SIEMPRE incluye si
+                        details: {
+                            si: evento.valores.si,          // ✅ OBLIGATORIO
+                            ax: evento.valores.ax,
+                            ay: evento.valores.ay,
+                            az: evento.valores.az,
+                            gx: evento.valores.gx,
+                            gy: evento.valores.gy,
+                            gz: evento.valores.gz,
+                            roll: evento.valores.roll,
+                            pitch: evento.valores.pitch,
+                            // yaw: evento.valores.yaw, // Campo no disponible en el modelo
+                            velocity: evento.valores.velocity,
+                            cambioGx: evento.valores.cambioGx
+                        }
                     }
                 });
                 guardados++;

@@ -143,7 +143,7 @@ export class EventDetectorWithGPS {
 
             for (const evento of eventos) {
                 try {
-                    await prisma.stabilityEvent.create({
+                    await prisma.stability_events.create({
                         data: {
                             session_id: sessionId,
                             timestamp: evento.timestamp,

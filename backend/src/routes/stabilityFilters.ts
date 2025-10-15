@@ -73,7 +73,7 @@ router.get('/critical-points', async (req, res) => {
         }
 
         // Obtener eventos de estabilidad
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: whereConditions,
             select: {
                 id: true,
@@ -237,7 +237,7 @@ router.get('/events', async (req, res) => {
         }
 
         // Obtener eventos
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: whereConditions,
             select: {
                 id: true,

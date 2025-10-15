@@ -111,7 +111,7 @@ export const getExecutiveDashboardHandler = async (req: Request, res: Response) 
             organizationId,
             temporalFilter
         });
-        const stabilityEvents = await prisma.stabilityEvent.findMany({
+        const stabilityEvents = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     vehicleId: { in: vehicleIds },

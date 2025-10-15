@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { createLogger } from '../utils/logger';
 import { dataCorrelationService } from './DataCorrelationService';
 import { radarIntegration } from './radarIntegration';
 
 const logger = createLogger('OperationalKeyCalculator');
-const prisma = new PrismaClient();
 
 interface EstadoClave {
     keyType: number;

@@ -6,6 +6,7 @@ import {
     XCircleIcon
 } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import { apiService } from '../../services/api';
 import { DeviceControlData, DeviceFileStatus } from '../../types/deviceControl';
 import { logger } from '../../utils/logger';
@@ -16,6 +17,7 @@ interface DeviceControlPanelProps {
 }
 
 const DeviceControlPanel: React.FC<DeviceControlPanelProps> = ({ className = '' }) => {
+    const { user } = useAuth();
     const [deviceData, setDeviceData] = useState<DeviceControlData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,13 +25,21 @@ const DeviceControlPanel: React.FC<DeviceControlPanelProps> = ({ className = '' 
 
     // Cargar datos de dispositivos
     const loadDeviceData = async () => {
+        if (!user?.organizationId) {
+            logger.warn('No hay organizationId disponible para cargar dispositivos');
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
 
-            logger.info('Cargando datos de dispositivos desde backend');
+            logger.info('Cargando datos de dispositivos desde backend', { organizationId: user.organizationId });
 
-            const response = await apiService.get<{ success: boolean; data: DeviceControlData }>('/api/devices/status');
+            const response = await apiService.get<{ success: boolean; data: DeviceControlData }>(
+                `/api/devices/status?organizationId=${user.organizationId}`
+            );
 
             if (response.success && response.data) {
                 setDeviceData(response.data);
@@ -52,8 +62,10 @@ const DeviceControlPanel: React.FC<DeviceControlPanelProps> = ({ className = '' 
     };
 
     useEffect(() => {
-        loadDeviceData();
-    }, []);
+        if (user?.organizationId) {
+            loadDeviceData();
+        }
+    }, [user?.organizationId]);
 
     const handleRefresh = () => {
         loadDeviceData();

@@ -189,115 +189,109 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
         }
     }, []);
 
-    // Cargar datos del heatmap (Puntos Negros)
+    // Cargar datos del heatmap (Puntos Negros) desde API real
     const fetchHeatmapData = useCallback(async () => {
         try {
-
-            // Intentar obtener datos reales desde la API
-            try {
-                const response = await apiService.get<{ success: boolean; data: any[] }>('/api/stability-events?limit=100&includeGPS=true');
-                if (response.data && response.data.success && response.data.data) {
-                    const events = response.data.data;
-                    const heatmapPoints = events.map((event: any) => ({
-                        id: event.id,
-                        lat: event.gps_lat || 40.4168,
-                        lng: event.gps_lng || -3.7038,
-                        intensity: event.severity === 'G' ? 0.9 : event.severity === 'M' ? 0.6 : 0.3,
-                        timestamp: event.timestamp,
-                        vehicleId: event.vehicle_id,
-                        vehicleName: event.vehicle_name || event.vehicle_id,
-                        eventType: event.event_type,
-                        severity: event.severity === 'G' ? 'critical' : event.severity === 'M' ? 'severe' : 'light',
-                        speed: event.speed || 0,
-                        speedLimit: event.speed_limit || 50,
-                        rotativo: event.rotativo || false,
-                        roadType: event.road_type || 'urban',
-                        location: event.location || 'Madrid'
-                    }));
-
-                    setHeatmapData({
-                        points: heatmapPoints,
-                        routes: [],
-                        geofences: []
-                    });
-                    return;
-                }
-            } catch (apiError) {
-                console.warn('Error obteniendo datos reales, usando datos mock:', apiError);
+            const orgId = getOrganizationId(user?.organizationId);
+            const params = new URLSearchParams();
+            if (orgId) params.append('organizationId', orgId);
+            if (filters.vehicles && filters.vehicles.length > 0) {
+                params.append('vehicleIds', filters.vehicles.join(','));
             }
+            if (filters.dateRange?.start) params.append('startDate', filters.dateRange.start);
+            if (filters.dateRange?.end) params.append('endDate', filters.dateRange.end);
+            params.append('severity', 'all');
+            params.append('rotativoOn', 'all');
+            params.append('clusterRadius', '20');
+            params.append('minFrequency', '1');
 
-            // Fallback a datos mock si no hay datos reales
-            const mockHeatmapData = {
-                points: [
-                    {
-                        id: '1',
-                        lat: 40.4168,
-                        lng: -3.7038,
-                        intensity: 0.8,
-                        timestamp: new Date().toISOString(),
-                        vehicleId: 'DOBACK023',
-                        vehicleName: 'DOBACK023',
-                        eventType: 'CURVA_PELIGROSA',
-                        severity: 'critical' as const,
-                        speed: 65,
-                        speedLimit: 50,
-                        rotativo: true,
-                        roadType: 'urban',
-                        location: 'Madrid Centro'
-                    },
-                    {
-                        id: '2',
-                        lat: 40.4178,
-                        lng: -3.7048,
-                        intensity: 0.6,
-                        timestamp: new Date().toISOString(),
-                        vehicleId: 'DOBACK027',
-                        vehicleName: 'DOBACK027',
-                        eventType: 'FRENADA_BRUSCA',
-                        severity: 'warning' as const,
-                        speed: 45,
-                        speedLimit: 50,
-                        rotativo: false,
-                        roadType: 'urban',
-                        location: 'Madrid Centro'
-                    }
-                ],
-                routes: [],
-                geofences: []
-            };
+            const response = await apiService.get<{ success: boolean; data: { clusters: any[] } }>(
+                `/api/hotspots/critical-points?${params.toString()}`
+            );
 
-            setHeatmapData(mockHeatmapData);
+            if (response.data && response.data.success && response.data.data?.clusters) {
+                const clusters = response.data.data.clusters;
+
+                // Aplanar eventos de clusters a puntos del heatmap
+                const points: any[] = [];
+                clusters.forEach((cluster: any) => {
+                    (cluster.events || []).forEach((event: any, idx: number) => {
+                        const sev = event.severity || 'leve';
+                        const intensity = sev === 'grave' ? 0.9 : sev === 'moderada' ? 0.6 : 0.3;
+                        points.push({
+                            id: `${cluster.id}-${idx}`,
+                            lat: event.lat,
+                            lng: event.lng,
+                            intensity,
+                            timestamp: event.timestamp,
+                            vehicleId: event.vehicleId,
+                            vehicleName: event.vehicleName || event.vehicleId,
+                            eventType: event.eventType,
+                            severity: sev,
+                            speed: event.speed || 0,
+                            speedLimit: event.speedLimit || 0,
+                            rotativo: event.rotativo || false,
+                            roadType: event.roadType || 'urban',
+                            location: event.location || `${event.lat?.toFixed(4)}, ${event.lng?.toFixed(4)}`
+                        });
+                    });
+                });
+
+                setHeatmapData({ points, routes: [], geofences: [] });
+            } else {
+                setHeatmapData({ points: [], routes: [], geofences: [] });
+            }
         } catch (err) {
             console.error('Error fetching heatmap data:', err);
+            setHeatmapData({ points: [], routes: [], geofences: [] });
         }
-    }, []);
+    }, [user?.organizationId, filters.vehicles, filters.dateRange?.start, filters.dateRange?.end]);
 
-    // Cargar datos de violaciones de velocidad
+    // Cargar datos de violaciones de velocidad desde API real
     const fetchSpeedViolations = useCallback(async () => {
         try {
-            // Simular datos de violaciones de velocidad
-            const mockSpeedViolations = [
-                {
-                    id: '1',
-                    lat: 40.4168,
-                    lng: -3.7038,
-                    speed: 85,
-                    speedLimit: 50,
-                    timestamp: new Date().toISOString(),
-                    vehicleId: 'DOBACK023',
-                    vehicleName: 'DOBACK023',
-                    violationType: 'grave' as const,
-                    roadType: 'urban' as const,
-                    rotativoOn: true,
-                    location: 'Madrid Centro'
-                }
-            ];
+            const orgId = getOrganizationId(user?.organizationId);
+            const params = new URLSearchParams();
+            if (orgId) params.append('organizationId', orgId);
+            if (filters.vehicles && filters.vehicles.length > 0) {
+                params.append('vehicleIds', filters.vehicles.join(','));
+            }
+            if (filters.dateRange?.start) params.append('startDate', filters.dateRange.start);
+            if (filters.dateRange?.end) params.append('endDate', filters.dateRange.end);
+            params.append('rotativoOn', 'all');
+            params.append('violationType', 'all');
+            params.append('inPark', 'all');
+            params.append('minSpeed', '0');
 
-            setSpeedViolations(mockSpeedViolations);
+            const response = await apiService.get<{ success: boolean; data: { violations: any[] } }>(
+                `/api/speed/violations?${params.toString()}`
+            );
+
+            if (response.data && response.data.success && response.data.data?.violations) {
+                const violations = response.data.data.violations.map((v: any) => ({
+                    id: v.id,
+                    lat: v.lat,
+                    lng: v.lng,
+                    speed: v.speed,
+                    speedLimit: v.speedLimit,
+                    timestamp: v.timestamp,
+                    vehicleId: v.vehicleId,
+                    vehicleName: v.vehicleName || v.vehicleId,
+                    violationType: v.violationType,
+                    roadType: v.roadType,
+                    rotativoOn: v.rotativoOn,
+                    location: `${(v.lat ?? 0).toFixed(4)}, ${(v.lng ?? 0).toFixed(4)}`
+                }));
+
+                setSpeedViolations(violations);
+            } else {
+                setSpeedViolations([]);
+            }
         } catch (err) {
             console.error('Error fetching speed violations:', err);
+            setSpeedViolations([]);
         }
-    }, []);
+    }, [user?.organizationId, filters.vehicles, filters.dateRange?.start, filters.dateRange?.end]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -536,7 +530,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                     {/* AÑADIDO: Índice de Estabilidad */}
                     <KPICard
                         title="Índice de Estabilidad (SI)"
-                        value={`${((quality?.indice_promedio || 0) * 100).toFixed(1)}%`}
+                        value={`${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`}
                         icon={<ChartBarIcon className="h-5 w-5" />}
                         colorClass={
                             (quality?.indice_promedio || 0) >= 0.90 ? "text-green-600" :

@@ -21,15 +21,13 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import path from 'path';
+import { prisma } from '../config/prisma';
+import { authenticate } from '../middleware/auth';
+import { kpiCacheService } from '../services/KPICacheService';
+import { unifiedFileProcessorV2 } from '../services/upload/UnifiedFileProcessorV2';
+import { logger } from '../utils/logger';
 
 const router = Router();
-
-// Función de logging simple
-const logger = {
-  info: (message: string, ...args: any[]) => console.log(`[INFO] ${message}`, ...args),
-  warn: (message: string, ...args: any[]) => console.warn(`[WARN] ${message}`, ...args),
-  error: (message: string, ...args: any[]) => console.error(`[ERROR] ${message}`, ...args)
-};
 
 // Configuración de multer para subida de archivos
 const storage = multer.diskStorage({
@@ -332,18 +330,127 @@ function parseCanFile(content: string) {
 
   return sessions;
 }
-// Función simplificada para obtener ID de vehículo
+// Función para obtener o crear vehículo en la base de datos
 async function getOrCreateVehicle(vehicleId: string, organizationId: string): Promise<string> {
-  // Por ahora retornamos un ID simulado
-  return `vehicle_${vehicleId}_${organizationId}`;
+  try {
+    // Buscar vehículo existente
+    let vehicle = await prisma.vehicle.findFirst({
+      where: {
+        identifier: vehicleId,
+        organizationId: organizationId
+      }
+    });
+
+    // Si no existe, crearlo
+    if (!vehicle) {
+      vehicle = await prisma.vehicle.create({
+        data: {
+          identifier: vehicleId,
+          name: vehicleId,
+          model: 'Fire Truck',
+          licensePlate: `PLATE-${vehicleId}`,
+          organizationId: organizationId,
+          type: 'TRUCK',
+          status: 'ACTIVE'
+        }
+      });
+      logger.info(`✨ Vehículo creado: ${vehicleId}`);
+    }
+
+    await prisma.$disconnect();
+    return vehicle.id;
+  } catch (error) {
+    logger.error('Error en getOrCreateVehicle:', error);
+    throw error;
+  }
 }
 
-// Función simplificada para guardar sesión
-async function saveSession(sessionData: any, vehicleId: string, userId: string, organizationId: string): Promise<string> {
-  // Por ahora retornamos un ID simulado
-  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  logger.info(`Sesión guardada: ${sessionId} para vehículo ${vehicleId}`);
-  return sessionId;
+// Función para guardar sesión en la base de datos (simplificada)
+async function saveSession(sessionData: any, vehicleId: string, userId: string, organizationId: string): Promise<{ id: string; created: boolean }> {
+  try {
+    // Buscar o crear usuario del sistema
+    let systemUser = await prisma.user.findFirst({
+      where: {
+        organizationId: organizationId,
+        role: 'ADMIN'
+      }
+    });
+
+    // Si no hay usuario admin, buscar cualquier usuario de la organización
+    if (!systemUser) {
+      systemUser = await prisma.user.findFirst({
+        where: { organizationId: organizationId }
+      });
+    }
+
+    const validUserId = systemUser?.id || userId;
+
+    // Verificar si la sesión ya existe (para evitar duplicados)
+    const existingSession = await prisma.session.findFirst({
+      where: {
+        vehicleId: vehicleId,
+        startTime: sessionData.startTime,
+        sessionNumber: sessionData.sessionNumber || 1,
+        source: 'AUTOMATIC_UPLOAD'
+      }
+    });
+
+    // Si la sesión ya existe, retornarla sin crear duplicado
+    if (existingSession) {
+      logger.info(`⚠️ Sesión ya existe, omitiendo: ${existingSession.id}`);
+      return { id: existingSession.id, created: false };
+    }
+
+    // Crear sesión básica solo si no existe
+    const session = await prisma.session.create({
+      data: {
+        vehicleId: vehicleId,
+        organizationId: organizationId,
+        startTime: sessionData.startTime,
+        endTime: sessionData.endTime || new Date(),
+        status: 'COMPLETED',
+        userId: validUserId,
+        sequence: sessionData.sessionNumber || 1,
+        sessionNumber: sessionData.sessionNumber || 1,
+        source: 'AUTOMATIC_UPLOAD'
+      }
+    });
+
+    // Guardar mediciones según el tipo
+    if (sessionData.tipo === 'gps' && sessionData.measurements) {
+      await prisma.gpsMeasurement.createMany({
+        data: sessionData.measurements.map((m: any) => ({
+          sessionId: session.id,
+          timestamp: m.timestamp,
+          latitude: m.latitude || 0,
+          longitude: m.longitude || 0,
+          altitude: m.altitude || 0,
+          speed: m.speed || 0,
+          satellites: m.satellites || 0,
+          quality: m.quality || 'NO_FIX'
+        })),
+        skipDuplicates: true
+      });
+    }
+
+    if (sessionData.tipo === 'rotativo' && sessionData.measurements) {
+      await prisma.rotativoMeasurement.createMany({
+        data: sessionData.measurements.map((m: any) => ({
+          sessionId: session.id,
+          timestamp: m.timestamp,
+          state: m.state || 'OFF'
+        })),
+        skipDuplicates: true
+      });
+    }
+
+    // ❌ REMOVIDO: await prisma.$disconnect(); - No desconectar aquí (usa singleton)
+    logger.info(`💾 Sesión guardada: ${session.id} (${sessionData.measurements?.length || 0} mediciones)`);
+    return { id: session.id, created: true };
+  } catch (error) {
+    logger.error('Error en saveSession:', error);
+    throw error;
+  }
 }
 
 // Endpoint para subir archivo
@@ -635,7 +742,7 @@ router.get('/files', async (req, res) => {
 // Endpoint para análisis integral de archivos CMadrid
 router.get('/analyze-cmadrid', async (req, res) => {
   try {
-    const cmadridPath = path.join(__dirname, '../../data/CMadrid');
+    const cmadridPath = path.join(__dirname, '../../data/datosDoback/CMadrid');
 
     if (!fs.existsSync(cmadridPath)) {
       return res.status(404).json({ error: 'Directorio CMadrid no encontrado' });
@@ -732,6 +839,436 @@ router.get('/analyze-cmadrid', async (req, res) => {
     logger.error('Error analizando CMadrid:', error);
     res.status(500).json({
       error: 'Error analizando archivos CMadrid',
+      details: (error as Error).message
+    });
+  }
+});
+
+/**
+ * GET /api/upload/files
+ * Listar archivos subidos
+ */
+router.get('/files', async (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, '../../uploads');
+
+    if (!fs.existsSync(uploadsDir)) {
+      return res.json({
+        success: true,
+        data: { files: [] }
+      });
+    }
+
+    const files = fs.readdirSync(uploadsDir).map(filename => ({
+      name: filename,
+      size: fs.statSync(path.join(uploadsDir, filename)).size,
+      uploadedAt: fs.statSync(path.join(uploadsDir, filename)).mtime
+    }));
+
+    res.json({
+      success: true,
+      data: { files }
+    });
+  } catch (error) {
+    logger.error('Error listando archivos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al listar archivos',
+      details: (error as Error).message
+    });
+  }
+});
+
+/**
+ * GET /api/upload/recent-sessions
+ * Obtener sesiones recientes
+ */
+router.get('/recent-sessions', async (req, res) => {
+  try {
+    const sessions = await prisma.session.findMany({
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        vehicle: {
+          select: {
+            name: true,
+            identifier: true
+          }
+        }
+      }
+    });
+
+    await prisma.$disconnect();
+
+    res.json({
+      success: true,
+      data: {
+        sessions: sessions.map((s: any) => ({
+          id: s.id,
+          vehicleName: s.vehicle?.name || s.vehicle?.identifier || 'Desconocido',
+          startTime: s.startTime,
+          endTime: s.endTime,
+          createdAt: s.createdAt
+        }))
+      }
+    });
+  } catch (error) {
+    logger.error('Error obteniendo sesiones recientes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener sesiones',
+      details: (error as Error).message
+    });
+  }
+});
+
+/**
+ * POST /api/upload/process-all-cmadrid
+ * Procesar automáticamente todos los archivos de CMadrid
+ * ✅ ACTUALIZADO: Usa UnifiedFileProcessor para correlación correcta
+ * ✅ Ahora correlaciona ESTABILIDAD + GPS + ROTATIVO del mismo día
+ */
+router.post('/process-all-cmadrid', authenticate, async (req, res) => {
+  try {
+    // ✅ Incrementar timeout para procesamiento largo
+    req.setTimeout(600000); // 10 minutos
+    res.setTimeout(600000);
+
+    logger.info('🚀 Iniciando procesamiento automático UNIFICADO de CMadrid...');
+
+    // ✅ NUEVO: Leer configuración del request (si viene del frontend)
+    const uploadConfig = req.body.config;
+    if (uploadConfig) {
+      logger.info('⚙️ Usando configuración personalizada del frontend', uploadConfig);
+      // TODO: Aplicar configuración a UnifiedFileProcessorV2
+    }
+
+    // ✅ Asegurar que Prisma esté conectado (crítico para procesamiento masivo)
+    try {
+      await prisma.$connect();
+      logger.info('✅ Prisma conectado correctamente');
+    } catch (err) {
+      logger.warn('⚠️ Prisma ya estaba conectado');
+    }
+
+    // UUIDs fijos del usuario/organización SYSTEM (creados en seed)
+    const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
+    const SYSTEM_ORG_ID = '00000000-0000-0000-0000-000000000002';
+
+    const userId = (req as any).user?.id || SYSTEM_USER_ID;
+    const organizationId = (req as any).user?.organizationId || SYSTEM_ORG_ID;
+    // cambio aquí
+    if (!(req as any).user?.organizationId) {
+      logger.warn('⚠️ organizationId no presente en usuario autenticado, usando SYSTEM_ORG_ID por fallback', { SYSTEM_ORG_ID });
+    }
+
+    // ✅ RUTA CORRECTA: backend/data/datosDoback/CMadrid (carpeta oficial)
+    const cmadridPath = path.join(__dirname, '../../data/datosDoback/CMadrid');
+
+    if (!fs.existsSync(cmadridPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Directorio CMadrid no encontrado'
+      });
+    }
+
+    const vehicleResults: Map<string, any> = new Map();
+    let totalArchivosLeidos = 0;
+    let totalSesionesCreadas = 0;
+
+    // Leer directorios de vehículos
+    const vehicleDirs = fs.readdirSync(cmadridPath).filter(item =>
+      fs.statSync(path.join(cmadridPath, item)).isDirectory() && item.toLowerCase().startsWith('doback')
+    );
+
+    logger.info(`📁 Encontrados ${vehicleDirs.length} vehículos en CMadrid`);
+
+    for (const vehicleDir of vehicleDirs) {
+      try {
+        const vehiclePath = path.join(cmadridPath, vehicleDir);
+        const vehicleId = vehicleDir.toUpperCase();
+
+        logger.info(`🚗 Procesando vehículo: ${vehicleId}`);
+
+        // Agrupar archivos por fecha para este vehículo
+        const archivosPorFecha: Map<string, any> = new Map();
+
+        // Leer archivos de cada tipo (case-insensitive)
+        const typeVariants = {
+          estabilidad: ['estabilidad', 'ESTABILIDAD', 'Estabilidad'],
+          gps: ['gps', 'GPS', 'Gps'],
+          rotativo: ['rotativo', 'ROTATIVO', 'Rotativo']
+        };
+
+        for (const [type, variants] of Object.entries(typeVariants)) {
+          let typePath: string | null = null;
+
+          // Buscar cuál variante existe
+          for (const variant of variants) {
+            const testPath = path.join(vehiclePath, variant);
+            if (fs.existsSync(testPath)) {
+              typePath = testPath;
+              break;
+            }
+          }
+
+          if (typePath) {
+            const files = fs.readdirSync(typePath).filter(f => f.endsWith('.txt'));
+
+            for (const file of files) {
+              // Extraer fecha del nombre del archivo
+              const matchFecha = file.match(/_(\d{8})\.txt$/);
+              if (!matchFecha) continue;
+
+              const fechaStr = matchFecha[1]; // YYYYMMDD
+
+              // ✅ CORRECCIÓN: Mantener formato YYYYMMDD (sin guiones)
+              // UnifiedFileProcessorV2 espera este formato
+              const fecha = fechaStr;
+
+              if (!archivosPorFecha.has(fecha)) {
+                archivosPorFecha.set(fecha, {
+                  fecha,
+                  archivos: {}
+                });
+              }
+
+              const grupo = archivosPorFecha.get(fecha);
+              const filePath = path.join(typePath, file);
+
+              grupo.archivos[type] = {
+                nombre: file,
+                buffer: fs.readFileSync(filePath)
+              };
+
+              totalArchivosLeidos++;
+            }
+          }
+        }
+
+        logger.info(`📦 Encontrados ${archivosPorFecha.size} días con datos para ${vehicleId}`);
+
+        // Inicializar stats del vehículo
+        vehicleResults.set(vehicleId, {
+          vehicle: vehicleId,
+          savedSessions: 0,
+          skippedSessions: 0,
+          filesProcessed: 0,
+          sessionDetails: [], // ✅ Detalles por sesión (ÚNICO dato enviado)
+          errors: []
+        });
+
+        const vehicleStats = vehicleResults.get(vehicleId);
+
+        // Procesar cada día usando UnifiedFileProcessor
+        for (const [fecha, grupo] of archivosPorFecha.entries()) {
+          logger.info(`📅 Procesando fecha: ${fecha}`);
+
+          // ✅ DEBUG: Ver qué archivos están en el grupo
+          logger.info(`   🔍 DEBUG Grupo: EST=${!!grupo.archivos.estabilidad}, GPS=${!!grupo.archivos.gps}, ROT=${!!grupo.archivos.rotativo}`);
+          if (grupo.archivos.estabilidad) logger.info(`   → ESTABILIDAD: ${grupo.archivos.estabilidad.nombre}`);
+          if (grupo.archivos.gps) logger.info(`   → GPS: ${grupo.archivos.gps.nombre}`);
+          if (grupo.archivos.rotativo) logger.info(`   → ROTATIVO: ${grupo.archivos.rotativo.nombre}`);
+
+          try {
+            // Preparar archivos para UnifiedFileProcessor
+            const archivosArray: Array<{ nombre: string; buffer: Buffer }> = [];
+
+            if (grupo.archivos.estabilidad) {
+              archivosArray.push({
+                nombre: grupo.archivos.estabilidad.nombre,
+                buffer: grupo.archivos.estabilidad.buffer
+              });
+            }
+
+            if (grupo.archivos.gps) {
+              archivosArray.push({
+                nombre: grupo.archivos.gps.nombre,
+                buffer: grupo.archivos.gps.buffer
+              });
+            }
+
+            if (grupo.archivos.rotativo) {
+              archivosArray.push({
+                nombre: grupo.archivos.rotativo.nombre,
+                buffer: grupo.archivos.rotativo.buffer
+              });
+            }
+
+            // ✅ Procesar con UnifiedFileProcessorV2 (correlación correcta con reglas estructuradas)
+            const resultado = await unifiedFileProcessorV2.procesarArchivos(
+              archivosArray,
+              organizationId,
+              userId,
+              uploadConfig // ✅ NUEVO: Pasar configuración personalizada
+            );
+
+            // Contar sesiones
+            totalSesionesCreadas += resultado.sesionesCreadas;
+            vehicleStats.savedSessions += resultado.sesionesCreadas;
+            vehicleStats.filesProcessed += archivosArray.length;
+            vehicleStats.sessionDetails = vehicleStats.sessionDetails || [];
+
+            // ✅ Agregar detalles de sesiones con nombres de archivos (SIMPLIFICADO)
+            if (resultado.sessionDetails && resultado.sessionDetails.length > 0) {
+              vehicleStats.sessionDetails.push(...resultado.sessionDetails);
+            }
+
+            // ✅ NO agregamos archivos individuales (demasiado pesado para JSON)
+            // Solo mantenemos sessionDetails que es lo que el frontend necesita
+
+            logger.info(`✅ ${fecha}: ${resultado.sesionesCreadas} sesiones creadas (correlacionadas)`);
+
+          } catch (error: any) {
+            logger.error(`❌ Error procesando fecha ${fecha}:`, error);
+            vehicleStats.errors.push(`Error en fecha ${fecha}: ${error.message}`);
+          }
+        }
+      } catch (vehicleError: any) {
+        logger.error(`❌ Error procesando vehículo ${vehicleDir}:`, vehicleError);
+        if (!vehicleResults.has(vehicleDir)) {
+          vehicleResults.set(vehicleDir, {
+            vehicleId: vehicleDir.toUpperCase(),
+            filesProcessed: 0,
+            sessionsCreated: 0,
+            errors: [`Error general del vehículo: ${vehicleError.message}`],
+            sessionDetails: []
+          });
+        }
+      }
+    }
+
+    const resultsArray = Array.from(vehicleResults.values());
+
+    // Invalidar cache de KPIs
+    if (totalSesionesCreadas > 0) {
+      kpiCacheService.invalidate(organizationId);
+      logger.info('✅ Cache de KPIs invalidado');
+    }
+
+    logger.info(`✅ Procesamiento completado: ${totalArchivosLeidos} archivos, ${totalSesionesCreadas} sesiones creadas`);
+
+    // ✅ Preparar respuesta con eventos detallados por sesión
+    try {
+      // ✅ NUEVO: Obtener eventos detallados para cada sesión
+      const resultsWithEvents = await Promise.all(
+        resultsArray.map(async (vehicleResult) => {
+          const sessionDetailsWithEvents = await Promise.all(
+            (vehicleResult.sessionDetails || []).map(async (sessionDetail) => {
+              if (!sessionDetail.sessionId) return sessionDetail;
+
+              try {
+                // Obtener eventos de estabilidad
+                const eventosEstabilidad = await prisma.$queryRaw`
+                  SELECT type, severity, COUNT(*) as count, 
+                         ROUND(AVG((details->>'si')::numeric), 3) as si_promedio
+                  FROM stability_events 
+                  WHERE session_id = ${sessionDetail.sessionId}
+                  GROUP BY type, severity
+                  ORDER BY count DESC;
+                `;
+
+                // Obtener segmentos de claves
+                const segmentosClaves = await prisma.$queryRaw`
+                  SELECT clave, COUNT(*) as count, SUM("durationSeconds") as total_segundos
+                  FROM operational_state_segments 
+                  WHERE "sessionId" = ${sessionDetail.sessionId}
+                  GROUP BY clave
+                  ORDER BY clave;
+                `;
+
+                // Obtener violaciones de velocidad
+                const violacionesVelocidad = await prisma.$queryRaw`
+                  SELECT "violationType", COUNT(*) as count
+                  FROM speed_violations 
+                  WHERE "sessionId" = ${sessionDetail.sessionId}
+                  GROUP BY "violationType"
+                  ORDER BY count DESC;
+                `;
+
+                return {
+                  ...sessionDetail,
+                  eventosGenerados: {
+                    estabilidad: (eventosEstabilidad as any[]).map((e: any) => ({
+                      tipo: e.type,
+                      severidad: e.severity,
+                      cantidad: Number(e.count),
+                      si_promedio: Number(e.si_promedio)
+                    })),
+                    segmentosClaves: (segmentosClaves as any[]).map((s: any) => ({
+                      clave: Number(s.clave),
+                      cantidad: Number(s.count),
+                      duracion_total_segundos: Number(s.total_segundos)
+                    })),
+                    violacionesVelocidad: (violacionesVelocidad as any[]).map((v: any) => ({
+                      tipo: v.violationType,
+                      cantidad: Number(v.count)
+                    }))
+                  }
+                };
+              } catch (error) {
+                logger.warn(`Error obteniendo eventos para sesión ${sessionDetail.sessionId}:`, error);
+                return {
+                  ...sessionDetail,
+                  eventosGenerados: {
+                    estabilidad: [],
+                    segmentosClaves: [],
+                    violacionesVelocidad: [],
+                    error: 'Error obteniendo eventos'
+                  }
+                };
+              }
+            })
+          );
+
+          return {
+            ...vehicleResult,
+            sessionDetails: sessionDetailsWithEvents
+          };
+        })
+      );
+
+      const responseData = {
+        success: true,
+        data: {
+          message: 'Procesamiento automático completado con correlación unificada y eventos detallados',
+          totalFiles: totalArchivosLeidos,
+          totalSaved: totalSesionesCreadas,
+          totalSkipped: 0,
+          vehiclesProcessed: vehicleDirs.length,
+          results: resultsWithEvents, // ✅ INCLUYE EVENTOS DETALLADOS
+          processingMethod: 'UnifiedFileProcessor (sesiones correlacionadas + eventos M3)'
+        }
+      };
+
+      // Log para debugging
+      const responseSize = JSON.stringify(responseData).length;
+      const totalSessionDetails = resultsArray.reduce((sum, v) => sum + (v.sessionDetails?.length || 0), 0);
+      logger.info(`📤 Enviando respuesta: ${Math.round(responseSize / 1024)} KB, ${totalSessionDetails} detalles de sesiones`);
+
+      res.json(responseData);
+    } catch (responseError: any) {
+      logger.error('❌ Error al preparar respuesta:', responseError);
+      // Respuesta simplificada en caso de error
+      res.json({
+        success: true,
+        data: {
+          message: 'Procesamiento completado (respuesta simplificada por error)',
+          totalFiles: totalArchivosLeidos,
+          totalSaved: totalSesionesCreadas,
+          totalSkipped: 0,
+          vehiclesProcessed: vehicleDirs.length,
+          results: [],
+          processingMethod: 'UnifiedFileProcessor'
+        }
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ Error en procesamiento automático:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error en procesamiento automático',
       details: (error as Error).message
     });
   }

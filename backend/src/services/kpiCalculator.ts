@@ -5,13 +5,12 @@
  * ACTUALIZADO: Con claves operacionales correctas
  */
 
-import { PrismaClient } from '@prisma/client';
+// import { prisma } from '../config/prisma'; // Comentado para usar importación dinámica
 import { createLogger } from '../utils/logger';
-import { keyCalculator } from './keyCalculator';
+import { calcularTiemposPorClave } from './keyCalculator';
 import { kpiCacheService } from './KPICacheService';
 import { speedAnalyzer } from './speedAnalyzer';
 
-const prisma = new PrismaClient();
 const logger = createLogger('KPICalculator');
 
 // ============================================================================
@@ -64,6 +63,7 @@ export async function calcularTiempoRotativo(sessionIds: string[]): Promise<{
     muestras_off: number;
     porcentaje_on: number;
 }> {
+    const { prisma } = await import('../config/prisma');
     const rotativoData = await prisma.rotativoMeasurement.findMany({
         where: { sessionId: { in: sessionIds } }
     });
@@ -104,12 +104,27 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
     puntos_gps_invalidos: number;
     porcentaje_cobertura: number;
 }> {
+    const { prisma } = await import('../config/prisma');
     const gpsData = await prisma.gpsMeasurement.findMany({
         where: { sessionId: { in: sessionIds } },
         orderBy: { timestamp: 'asc' }
     });
 
-    const gpsValidos = gpsData.filter(g => g.fix === '1' && g.satellites >= CONSTANTS.MIN_GPS_SATELLITES);
+    // Corregir filtro GPS: aceptar coordenadas válidas aunque fix no sea exactamente '1'
+    const gpsValidos = gpsData.filter(g => {
+        // Verificar que tenga coordenadas válidas
+        const coordenadasValidas = g.latitude && g.longitude &&
+            g.latitude !== 0 && g.longitude !== 0 &&
+            g.latitude > 35 && g.latitude < 45 &&
+            g.longitude > -5 && g.longitude < -1;
+
+        // Verificar satélites (mínimo 4 para precisión)
+        const satelitesSuficientes = g.satellites >= CONSTANTS.MIN_GPS_SATELLITES;
+
+        // Aceptar si tiene coordenadas válidas y satélites suficientes
+        // No requerir fix === '1' ya que los datos pueden tener fix como null
+        return coordenadasValidas && satelitesSuficientes;
+    });
     const gpsInvalidos = gpsData.length - gpsValidos.length;
 
     let kmConGPS = 0;
@@ -170,6 +185,7 @@ export async function calcularIndiceEstabilidad(sessionIds: string[]): Promise<{
     estrellas: string;
     total_muestras: number;
 }> {
+    const { prisma } = await import('../config/prisma');
     const result = await prisma.stabilityMeasurement.aggregate({
         where: { sessionId: { in: sessionIds } },
         _avg: { si: true },
@@ -218,6 +234,7 @@ export async function calcularVelocidades(sessionIds: string[]): Promise<{
     velocidad_promedio: number;
     total_muestras: number;
 }> {
+    const { prisma } = await import('../config/prisma');
     const gpsData = await prisma.gpsMeasurement.findMany({
         where: {
             sessionId: { in: sessionIds },
@@ -255,6 +272,7 @@ export async function calcularHorasConduccion(sessionIds: string[]): Promise<{
     horas_formateado: string;
     sesiones_con_movimiento: number;
 }> {
+    const { prisma } = await import('../config/prisma');
     const sessions = await prisma.session.findMany({
         where: { id: { in: sessionIds } },
         include: {
@@ -315,6 +333,7 @@ export async function calcularDisponibilidad(sessionIds: string[]): Promise<{
     }
 
     // Una sesión es válida si tiene datos de los 3 tipos
+    const { prisma } = await import('../config/prisma');
     const sesionesValidas = await prisma.session.count({
         where: {
             id: { in: sessionIds },
@@ -352,6 +371,7 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
         }
 
         // Obtener claves operacionales de las sesiones
+        const { prisma } = await import('../config/prisma');
         const claves = await prisma.operationalKey.findMany({
             where: {
                 sessionId: { in: sessionIds }
@@ -455,6 +475,22 @@ export async function calcularKPIsCompletos(filters: {
             if (filters.to) sessionFilter.startTime.lte = filters.to;
         }
 
+        // 🔍 DEBUG: Log del filtro completo
+        logger.info('🔍 Filtro de sesiones construido:', {
+            organizationId: sessionFilter.organizationId,
+            vehicleIds: filters.vehicleIds,
+            from: filters.from,
+            to: filters.to,
+            sessionFilter: JSON.stringify(sessionFilter)
+        });
+
+        // Importar prisma dinámicamente
+        const { prisma } = await import('../config/prisma');
+        logger.info('🔍 Prisma importado dinámicamente:', {
+            prismaType: typeof prisma,
+            prismaExists: !!prisma
+        });
+
         // Obtener sesiones
         const sessions = await prisma.session.findMany({
             where: sessionFilter,
@@ -462,7 +498,10 @@ export async function calcularKPIsCompletos(filters: {
         });
 
         const sessionIds = sessions.map(s => s.id);
-        logger.info(`Sesiones encontradas: ${sessionIds.length}`);
+        logger.info(`Sesiones encontradas: ${sessionIds.length}`, {
+            organizationIdBuscado: sessionFilter.organizationId,
+            sessionIds: sessionIds.slice(0, 3)
+        });
 
         if (sessionIds.length === 0) {
             return {
@@ -532,7 +571,7 @@ export async function calcularKPIsCompletos(filters: {
         };
 
         // Calcular tiempos por clave (usando geocercas)
-        const tiemposPorClave = await keyCalculator.calcularTiemposPorClave(sessionIds);
+        const tiemposPorClave = await calcularTiemposPorClave(sessionIds);
 
         const states = {
             states: [

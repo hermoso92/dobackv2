@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('TemporalCorrelationService');
-const prisma = new PrismaClient();
 
 export interface SesionCorrelacionada {
     sessionId: string;
@@ -215,7 +214,7 @@ export class TemporalCorrelationService {
             prisma.dataQualityMetrics.findUnique({ where: { sessionId } })
         ]);
 
-        const estabilidadConGPS = await prisma.stabilityEvent.count({
+        const estabilidadConGPS = await prisma.stability_events.count({
             where: {
                 session_id: sessionId,
                 lat: { not: 0 },

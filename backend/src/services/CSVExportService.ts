@@ -330,7 +330,7 @@ export class CSVExportService {
 
             const { organizationId, vehicleIds, startDate, endDate } = options;
 
-            const events = await prisma.stabilityEvent.findMany({
+            const events = await prisma.stability_events.findMany({
                 where: {
                     Session: {
                         organizationId,

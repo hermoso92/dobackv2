@@ -4,7 +4,7 @@ import { CreateEventDTO } from '../types/event';
 
 export class EventService {
     async getEventsBySession(sessionId: string) {
-        return prisma.stabilityEvent.findMany({
+        return prisma.stability_events.findMany({
             where: { session_id: sessionId },
             include: {
                 Session: {
@@ -68,7 +68,7 @@ export class EventService {
             console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
 
             // Consulta directa con filtros en SQL
-            const events = await prisma.stabilityEvent.findMany({
+            const events = await prisma.stability_events.findMany({
                 where,
                 include: {
                     Session: {

@@ -40,6 +40,8 @@ import {
 import React, { useRef, useState } from 'react';
 import { apiService } from '../services/api';
 import { logger } from '../utils/logger';
+import { SimpleProcessingReport } from './SimpleProcessingReport';
+import { UploadConfigPanel } from './UploadConfigPanel';
 
 interface UploadedFile {
     name: string;
@@ -122,6 +124,7 @@ const FileUploadManager: React.FC = () => {
     const [autoProcessProgress, setAutoProcessProgress] = useState(0);
     const [autoProcessResults, setAutoProcessResults] = useState<any>(null);
     const [autoProcessError, setAutoProcessError] = useState<string | null>(null);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -217,11 +220,14 @@ const FileUploadManager: React.FC = () => {
     const fetchUploadedFiles = async () => {
         try {
             const response = await apiService.get('/api/upload/files');
-            if (response.success) {
-                setUploadedFiles((response.data as any).files);
+            if (response.success && response.data) {
+                setUploadedFiles((response.data as any).files || []);
+            } else {
+                setUploadedFiles([]);
             }
         } catch (error) {
-            console.error('Error obteniendo archivos:', error);
+            logger.error('Error obteniendo archivos:', error);
+            setUploadedFiles([]);
             // Mostrar mensaje de error más claro al usuario
             setUploadError('El servidor backend no está respondiendo correctamente. Por favor, verifica que el servidor esté ejecutándose.');
         }
@@ -231,13 +237,15 @@ const FileUploadManager: React.FC = () => {
         setLoadingAnalysis(true);
         try {
             const response = await apiService.get('/api/upload/analyze-cmadrid');
-            if (response.success) {
+            if (response.success && response.data) {
                 setAnalysisData((response.data as any).analysis);
             } else {
                 setUploadError(response.error || 'Error analizando archivos');
+                setAnalysisData(null);
             }
         } catch (error) {
             setUploadError('Error de conexión al analizar archivos');
+            setAnalysisData(null);
         } finally {
             setLoadingAnalysis(false);
         }
@@ -246,16 +254,19 @@ const FileUploadManager: React.FC = () => {
     const fetchRecentSessions = async () => {
         try {
             const response = await apiService.get('/api/upload/recent-sessions');
-            if (response.success) {
-                setRecentSessions((response.data as any).sessions);
+            if (response.success && response.data) {
+                setRecentSessions((response.data as any).sessions || []);
+            } else {
+                setRecentSessions([]);
             }
         } catch (error) {
-            console.error('Error obteniendo sesiones recientes:', error);
+            logger.error('Error obteniendo sesiones recientes:', error);
+            setRecentSessions([]);
         }
     };
 
     // Funciones para procesamiento automático
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);
         setAutoProcessError(null);
         setAutoProcessResults(null);
@@ -270,18 +281,33 @@ const FileUploadManager: React.FC = () => {
         try {
             logger.info('🚀 Iniciando procesamiento automático de todos los vehículos...');
 
+            // ✅ NUEVO: Leer configuración guardada de localStorage
+            let uploadConfig = null;
+            try {
+                const savedConfig = localStorage.getItem('uploadConfig');
+                if (savedConfig) {
+                    uploadConfig = JSON.parse(savedConfig);
+                    logger.info('⚙️ Usando configuración personalizada', uploadConfig);
+                }
+            } catch (e) {
+                logger.error('Error leyendo configuración:', e);
+            }
+
             // Simular progreso inicial
             setAutoProcessProgress(10);
 
-            // Llamar al endpoint de procesamiento automático
-            const response = await apiService.post('/api/upload/process-all-cmadrid', {}, {
-                timeout: 300000 // 5 minutos para procesamiento completo
+            // Llamar al endpoint de procesamiento automático CON configuración
+            const response = await apiService.post('/api/upload/process-all-cmadrid', {
+                config: uploadConfig // ✅ NUEVO: Pasar configuración al backend
+            }, {
+                timeout: 600000 // ✅ 10 minutos para procesamiento completo (era 5min, insuficiente)
             });
 
             setAutoProcessProgress(100);
 
             if (response.success) {
                 setAutoProcessResults(response.data);
+                setShowReportModal(true); // ✅ Mostrar modal automáticamente
                 logger.info('✅ Procesamiento automático completado', response.data);
 
                 // Actualizar datos
@@ -290,9 +316,16 @@ const FileUploadManager: React.FC = () => {
                 setAutoProcessError(response.error || 'Error en el procesamiento automático');
             }
         } catch (error: any) {
-            const errorMessage = error?.response?.data?.error || error?.message || 'Error de conexión durante el procesamiento';
-            setAutoProcessError(errorMessage);
-            logger.error('Error en procesamiento automático:', error);
+            // Si es timeout, dar un mensaje específico
+            if (error?.code === 'ECONNABORTED' && error?.message?.includes('timeout')) {
+                const timeoutMsg = '⏱️ Timeout: El procesamiento está tardando más de lo esperado. Continúa en segundo plano. Revisa el historial en unos minutos.';
+                setAutoProcessError(timeoutMsg);
+                logger.error('Timeout en procesamiento automático:', error.message);
+            } else {
+                const errorMessage = error?.response?.data?.error || error?.message || 'Error de conexión durante el procesamiento';
+                setAutoProcessError(errorMessage);
+                logger.error('Error en procesamiento automático:', error);
+            }
         } finally {
             setIsProcessingAuto(false);
         }
@@ -365,9 +398,75 @@ const FileUploadManager: React.FC = () => {
             <Typography variant="h4" component="h1" gutterBottom>
                 Gestión de Datos de Vehículos
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 Sube archivos individuales o procesa automáticamente todos los vehículos de CMadrid
             </Typography>
+
+            {/* ✅ NUEVO: Reglas de Correlación */}
+            <Card sx={{ mb: 3, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.main' }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <AutoAwesomeIcon color="info" />
+                        <Typography variant="h6" fontWeight="bold">
+                            📐 Reglas de Correlación de Sesiones
+                        </Typography>
+                    </Box>
+
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                🔍 Detección de Sesiones:
+                            </Typography>
+                            <List dense>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Gap > 5 minutos = nueva sesión"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Numeración reinicia cada día"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Duración mínima: 1 segundo"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                            </List>
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                🔗 Correlación de Archivos:
+                            </Typography>
+                            <List dense>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Umbral: ≤ 120 segundos entre inicios"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Requerido: ESTABILIDAD + ROTATIVO"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemText
+                                        primary="• Opcional: GPS (puede faltar)"
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                    />
+                                </ListItem>
+                            </List>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
 
             {/* Pestañas */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -575,7 +674,7 @@ const FileUploadManager: React.FC = () => {
                             <Typography variant="subtitle2" gutterBottom>
                                 Detalles por grupo:
                             </Typography>
-                            {uploadResult.results.map((group, index) => (
+                            {(uploadResult.results || []).map((group, index) => (
                                 <Card key={index} variant="outlined" sx={{ mb: 2 }}>
                                     <CardContent>
                                         <Typography variant="subtitle2" color="primary" gutterBottom>
@@ -620,7 +719,7 @@ const FileUploadManager: React.FC = () => {
                                 <Typography variant="subtitle2" color="error" gutterBottom>
                                     Errores encontrados:
                                 </Typography>
-                                {uploadResult.errors.map((error, index) => (
+                                {(uploadResult.errors || []).map((error, index) => (
                                     <Typography key={index} variant="body2" color="error">
                                         {error.file}: {error.error}
                                     </Typography>
@@ -715,7 +814,7 @@ const FileUploadManager: React.FC = () => {
                                             Tipos de Archivo
                                         </Typography>
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                            {Object.entries(analysisData.fileTypes).map(([type, count]) => (
+                                            {Object.entries(analysisData.fileTypes || {}).map(([type, count]) => (
                                                 <Chip
                                                     key={type}
                                                     label={`${type.toUpperCase()}: ${count}`}
@@ -744,7 +843,7 @@ const FileUploadManager: React.FC = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {Object.values(analysisData.vehicles).map((vehicle: any) => (
+                                            {Object.values(analysisData.vehicles || {}).map((vehicle: any) => (
                                                 <TableRow key={vehicle.vehicleId}>
                                                     <TableCell>
                                                         <Typography variant="subtitle2" fontWeight="bold">
@@ -793,7 +892,7 @@ const FileUploadManager: React.FC = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {uploadedFiles.map((file, index) => (
+                                        {(uploadedFiles || []).map((file, index) => (
                                             <TableRow key={index}>
                                                 <TableCell>
                                                     <Typography variant="body2" fontWeight="medium">
@@ -841,7 +940,7 @@ const FileUploadManager: React.FC = () => {
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {recentSessions.map((session, index) => (
+                                                {(recentSessions || []).map((session, index) => (
                                                     <TableRow key={index}>
                                                         <TableCell>
                                                             <Typography variant="body2" fontWeight="medium">
@@ -912,6 +1011,11 @@ const FileUploadManager: React.FC = () => {
                         </Alert>
                     </CardContent>
                 </Card>
+
+                {/* ⚙️ PANEL DE CONFIGURACIÓN */}
+                <UploadConfigPanel onConfigChange={(config) => {
+                    logger.info('Configuración actualizada', config);
+                }} />
 
                 {/* Controles */}
                 <Card sx={{ mb: 4 }}>
@@ -1010,7 +1114,7 @@ const FileUploadManager: React.FC = () => {
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {autoProcessResults.results.map((result: any, index: number) => (
+                                                {(autoProcessResults?.results || []).map((result: any, index: number) => (
                                                     <TableRow key={index}>
                                                         <TableCell>
                                                             <Typography variant="subtitle2" fontWeight="bold">
@@ -1080,7 +1184,7 @@ const FileUploadManager: React.FC = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {recentSessions.slice(0, 10).map((session, index) => (
+                                        {(recentSessions || []).slice(0, 10).map((session, index) => (
                                             <TableRow key={index}>
                                                 <TableCell>
                                                     <Typography variant="body2" fontWeight="medium">
@@ -1115,6 +1219,13 @@ const FileUploadManager: React.FC = () => {
                     </Card>
                 )}
             </TabPanel>
+
+            {/* Modal de Reporte Detallado */}
+            <SimpleProcessingReport
+                open={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                results={autoProcessResults}
+            />
         </Box>
     );
 };

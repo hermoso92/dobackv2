@@ -28,7 +28,7 @@ interface FiltersContextType {
 const FiltersContext = createContext<FiltersContextType | undefined>(undefined);
 
 export const FiltersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user } = useAuth();
+    const { user, isAuthenticated, isLoading: authLoading } = useAuth();
     const [state, setState] = useState<FilterState>({
         filters: DEFAULT_FILTERS,
         presets: DEFAULT_FILTER_PRESETS,
@@ -52,17 +52,29 @@ export const FiltersProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 // Cargar vehículos
                 let vehicleList: any[] = [];
                 try {
+                    logger.info('Cargando vehículos desde /api/dashboard/vehicles');
                     const dashboardVehiclesResponse = await apiService.get('/api/dashboard/vehicles');
-                    if (dashboardVehiclesResponse.success) {
-                        vehicleList = Array.isArray(dashboardVehiclesResponse.data) ? dashboardVehiclesResponse.data : [];
+
+                    if (dashboardVehiclesResponse.success && Array.isArray(dashboardVehiclesResponse.data)) {
+                        vehicleList = dashboardVehiclesResponse.data;
+                        logger.info(`✅ ${vehicleList.length} vehículos cargados exitosamente`);
+                    } else {
+                        logger.warn('Respuesta inesperada de /api/dashboard/vehicles:', dashboardVehiclesResponse);
                     }
                 } catch (error) {
-                    const vehiclesResponse = await apiService.get('/api/vehicles');
-                    if (vehiclesResponse.success) {
-                        vehicleList = Array.isArray(vehiclesResponse.data) ? vehiclesResponse.data : [];
+                    logger.warn('Error al cargar desde /api/dashboard/vehicles, intentando /api/vehicles:', error);
+                    try {
+                        const vehiclesResponse = await apiService.get('/api/vehicles');
+                        if (vehiclesResponse.success && Array.isArray(vehiclesResponse.data)) {
+                            vehicleList = vehiclesResponse.data;
+                            logger.info(`✅ ${vehicleList.length} vehículos cargados desde /api/vehicles`);
+                        }
+                    } catch (fallbackError) {
+                        logger.error('Error al cargar vehículos desde ambos endpoints:', fallbackError);
                     }
                 }
 
+                // Asignar parkId si no existe (compatibilidad)
                 const vehiclesWithPark = vehicleList.map((v: any) => {
                     if (v.parkId) return v;
                     const nombre = v.name?.toUpperCase() || '';
@@ -73,14 +85,17 @@ export const FiltersProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
                 setVehicles(vehiclesWithPark);
                 setAllVehicles(vehiclesWithPark);
+                logger.info('Vehículos actualizados en el contexto:', vehiclesWithPark.length);
 
                 // Cargar parques
                 try {
                     const parksResponse = await apiService.get('/api/parks');
                     if (parksResponse.success && Array.isArray(parksResponse.data)) {
                         setFireStations(parksResponse.data);
+                        logger.info(`✅ ${parksResponse.data.length} parques cargados`);
                     }
                 } catch (error) {
+                    logger.warn('Error al cargar parques, usando array vacío:', error);
                     setFireStations([]);
                 }
 
@@ -91,20 +106,48 @@ export const FiltersProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         setRoadTypes(roadTypesResponse.data.map((item: any) => item.id || item.name || item));
                     }
                 } catch (error) {
+                    logger.warn('Error al cargar tipos de vía, usando valores por defecto:', error);
                     setRoadTypes(['autopista', 'urbana', 'rural', 'túnel', 'especial']);
                 }
 
             } catch (error) {
                 logger.error('Error loading initial filter data:', error);
+                // Asegurar que los arrays no queden undefined
+                setVehicles([]);
+                setAllVehicles([]);
+                setFireStations([]);
+                setRoadTypes(['autopista', 'urbana', 'rural', 'túnel', 'especial']);
             } finally {
                 setState(prev => ({ ...prev, isLoading: false }));
             }
         };
 
-        if (user) {
-            loadInitialData();
+        // Solo cargar datos si la autenticación está completa y el usuario está autenticado
+        if (!authLoading && isAuthenticated && user?.id && user?.organizationId) {
+            logger.info('Usuario autenticado detectado, cargando datos de filtros...', {
+                userId: user.id,
+                organizationId: user.organizationId
+            });
+            // Pequeño delay para asegurar que el token está disponible
+            const timeoutId = setTimeout(() => {
+                loadInitialData();
+            }, 100);
+
+            return () => clearTimeout(timeoutId);
+        } else if (!authLoading && !isAuthenticated) {
+            logger.warn('Usuario no autenticado, no se cargarán datos de filtros');
+        } else if (authLoading) {
+            logger.info('Autenticación en progreso, esperando...');
+        } else {
+            logger.warn('Usuario no autenticado o datos incompletos', {
+                user,
+                isAuthenticated,
+                authLoading,
+                hasUserId: !!user?.id,
+                hasOrgId: !!user?.organizationId
+            });
         }
-    }, [user]);
+    }, [user?.id, user?.organizationId, isAuthenticated, authLoading]);
 
     const saveFilters = useCallback((filters: GlobalFilters) => {
         if (user?.id) {

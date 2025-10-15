@@ -28,7 +28,7 @@ export interface CANPoint {
     rotativo: boolean;
 }
 
-export type StabilityLevel = 'critical' | 'danger' | 'moderate' | 'punto_interes';
+export type StabilityLevel = 'critical' | 'danger' | 'moderate' | 'punto_interes' | 'GRAVE' | 'MODERADA' | 'LEVE';
 
 export type RolloverCause =
     | 'pendiente_lateral'
@@ -61,26 +61,90 @@ export interface StabilityEvent {
 }
 
 /**
- * Clasifica el nivel de riesgo según el Índice de Estabilidad (SI)
+ * ✅ CLASIFICACIÓN DE SEVERIDAD POR SI (REGLAS M3)
+ * Regla absoluta: Un evento solo puede generarse si 0 ≤ SI < 0.50
  */
-function classifyRiskLevel(si: number): StabilityLevel | null {
-    const siPercent = si * 100; // Convertir a porcentaje
+function clasificarSeveridadPorSI(si: number): 'GRAVE' | 'MODERADA' | 'LEVE' | null {
+    // ✅ REGLA M3: Solo generar eventos si SI < 0.50
+    if (si >= 0.50) return null;
 
-    if (siPercent < 10) {
-        return 'critical'; // 🔴 Riesgo Crítico: SI < 10%
-    } else if (siPercent < 30) {
-        return 'danger';   // 🟠 Riesgo Peligroso: 10% ≤ SI < 30%
-    } else if (siPercent < 50) {
-        return 'moderate'; // 🟡 Riesgo Moderado: 30% ≤ SI < 50%
-    } else if (siPercent < 60) {
-        return 'punto_interes'; // 🔵 Punto de Interés: 50% ≤ SI < 60%
-    }
-
-    return null; // No generar evento si SI ≥ 60%
+    // ✅ CLASIFICACIÓN M3:
+    if (si < 0.20) return 'GRAVE';      // 🔴 Riesgo extremo o vuelco inminente
+    if (si < 0.35) return 'MODERADA';   // 🟠 Deslizamiento controlable
+    return 'LEVE';                      // 🟡 Maniobra exigida pero estable
 }
 
 /**
- * Detecta la causa confiable del riesgo de vuelco según las especificaciones
+ * @deprecated Usar clasificarSeveridadPorSI() según reglas M3
+ */
+function classifyRiskLevel(si: number): StabilityLevel | null {
+    const severidad = clasificarSeveridadPorSI(si);
+    if (!severidad) return null;
+
+    // Mapear a tipos legacy
+    switch (severidad) {
+        case 'GRAVE': return 'critical';
+        case 'MODERADA': return 'danger';
+        case 'LEVE': return 'moderate';
+        default: return null;
+    }
+}
+
+/**
+ * ✅ DETECTA TIPOS DE EVENTOS SEGÚN REGLAS M3
+ */
+function detectarTipoEventoM3(
+    curr: StabilityDataPoint,
+    prev?: StabilityDataPoint,
+    vehicleSpeed: number = 0
+): string {
+    const si = curr.si;
+    const roll = Math.abs(curr.roll || 0);
+    const ay = Math.abs(curr.ay);
+    const gx = Math.abs(curr.gz); // ✅ Usar gz (yaw rate) en lugar de gx
+    const gz = Math.abs(curr.gz);
+
+    // ✅ VUELCO_INMINENTE: si < 0.10 y (roll > 10° o gx > 30°/s)
+    if (si < 0.10 && (roll > 10 || gx > 30)) {
+        return 'VUELCO_INMINENTE';
+    }
+
+    // ✅ DERIVA_PELIGROSA: gx > 45°/s y si < 0.50
+    if (gx > 45 && si < 0.50) {
+        return 'DERIVA_PELIGROSA';
+    }
+
+    // ✅ MANIOBRA_BRUSCA: ay > 3 m/s²
+    if (ay > 3) {
+        return 'MANIOBRA_BRUSCA';
+    }
+
+    // ✅ DERIVA_LATERAL_SIGNIFICATIVA: yaw_rate - ay/v > 0.15 rad/s
+    const yawRate = gz;
+    const lateralDeriva = Math.abs(yawRate - (ay / Math.max(vehicleSpeed, 1)));
+    if (lateralDeriva > 0.15) {
+        return 'DERIVA_LATERAL_SIGNIFICATIVA';
+    }
+
+    // ✅ CAMBIO_CARGA: Δroll > 10% y Δsi > 10% y si < 0.50
+    if (prev) {
+        const deltaRoll = Math.abs(roll - Math.abs(prev.roll || 0));
+        const deltaSi = Math.abs(si - prev.si);
+        if (deltaRoll > 10 && deltaSi > 0.10 && si < 0.50) {
+            return 'CAMBIO_CARGA';
+        }
+    }
+
+    // ✅ RIESGO_VUELCO: si < 0.50 (caso general)
+    if (si < 0.50) {
+        return 'RIESGO_VUELCO';
+    }
+
+    return 'RIESGO_VUELCO'; // Por defecto
+}
+
+/**
+ * @deprecated Usar detectarTipoEventoM3() según reglas M3
  */
 function detectRolloverCause(
     curr: StabilityDataPoint,
@@ -205,10 +269,10 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
     let exactCount = 0;
     let discardedCount = 0;
 
-    // Filtrar solo puntos críticos (SI < 60%) para optimización
+    // ✅ FILTRAR SOLO PUNTOS CRÍTICOS (REGLAS M3: SI < 0.50)
     const criticalPoints = stabilityData.filter(point => {
         const si = point.si;
-        return typeof si === 'number' && !isNaN(si) && si >= 0 && si <= 1 && si < 0.6;
+        return typeof si === 'number' && !isNaN(si) && si >= 0 && si <= 1 && si < 0.50;
     });
 
     logger.info('Iniciando generación de eventos de estabilidad optimizada', {
@@ -229,9 +293,9 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
         const point = criticalPoints[idx];
         const si = point.si;
 
-        // Clasificar nivel de riesgo según SI
-        const level = classifyRiskLevel(si);
-        if (!level) {
+        // ✅ CLASIFICAR SEVERIDAD SEGÚN REGLAS M3
+        const severidad = clasificarSeveridadPorSI(si);
+        if (!severidad) {
             continue; // No debería pasar por el filtro anterior, pero por seguridad
         }
 
@@ -247,9 +311,15 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
             let nextGps: GPSPoint | null = null;
             for (const gpsPoint of gpsData) {
                 const gpsTime = new Date(gpsPoint.timestamp).getTime();
-                if (gpsTime <= targetTime) prevGps = gpsPoint;
+                const gpsPointConverted: GPSPoint = {
+                    timestamp: gpsPoint.timestamp.toISOString(),
+                    latitude: gpsPoint.latitude,
+                    longitude: gpsPoint.longitude,
+                    speed: gpsPoint.speed
+                };
+                if (gpsTime <= targetTime) prevGps = gpsPointConverted;
                 if (gpsTime > targetTime) {
-                    nextGps = gpsPoint;
+                    nextGps = gpsPointConverted;
                     break;
                 }
             }
@@ -310,8 +380,8 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
             accmag: point.accmag
         };
 
-        // Detectar causa del riesgo de vuelco
-        const cause = detectRolloverCause(stabilityPoint, prevPoint ? {
+        // ✅ DETECTAR TIPO DE EVENTO SEGÚN REGLAS M3
+        const tipoEvento = detectarTipoEventoM3(stabilityPoint, prevPoint ? {
             timestamp: prevPoint.timestamp.toISOString(),
             si: prevPoint.si,
             roll: prevPoint.roll,
@@ -321,16 +391,13 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
             accmag: prevPoint.accmag
         } : undefined, vehicleSpeed);
 
-        const tipos = causeToEventTypes(cause);
-
-        // Logging solo para eventos críticos o cada 100 eventos
-        if (level === 'critical' || idx % 100 === 0) {
+        // ✅ LOGGING SEGÚN REGLAS M3
+        if (severidad === 'GRAVE' || idx % 100 === 0) {
             logger.debug('Evento detectado', {
                 timestamp: point.timestamp,
-                si: si * 100,
-                level,
-                cause,
-                tipos,
+                si: si, // ✅ SI en formato 0-1 (no multiplicar por 100)
+                severidad,
+                tipoEvento,
                 vehicleSpeed,
                 hasCanData: !!closestCan,
                 interpolated: interpolated
@@ -349,10 +416,12 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
             );
 
             if (Math.abs(currentTime - prevTime) <= eventWindow && dist <= eventDistance) {
-                // Agrupar tipos y actualizar nivel si es necesario
-                prevEvent.tipos = Array.from(new Set([...prevEvent.tipos, ...tipos]));
-                if (compareStabilityLevel(level, prevEvent.level) > 0) {
-                    prevEvent.level = level;
+                // ✅ AGRUPAR TIPOS SEGÚN REGLAS M3
+                prevEvent.tipos = Array.from(new Set([...prevEvent.tipos, tipoEvento]));
+                // Actualizar severidad si es más grave
+                const prioridad = { 'GRAVE': 3, 'MODERADA': 2, 'LEVE': 1 };
+                if (prioridad[severidad] > prioridad[prevEvent.level as keyof typeof prioridad]) {
+                    prevEvent.level = severidad;
                 }
                 merged = true;
                 break;
@@ -364,18 +433,18 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
 
         if (merged) continue;
 
-        // Crear nuevo evento
+        // ✅ CREAR NUEVO EVENTO SEGÚN REGLAS M3
         generated.push({
-            id: `${point.timestamp}-${gps.latitude}-${gps.longitude}-${level}`,
+            id: `${point.timestamp}-${gps.latitude}-${gps.longitude}-${severidad}`,
             sessionId,
             timestamp: new Date(point.timestamp),
             lat: gps.latitude,
             lon: gps.longitude,
-            level,
+            level: severidad, // ✅ USAR SEVERIDAD M3
             perc: Math.round(si * 100), // Convertir a porcentaje directo (0=crítico, 1=estable)
-            tipos,
+            tipos: [tipoEvento], // ✅ USAR TIPO M3
             valores: {
-                si: point.si,
+                si: point.si, // ✅ SI OBLIGATORIO
                 roll: point.roll,
                 ay: point.ay,
                 yaw: point.gz
@@ -440,7 +509,7 @@ export async function saveStabilityEvents(events: StabilityEvent[]): Promise<voi
 
     try {
         // Usar createMany para inserción masiva optimizada
-        await prisma.stabilityEvent.createMany({
+        await prisma.stability_events.createMany({
             data: events.map(event => ({
                 id: event.id,
                 session_id: event.sessionId,
@@ -519,7 +588,7 @@ export async function getStabilityEvents(sessionId: string, filters?: any): Prom
             return [];
         }
 
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: { session_id: sessionId },
             orderBy: { timestamp: 'desc' }
         });

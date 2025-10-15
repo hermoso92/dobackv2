@@ -127,37 +127,38 @@ model Vehicle {
 }
 
 model Session {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()"))
-  vehicleId            String
-  userId               String
-  endTime              DateTime?
-  startTime            DateTime
-  createdAt            DateTime               @default(now())
-  sequence             Int
-  sessionNumber        Int
-  status               SessionStatus          @default(ACTIVE)
-  updatedAt            DateTime
-  type                 SessionType            @default(ROUTINE)
-  weatherConditions    Json?
-  organizationId       String
-  parkId               String?
-  zoneId               String?
-  source               String
-  ArchivoSubido        ArchivoSubido[]
-  CanMeasurement       CanMeasurement[]
-  EjecucionEvento      EjecucionEvento[]
-  GpsMeasurement       GpsMeasurement[]
-  InformeGenerado      InformeGenerado[]
-  RotativoMeasurement  RotativoMeasurement[]
-  Organization         Organization           @relation(fields: [organizationId], references: [id])
-  Park                 Park?                  @relation(fields: [parkId], references: [id])
-  User                 User                   @relation(fields: [userId], references: [id])
-  Vehicle              Vehicle                @relation(fields: [vehicleId], references: [id])
-  Zone                 Zone?                  @relation(fields: [zoneId], references: [id])
-  SessionUploadLog     SessionUploadLog[]
-  StabilityMeasurement StabilityMeasurement[]
-  SugerenciaIA         SugerenciaIA[]
-  stability_events     stability_events[]
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()"))
+  vehicleId                String
+  userId                   String
+  endTime                  DateTime?
+  startTime                DateTime
+  createdAt                DateTime                   @default(now())
+  sequence                 Int
+  sessionNumber            Int
+  status                   SessionStatus              @default(ACTIVE)
+  updatedAt                DateTime
+  type                     SessionType                @default(ROUTINE)
+  weatherConditions        Json?
+  organizationId           String
+  parkId                   String?
+  zoneId                   String?
+  source                   String
+  ArchivoSubido            ArchivoSubido[]
+  CanMeasurement           CanMeasurement[]
+  EjecucionEvento          EjecucionEvento[]
+  GpsMeasurement           GpsMeasurement[]
+  InformeGenerado          InformeGenerado[]
+  RotativoMeasurement      RotativoMeasurement[]
+  Organization             Organization               @relation(fields: [organizationId], references: [id])
+  Park                     Park?                      @relation(fields: [parkId], references: [id])
+  User                     User                       @relation(fields: [userId], references: [id])
+  Vehicle                  Vehicle                    @relation(fields: [vehicleId], references: [id])
+  Zone                     Zone?                      @relation(fields: [zoneId], references: [id])
+  SessionUploadLog         SessionUploadLog[]
+  StabilityMeasurement     StabilityMeasurement[]
+  SugerenciaIA             SugerenciaIA[]
+  stability_events         stability_events[]
+  OperationalStateSegments OperationalStateSegment[]
 }
 
 model Geofence {
@@ -849,6 +850,70 @@ model stability_events {
   @@index([rotativoState], map: "idx_stability_events_rotativo")
   @@index([session_id], map: "stability_events_session_idx")
   @@index([timestamp], map: "stability_events_time_idx")
+}
+
+/// Tabla para persistir segmentos de claves operacionales (Mandamiento M2)
+/// Cada segmento representa un intervalo de tiempo en una clave específica
+model OperationalStateSegment {
+  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId       String
+  clave           Int      // 0, 1, 2, 3, 4, 5
+  startTime       DateTime @db.Timestamptz(6)
+  endTime         DateTime @db.Timestamptz(6)
+  durationSeconds Int
+  metadata        Json?    // Info adicional (geocerca, rotativo, velocidad promedio)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  Session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([sessionId, clave])
+  @@index([sessionId, startTime])
+  @@map("operational_state_segments")
+}
+
+/// Tabla para logging de uso de geocercas (Mandamiento M7)
+/// Registra cada llamada a Radar.com o fallback a BD local
+model GeofenceUsageLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()"))
+  timestamp      DateTime @default(now())
+  source         String   // 'radar.com' | 'local_db'
+  organizationId String
+  operation      String   // 'getParks' | 'isInGeofence' | 'getZones'
+  success        Boolean
+  apiCalls       Int      @default(1)
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+  
+  @@index([timestamp])
+  @@index([source, timestamp])
+  @@index([organizationId])
+  @@map("geofence_usage_logs")
+}
+
+/// Tabla para persistir violaciones de velocidad (Mandamiento M6)
+/// Cada registro es un punto GPS que excede el límite de velocidad
+model SpeedViolation {
+  id            String   @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId     String
+  timestamp     DateTime @db.Timestamptz(6)
+  lat           Float
+  lon           Float
+  speed         Float
+  speedLimit    Float
+  excess        Float
+  violationType String   // 'correcto' | 'leve' | 'moderada' | 'grave'
+  roadType      String   // 'urban' | 'interurban' | 'highway'
+  rotativoOn    Boolean
+  inPark        Boolean
+  createdAt     DateTime @default(now())
+  
+  @@index([sessionId])
+  @@index([sessionId, violationType])
+  @@index([timestamp])
+  @@index([violationType])
+  @@map("speed_violations")
 }
 
 enum UserRole {

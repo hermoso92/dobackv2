@@ -147,6 +147,7 @@ model Session {
   archivosSubidos       ArchivoSubido[]
   canMeasurements       CanMeasurement[]
   dataQualityMetrics    DataQualityMetrics?
+  processingReport      SessionProcessingReport?
   eventExecutions       EjecucionEvento[]
   gpsMeasurements       GpsMeasurement[]
   informes              InformeGenerado[]
@@ -1137,4 +1138,40 @@ enum OperationalKeyType {
   EMERGENCIA
   INCENDIO
   REGRESO
+}
+
+model SessionProcessingReport {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId           String   @unique
+  
+  // Archivos procesados
+  filesProcessed      Json     // { gps: {...}, estabilidad: {...}, rotativo: {...} }
+  
+  // Métricas detalladas por tipo
+  gpsMetrics          Json     // { total, valid, invalid, interpolated, jumps, errors }
+  stabilityMetrics    Json     // { total, valid, invalid, errors }
+  rotativoMetrics     Json     // { total, valid, invalid, errors }
+  
+  // Eventos y alertas detectados
+  eventsDetected      Json     // { total, byType, critical, warnings }
+  
+  // Estado final del procesamiento
+  status              String   // SUCCESS, PARTIAL, FAILED
+  warnings            String[]
+  errors              String[]
+  
+  // Timestamps de procesamiento
+  processingStarted   DateTime
+  processingEnded     DateTime
+  processingDuration  Int      // milisegundos
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relación con sesión
+  session             Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
 }

@@ -112,6 +112,7 @@ export function parseEstabilidadRobust(buffer: Buffer, fechaSesion?: Date): Stab
 
             ultimoMarcadorTemporal = new Date(fechaSesionDetectada);
             ultimoMarcadorTemporal.setHours(parseInt(h), parseInt(m), parseInt(s), 0);
+
             lineasDesdeMarcador = 0;
             contadores.marcadoresDetectados++;
 

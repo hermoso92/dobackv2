@@ -176,7 +176,7 @@ export class AdvancedAIService {
                     }
                 }
             }),
-            prisma.stabilityEvent.findMany({
+            prisma.stability_events.findMany({
                 where: {
                     Session: {
                         organizationId
@@ -387,7 +387,7 @@ export class AdvancedAIService {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 30);
 
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     organizationId
@@ -441,7 +441,7 @@ export class AdvancedAIService {
                     vehicle: true
                 }
             }),
-            prisma.stabilityEvent.findMany({
+            prisma.stability_events.findMany({
                 where: {
                     Session: {
                         organizationId

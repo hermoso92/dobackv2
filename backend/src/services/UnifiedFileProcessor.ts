@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { createLogger } from '../utils/logger';
 import {
     ArchivoAgrupado,
@@ -11,7 +11,6 @@ import { parseRotativoRobust } from './parsers/RobustRotativoParser';
 import { parseEstabilidadRobust } from './parsers/RobustStabilityParser';
 
 const logger = createLogger('UnifiedFileProcessor');
-const prisma = new PrismaClient();
 
 export interface ProcessingResult {
     success: boolean;
@@ -104,6 +103,67 @@ export class UnifiedFileProcessor {
                 archivosValidos: resultado.archivosValidos,
                 problemas: resultado.problemas.length
             });
+
+            // ============================================================================
+            // MANDAMIENTO M9: POST-PROCESAMIENTO OBLIGATORIO
+            // ============================================================================
+            try {
+                if (resultado.sessionIds && resultado.sessionIds.length > 0) {
+                    logger.info(`📦 POST-PROCESO: Iniciando para ${resultado.sessionIds.length} sesiones`);
+
+                    // 1. Detectar y guardar eventos de estabilidad
+                    const eventModule: any = await import('./eventDetector');
+                    const detectarYGuardar = eventModule.detectarYGuardarEventos || eventModule.eventDetector?.detectarYGuardarEventos;
+
+                    if (typeof detectarYGuardar === 'function') {
+                        for (const sid of resultado.sessionIds) {
+                            try {
+                                await detectarYGuardar(sid);
+                                logger.info(`✅ Eventos detectados para sesión ${sid}`);
+                            } catch (e: any) {
+                                logger.warn(`⚠️ Error detectando eventos para sesión ${sid}:`, e?.message);
+                            }
+                        }
+                    }
+
+                    // 2. ✅ NUEVO: Calcular y guardar segmentos de claves operacionales (Mandamiento M2.5)
+                    try {
+                        const keyModule: any = await import('./keyCalculator');
+                        const calcularSegmentos = keyModule.calcularYGuardarSegmentos || keyModule.keyCalculator?.calcularYGuardarSegmentos;
+
+                        if (typeof calcularSegmentos === 'function') {
+                            for (const sid of resultado.sessionIds) {
+                                try {
+                                    const numSegmentos = await calcularSegmentos(sid);
+                                    logger.info(`✅ ${numSegmentos} segmentos guardados para sesión ${sid}`);
+                                } catch (e: any) {
+                                    logger.warn(`⚠️ Error calculando segmentos para sesión ${sid}:`, e?.message);
+                                }
+                            }
+                        } else {
+                            logger.warn('⚠️ Función calcularYGuardarSegmentos no disponible');
+                        }
+                    } catch (e: any) {
+                        logger.warn('⚠️ Error importando keyCalculator:', e?.message);
+                    }
+
+                    // 3. Analizar velocidades (opcional - puede ser pesado)
+                    try {
+                        const speedModule: any = await import('./speedAnalyzer');
+                        const analizarSesiones = speedModule.analizarSesionesYGuardar || speedModule.analizarVelocidades;
+                        if (typeof analizarSesiones === 'function') {
+                            await analizarSesiones(resultado.sessionIds);
+                            logger.info('✅ Análisis de velocidades completado');
+                        }
+                    } catch (e: any) {
+                        logger.warn('⚠️ Error analizando velocidades:', e?.message);
+                    }
+
+                    logger.info('✅ POST-PROCESO COMPLETADO');
+                }
+            } catch (postErr: any) {
+                logger.warn('⚠️ Error general en post-procesamiento:', postErr?.message);
+            }
 
         } catch (error: any) {
             logger.error('Error crítico en procesamiento', { error: error.message });
@@ -208,7 +268,15 @@ export class UnifiedFileProcessor {
                 : [];
 
             // 6. Crear sesión en BD
-            const startTime = sesionEstabilidad?.fechaDate
+            // Tomar SIEMPRE el primer timestamp real disponible de las mediciones; solo si no hay ninguno, usar fechaDate detectada; y como último recurso, now
+            const firstGpsTs = gpsResult?.puntos && gpsResult.puntos.length > 0 ? gpsResult.puntos[0].timestamp : undefined;
+            const firstEstTs = estabilidadResult?.mediciones && estabilidadResult.mediciones.length > 0 ? estabilidadResult.mediciones[0].timestamp : undefined;
+            const firstRotTs = rotativoResult?.mediciones && rotativoResult.mediciones.length > 0 ? rotativoResult.mediciones[0].timestamp : undefined;
+
+            let startTime = firstGpsTs
+                || firstEstTs
+                || firstRotTs
+                || sesionEstabilidad?.fechaDate
                 || sesionGPS?.fechaDate
                 || sesionRotativo?.fechaDate
                 || new Date();

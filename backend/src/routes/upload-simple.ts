@@ -251,7 +251,7 @@ router.get('/files', async (req, res) => {
 // Endpoint para análisis integral de archivos CMadrid
 router.get('/analyze-cmadrid', async (req, res) => {
     try {
-        const cmadridPath = path.join(__dirname, '../../data/CMadrid');
+        const cmadridPath = path.join(__dirname, '../../data/datosDoback/CMadrid');
 
         if (!fs.existsSync(cmadridPath)) {
             return res.status(404).json({ error: 'Directorio CMadrid no encontrado' });

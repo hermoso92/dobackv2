@@ -138,7 +138,14 @@ export class DataCorrelationService {
             };
         });
 
-        const puntosGPSValidos = gps.filter(g => g.fix === '1').length;
+        // Corregir filtro GPS: aceptar coordenadas válidas aunque fix no sea exactamente '1'
+        const puntosGPSValidos = gps.filter(g => {
+            const coordenadasValidas = g.latitude && g.longitude &&
+                g.latitude !== 0 && g.longitude !== 0 &&
+                g.latitude > 35 && g.latitude < 45 &&
+                g.longitude > -5 && g.longitude < -1;
+            return coordenadasValidas && g.satellites >= 4;
+        }).length;
 
         logger.info(`Correlación completada`, {
             gpsRotativo: correlacionesGPSRotativo,

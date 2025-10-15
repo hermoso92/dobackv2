@@ -125,6 +125,8 @@ token.txt
 
 # Large data
 pbf/
+temp/
+backend/data/
 
 # Package managers
 package-lock.json

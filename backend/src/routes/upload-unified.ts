@@ -1,12 +1,10 @@
-import { PrismaClient } from '@prisma/client';
 import { Request, Response, Router } from 'express';
 import multer from 'multer';
+import { prisma } from '../config/prisma';
 import { extractOrganizationId, requireAuth } from '../middleware/auth';
 import { kpiCacheService } from '../services/KPICacheService';
 import { unifiedFileProcessor } from '../services/UnifiedFileProcessor';
 import { createLogger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 const logger = createLogger('UploadUnified');
 const router = Router();

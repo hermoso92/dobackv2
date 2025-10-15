@@ -45,13 +45,15 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
 }) => {
     // Estados de filtros
     const [severityFilter, setSeverityFilter] = useState<'all' | 'grave' | 'moderada' | 'leve'>('all');
-    const [minFrequency, setMinFrequency] = useState(1);
+    const [minFrequency, setMinFrequency] = useState(2); // default más estricto
     const [rotativoFilter, setRotativoFilter] = useState<'all' | 'on' | 'off'>('all');
-    const [clusterRadius, setClusterRadius] = useState(20);
+    const [clusterRadius, setClusterRadius] = useState(30); // default más amplio
+    const [individualMode, setIndividualMode] = useState<boolean>(false); // modo eventos individuales (sin clustering)
 
     // Estados de datos
     const [clusters, setClusters] = useState<any[]>([]);
     const [ranking, setRanking] = useState<any[]>([]);
+    const [apiTotals, setApiTotals] = useState<{ totalEvents: number; totalClusters: number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +76,8 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                 severityFilter,
                 minFrequency,
                 rotativoFilter,
-                clusterRadius
+                clusterRadius,
+                individualMode
             });
 
             const params = new URLSearchParams({
@@ -84,6 +87,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                 rotativoOn: rotativoFilter,
                 clusterRadius: clusterRadius.toString()
             });
+            params.append('mode', individualMode ? 'single' : 'cluster');
 
             if (vehicleIds && vehicleIds.length > 0) {
                 params.append('vehicleIds', vehicleIds.join(','));
@@ -94,12 +98,33 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             logger.info(`URL completa: ${HOTSPOT_ENDPOINTS.CRITICAL_POINTS}?${params.toString()}`);
 
             // Cargar clusters
-            const clustersResponse = await apiService.get<{ clusters: any[]; totalEvents: number; totalClusters: number }>(
+            const clustersResponse = await apiService.get<{ clusters: any[]; total_events?: number; totalClusters?: number; totalEvents?: number }>(
                 `${HOTSPOT_ENDPOINTS.CRITICAL_POINTS}?${params.toString()}`
             );
 
             if (clustersResponse.success && clustersResponse.data) {
-                setClusters(clustersResponse.data.clusters || []);
+                // Soportar respuestas en dos formatos:
+                // 1) { success, data: { clusters, total_events, totalClusters } }
+                // 2) { success, data: { clusters, ... } } ya tipado como T
+                const root: any = clustersResponse as any;
+                const dataAny: any = (root.data && root.data.data) ? root.data.data : clustersResponse.data;
+
+                const list = Array.isArray(dataAny?.clusters) ? dataAny.clusters : [];
+                setClusters(list);
+
+                const te = typeof dataAny?.total_events === 'number'
+                    ? dataAny.total_events
+                    : (typeof dataAny?.totalEvents === 'number' ? dataAny.totalEvents : undefined);
+                const tc = typeof dataAny?.totalClusters === 'number' ? dataAny.totalClusters : undefined;
+
+                if (typeof te === 'number' || typeof tc === 'number') {
+                    setApiTotals({
+                        totalEvents: te ?? list.reduce((sum: number, c: any) => sum + (c.frequency || 0), 0),
+                        totalClusters: tc ?? list.length
+                    });
+                } else {
+                    setApiTotals(null);
+                }
             }
 
             // Cargar ranking
@@ -108,7 +133,9 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             );
 
             if (rankingResponse.success && rankingResponse.data) {
-                setRanking(rankingResponse.data.ranking || []);
+                const rootRank: any = rankingResponse as any;
+                const dataRank: any = (rootRank.data && rootRank.data.data) ? rootRank.data.data : rankingResponse.data;
+                setRanking(Array.isArray(dataRank?.ranking) ? dataRank.ranking : []);
             }
 
             logger.info(`Puntos negros cargados: ${clustersResponse.data?.clusters?.length || 0} clusters`);
@@ -119,7 +146,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
         } finally {
             setLoading(false);
         }
-    }, [organizationId, vehicleIds, startDate, endDate, severityFilter, minFrequency, rotativoFilter, clusterRadius]);
+    }, [organizationId, vehicleIds, startDate, endDate, severityFilter, minFrequency, rotativoFilter, clusterRadius, individualMode]);
 
     useEffect(() => {
         loadData();
@@ -147,8 +174,8 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
 
     // Estadísticas
     const stats = useMemo(() => {
-        const totalClusters = clusters.length;
-        const totalEvents = clusters.reduce((sum, c) => sum + c.frequency, 0);
+        const totalClusters = apiTotals?.totalClusters ?? clusters.length;
+        const totalEvents = apiTotals?.totalEvents ?? clusters.reduce((sum, c) => sum + c.frequency, 0);
         const graveCount = clusters.filter(c => c.dominantSeverity === 'grave').length;
         const moderadaCount = clusters.filter(c => c.dominantSeverity === 'moderada').length;
         const leveCount = clusters.filter(c => c.dominantSeverity === 'leve').length;
@@ -160,7 +187,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             moderadaCount,
             leveCount
         };
-    }, [clusters]);
+    }, [clusters, apiTotals]);
 
     if (loading) {
         return (
@@ -190,7 +217,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                     <h3 className="text-lg font-semibold text-slate-800">Filtros de Análisis</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     {/* Filtro de severidad */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -262,6 +289,27 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                             onChange={(e) => setClusterRadius(parseInt(e.target.value))}
                             className="w-full"
                         />
+                    </div>
+
+                    {/* Modo eventos individuales */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Modo de visualización
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIndividualMode(false)}
+                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${!individualMode ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                Agrupar (clusters)
+                            </button>
+                            <button
+                                onClick={() => setIndividualMode(true)}
+                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${individualMode ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                Eventos individuales
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
