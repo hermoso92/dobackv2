@@ -263,7 +263,7 @@ router.get('/violations', async (req, res) => {
         const isValidSpeed = (s: number) => Number.isFinite(s) && s >= 0 && s <= 160;
         const clampExcess = (speed: number, limit: number) => Math.max(0, speed - limit);
 
-        // Convertir excesos a formato SpeedViolation
+        // Convertir excesos a formato SpeedViolation con límites recalculados según vehicleCategory
         const speedViolations: SpeedViolation[] = excesosFiltrados.map(exceso => {
             // Mapear tipo de vía a roadType
             const roadTypeMap: Record<string, 'urban' | 'interurban' | 'highway'> = {
@@ -278,16 +278,19 @@ router.get('/violations', async (req, res) => {
 
             const roadType = roadTypeMap[exceso.tipoVia] || 'urban';
             const inPark = isInPark(exceso.lat, exceso.lon);
-
-            // Mapear severidad a violationType
-            const violationType: 'grave' | 'moderada' | 'leve' | 'correcto' =
-                exceso.severidad === 'GRAVE' ? 'grave' :
-                    exceso.severidad === 'MODERADA' ? 'moderada' :
-                        exceso.severidad === 'LEVE' ? 'leve' :
-                            'correcto';
-
             const speed = isValidSpeed(exceso.velocidad) ? exceso.velocidad : 0;
-            const speedLimit = isValidSpeed(exceso.limite) ? exceso.limite : 0;
+
+            // RECALCULAR límite según vehicleCategory seleccionada
+            const speedLimit = getSpeedLimit(
+                exceso.vehicleId,
+                roadType,
+                exceso.rotativoOn,
+                inPark,
+                filters.vehicleCategory
+            );
+
+            // RECALCULAR clasificación según nuevo límite
+            const violationType = classifySpeedViolation(speed, speedLimit);
             const excess = clampExcess(speed, speedLimit);
 
             return {
@@ -309,9 +312,12 @@ router.get('/violations', async (req, res) => {
 
         logger.info(`Excesos convertidos (filtrados por rango): ${speedViolations.length}`);
 
-        // Aplicar filtros adicionales
-        let filteredViolations = speedViolations;
+        // Filtrar solo las violaciones reales (exceso > 0) ya que con el nuevo límite puede que no haya exceso
+        let filteredViolations = speedViolations.filter(v => v.violationType !== 'correcto');
 
+        logger.info(`Violaciones con exceso real después de recalcular con ${filters.vehicleCategory}: ${filteredViolations.length}`);
+
+        // Aplicar filtros adicionales
         // Filtro de rotativo
         if (filters.rotativoFilter !== 'all') {
             if (filters.rotativoFilter === 'on') {
@@ -694,17 +700,21 @@ router.get('/critical-zones', async (req, res) => {
 
         logger.info(`Eventos de velocidad procesados: ${speedEvents.length}`);
 
+        // Filtrar solo violaciones reales (con exceso) después de recalcular con vehicleCategory
+        const actualViolations = speedEvents.filter((event: any) => event.violationType !== 'correcto');
+        logger.info(`Violaciones reales con ${vehicleCategory}: ${actualViolations.length} de ${speedEvents.length}`);
+
         // Agrupar eventos por proximidad (clustering)
         const clusterRadius = 0.01; // ~1km en grados
         const clusters: Array<{
             lat: number;
             lng: number;
             location: string;
-            events: typeof speedEvents;
+            events: typeof actualViolations;
         }> = [];
 
         // Filtrar eventos con coordenadas válidas antes del clustering
-        const validSpeedEvents = speedEvents.filter((event: any) =>
+        const validSpeedEvents = actualViolations.filter((event: any) =>
             event.lat !== undefined &&
             event.lat !== null &&
             event.lng !== undefined &&
