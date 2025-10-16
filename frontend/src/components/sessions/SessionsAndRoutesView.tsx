@@ -295,7 +295,7 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
                     };
 
                     setRouteData(formattedData);
-                    logger.info('Datos de ruta cargados exitosamente', { 
+                    logger.info('Datos de ruta cargados exitosamente', {
                         routePoints: formattedData.route.length,
                         events: formattedData.events.length,
                         stats: formattedData.stats
@@ -379,6 +379,7 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
                                         ) : routeData ? (
                                             <>
                                                 <RouteMapComponent
+                                                    key={`route-map-${selectedSessionId}`}
                                                     center={routeData.route.length > 0 && routeData.route[0] ?
                                                         [routeData.route[0].lat, routeData.route[0].lng] :
                                                         [40.4168, -3.7038]

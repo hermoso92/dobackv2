@@ -133,17 +133,17 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
     const isInitializingRef = useRef<boolean>(false);
 
     // Log de debugging
-    logger.info('RouteMapComponent renderizado', { 
-        center, 
-        zoom, 
-        routeLength: route?.length, 
-        eventsLength: events?.length, 
-        vehicleName 
+    logger.info('RouteMapComponent renderizado', {
+        center,
+        zoom,
+        routeLength: route?.length,
+        eventsLength: events?.length,
+        vehicleName
     });
 
     useEffect(() => {
-        logger.info('RouteMapComponent useEffect ejecutado', { 
-            hasRoute: !!route, 
+        logger.info('RouteMapComponent useEffect ejecutado', {
+            hasRoute: !!route,
             routeLength: route?.length,
             hasMapContainer: !!mapContainerRef.current,
             isInitializing: isInitializingRef.current
@@ -156,9 +156,9 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
         }
 
         if (!mapContainerRef.current || isInitializingRef.current) {
-            logger.warn('RouteMapComponent: No se puede inicializar', { 
-                hasContainer: !!mapContainerRef.current, 
-                isInitializing: isInitializingRef.current 
+            logger.warn('RouteMapComponent: No se puede inicializar', {
+                hasContainer: !!mapContainerRef.current,
+                isInitializing: isInitializingRef.current
             });
             return;
         }
@@ -278,8 +278,8 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                         smoothFactor: 1.0
                     }).addTo(mapRef.current);
 
-                    logger.info('RouteMapComponent: Ruta añadida al mapa', { 
-                        routePoints: routeCoordinates.length 
+                    logger.info('RouteMapComponent: Ruta añadida al mapa', {
+                        routePoints: routeCoordinates.length
                     });
 
                     // Ajustar vista para mostrar toda la ruta
@@ -311,8 +311,8 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                 }
 
                 // Agregar eventos si existen
-                logger.info('RouteMapComponent: Añadiendo eventos al mapa', { 
-                    eventsCount: events.length 
+                logger.info('RouteMapComponent: Añadiendo eventos al mapa', {
+                    eventsCount: events.length
                 });
                 events.forEach(event => {
                     if (event.lat && event.lng) {
@@ -638,14 +638,17 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
 
         // Cleanup
         return () => {
+            logger.info('RouteMapComponent: Limpiando mapa');
             if (mapRef.current) {
                 try {
                     mapRef.current.remove();
                 } catch (e) {
-                    console.warn('Error removing map on cleanup:', e);
+                    logger.warn('Error removing map on cleanup:', e);
                 }
                 mapRef.current = null;
             }
+            // Resetear el flag de inicialización para permitir re-inicialización
+            isInitializingRef.current = false;
         };
     }, [center, zoom, route, events, vehicleName]);
 
