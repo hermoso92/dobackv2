@@ -205,6 +205,45 @@ export const usePDFExport = () => {
         }
     }, []);
 
+    /**
+     * Exporta reporte de recorrido completo con mapa
+     */
+    const exportRouteReport = useCallback(async (routeData: {
+        sessionId: string;
+        vehicleName: string;
+        startTime: string;
+        endTime: string;
+        duration: string;
+        distance: number;
+        avgSpeed: number;
+        maxSpeed: number;
+        route: Array<{ lat: number; lng: number; speed: number; timestamp: Date }>;
+        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date }>;
+        stats: {
+            validRoutePoints: number;
+            validEvents: number;
+            totalGpsPoints: number;
+            totalEvents: number;
+        };
+        mapImage?: string;
+    }) => {
+        try {
+            setIsExporting(true);
+            setExportError(null);
+
+            await enhancedPDFExportService.generateRouteReport(routeData);
+
+            logger.info('PDF de recorrido exportado exitosamente', { sessionId: routeData.sessionId });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al exportar recorrido';
+            setExportError(errorMessage);
+            logger.error('Error exportando PDF de recorrido', { error });
+            throw error;
+        } finally {
+            setIsExporting(false);
+        }
+    }, []);
+
     return {
         isExporting,
         exportError,
@@ -217,6 +256,7 @@ export const usePDFExport = () => {
         // Nuevas funciones mejoradas
         exportEnhancedTabToPDF,
         captureElementEnhanced,
-        exportVehicleReport
+        exportVehicleReport,
+        exportRouteReport
     };
 };

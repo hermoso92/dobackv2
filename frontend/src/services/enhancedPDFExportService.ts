@@ -1376,8 +1376,8 @@ class EnhancedPDFExportService {
                     }
 
                     const textColor = violation.violationType === 'grave' ? this.colors.danger :
-                                     violation.violationType === 'moderado' ? this.colors.warning :
-                                     this.colors.text;
+                        violation.violationType === 'moderado' ? this.colors.warning :
+                            this.colors.text;
                     pdf.setTextColor(...textColor);
 
                     xPos = margin + 2;
@@ -1421,6 +1421,287 @@ class EnhancedPDFExportService {
             logger.info('PDF de vehiculo generado exitosamente', { vehicleName: vehicleData.vehicleName, fileName });
         } catch (error) {
             logger.error('Error generando PDF de vehiculo', { error });
+            throw error;
+        }
+    }
+
+    /**
+     * Genera PDF de un recorrido completo con mapa y eventos
+     */
+    async generateRouteReport(routeData: {
+        sessionId: string;
+        vehicleName: string;
+        startTime: string;
+        endTime: string;
+        duration: string;
+        distance: number;
+        avgSpeed: number;
+        maxSpeed: number;
+        route: Array<{ lat: number; lng: number; speed: number; timestamp: Date }>;
+        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date }>;
+        stats: {
+            validRoutePoints: number;
+            validEvents: number;
+            totalGpsPoints: number;
+            totalEvents: number;
+        };
+        mapImage?: string; // Base64 image del mapa
+    }): Promise<void> {
+        try {
+            logger.info('Generando reporte de recorrido', { sessionId: routeData.sessionId });
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            const contentWidth = pageWidth - (2 * margin);
+            let yPosition = margin;
+
+            // PORTADA DEL RECORRIDO
+            pdf.setFillColor(...this.colors.info);
+            pdf.rect(0, 0, pageWidth, 70, 'F');
+
+            pdf.setFontSize(26);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text('REPORTE DE RECORRIDO COMPLETO', pageWidth / 2, yPosition + 15, { align: 'center' });
+
+            pdf.setFontSize(16);
+            pdf.text(routeData.vehicleName, pageWidth / 2, yPosition + 25, { align: 'center' });
+
+            pdf.setFontSize(11);
+            pdf.text(`Session ID: ${routeData.sessionId}`, pageWidth / 2, yPosition + 32, { align: 'center' });
+
+            yPosition += 50;
+
+            // Periodo del recorrido
+            pdf.setFillColor(...this.colors.light);
+            pdf.roundedRect(pageWidth / 2 - 60, yPosition, 120, 15, 3, 3, 'F');
+            pdf.setFontSize(9);
+            pdf.setTextColor(...this.colors.text);
+            pdf.text(`${routeData.startTime} - ${routeData.endTime}`, pageWidth / 2, yPosition + 10, { align: 'center' });
+
+            // Nueva página para contenido
+            pdf.addPage();
+            yPosition = margin;
+
+            const checkPageBreak = (requiredHeight: number): boolean => {
+                if (yPosition + requiredHeight > pageHeight - margin - 15) {
+                    pdf.addPage();
+                    yPosition = margin;
+                    return true;
+                }
+                return false;
+            };
+
+            // ESTADÍSTICAS DEL RECORRIDO
+            pdf.setFontSize(16);
+            pdf.setTextColor(...this.colors.text);
+            pdf.text('DATOS DEL RECORRIDO', margin, yPosition);
+            yPosition += 10;
+
+            const statsItems = [
+                { label: 'Duracion Total', value: routeData.duration },
+                { label: 'Distancia Recorrida', value: `${routeData.distance.toFixed(2)} km` },
+                { label: 'Velocidad Promedio', value: `${routeData.avgSpeed.toFixed(2)} km/h` },
+                { label: 'Velocidad Maxima', value: `${routeData.maxSpeed.toFixed(2)} km/h` },
+                { label: 'Puntos GPS Validos', value: `${routeData.stats.validRoutePoints} / ${routeData.stats.totalGpsPoints}` },
+                { label: 'Eventos Registrados', value: `${routeData.stats.validEvents} / ${routeData.stats.totalEvents}` }
+            ];
+
+            statsItems.forEach((stat, index) => {
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const xPos = margin + col * (contentWidth / 2 + 5);
+                const statYPos = yPosition + row * 18;
+
+                checkPageBreak(18);
+
+                pdf.setFillColor(...this.colors.light);
+                pdf.roundedRect(xPos, statYPos, contentWidth / 2 - 2, 15, 2, 2, 'F');
+
+                pdf.setFontSize(8);
+                pdf.setTextColor(...this.colors.secondary);
+                pdf.text(stat.label, xPos + 3, statYPos + 6);
+
+                pdf.setFontSize(13);
+                pdf.setTextColor(...this.colors.text);
+                pdf.text(String(stat.value), xPos + 3, statYPos + 12);
+            });
+
+            yPosition += Math.ceil(statsItems.length / 2) * 18 + 10;
+
+            // MAPA DEL RECORRIDO
+            if (routeData.mapImage) {
+                checkPageBreak(110);
+
+                pdf.setFillColor(...this.colors.success);
+                pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                pdf.setFontSize(14);
+                pdf.setTextColor(255, 255, 255);
+                pdf.text('MAPA DEL RECORRIDO', margin + 3, yPosition + 5);
+                yPosition += 10;
+
+                const mapWidth = contentWidth;
+                const mapHeight = 100;
+
+                try {
+                    pdf.addImage(routeData.mapImage, 'PNG', margin, yPosition, mapWidth, mapHeight, undefined, 'FAST');
+                    yPosition += mapHeight + 5;
+
+                    pdf.setFontSize(7);
+                    pdf.setTextColor(...this.colors.textSecondary);
+                    pdf.text(`Ruta con ${routeData.route.length} puntos GPS`, margin, yPosition);
+                    yPosition += 8;
+                } catch (error) {
+                    logger.warn('Error añadiendo mapa al PDF', { error });
+                }
+            }
+
+            // ANÁLISIS DE EVENTOS
+            if (routeData.events && routeData.events.length > 0) {
+                checkPageBreak(60);
+
+                pdf.setFillColor(...this.colors.warning);
+                pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                pdf.setFontSize(14);
+                pdf.setTextColor(255, 255, 255);
+                pdf.text(`EVENTOS DEL RECORRIDO (${routeData.events.length})`, margin + 3, yPosition + 5);
+                yPosition += 12;
+
+                // Agrupar eventos por tipo y severidad
+                const eventsByType: Record<string, number> = {};
+                const eventsBySeverity: Record<string, number> = {};
+
+                routeData.events.forEach(event => {
+                    eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
+                    eventsBySeverity[event.severity] = (eventsBySeverity[event.severity] || 0) + 1;
+                });
+
+                // Resumen de eventos
+                pdf.setFillColor(...this.colors.light);
+                pdf.roundedRect(margin, yPosition, contentWidth, 25, 2, 2, 'F');
+
+                pdf.setFontSize(10);
+                pdf.setTextColor(...this.colors.text);
+                pdf.text('POR SEVERIDAD:', margin + 5, yPosition + 7);
+
+                pdf.setFontSize(9);
+                let xOffset = margin + 5;
+                yPosition += 12;
+
+                Object.entries(eventsBySeverity).forEach(([severity, count]) => {
+                    const color = severity === 'grave' ? this.colors.danger :
+                                 severity === 'moderada' ? this.colors.warning :
+                                 this.colors.info;
+
+                    pdf.setTextColor(...color);
+                    pdf.text(`${severity.toUpperCase()}: ${count}`, xOffset, yPosition);
+                    xOffset += 35;
+                });
+
+                yPosition += 10;
+                pdf.setFontSize(10);
+                pdf.setTextColor(...this.colors.text);
+                pdf.text('POR TIPO:', margin + 5, yPosition);
+                yPosition += 7;
+
+                pdf.setFontSize(8);
+                pdf.setTextColor(...this.colors.secondary);
+                Object.entries(eventsByType).sort((a, b) => b[1] - a[1]).forEach(([type, count], index) => {
+                    checkPageBreak(6);
+                    pdf.text(`• ${type}: ${count} eventos`, margin + 7, yPosition);
+                    yPosition += 6;
+                });
+
+                yPosition += 5;
+
+                // Tabla de eventos (top 20)
+                checkPageBreak(40);
+                const topEvents = routeData.events.slice(0, 20);
+
+                pdf.setFillColor(...this.colors.primary);
+                pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                pdf.setFontSize(8);
+                pdf.setTextColor(255, 255, 255);
+
+                const colWidths = [30, 50, 40, 30];
+                const headers = ['Hora', 'Tipo', 'Ubicacion', 'Severidad'];
+
+                let xPos = margin + 2;
+                headers.forEach((header, i) => {
+                    pdf.text(header, xPos, yPosition + 5);
+                    xPos += colWidths[i] || 30;
+                });
+
+                yPosition += 7;
+
+                pdf.setFontSize(7);
+                topEvents.forEach((event, idx) => {
+                    checkPageBreak(7);
+
+                    if (idx % 2 === 0) {
+                        pdf.setFillColor(...this.colors.light);
+                        pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                    }
+
+                    const textColor = event.severity === 'grave' ? this.colors.danger :
+                                     event.severity === 'moderada' ? this.colors.warning :
+                                     this.colors.text;
+                    pdf.setTextColor(...textColor);
+
+                    xPos = margin + 2;
+
+                    const time = new Date(event.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    pdf.text(time, xPos, yPosition + 5);
+                    xPos += colWidths[0] || 30;
+
+                    pdf.setTextColor(...this.colors.text);
+                    const type = event.type.length > 20 ? event.type.substring(0, 18) + '...' : event.type;
+                    pdf.text(type, xPos, yPosition + 5);
+                    xPos += colWidths[1] || 50;
+
+                    const location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
+                    pdf.text(location, xPos, yPosition + 5);
+                    xPos += colWidths[2] || 40;
+
+                    pdf.setTextColor(...textColor);
+                    pdf.text(event.severity.toUpperCase(), xPos, yPosition + 5);
+
+                    yPosition += 7;
+                });
+
+                if (routeData.events.length > 20) {
+                    yPosition += 3;
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(...this.colors.textSecondary);
+                    pdf.text(`... y ${routeData.events.length - 20} eventos adicionales`, margin, yPosition);
+                    yPosition += 5;
+                }
+            }
+
+            // PIE DE PÁGINA
+            this.addFooterToAllPages(pdf, {
+                tabName: `Recorrido_${routeData.vehicleName}_${routeData.sessionId}`,
+                tabIndex: 98,
+                kpis: [],
+                generatedBy: 'Sistema'
+            } as any, pageWidth, pageHeight, margin);
+
+            // Guardar
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const fileName = `DobackSoft_Recorrido_${routeData.vehicleName}_${routeData.sessionId}_${dateStr}.pdf`;
+            pdf.save(fileName);
+
+            logger.info('PDF de recorrido generado exitosamente', { sessionId: routeData.sessionId, fileName });
+        } catch (error) {
+            logger.error('Error generando PDF de recorrido', { error });
             throw error;
         }
     }
