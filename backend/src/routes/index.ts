@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { prisma } from '../config/prisma';
 import { attachOrg } from '../middleware/attachOrg';
 import { authenticate } from '../middleware/auth';
 import {
@@ -126,7 +127,8 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
         const startDate = req.query.startDate as string;
         const endDate = req.query.endDate as string;
 
-        const { prisma } = await import('../config/prisma');
+        const prismaModule = await import('../config/prisma');
+        const prisma = prismaModule.prisma || prismaModule.default;
 
         logger.info('Obteniendo ranking de sesiones', {
             organizationId: orgId,
@@ -327,7 +329,6 @@ router.get('/session-route/:id', authenticate, attachOrg, async (req, res) => {
     try {
         const { id } = req.params;
         const orgId = (req as any).orgId;
-        const { prisma } = await import('../config/prisma');
 
         // Obtener sesión con vehículo
         const session = await prisma.session.findFirst({
@@ -345,11 +346,13 @@ router.get('/session-route/:id', authenticate, attachOrg, async (req, res) => {
             orderBy: { timestamp: 'asc' }
         });
 
-        // Obtener eventos de estabilidad (tabla correcta)
-        const stabilityEvents = await prisma.stabilityEvent.findMany({
-            where: { session_id: id },
-            orderBy: { timestamp: 'asc' }
-        }).catch(() => []);
+        // Obtener eventos de estabilidad usando SQL directo
+        const stabilityEvents = await prisma.$queryRaw<any[]>`
+            SELECT id, session_id, timestamp, lat, lon, type, severity, speed, "rotativoState", details, "keyType", "interpolatedGPS"
+            FROM stability_events
+            WHERE session_id = ${id}
+            ORDER BY timestamp ASC
+        `.catch(() => []) as any[];
 
         logger.info(`🔍 Encontrados ${stabilityEvents.length} eventos de estabilidad para sesión ${id}`);
         logger.info(`🔍 Encontrados ${gpsPoints.length} puntos GPS para sesión ${id}`);
@@ -773,7 +776,8 @@ logger.info('  ✅ Ranking de Sesiones: /api/sessions/ranking');
  */
 router.post('/clean-all-sessions', authenticate, async (req, res) => {
     try {
-        const { prisma } = await import('../config/prisma');
+        const prismaModule = await import('../config/prisma');
+        const prisma = prismaModule.prisma || prismaModule.default;
 
         logger.warn('⚠️ Iniciando limpieza de base de datos - OPERACIÓN DESTRUCTIVA');
         logger.warn('⚠️ Esta acción eliminará TODAS las sesiones de TODAS las organizaciones');

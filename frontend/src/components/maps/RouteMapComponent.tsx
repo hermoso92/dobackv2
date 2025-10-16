@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useRef } from 'react';
+import { logger } from '../../utils/logger';
 
 // Extender la interfaz Window para incluir propiedades globales
 declare global {
@@ -134,15 +135,12 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
     useEffect(() => {
         // Solo inicializar si tenemos datos de ruta
         if (!route || route.length === 0) {
-            console.log('🗺️ RouteMapComponent: No hay datos de ruta, saltando inicialización');
             return;
         }
 
         if (!mapContainerRef.current || isInitializingRef.current) {
             return;
         }
-
-        console.log('🗺️ RouteMapComponent: Inicializando mapa con', route.length, 'puntos');
 
         // Marcar como inicializando
         isInitializingRef.current = true;
@@ -595,13 +593,11 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                             mapRef.current.invalidateSize();
                         }
                     } catch (error) {
-                        console.warn('⚠️ Error invalidando tamaño del mapa:', error);
+                        logger.warn('Error invalidando tamaño del mapa', { error });
                     }
                 }, 100);
-
-                console.log('✅ RouteMapComponent: Mapa inicializado correctamente');
             } catch (error) {
-                console.error('❌ RouteMapComponent: Error inicializando mapa:', error);
+                logger.error('Error inicializando mapa', { error });
             } finally {
                 isInitializingRef.current = false;
             }

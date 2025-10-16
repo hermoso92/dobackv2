@@ -1140,6 +1140,68 @@ router.post('/process-all-cmadrid', authenticate, async (req, res) => {
 
     const resultsArray = Array.from(vehicleResults.values());
 
+    // ✅ NUEVO: Recopilar todos los sessionIds para post-procesamiento
+    const allSessionIds: string[] = [];
+    for (const vehicleResult of resultsArray) {
+      if (vehicleResult.sessionDetails) {
+        for (const sessionDetail of vehicleResult.sessionDetails) {
+          if (sessionDetail.sessionId) {
+            allSessionIds.push(sessionDetail.sessionId);
+          }
+        }
+      }
+    }
+
+    // ✅ NUEVO: Ejecutar post-procesamiento automático (generar eventos y segmentos)
+    if (allSessionIds.length > 0) {
+      logger.info(`🔄 Iniciando post-procesamiento para ${allSessionIds.length} sesiones...`);
+
+      try {
+        const { UploadPostProcessor } = await import('../services/upload/UploadPostProcessor');
+        const postProcessResult = await UploadPostProcessor.process(allSessionIds);
+
+        logger.info('✅ Post-procesamiento completado', {
+          eventsGenerated: postProcessResult.eventsGenerated,
+          segmentsGenerated: postProcessResult.segmentsGenerated,
+          duration: postProcessResult.duration
+        });
+
+        // ✅ Agregar eventos a sessionDetails de cada vehículo
+        if (postProcessResult.sessionDetails) {
+          const eventsBySession = new Map(
+            postProcessResult.sessionDetails.map(s => [s.sessionId, s])
+          );
+
+          logger.info(`📋 Post-procesamiento completó con detalles de eventos`, {
+            totalSessions: postProcessResult.sessionDetails.length,
+            totalEvents: postProcessResult.eventsGenerated,
+            firstSessionExample: postProcessResult.sessionDetails[0]
+          });
+
+          for (const vehicleResult of resultsArray) {
+            if (vehicleResult.sessionDetails) {
+              vehicleResult.sessionDetails = vehicleResult.sessionDetails.map((session: any) => {
+                const eventData = eventsBySession.get(session.sessionId);
+                return {
+                  ...session,
+                  eventsGenerated: eventData?.eventsGenerated || 0,
+                  segmentsGenerated: eventData?.segmentsGenerated || 0,
+                  events: eventData?.events || []
+                };
+              });
+            }
+          }
+
+          logger.info(`📊 Eventos agregados a sessionDetails`, {
+            vehiclesWithData: resultsArray.filter(v => v.sessionDetails?.some((s: any) => s.eventsGenerated > 0)).length
+          });
+        }
+      } catch (error: any) {
+        logger.error('❌ Error en post-procesamiento:', error);
+        // Continuar sin fallar
+      }
+    }
+
     // Invalidar cache de KPIs
     if (totalSesionesCreadas > 0) {
       kpiCacheService.invalidate(organizationId);
@@ -1148,121 +1210,26 @@ router.post('/process-all-cmadrid', authenticate, async (req, res) => {
 
     logger.info(`✅ Procesamiento completado: ${totalArchivosLeidos} archivos, ${totalSesionesCreadas} sesiones creadas`);
 
-    // ✅ Preparar respuesta con eventos detallados por sesión
-    try {
-      // ✅ NUEVO: Obtener eventos detallados para cada sesión
-      const resultsWithEvents = await Promise.all(
-        resultsArray.map(async (vehicleResult) => {
-          const sessionDetailsWithEvents = await Promise.all(
-            (vehicleResult.sessionDetails || []).map(async (sessionDetail) => {
-              if (!sessionDetail.sessionId) return sessionDetail;
+    // ✅ Preparar respuesta final con eventos (ya agregados por el post-procesamiento)
+    const responseData = {
+      success: true,
+      data: {
+        message: 'Procesamiento automático completado con correlación unificada y eventos detallados',
+        totalFiles: totalArchivosLeidos,
+        totalSaved: totalSesionesCreadas,
+        totalSkipped: 0,
+        vehiclesProcessed: vehicleDirs.length,
+        results: resultsArray, // ✅ Ya incluye eventos y segmentos del post-procesamiento
+        processingMethod: 'UnifiedFileProcessor V2 + PostProcessor (eventos automáticos)'
+      }
+    };
 
-              try {
-                // Obtener eventos de estabilidad
-                const eventosEstabilidad = await prisma.$queryRaw`
-                  SELECT type, severity, COUNT(*) as count, 
-                         ROUND(AVG((details->>'si')::numeric), 3) as si_promedio
-                  FROM stability_events 
-                  WHERE session_id = ${sessionDetail.sessionId}
-                  GROUP BY type, severity
-                  ORDER BY count DESC;
-                `;
+    // Log para debugging
+    const responseSize = JSON.stringify(responseData).length;
+    const totalSessionDetails = resultsArray.reduce((sum, v) => sum + (v.sessionDetails?.length || 0), 0);
+    logger.info(`📤 Enviando respuesta: ${Math.round(responseSize / 1024)} KB, ${totalSessionDetails} detalles de sesiones`);
 
-                // Obtener segmentos de claves
-                const segmentosClaves = await prisma.$queryRaw`
-                  SELECT clave, COUNT(*) as count, SUM("durationSeconds") as total_segundos
-                  FROM operational_state_segments 
-                  WHERE "sessionId" = ${sessionDetail.sessionId}
-                  GROUP BY clave
-                  ORDER BY clave;
-                `;
-
-                // Obtener violaciones de velocidad
-                const violacionesVelocidad = await prisma.$queryRaw`
-                  SELECT "violationType", COUNT(*) as count
-                  FROM speed_violations 
-                  WHERE "sessionId" = ${sessionDetail.sessionId}
-                  GROUP BY "violationType"
-                  ORDER BY count DESC;
-                `;
-
-                return {
-                  ...sessionDetail,
-                  eventosGenerados: {
-                    estabilidad: (eventosEstabilidad as any[]).map((e: any) => ({
-                      tipo: e.type,
-                      severidad: e.severity,
-                      cantidad: Number(e.count),
-                      si_promedio: Number(e.si_promedio)
-                    })),
-                    segmentosClaves: (segmentosClaves as any[]).map((s: any) => ({
-                      clave: Number(s.clave),
-                      cantidad: Number(s.count),
-                      duracion_total_segundos: Number(s.total_segundos)
-                    })),
-                    violacionesVelocidad: (violacionesVelocidad as any[]).map((v: any) => ({
-                      tipo: v.violationType,
-                      cantidad: Number(v.count)
-                    }))
-                  }
-                };
-              } catch (error) {
-                logger.warn(`Error obteniendo eventos para sesión ${sessionDetail.sessionId}:`, error);
-                return {
-                  ...sessionDetail,
-                  eventosGenerados: {
-                    estabilidad: [],
-                    segmentosClaves: [],
-                    violacionesVelocidad: [],
-                    error: 'Error obteniendo eventos'
-                  }
-                };
-              }
-            })
-          );
-
-          return {
-            ...vehicleResult,
-            sessionDetails: sessionDetailsWithEvents
-          };
-        })
-      );
-
-      const responseData = {
-        success: true,
-        data: {
-          message: 'Procesamiento automático completado con correlación unificada y eventos detallados',
-          totalFiles: totalArchivosLeidos,
-          totalSaved: totalSesionesCreadas,
-          totalSkipped: 0,
-          vehiclesProcessed: vehicleDirs.length,
-          results: resultsWithEvents, // ✅ INCLUYE EVENTOS DETALLADOS
-          processingMethod: 'UnifiedFileProcessor (sesiones correlacionadas + eventos M3)'
-        }
-      };
-
-      // Log para debugging
-      const responseSize = JSON.stringify(responseData).length;
-      const totalSessionDetails = resultsArray.reduce((sum, v) => sum + (v.sessionDetails?.length || 0), 0);
-      logger.info(`📤 Enviando respuesta: ${Math.round(responseSize / 1024)} KB, ${totalSessionDetails} detalles de sesiones`);
-
-      res.json(responseData);
-    } catch (responseError: any) {
-      logger.error('❌ Error al preparar respuesta:', responseError);
-      // Respuesta simplificada en caso de error
-      res.json({
-        success: true,
-        data: {
-          message: 'Procesamiento completado (respuesta simplificada por error)',
-          totalFiles: totalArchivosLeidos,
-          totalSaved: totalSesionesCreadas,
-          totalSkipped: 0,
-          vehiclesProcessed: vehicleDirs.length,
-          results: [],
-          processingMethod: 'UnifiedFileProcessor'
-        }
-      });
-    }
+    res.json(responseData);
 
   } catch (error) {
     logger.error('❌ Error en procesamiento automático:', error);
@@ -1270,6 +1237,61 @@ router.post('/process-all-cmadrid', authenticate, async (req, res) => {
       success: false,
       error: 'Error en procesamiento automático',
       details: (error as Error).message
+    });
+  }
+});
+
+/**
+ * 🔄 ENDPOINT: Regenerar eventos de todas las sesiones existentes
+ * Útil después de actualizar la lógica de detección de eventos
+ */
+router.post('/regenerate-all-events', async (req: Request, res: Response) => {
+  try {
+    logger.info('🔄 Iniciando regeneración completa de eventos...');
+
+    // 1. Eliminar todos los eventos existentes
+    const deleteResult = await prisma.$executeRaw`DELETE FROM stability_events`;
+    logger.info(`🗑️ Eventos eliminados: ${deleteResult}`);
+
+    // 2. Obtener todas las sesiones
+    const sessions = await prisma.session.findMany({
+      select: { id: true },
+      orderBy: { startTime: 'desc' }
+    });
+
+    logger.info(`📋 Regenerando eventos para ${sessions.length} sesiones...`);
+
+    // 3. Regenerar eventos con el post-processor
+    const { UploadPostProcessor } = await import('../services/upload/UploadPostProcessor');
+    const sessionIds = sessions.map(s => s.id);
+
+    const result = await UploadPostProcessor.process(sessionIds);
+
+    logger.info('✅ Regeneración completada', {
+      totalSessions: sessions.length,
+      eventsGenerated: result.eventsGenerated,
+      segmentsGenerated: result.segmentsGenerated,
+      duration: result.duration,
+      errors: result.errors.length
+    });
+
+    res.json({
+      success: true,
+      data: {
+        totalSessions: sessions.length,
+        eventsGenerated: result.eventsGenerated,
+        segmentsGenerated: result.segmentsGenerated,
+        duration: result.duration,
+        errors: result.errors
+      }
+    });
+
+  } catch (error: any) {
+    logger.error('❌ Error regenerando eventos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error regenerando eventos',
+      details: error.message
     });
   }
 });

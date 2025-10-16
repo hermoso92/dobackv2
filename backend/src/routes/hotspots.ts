@@ -39,7 +39,7 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
     events.forEach((event, i) => {
         if (usedEvents.has(i)) return;
 
-        // ✅ MANDAMIENTO M5.2: Usar Set para IDs únicos
+        // MANDAMIENTO M5.2: Usar Set para IDs únicos
         const eventIds = new Set<string>();
         eventIds.add(event.id);
 
@@ -77,7 +77,7 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
             // MANDAMIENTO M5.1: Radio en metros
             if (distance <= radiusMeters) {
                 cluster.events.push(otherEvent);
-                eventIds.add(otherEvent.id); // ✅ Añadir ID único
+                eventIds.add(otherEvent.id); // Añadir ID único
 
                 const severity = otherEvent.severity || 'leve';
                 cluster.severity_counts[severity as keyof typeof cluster.severity_counts] =
@@ -100,7 +100,7 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
         cluster.lat = cluster.events.reduce((sum: number, e: any) => sum + e.lat, 0) / cluster.events.length;
         cluster.lng = cluster.events.reduce((sum: number, e: any) => sum + e.lng, 0) / cluster.events.length;
 
-        // ✅ MANDAMIENTO M5.2: Frecuencia = número de IDs únicos
+        // MANDAMIENTO M5.2: Frecuencia = número de IDs únicos
         cluster.frequency = eventIds.size;
 
         // Determinar severidad dominante
@@ -141,7 +141,7 @@ router.get('/critical-points', async (req, res) => {
 
         const { prisma } = await import('../config/prisma');
 
-        // ✅ LEER EVENTOS DESDE BD filtrando por timestamp, organización y vehículos
+        // LEER EVENTOS DESDE BD filtrando por timestamp, organización y vehículos
         let eventosDB;
 
         if (from && to && vehicleIds && vehicleIds.length > 0) {
@@ -194,13 +194,17 @@ router.get('/critical-points', async (req, res) => {
             ` as any[];
         }
 
-        logger.info(`📍 Eventos encontrados en BD: ${eventosDB.length}`);
+        logger.info(`Eventos encontrados en BD: ${eventosDB.length}`);
 
         // Convertir eventos a formato del endpoint
         const eventos = eventosDB.map(e => {
             const details = e.details as any || {};
-            // ✅ CORREGIDO: El SI está en details.valores.si, no en details.si
+            // CORREGIDO: El SI está en details.valores.si, no en details.si
             const si = details.valores?.si || details.si || 0;
+            const roll = details.valores?.roll || details.roll || 0;
+            const ay = details.valores?.ay || details.ay || 0;
+            const gx = details.valores?.gx || details.gx || 0;
+            const speed = details.valores?.speed || details.speed || 0;
 
             // Calcular severidad basada en SI
             let severity = 'leve';
@@ -214,16 +218,23 @@ router.get('/critical-points', async (req, res) => {
                 timestamp: e.timestamp.toISOString(),
                 vehicleId: e.vehicleId,
                 vehicleName: e.vehicleName || e.vehicleIdentifier || 'unknown',
-                eventType: e.type,
+                type: e.type, // ✅ Cambiado de eventType a type
+                eventType: e.type, // ✅ Mantener para compatibilidad
                 severity,
                 si,
+                roll,
+                ay,
+                gx,
+                speed,
                 rotativo: e.rotativoState === 1,
+                rotativoState: e.rotativoState,
                 location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`,
-                descripcion: e.type
+                descripcion: e.type,
+                details // ✅ Incluir detalles completos
             };
         });
 
-        logger.info(`📍 Eventos procesados: ${eventos.length}`);
+        logger.info(`Eventos procesados: ${eventos.length}`);
 
         // Aplicar filtro de rotativo
         let filteredEvents = eventos;
@@ -398,9 +409,9 @@ router.get('/ranking', async (req, res) => {
 
         const sessionIds = sessions.map(s => s.id);
 
-        logger.info(`📍 Buscando eventos para ranking en ${sessionIds.length} sesiones`);
+        logger.info(`Buscando eventos para ranking en ${sessionIds.length} sesiones`);
 
-        // ✅ LEER EVENTOS DESDE BD (NO recalcular)
+        // LEER EVENTOS DESDE BD (NO recalcular)
         const eventosDB = await prisma.$queryRaw`
             SELECT 
                 se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
@@ -412,13 +423,17 @@ router.get('/ranking', async (req, res) => {
             AND se."session_id" = ANY(${sessionIds})
         ` as any[];
 
-        logger.info(`📍 Eventos encontrados para ranking: ${eventosDB.length}`);
+        logger.info(`Eventos encontrados para ranking: ${eventosDB.length}`);
 
         // Convertir eventos a formato del endpoint
         const eventos = eventosDB.map(e => {
             const details = e.details as any || {};
-            // ✅ CORREGIDO: El SI está en details.valores.si, no en details.si
+            // CORREGIDO: El SI está en details.valores.si, no en details.si
             const si = details.valores?.si || details.si || 0;
+            const roll = details.valores?.roll || details.roll || 0;
+            const ay = details.valores?.ay || details.ay || 0;
+            const gx = details.valores?.gx || details.gx || 0;
+            const speed = details.valores?.speed || details.speed || 0;
 
             // Calcular severidad basada en SI
             let severity = 'leve';
@@ -430,9 +445,17 @@ router.get('/ranking', async (req, res) => {
                 lng: e.lon,
                 severity,
                 timestamp: e.timestamp,
-                eventType: e.type,
+                type: e.type, // ✅ Cambiado de eventType a type
+                eventType: e.type, // ✅ Mantener para compatibilidad
+                si,
+                roll,
+                ay,
+                gx,
+                speed,
                 rotativo: e.rotativoState === 1,
-                location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`
+                rotativoState: e.rotativoState,
+                location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`,
+                details // ✅ Incluir detalles completos
             };
         });
 

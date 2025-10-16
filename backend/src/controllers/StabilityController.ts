@@ -389,7 +389,7 @@ export class StabilityController {
             });
 
             // Obtener eventos de estabilidad
-            const stabilityEvents = await prisma.stability_events.findMany({
+            const stabilityEvents = await prisma.stabilityEvent.findMany({
                 where: { session_id: id },
                 orderBy: { timestamp: 'asc' }
             });
@@ -486,7 +486,7 @@ export class StabilityController {
             }
 
             // Obtener eventos de estabilidad
-            const events = await prisma.stability_events.findMany({
+            const events = await prisma.stabilityEvent.findMany({
                 where: {
                     session_id: id
                 },
@@ -495,16 +495,26 @@ export class StabilityController {
                 }
             });
 
-            const formattedEvents = events.map(e => ({
-                id: e.id,
-                sessionId: id,
-                timestamp: e.timestamp.toISOString(),
-                type: e.type,
-                lat: e.lat,
-                lon: e.lon,
-                details: e.details,
-                severity: (e.details as any)?.severity || 'medium'
-            }));
+            const formattedEvents = events.map(e => {
+                const details = (typeof e.details === 'object' ? e.details : {}) as any;
+                return {
+                    id: e.id,
+                    sessionId: id,
+                    timestamp: e.timestamp.toISOString(),
+                    type: e.type,
+                    lat: e.lat || 0,
+                    lon: e.lon || 0,
+                    severity: details?.severity || e.severity || 'medium',
+                    level: details?.level || 'unknown',
+                    perc: details?.perc || 0,
+                    tipos: details?.tipos || [e.type],
+                    valores: details?.valores || {},
+                    can: details?.can || undefined,
+                    speed: e.speed || 0,
+                    rotativoState: e.rotativoState || 0,
+                    details: details
+                };
+            });
 
             res.json({
                 success: true,
@@ -987,7 +997,7 @@ export class StabilityController {
             }
 
             // Obtener eventos de estabilidad con información de sesión y vehículo
-            const events = await prisma.stability_events.findMany({
+            const events = await prisma.stabilityEvent.findMany({
                 where: whereClause,
                 include: {
                     Session: {
@@ -1115,7 +1125,7 @@ export class StabilityController {
             }
 
             // Obtener eventos
-            const events = await prisma.stability_events.findMany({
+            const events = await prisma.stabilityEvent.findMany({
                 where: whereClause,
                 include: {
                     Session: {

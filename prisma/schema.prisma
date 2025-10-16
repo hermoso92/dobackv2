@@ -831,16 +831,19 @@ model debug_overspeed {
 }
 
 model stability_events {
-  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  session_id    String
-  timestamp     DateTime @db.Timestamptz(6)
-  lat           Float
-  lon           Float
-  type          String
-  speed         Float?   // Velocidad en km/h del evento
-  rotativoState Int?     // Estado del rotativo (0=apagado, 1=encendido, 2=clave2, 5=clave5)
-  details       Json?
-  Session       Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
+  id               String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  session_id       String
+  timestamp        DateTime @db.Timestamptz(6)
+  lat              Float?
+  lon              Float?
+  type             String
+  severity         String?  // Severidad del evento: LEVE, MODERADA, GRAVE, CRÍTICA
+  speed            Float?   // Velocidad en km/h del evento
+  rotativoState    Int?     // Estado del rotativo (0=apagado, 1=encendido, 2=clave2, 5=clave5)
+  details          Json?
+  keyType          Int?     // Tipo de clave operacional en el momento del evento (0, 2, 5)
+  interpolatedGPS  Boolean  @default(false) // Si las coordenadas GPS fueron interpoladas
+  Session          Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
 
   @@index([session_id], map: "idx_stability_events_session")
   @@index([session_id, timestamp(sort: Desc)], map: "idx_stability_events_session_time")

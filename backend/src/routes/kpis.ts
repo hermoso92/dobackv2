@@ -635,7 +635,7 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         }
         const events = await prisma.stabilityEvent.findMany({
             where: eventsWhere,
-            select: { type: true, sessionId: true }
+            select: { type: true, session_id: true }
         });
 
         const totalEvents = events.length;

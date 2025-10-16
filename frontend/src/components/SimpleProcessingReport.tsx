@@ -11,6 +11,7 @@
 
 import {
     CheckCircle as CheckIcon,
+    ErrorOutline as EventIcon,
     Description as FileIcon,
     Warning as WarningIcon
 } from '@mui/icons-material';
@@ -31,19 +32,48 @@ import {
 } from '@mui/material';
 import React from 'react';
 
+interface SessionEvent {
+    type: string;
+    severity: string;
+    timestamp: string | Date;
+    lat?: number;
+    lon?: number;
+}
+
+interface FileDetail {
+    fileName: string;
+    sessionNumber: number;
+    startTime: string;
+    endTime: string;
+    durationSeconds: number;
+    durationFormatted: string;
+    measurements: number;
+}
+
 interface SessionDetail {
     sessionNumber: number;
     sessionId: string;
     startTime: string;
     endTime: string;
+    durationSeconds?: number;
+    durationFormatted?: string;
     measurements: number;
     status: 'CREADA' | 'OMITIDA' | 'ERROR';
     reason: string;
+    // Estructura de archivos (V2)
+    estabilidad?: FileDetail | null;
+    gps?: FileDetail | null;
+    rotativo?: FileDetail | null;
+    // Estructura legacy (V1)
     archivos?: {
         estabilidad: string | null;
         gps: string | null;
         rotativo: string | null;
     };
+    // Post-procesamiento
+    eventsGenerated?: number;
+    events?: SessionEvent[];
+    segmentsGenerated?: number;
 }
 
 interface VehicleResult {
@@ -260,6 +290,86 @@ export const SimpleProcessingReport: React.FC<SimpleProcessingReportProps> = ({
                                                                         </ListItem>
                                                                     )}
                                                                 </List>
+
+                                                                {/* ✅ EVENTOS DE ESTABILIDAD DETECTADOS */}
+                                                                {session.eventsGenerated !== undefined && session.eventsGenerated > 0 && (
+                                                                    <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#e3f2fd', borderRadius: 1, border: '1px solid #1976d2' }}>
+                                                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                                                                            <EventIcon sx={{ fontSize: 20, color: '#1976d2' }} />
+                                                                            <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                                                                                {session.eventsGenerated} Eventos de estabilidad detectados
+                                                                            </Typography>
+                                                                        </Stack>
+
+                                                                        {session.events && session.events.length > 0 ? (
+                                                                            <Box>
+                                                                                <Typography variant="caption" sx={{ pl: 1, color: 'text.secondary', fontWeight: 'bold', display: 'block', mb: 1 }}>
+                                                                                    Primeros {Math.min(10, session.events.length)} eventos:
+                                                                                </Typography>
+                                                                                <List dense sx={{ pl: 0 }}>
+                                                                                    {session.events.map((event, eventIdx) => {
+                                                                                        const severityConfig = {
+                                                                                            'CRÍTICA': { color: '#d32f2f', bg: '#ffebee', label: '🔴 CRÍTICO' },
+                                                                                            'GRAVE': { color: '#d32f2f', bg: '#ffebee', label: '🔴 GRAVE' },
+                                                                                            'MODERADA': { color: '#f57c00', bg: '#fff3e0', label: '🟠 MODERADA' },
+                                                                                            'LEVE': { color: '#0288d1', bg: '#e1f5fe', label: '🟡 LEVE' }
+                                                                                        };
+                                                                                        const config = severityConfig[event.severity as keyof typeof severityConfig] ||
+                                                                                            { color: '#757575', bg: '#f5f5f5', label: '⚪ ' + event.severity };
+
+                                                                                        return (
+                                                                                            <ListItem
+                                                                                                key={eventIdx}
+                                                                                                sx={{
+                                                                                                    py: 0.5,
+                                                                                                    px: 1,
+                                                                                                    mb: 0.5,
+                                                                                                    backgroundColor: config.bg,
+                                                                                                    borderRadius: 0.5,
+                                                                                                    border: `1px solid ${config.color}40`
+                                                                                                }}
+                                                                                            >
+                                                                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+                                                                                                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: config.color, minWidth: '95px' }}>
+                                                                                                        {config.label}
+                                                                                                    </Typography>
+                                                                                                    <Typography variant="caption" sx={{ flex: 1 }}>
+                                                                                                        {event.type.replace(/_/g, ' ')}
+                                                                                                    </Typography>
+                                                                                                    {event.lat && event.lon && (
+                                                                                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                                                                                                            📍 {event.lat.toFixed(5)}, {event.lon.toFixed(5)}
+                                                                                                        </Typography>
+                                                                                                    )}
+                                                                                                </Stack>
+                                                                                            </ListItem>
+                                                                                        );
+                                                                                    })}
+                                                                                    {session.eventsGenerated > session.events.length && (
+                                                                                        <ListItem sx={{ py: 0.5, px: 1 }}>
+                                                                                            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary', fontWeight: 'bold' }}>
+                                                                                                ... y {session.eventsGenerated - session.events.length} eventos más (total: {session.eventsGenerated})
+                                                                                            </Typography>
+                                                                                        </ListItem>
+                                                                                    )}
+                                                                                </List>
+                                                                            </Box>
+                                                                        ) : (
+                                                                            <Typography variant="caption" sx={{ pl: 1, color: 'text.secondary', fontStyle: 'italic' }}>
+                                                                                {session.eventsGenerated} eventos detectados (no hay detalles disponibles)
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Box>
+                                                                )}
+
+                                                                {/* Segmentos operacionales */}
+                                                                {session.segmentsGenerated !== undefined && session.segmentsGenerated > 0 && (
+                                                                    <Box sx={{ mt: 1, p: 1, backgroundColor: 'grey.100', borderRadius: 1 }}>
+                                                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                                                                            ✅ {session.segmentsGenerated} Segmentos operacionales generados
+                                                                        </Typography>
+                                                                    </Box>
+                                                                )}
                                                             </Box>
                                                         </Card>
                                                     ))}

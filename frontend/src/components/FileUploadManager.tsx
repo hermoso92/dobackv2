@@ -126,6 +126,9 @@ const FileUploadManager: React.FC = () => {
     const [autoProcessError, setAutoProcessError] = useState<string | null>(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
+    // ✅ NUEVO: Estados para regeneración de eventos
+    const [isRegeneratingEvents, setIsRegeneratingEvents] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,8 +310,23 @@ const FileUploadManager: React.FC = () => {
 
             if (response.success) {
                 setAutoProcessResults(response.data);
+
+                // ✅ Debug: Verificar eventos en la respuesta
+                const responseData = response.data as any;
+                const totalEvents = responseData.results?.reduce((sum: number, v: any) =>
+                    sum + (v.sessionDetails?.reduce((s: number, session: any) =>
+                        s + (session.eventsGenerated || 0), 0) || 0), 0);
+                const sessionsWithEvents = responseData.results?.reduce((sum: number, v: any) =>
+                    sum + (v.sessionDetails?.filter((s: any) => s.eventsGenerated > 0).length || 0), 0);
+
+                logger.info('✅ Procesamiento automático completado', {
+                    totalSessions: responseData.totalSaved,
+                    totalEvents,
+                    sessionsWithEvents,
+                    firstSessionExample: responseData.results?.[0]?.sessionDetails?.[0]
+                });
+
                 setShowReportModal(true); // ✅ Mostrar modal automáticamente
-                logger.info('✅ Procesamiento automático completado', response.data);
 
                 // Actualizar datos
                 fetchRecentSessions();
@@ -346,6 +364,42 @@ const FileUploadManager: React.FC = () => {
             const errorMessage = error?.response?.data?.error || error?.message || 'Error limpiando base de datos';
             setAutoProcessError(errorMessage);
             logger.error('Error limpiando base de datos:', error);
+        }
+    };
+
+    // ✅ NUEVO: Handler para regenerar eventos
+    const handleRegenerateEvents = async () => {
+        setIsRegeneratingEvents(true);
+        setAutoProcessError(null);
+
+        try {
+            logger.info('🔄 Regenerando eventos de estabilidad...');
+            const response = await apiService.post('/api/generate-events', {}, {
+                timeout: 300000 // 5 minutos timeout
+            });
+
+            if (response.success) {
+                logger.info('✅ Eventos regenerados correctamente', response.data);
+
+                // Mostrar alerta de éxito
+                const data = response.data as any;
+                const { sesionesProcesadas = 0, totalEventosGenerados = 0, totalEventosBD = 0 } = data;
+                setAutoProcessError(null);
+                setAutoProcessResults({
+                    message: `✅ Regeneración completada: ${totalEventosGenerados} eventos generados en ${sesionesProcesadas} sesiones. Total en BD: ${totalEventosBD}`,
+                    type: 'success'
+                });
+
+                fetchRecentSessions();
+            } else {
+                setAutoProcessError(response.error || 'Error regenerando eventos');
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error regenerando eventos';
+            setAutoProcessError(`Error regenerando eventos: ${errorMessage}`);
+            logger.error('Error regenerando eventos:', error);
+        } finally {
+            setIsRegeneratingEvents(false);
         }
     };
 
@@ -1023,21 +1077,30 @@ const FileUploadManager: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Controles de Procesamiento
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                             <Button
                                 variant="outlined"
                                 color="warning"
                                 onClick={handleCleanDatabase}
-                                disabled={isProcessingAuto}
+                                disabled={isProcessingAuto || isRegeneratingEvents}
                                 startIcon={<DeleteIcon />}
                             >
                                 Limpiar Base de Datos
                             </Button>
                             <Button
+                                variant="outlined"
+                                color="info"
+                                onClick={handleRegenerateEvents}
+                                disabled={isProcessingAuto || isRegeneratingEvents}
+                                startIcon={isRegeneratingEvents ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
+                            >
+                                {isRegeneratingEvents ? 'Regenerando...' : 'Regenerar Eventos'}
+                            </Button>
+                            <Button
                                 variant="contained"
                                 color="primary"
                                 onClick={handleAutoProcess}
-                                disabled={isProcessingAuto}
+                                disabled={isProcessingAuto || isRegeneratingEvents}
                                 startIcon={isProcessingAuto ? <CircularProgress size={20} /> : <PlayArrowIcon />}
                                 size="large"
                             >

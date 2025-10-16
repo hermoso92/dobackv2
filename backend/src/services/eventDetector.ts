@@ -434,21 +434,30 @@ export async function detectarEventosSesion(sessionId: string): Promise<EventoDe
             orderBy: { timestamp: 'asc' }
         });
 
-        // Añadir lat/lon a cada evento buscando el GPS más cercano en tiempo
+        // Añadir lat/lon a cada evento buscando el GPS MÁS CERCANO en tiempo
         for (const evento of eventos) {
             const timestamp = evento.timestamp.getTime();
 
-            // Buscar GPS más cercano (±5 segundos)
-            const gpsMatch = gpsData.find(gps => {
+            // Buscar GPS MÁS CERCANO (no solo el primero dentro del rango)
+            let gpsMatch = null;
+            let minDiff = Infinity;
+
+            for (const gps of gpsData) {
                 const diff = Math.abs(gps.timestamp.getTime() - timestamp);
-                return diff < 5000; // 5 segundos
-            });
+                if (diff < 30000 && diff < minDiff) { // Ventana de ±30 segundos
+                    minDiff = diff;
+                    gpsMatch = gps;
+                }
+            }
 
             if (gpsMatch) {
                 evento.lat = gpsMatch.latitude;
                 evento.lon = gpsMatch.longitude;
                 // Velocidad en km/h (datos vienen en km/h)
                 (evento.valores as any).velocity = gpsMatch.speed || 0;
+                logger.debug(`GPS correlacionado para evento: diff=${minDiff}ms`);
+            } else {
+                logger.warn(`⚠️ No se encontró GPS para evento en ${evento.timestamp}`);
             }
         }
 
@@ -456,10 +465,11 @@ export async function detectarEventosSesion(sessionId: string): Promise<EventoDe
         const antes = eventos.length;
         for (let i = eventos.length - 1; i >= 0; i--) {
             if (eventos[i].lat === undefined || eventos[i].lon === undefined) {
+                logger.warn(`⚠️ Descartando evento ${eventos[i].tipo} sin GPS`);
                 eventos.splice(i, 1);
             }
         }
-        logger.info(`Eventos con GPS: ${eventos.length}/${antes}`);
+        logger.info(`Eventos con GPS: ${eventos.length}/${antes} (descartados: ${antes - eventos.length})`);
     }
 
     return eventos;
@@ -572,9 +582,216 @@ async function detectarYGuardarEventos(sessionId: string): Promise<{ total: numb
     }
 }
 
+/**
+ * Genera eventos de estabilidad para una sesión completa
+ * Wrapper para uso en post-procesamiento de upload
+ * @param sessionId - ID de la sesión
+ * @returns Lista de eventos detectados y guardados
+ */
+export async function generateStabilityEventsForSession(sessionId: string): Promise<EventoDetectado[]> {
+    logger.info('🚨 Generando eventos de estabilidad para sesión', { sessionId });
+
+    try {
+        // 1. Obtener mediciones de estabilidad
+        const measurements = await prisma.stabilityMeasurement.findMany({
+            where: { sessionId },
+            orderBy: { timestamp: 'asc' }
+        });
+
+        if (measurements.length === 0) {
+            logger.warn('⚠️ Sin mediciones de estabilidad para generar eventos', { sessionId });
+            return [];
+        }
+
+        logger.info(`📊 Analizando ${measurements.length} mediciones`);
+
+        // 2. Detectar eventos
+        const eventos: EventoDetectado[] = [];
+
+        for (const measurement of measurements) {
+            // Ejecutar detectores
+            const riesgoVuelco = detectarRiesgoVuelco(measurement);
+            if (riesgoVuelco) {
+                riesgoVuelco.sessionId = sessionId;
+                eventos.push(riesgoVuelco);
+            }
+
+            const vuelcoInminente = detectarVuelcoInminente(measurement);
+            if (vuelcoInminente) {
+                vuelcoInminente.sessionId = sessionId;
+                eventos.push(vuelcoInminente);
+            }
+
+            const derivaPeligrosa = detectarDerivaPeligrosa(measurement);
+            if (derivaPeligrosa) {
+                derivaPeligrosa.sessionId = sessionId;
+                eventos.push(derivaPeligrosa);
+            }
+
+            // Deriva lateral significativa ya está cubierta por deriva peligrosa
+
+            const maniobraBrusca = detectarManiobraBrusca(measurement);
+            if (maniobraBrusca) {
+                maniobraBrusca.sessionId = sessionId;
+                eventos.push(maniobraBrusca);
+            }
+        }
+
+        logger.info(`✅ ${eventos.length} eventos detectados`);
+
+        if (eventos.length === 0) {
+            return [];
+        }
+
+        // 3. Cargar TODOS los datos de GPS y rotativo de la sesión (optimización)
+        logger.info(`📡 Cargando datos GPS y rotativo para correlación...`);
+        const [allGpsPoints, allRotativoPoints] = await Promise.all([
+            prisma.gpsMeasurement.findMany({
+                where: { sessionId },
+                orderBy: { timestamp: 'asc' }
+            }),
+            prisma.rotativoMeasurement.findMany({
+                where: { sessionId },
+                orderBy: { timestamp: 'asc' }
+            })
+        ]);
+
+        logger.info(`📡 Datos cargados: ${allGpsPoints.length} GPS, ${allRotativoPoints.length} Rotativo`);
+
+        // Función auxiliar para encontrar el punto más cercano
+        function findClosestPoint<T extends { timestamp: Date }>(
+            points: T[],
+            targetTime: Date,
+            maxDiffMs: number
+        ): T | null {
+            if (points.length === 0) return null;
+
+            let closest: T | null = null;
+            let minDiff = Infinity;
+
+            for (const point of points) {
+                const diff = Math.abs(point.timestamp.getTime() - targetTime.getTime());
+                if (diff < minDiff && diff <= maxDiffMs) {
+                    minDiff = diff;
+                    closest = point;
+                }
+            }
+
+            return closest;
+        }
+
+        // 4. Correlacionar con GPS y obtener velocidad (max ±30 segundos)
+        let gpsCorrelated = 0;
+        for (const evento of eventos) {
+            const closest = findClosestPoint(allGpsPoints, evento.timestamp, 30000);
+            if (closest) {
+                evento.lat = closest.latitude;
+                evento.lon = closest.longitude;
+                evento.valores.velocity = closest.speed;
+                gpsCorrelated++;
+            }
+        }
+        logger.info(`📍 GPS correlacionado en ${gpsCorrelated}/${eventos.length} eventos`);
+
+        // 5. Correlacionar con estado del rotativo (max ±60 segundos)
+        const stateMap: Record<string, number> = {
+            'apagado': 0,
+            'clave 2': 2,
+            'clave 5': 5
+        };
+
+        let rotativoCorrelated = 0;
+        for (const evento of eventos) {
+            const closest = findClosestPoint(allRotativoPoints, evento.timestamp, 60000);
+            if (closest) {
+                evento.rotativo = closest.state !== 'apagado';
+                (evento as any).rotativoState = stateMap[closest.state] || 0;
+                rotativoCorrelated++;
+            }
+        }
+        logger.info(`🔄 Rotativo correlacionado en ${rotativoCorrelated}/${eventos.length} eventos`);
+
+        // 6. Obtener información de la sesión
+        const session = await prisma.session.findUnique({
+            where: { id: sessionId },
+            select: { vehicleId: true, organizationId: true }
+        });
+
+        if (!session) {
+            throw new Error(`Sesión no encontrada: ${sessionId}`);
+        }
+
+        // 7. Verificar si ya existen eventos para esta sesión (usar snake_case)
+        const existingCount = await prisma.$queryRaw<any[]>`
+            SELECT COUNT(*) as count 
+            FROM stability_events 
+            WHERE session_id = ${sessionId}
+        `;
+
+        const count = parseInt((existingCount[0] as any).count);
+
+        if (count > 0) {
+            logger.warn('⚠️ Eventos ya existen para esta sesión, saltando creación', {
+                sessionId,
+                existingCount: count
+            });
+            return eventos;
+        }
+
+        // 8. Guardar eventos en BD con TODOS los campos
+        for (const e of eventos) {
+            const rotativoState = (e as any).rotativoState ?? null; // Usar ?? en lugar de || para permitir 0
+            const speed = e.valores.velocity ?? null;
+            const interpolatedGPS = !e.lat; // Si no hay GPS, marca como interpolado (aunque aquí es NULL)
+
+            await prisma.$executeRaw`
+                INSERT INTO stability_events (
+                    id, session_id, timestamp, type, severity, details, 
+                    lat, lon, speed, "rotativoState", "keyType", "interpolatedGPS"
+                )
+                VALUES (
+                    (gen_random_uuid())::text,
+                    ${sessionId},
+                    ${e.timestamp},
+                    ${e.tipo},
+                    ${e.severidad},
+                    ${JSON.stringify({
+                ...e.valores,
+                description: e.descripcion,
+                rotativo: e.rotativo
+            })}::jsonb,
+                    ${e.lat ? parseFloat(e.lat.toString()) : null},
+                    ${e.lon ? parseFloat(e.lon.toString()) : null},
+                    ${speed},
+                    ${rotativoState},
+                    ${rotativoState},
+                    ${interpolatedGPS}
+                )
+            `;
+        }
+
+        logger.info('✅ Eventos de estabilidad guardados en BD', {
+            sessionId,
+            count: eventos.length,
+            breakdown: {
+                critical: eventos.filter(e => e.severidad === 'GRAVE').length,
+                moderate: eventos.filter(e => e.severidad === 'MODERADA').length,
+                light: eventos.filter(e => e.severidad === 'LEVE').length
+            }
+        });
+
+        return eventos;
+
+    } catch (error: any) {
+        logger.error('❌ Error generando eventos para sesión:', { sessionId, error: error.message });
+        throw error;
+    }
+}
+
 export const eventDetector = {
     detectarEventosSesion,
     detectarEventosMasivo,
-    detectarYGuardarEventos
+    detectarYGuardarEventos,
+    generateStabilityEventsForSession // Nueva función para post-processing
 };
 

@@ -62,7 +62,7 @@ export const useStabilityIndexEvents = (
                 params.append('selectedTypes', filters.selectedTypes.join(','));
             }
 
-            const response = await api.get(`/api/stability/events/${sessionId}?${params.toString()}`);
+            const response = await api.get(`/api/stability/sessions/${sessionId}/events?${params.toString()}`);
 
             if (response.data.success) {
                 // Convertir eventos del backend al formato del frontend

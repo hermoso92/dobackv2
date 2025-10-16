@@ -86,6 +86,94 @@ router.post('/unified', upload.array('files', 20), async (req: Request, res: Res
             userId
         );
 
+        // ✅ NUEVO: Post-procesamiento automático
+        if (resultado.sesionesCreadas > 0 && resultado.sessionIds && resultado.sessionIds.length > 0) {
+            logger.info('🔄 Iniciando post-procesamiento automático...', {
+                sessionCount: resultado.sessionIds.length
+            });
+
+            try {
+                const { UploadPostProcessor } = await import('../services/upload/UploadPostProcessor');
+                const postProcessResult = await UploadPostProcessor.process(resultado.sessionIds);
+
+                // Añadir resultados del post-procesamiento a la respuesta
+                (resultado as any).postProcessing = {
+                    eventsGenerated: postProcessResult.eventsGenerated,
+                    segmentsGenerated: postProcessResult.segmentsGenerated,
+                    errors: postProcessResult.errors,
+                    duration: postProcessResult.duration
+                };
+
+                // ✅ NUEVO: Construir sessionDetails con información de eventos
+                if (postProcessResult.sessionDetails && postProcessResult.sessionDetails.length > 0) {
+                    // Obtener información básica de las sesiones desde BD
+                    const sessions = await prisma.session.findMany({
+                        where: { id: { in: resultado.sessionIds } },
+                        include: {
+                            vehicle: { select: { identifier: true } }
+                        }
+                    });
+
+                    // Mapear eventos por sesión
+                    const eventsBySession = new Map(
+                        postProcessResult.sessionDetails.map(s => [s.sessionId, s])
+                    );
+
+                    // Construir sessionDetails con eventos
+                    (resultado as any).sessionDetails = sessions.map((session: any) => {
+                        const eventInfo = eventsBySession.get(session.id);
+                        const startTime = new Date(session.startTime);
+                        const endTime = session.endTime ? new Date(session.endTime) : startTime;
+                        const durationSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+
+                        return {
+                            sessionId: session.id,
+                            sessionNumber: session.sequence,
+                            vehicleIdentifier: session.vehicle?.identifier || 'Desconocido',
+                            startTime: startTime.toISOString(),
+                            endTime: endTime.toISOString(),
+                            durationSeconds,
+                            durationFormatted: formatDuration(durationSeconds),
+                            status: 'CREADA',
+                            reason: 'Sesión procesada correctamente',
+                            measurements: 0, // Se puede calcular después si es necesario
+                            eventsGenerated: eventInfo?.eventsGenerated || 0,
+                            segmentsGenerated: eventInfo?.segmentsGenerated || 0,
+                            events: eventInfo?.events || []
+                        };
+                    });
+                }
+
+                logger.info('✅ Post-procesamiento completado', {
+                    eventsGenerated: postProcessResult.eventsGenerated,
+                    segmentsGenerated: postProcessResult.segmentsGenerated,
+                    duration: postProcessResult.duration
+                });
+            } catch (error: any) {
+                logger.error('❌ Error en post-procesamiento:', error);
+                // No fallar la respuesta completa, solo advertir
+                if (!Array.isArray((resultado as any).warnings)) {
+                    (resultado as any).warnings = [];
+                }
+                (resultado as any).warnings.push(`Post-procesamiento parcial: ${error.message}`);
+            }
+        }
+
+        // Helper function for duration formatting
+        function formatDuration(seconds: number): string {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
         // ✅ OPTIMIZACIÓN: Invalidar cache de KPIs después de subir datos nuevos
         if (resultado.sesionesCreadas > 0) {
             kpiCacheService.invalidate(organizationId);
@@ -98,13 +186,23 @@ router.post('/unified', upload.array('files', 20), async (req: Request, res: Res
         res.status(statusCode).json({
             success: resultado.success,
             message: `Procesamiento completado: ${resultado.sesionesCreadas} sesiones creadas`,
+            totalSaved: resultado.sesionesCreadas,
+            totalSkipped: 0,
+            results: (resultado as any).sessionDetails ? [{
+                vehicle: 'Varios',
+                savedSessions: resultado.sesionesCreadas,
+                skippedSessions: 0,
+                sessionDetails: (resultado as any).sessionDetails
+            }] : [],
             data: {
                 sesionesCreadas: resultado.sesionesCreadas,
                 sessionIds: resultado.sessionIds,
                 archivosValidos: resultado.archivosValidos,
                 archivosConProblemas: resultado.archivosConProblemas,
                 estadisticas: resultado.estadisticas,
-                problemas: resultado.problemas
+                problemas: resultado.problemas,
+                postProcessing: (resultado as any).postProcessing,
+                sessionDetails: (resultado as any).sessionDetails
             }
         });
 

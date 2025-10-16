@@ -603,8 +603,8 @@ export class UnifiedFileProcessorV2 {
 
         logger.info(`   ✅ Sesión ${session.sessionNumber} guardada: ${dbSession.id}`);
 
-        // ✅ POST-PROCESAMIENTO AUTOMÁTICO (MANDAMIENTO M9.2)
-        await this.ejecutarPostProcesamiento(dbSession.id);
+        // ✅ POST-PROCESAMIENTO AUTOMÁTICO movido a UploadPostProcessor (centralizado)
+        // await this.ejecutarPostProcesamiento(dbSession.id); // DESHABILITADO - ahora se ejecuta desde upload-unified.ts
 
         return {
             sessionId: dbSession.id,
