@@ -131,6 +131,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
     const mapRef = useRef<L.Map | null>(null);
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const isInitializingRef = useRef<boolean>(false);
+    const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Log de debugging
     logger.info('RouteMapComponent renderizado', {
@@ -167,6 +168,12 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
         // Marcar como inicializando
         isInitializingRef.current = true;
 
+        // Cancelar cualquier timeout pendiente
+        if (initTimeoutRef.current) {
+            clearTimeout(initTimeoutRef.current);
+            initTimeoutRef.current = null;
+        }
+
         // Limpiar mapa existente con mejor manejo de errores
         if (mapRef.current) {
             try {
@@ -175,7 +182,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                     mapRef.current.remove();
                 }
             } catch (e) {
-                console.warn('⚠️ Error removing map:', e);
+                logger.warn('Error removing map:', e);
             }
             mapRef.current = null;
         }
@@ -186,7 +193,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
         }
 
         // Pequeño delay para asegurar que el contenedor esté listo
-        setTimeout(() => {
+        initTimeoutRef.current = setTimeout(() => {
             if (!mapContainerRef.current) {
                 isInitializingRef.current = false;
                 return;
@@ -639,6 +646,14 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
         // Cleanup
         return () => {
             logger.info('RouteMapComponent: Limpiando mapa');
+            
+            // Cancelar timeout pendiente
+            if (initTimeoutRef.current) {
+                clearTimeout(initTimeoutRef.current);
+                initTimeoutRef.current = null;
+            }
+            
+            // Limpiar mapa
             if (mapRef.current) {
                 try {
                     mapRef.current.remove();
@@ -647,6 +662,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                 }
                 mapRef.current = null;
             }
+            
             // Resetear el flag de inicialización para permitir re-inicialización
             isInitializingRef.current = false;
         };
