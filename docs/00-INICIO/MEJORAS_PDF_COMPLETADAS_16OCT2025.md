@@ -259,6 +259,12 @@ frontend/src/components/speed/SpeedAnalysisTab.tsx
 frontend/src/components/stability/BlackSpotsTab.tsx
 ├── Top 15 puntos negros
 └── Botón de exportación directa
+
+frontend/src/components/sessions/SessionsAndRoutesView.tsx
+├── Botón "Exportar Recorrido PDF" integrado
+├── Captura automática del mapa Leaflet
+├── Exportación completa de recorrido con mapa
+└── Hook exportRouteReport implementado
 ```
 
 ---
@@ -302,8 +308,17 @@ await exportVehicleReport(vehicleData);
 ```
 
 ### **4. Exportar recorrido completo:**
+
+**✅ INTEGRADO EN SESIONES Y RECORRIDOS:**
+1. Ir a módulo "Sesiones y Recorridos"
+2. Seleccionar un vehículo
+3. Seleccionar una sesión con datos GPS
+4. Clic en **"Exportar Recorrido PDF"** (botón azul en header del mapa)
+5. Se descarga PDF completo con mapa, estadísticas y eventos
+
+**Uso desde código:**
 ```typescript
-// Desde componente SessionsAndRoutesView
+// Desde cualquier componente que use usePDFExport
 const { exportRouteReport, captureElementEnhanced } = usePDFExport();
 
 // 1. Capturar mapa
@@ -334,6 +349,8 @@ await exportRouteReport(routeData);
 ## 📌 COMMITS REALIZADOS
 
 ```bash
+a56051f - feat: Integrar exportacion de recorridos en SessionsAndRoutesView
+a29b173 - docs: Documento completo de mejoras PDF implementadas
 5fc7e8e - feat: Export de recorridos completos con mapa y analisis
 122546a - feat: Reporte individual completo por vehiculo
 f4adcf8 - feat: Geocodificacion automatica y analisis por vehiculo en PDFs
