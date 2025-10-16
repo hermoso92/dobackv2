@@ -38,10 +38,112 @@ interface Session {
     maxSpeed: number;
 }
 
+// Exportar función para uso externo
+export const useRouteExport = (routeData: any, selectedSession: any) => {
+    const { exportRouteReport, captureElementEnhanced } = usePDFExport();
+    
+    return useCallback(async () => {
+        if (!selectedSession || !routeData) {
+            logger.warn('No hay sesión o ruta seleccionada para exportar');
+            return;
+        }
+
+        try {
+            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
+
+            // Capturar mapa del elemento con ID específico
+            const mapElement = document.querySelector('.leaflet-container');
+            let mapImage: string | null = null;
+
+            if (mapElement) {
+                const tempId = 'route-map-export';
+                mapElement.id = tempId;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                mapImage = await captureElementEnhanced(tempId, 3);
+                mapElement.removeAttribute('id');
+            }
+
+            // Geocodificar ubicaciones de eventos
+            logger.info('Geocodificando ubicaciones de eventos...');
+            const eventsWithLocations = await Promise.all(
+                routeData.events.map(async (event: any) => {
+                    let location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
+                    
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${event.lat}&lon=${event.lng}`,
+                            { headers: { 'User-Agent': 'DobackSoft/1.0' } }
+                        );
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.address) {
+                                const road = data.address.road || data.address.street || data.address.highway;
+                                const city = data.address.city || data.address.town || data.address.village;
+                                if (road && city) {
+                                    location = `${road}, ${city}`;
+                                } else if (road) {
+                                    location = road;
+                                }
+                            }
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    } catch (error) {
+                        logger.warn('Error geocodificando evento', { error });
+                    }
+                    
+                    return {
+                        id: event.id,
+                        lat: event.lat,
+                        lng: event.lng,
+                        location: location,
+                        type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                        severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
+                                 event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
+                                 event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
+                                 'Desconocida',
+                        timestamp: new Date(event.timestamp)
+                    };
+                })
+            );
+
+            const exportData = {
+                sessionId: selectedSession.id,
+                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
+                startTime: selectedSession.startTime,
+                endTime: selectedSession.endTime,
+                duration: selectedSession.duration,
+                distance: selectedSession.distance,
+                avgSpeed: selectedSession.avgSpeed,
+                maxSpeed: selectedSession.maxSpeed,
+                route: routeData.route.map((point: any) => ({
+                    lat: point.lat,
+                    lng: point.lng,
+                    speed: point.speed,
+                    timestamp: new Date(point.timestamp)
+                })),
+                events: eventsWithLocations,
+                stats: {
+                    validRoutePoints: routeData.stats.validRoutePoints,
+                    validEvents: routeData.stats.validEvents,
+                    totalGpsPoints: routeData.stats.totalGpsPoints,
+                    totalEvents: routeData.stats.totalEvents
+                },
+                mapImage: mapImage || undefined
+            };
+
+            await exportRouteReport(exportData);
+            logger.info('Recorrido exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando recorrido', { error });
+        }
+    }, [selectedSession, routeData, captureElementEnhanced, exportRouteReport]);
+};
+
 export const SessionsAndRoutesView: React.FC = () => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
-    const { exportRouteReport, captureElementEnhanced, isExporting } = usePDFExport();
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -215,79 +317,6 @@ export const SessionsAndRoutesView: React.FC = () => {
         loadRouteData();
     }, [selectedSessionId]);
 
-    // Exportar recorrido completo a PDF
-    const handleExportRoute = useCallback(async () => {
-        if (!selectedSession || !routeData) {
-            logger.warn('No hay sesión o ruta seleccionada para exportar');
-            return;
-        }
-
-        try {
-            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
-
-            // Capturar mapa del elemento con ID específico
-            const mapElement = document.querySelector('.leaflet-container');
-            let mapImage: string | null = null;
-
-            if (mapElement) {
-                // Darle un ID temporal si no lo tiene
-                const tempId = 'route-map-export';
-                mapElement.id = tempId;
-
-                // Esperar un poco para que el mapa se renderice completamente con la ruta
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Capturar el mapa con mayor calidad
-                mapImage = await captureElementEnhanced(tempId, 3);
-
-                // Limpiar ID temporal
-                mapElement.removeAttribute('id');
-            }
-
-            // Preparar datos para el PDF con nombres reales y formato correcto
-            const exportData = {
-                sessionId: selectedSession.id,
-                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
-                startTime: selectedSession.startTime,
-                endTime: selectedSession.endTime,
-                duration: selectedSession.duration,
-                distance: selectedSession.distance,
-                avgSpeed: selectedSession.avgSpeed,
-                maxSpeed: selectedSession.maxSpeed,
-                route: routeData.route.map(point => ({
-                    lat: point.lat,
-                    lng: point.lng,
-                    speed: point.speed,
-                    timestamp: new Date(point.timestamp)
-                })),
-                events: routeData.events.map(event => ({
-                    id: event.id,
-                    lat: event.lat,
-                    lng: event.lng,
-                    type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Evento',
-                    severity: event.severity === 'HIGH' ? 'Grave' :
-                        event.severity === 'MEDIUM' ? 'Moderada' :
-                            event.severity === 'LOW' ? 'Leve' :
-                                event.severity?.toLowerCase() || 'Desconocida',
-                    timestamp: new Date(event.timestamp)
-                })),
-                stats: {
-                    validRoutePoints: routeData.stats.validRoutePoints,
-                    validEvents: routeData.stats.validEvents,
-                    totalGpsPoints: routeData.stats.totalGpsPoints,
-                    totalEvents: routeData.stats.totalEvents
-                },
-                mapImage: mapImage || undefined
-            };
-
-            await exportRouteReport(exportData);
-
-            logger.info('Recorrido exportado exitosamente');
-        } catch (error) {
-            logger.error('Error exportando recorrido', { error });
-        }
-    }, [selectedSession, routeData, captureElementEnhanced, exportRouteReport]);
-
     if (sessionsLoading) {
         return (
             <Box sx={{ p: 3 }}>
@@ -301,41 +330,6 @@ export const SessionsAndRoutesView: React.FC = () => {
 
     return (
         <Box sx={{ p: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Barra de herramientas superior */}
-            <Box sx={{ mb: 1, flexShrink: 0 }}>
-                <Card sx={{ boxShadow: 1, border: '1px solid #e2e8f0' }}>
-                    <CardContent sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
-                                📍 Sesiones y Recorridos
-                            </Typography>
-                            
-                            {/* Botón de exportar PDF */}
-                            {routeData && routeData.route.length > 0 && (
-                                <Button
-                                    onClick={handleExportRoute}
-                                    disabled={isExporting}
-                                    variant="contained"
-                                    sx={{
-                                        bgcolor: '#2563eb',
-                                        '&:hover': { bgcolor: '#1d4ed8' },
-                                        '&:disabled': { bgcolor: '#cbd5e1', cursor: 'not-allowed' },
-                                        textTransform: 'none',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 500,
-                                        px: 2,
-                                        py: 1,
-                                        gap: 1
-                                    }}
-                                >
-                                    📄 {isExporting ? 'Generando...' : 'Exportar Reporte Detallado'}
-                                </Button>
-                            )}
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Box>
-
             {/* Selectores compactos */}
             <Box sx={{ mb: 1, flexShrink: 0 }}>
                 <VehicleSessionSelector
@@ -474,58 +468,158 @@ export const SessionsAndRoutesView: React.FC = () => {
                                         </Box>
                                     )}
 
-                                    {/* Indicador LED cuando hay evento seleccionado */}
+                                    {/* Panel de detalles del evento con indicador LED */}
                                     {selectedEvent && (
                                         <Box sx={{
                                             position: 'absolute',
                                             top: 60,
                                             right: 16,
-                                            bgcolor: 'rgba(255,255,255,0.95)',
-                                            p: 2,
+                                            bgcolor: 'rgba(255,255,255,0.98)',
+                                            p: 3,
                                             borderRadius: 2,
                                             zIndex: 1000,
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                            minWidth: '280px'
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                            minWidth: '350px',
+                                            maxWidth: '400px',
+                                            border: '1px solid #e0e0e0'
                                         }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                    🔴 Indicador LED del Dispositivo
+                                            {/* Header */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                                                    📊 Detalles del Evento
                                                 </Typography>
                                                 <Button
                                                     size="small"
                                                     onClick={() => setSelectedEvent(null)}
-                                                    sx={{
-                                                        minWidth: 'auto',
+                                                    sx={{ 
+                                                        minWidth: 'auto', 
                                                         p: 0.5,
-                                                        fontSize: '0.7rem',
-                                                        color: 'text.secondary'
+                                                        fontSize: '0.8rem',
+                                                        color: 'text.secondary',
+                                                        '&:hover': { bgcolor: 'grey.100' }
                                                     }}
                                                 >
                                                     ✕
                                                 </Button>
                                             </Box>
-                                            <LEDIndicator
-                                                stabilityPercentage={stabilityPercentage}
-                                                size="medium"
-                                                showAcousticInfo={true}
-                                                showLabels={true}
-                                            />
-                                            <Typography variant="caption" color="text.secondary" sx={{
-                                                display: 'block',
-                                                mt: 1,
-                                                fontSize: '0.7rem',
-                                                textAlign: 'center'
-                                            }}>
-                                                Evento: {new Date(selectedEvent.timestamp).toLocaleTimeString()}
-                                            </Typography>
-                                            {selectedEvent.type && (
-                                                <Typography variant="caption" color="text.secondary" sx={{
-                                                    display: 'block',
-                                                    fontSize: '0.7rem',
-                                                    textAlign: 'center'
-                                                }}>
-                                                    Tipo: {selectedEvent.type}
+
+                                            {/* Información básica del evento */}
+                                            <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.primary' }}>
+                                                    🔍 Información del Evento
                                                 </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    <strong>Tipo:</strong> {selectedEvent.type || 'N/A'}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    <strong>Severidad:</strong> 
+                                                    <span style={{ 
+                                                        marginLeft: 4,
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.75rem',
+                                                        backgroundColor: selectedEvent.severity?.toLowerCase().includes('critic') ? '#fee2e2' :
+                                                                        selectedEvent.severity?.toLowerCase().includes('grave') ? '#fee2e2' :
+                                                                        selectedEvent.severity?.toLowerCase().includes('moder') ? '#fef3c7' : '#d1fae5',
+                                                        color: selectedEvent.severity?.toLowerCase().includes('critic') ? '#b91c1c' :
+                                                               selectedEvent.severity?.toLowerCase().includes('grave') ? '#b91c1c' :
+                                                               selectedEvent.severity?.toLowerCase().includes('moder') ? '#a16207' : '#065f46'
+                                                    }}>
+                                                        {selectedEvent.severity || 'N/A'}
+                                                    </span>
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    <strong>Fecha:</strong> {new Date(selectedEvent.timestamp).toLocaleString()}
+                                                </Typography>
+                                                {selectedEvent.speed && (
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        <strong>Velocidad:</strong> {selectedEvent.speed} km/h
+                                                    </Typography>
+                                                )}
+                                                {selectedEvent.rotativoState !== undefined && (
+                                                    <Typography variant="body2">
+                                                        <strong>Rotativo:</strong> 
+                                                        <span style={{ 
+                                                            marginLeft: 4,
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.75rem',
+                                                            backgroundColor: selectedEvent.rotativoState ? '#d1fae5' : '#fee2e2',
+                                                            color: selectedEvent.rotativoState ? '#065f46' : '#b91c1c'
+                                                        }}>
+                                                            {selectedEvent.rotativoState ? 'Encendido' : 'Apagado'}
+                                                        </span>
+                                                    </Typography>
+                                                )}
+                                            </Box>
+
+                                            {/* Métricas técnicas */}
+                                            {(selectedEvent.details || selectedEvent.metrics) && (
+                                                <Box sx={{ mb: 3, p: 2, bgcolor: 'blue.50', borderRadius: 1 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
+                                                        📈 Métricas Técnicas
+                                                    </Typography>
+                                                    {selectedEvent.details && typeof selectedEvent.details === 'object' && (
+                                                        <>
+                                                            {selectedEvent.details.ltr !== undefined && (
+                                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                    <strong>LTR:</strong> {selectedEvent.details.ltr.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                            {selectedEvent.details.ssf !== undefined && (
+                                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                    <strong>SSF:</strong> {selectedEvent.details.ssf.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                            {selectedEvent.details.drs !== undefined && (
+                                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                    <strong>DRS:</strong> {selectedEvent.details.drs.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    {selectedEvent.metrics && typeof selectedEvent.metrics === 'object' && (
+                                                        <>
+                                                            {selectedEvent.metrics.ltr !== undefined && (
+                                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                    <strong>LTR:</strong> {selectedEvent.metrics.ltr.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                            {selectedEvent.metrics.ssf !== undefined && (
+                                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                    <strong>SSF:</strong> {selectedEvent.metrics.ssf.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                            {selectedEvent.metrics.drs !== undefined && (
+                                                                <Typography variant="body2">
+                                                                    <strong>DRS:</strong> {selectedEvent.metrics.drs.toFixed(3)}
+                                                                </Typography>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Box>
+                                            )}
+
+                                            {/* Indicador LED */}
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
+                                                    🔴 Indicador LED del Dispositivo
+                                                </Typography>
+                                                <LEDIndicator
+                                                    stabilityPercentage={stabilityPercentage}
+                                                    size="medium"
+                                                    showAcousticInfo={true}
+                                                    showLabels={true}
+                                                />
+                                            </Box>
+
+                                            {/* Coordenadas */}
+                                            {selectedEvent.lat && selectedEvent.lng && (
+                                                <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.100', borderRadius: 1, textAlign: 'center' }}>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        📍 {selectedEvent.lat.toFixed(6)}, {selectedEvent.lng.toFixed(6)}
+                                                    </Typography>
+                                                </Box>
                                             )}
                                         </Box>
                                     )}
