@@ -630,30 +630,26 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
                     const kpisVelocidad: EnhancedKPIData[] = [
                         {
-                            title: 'Total Excesos',
+                            title: 'Total Excesos Detectados',
                             value: speedViolations.length,
-                            icon: '🚗',
                             category: speedViolations.length > 20 ? 'danger' : 'success',
-                            description: 'Total de excesos de velocidad detectados durante el período. Incluye todas las clasificaciones según normativa DGT para vehículos de emergencia.'
+                            description: 'Total de excesos de velocidad detectados durante el periodo. Incluye todas las clasificaciones segun normativa DGT para vehiculos de emergencia.'
                         },
                         {
-                            title: 'Excesos Graves',
+                            title: 'Excesos Graves (>20 km/h)',
                             value: graveViolations.length,
-                            icon: '🔴',
                             category: 'danger',
-                            description: 'Excesos superiores a 20 km/h sobre el límite permitido. Requieren revisión inmediata y pueden indicar necesidad de formación adicional.'
+                            description: 'Excesos superiores a 20 km/h sobre el limite permitido. Requieren revision inmediata y pueden indicar necesidad de formacion adicional.'
                         },
                         {
-                            title: 'Excesos Moderados',
+                            title: 'Excesos Moderados (10-20 km/h)',
                             value: moderadoViolations.length,
-                            icon: '🟠',
                             category: 'warning',
                             description: 'Excesos entre 10-20 km/h. Situaciones de riesgo medio que deben monitorearse para evitar recurrencia.'
                         },
                         {
-                            title: 'Excesos Leves',
+                            title: 'Excesos Leves (1-10 km/h)',
                             value: leveViolations.length,
-                            icon: '🟡',
                             category: 'success',
                             description: 'Excesos de 1-10 km/h. Variaciones menores que pueden considerarse normales en contexto de emergencias.'
                         },
@@ -661,16 +657,14 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             title: 'Exceso Promedio',
                             value: avgExcess.toFixed(2),
                             unit: 'km/h',
-                            icon: '⚡',
                             category: avgExcess > 15 ? 'warning' : 'success',
-                            description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de límites.'
+                            description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de limites.'
                         },
                         {
-                            title: 'Con Rotativo ON',
+                            title: 'Excesos con Rotativo Encendido',
                             value: speedViolations.filter((v: any) => v.rotativoOn).length,
-                            icon: '🚨',
                             category: 'info',
-                            description: 'Excesos ocurridos durante emergencias con rotativo encendido. Límites más permisivos según normativa de vehículos prioritarios.'
+                            description: 'Excesos ocurridos durante emergencias con rotativo encendido. Limites mas permisivos segun normativa de vehiculos prioritarios.'
                         }
                     ];
 
@@ -702,31 +696,28 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         speedViolations: violationsData,
                         sections: [
                             {
-                                title: 'Límites de Velocidad Aplicados',
+                                title: 'Limites de Velocidad Aplicados',
                                 type: 'list',
-                                icon: '📏',
                                 content: [
-                                    '🏘️ Urbana: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
-                                    '🛣️ Interurbana: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
-                                    '🏎️ Autopista: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
-                                    '🏞️ Dentro del Parque: 20 km/h (límite fijo para todos)'
+                                    'VIA URBANA: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
+                                    'VIA INTERURBANA: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
+                                    'AUTOPISTA: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
+                                    'DENTRO DEL PARQUE: 20 km/h (limite fijo para todos los vehiculos)'
                                 ]
                             },
                             {
-                                title: 'Clasificación de Severidad',
+                                title: 'Clasificacion de Severidad',
                                 type: 'list',
-                                icon: '⚠️',
                                 content: [
-                                    '🔴 Grave: Exceso superior a 20 km/h - Requiere acción inmediata',
-                                    '🟠 Moderado: Exceso entre 10-20 km/h - Requiere monitoreo',
-                                    '🟡 Leve: Exceso entre 1-10 km/h - Variación aceptable'
+                                    'GRAVE: Exceso superior a 20 km/h - Requiere accion inmediata',
+                                    'MODERADO: Exceso entre 10-20 km/h - Requiere monitoreo',
+                                    'LEVE: Exceso entre 1-10 km/h - Variacion aceptable'
                                 ]
                             },
                             {
-                                title: 'Análisis de Resultados',
+                                title: 'Analisis de Resultados',
                                 type: 'text',
-                                icon: '📊',
-                                content: `Se detectaron ${speedViolations.length} excesos de velocidad en el período analizado. ${graveViolations.length} fueron clasificados como graves (>${20} km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${speedViolations.filter((v: any) => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
+                                content: `Se detectaron ${speedViolations.length} excesos de velocidad en el periodo analizado. ${graveViolations.length} fueron clasificados como graves (>20 km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${speedViolations.filter((v: any) => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
                             }
                         ],
                         filters: {
@@ -748,32 +739,28 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
                     const kpisPuntosNegros: EnhancedKPIData[] = [
                         {
-                            title: 'Zonas Críticas',
+                            title: 'Zonas Criticas Identificadas',
                             value: ranking.length,
-                            icon: '🗺️',
                             category: ranking.length > 10 ? 'warning' : 'success',
-                            description: 'Número total de zonas identificadas como puntos negros. Áreas con alta concentración de eventos de inestabilidad que requieren atención especial.'
+                            description: 'Numero total de zonas identificadas como puntos negros. Areas con alta concentracion de eventos de inestabilidad que requieren atencion especial.'
                         },
                         {
-                            title: 'Total de Eventos',
+                            title: 'Total de Eventos Registrados',
                             value: totalBlackSpotsEvents,
-                            icon: '⚠️',
                             category: totalBlackSpotsEvents > 100 ? 'danger' : 'success',
-                            description: 'Suma total de eventos de inestabilidad registrados en todas las zonas críticas. Indica el nivel general de riesgo en la red viaria.'
+                            description: 'Suma total de eventos de inestabilidad registrados en todas las zonas criticas. Indica el nivel general de riesgo en la red viaria.'
                         },
                         {
                             title: 'Zonas con Eventos Graves',
                             value: graveSpots,
-                            icon: '🔴',
                             category: 'danger',
                             description: 'Zonas que registraron al menos un evento de alta severidad. Requieren medidas correctivas urgentes o restricciones operativas.'
                         },
                         {
-                            title: 'Eventos por Zona',
+                            title: 'Promedio Eventos por Zona',
                             value: ranking.length > 0 ? (totalBlackSpotsEvents / ranking.length).toFixed(1) : 0,
-                            icon: '📊',
                             category: 'info',
-                            description: 'Promedio de eventos por zona crítica. Indica la concentración de incidencias en cada punto identificado.'
+                            description: 'Promedio de eventos por zona critica. Indica la concentracion de incidencias en cada punto identificado.'
                         }
                     ];
 
@@ -799,26 +786,23 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         blackSpots: blackSpotsDetails,
                         sections: [
                             {
-                                title: 'Metodología de Detección',
+                                title: 'Metodologia de Deteccion',
                                 type: 'text',
-                                icon: '🔬',
-                                content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geográfica (clustering). Se consideran zonas críticas aquellas con frecuencia mínima de 2 eventos y se clasifican según la severidad dominante de los incidentes registrados.'
+                                content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geografica (clustering). Se consideran zonas criticas aquellas con frecuencia minima de 2 eventos y se clasifican segun la severidad dominante de los incidentes registrados.'
                             },
                             {
-                                title: 'Criterios de Clasificación',
+                                title: 'Criterios de Clasificacion',
                                 type: 'list',
-                                icon: '⚖️',
                                 content: [
-                                    '🔴 Severidad Grave: Índice de estabilidad 0-20% - Riesgo alto',
-                                    '🟠 Severidad Moderada: Índice 20-35% - Riesgo medio',
-                                    '🟡 Severidad Leve: Índice 35-50% - Riesgo bajo'
+                                    'SEVERIDAD GRAVE: Indice de estabilidad 0-20% - Riesgo alto',
+                                    'SEVERIDAD MODERADA: Indice 20-35% - Riesgo medio',
+                                    'SEVERIDAD LEVE: Indice 35-50% - Riesgo bajo'
                                 ]
                             },
                             {
-                                title: 'Análisis de Patrones',
+                                title: 'Analisis de Patrones Detectados',
                                 type: 'text',
-                                icon: '📈',
-                                content: `Se identificaron ${ranking.length} zonas críticas con ${totalBlackSpotsEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registró ${ranking[0]?.totalEvents || 0} eventos, indicando un patrón recurrente que requiere investigación y posibles medidas correctivas.`
+                                content: `Se identificaron ${ranking.length} zonas criticas con ${totalBlackSpotsEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registro ${ranking[0]?.totalEvents || 0} eventos, indicando un patron recurrente que requiere investigacion y posibles medidas correctivas.`
                             }
                         ],
                         filters: {

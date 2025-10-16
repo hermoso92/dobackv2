@@ -165,30 +165,26 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
 
             const kpis: EnhancedKPIData[] = [
                 {
-                    title: 'Total Excesos',
+                    title: 'Total Excesos Detectados',
                     value: violations.length,
-                    icon: '🚗',
                     category: violations.length > 20 ? 'danger' : 'success',
-                    description: 'Total de excesos de velocidad detectados durante el período. Incluye todas las clasificaciones según normativa DGT para vehículos de emergencia.'
+                    description: 'Total de excesos de velocidad detectados durante el periodo. Incluye todas las clasificaciones segun normativa DGT para vehiculos de emergencia.'
                 },
                 {
-                    title: 'Excesos Graves',
+                    title: 'Excesos Graves (>20 km/h)',
                     value: graveViolations.length,
-                    icon: '🔴',
                     category: 'danger',
-                    description: 'Excesos superiores a 20 km/h sobre el límite permitido. Requieren revisión inmediata y pueden indicar necesidad de formación adicional.'
+                    description: 'Excesos superiores a 20 km/h sobre el limite permitido. Requieren revision inmediata y pueden indicar necesidad de formacion adicional.'
                 },
                 {
-                    title: 'Excesos Moderados',
+                    title: 'Excesos Moderados (10-20 km/h)',
                     value: moderadoViolations.length,
-                    icon: '🟠',
                     category: 'warning',
                     description: 'Excesos entre 10-20 km/h. Situaciones de riesgo medio que deben monitorearse para evitar recurrencia.'
                 },
                 {
-                    title: 'Excesos Leves',
+                    title: 'Excesos Leves (1-10 km/h)',
                     value: leveViolations.length,
-                    icon: '🟡',
                     category: 'success',
                     description: 'Excesos de 1-10 km/h. Variaciones menores que pueden considerarse normales en contexto de emergencias.'
                 },
@@ -196,16 +192,14 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                     title: 'Exceso Promedio',
                     value: avgExcess.toFixed(2),
                     unit: 'km/h',
-                    icon: '⚡',
                     category: avgExcess > 15 ? 'warning' : 'success',
-                    description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de límites.'
+                    description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de limites.'
                 },
                 {
-                    title: 'Con Rotativo ON',
+                    title: 'Excesos con Rotativo Encendido',
                     value: violations.filter(v => v.rotativoOn).length,
-                    icon: '🚨',
                     category: 'info',
-                    description: 'Excesos ocurridos durante emergencias con rotativo encendido. Límites más permisivos según normativa de vehículos prioritarios.'
+                    description: 'Excesos ocurridos durante emergencias con rotativo encendido. Limites mas permisivos segun normativa de vehiculos prioritarios.'
                 }
             ];
 
@@ -236,31 +230,28 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                 speedViolations: violationsData,
                 sections: [
                     {
-                        title: 'Límites de Velocidad Aplicados',
+                        title: 'Limites de Velocidad Aplicados',
                         type: 'list',
-                        icon: '📏',
                         content: [
-                            '🏘️ Urbana: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
-                            '🛣️ Interurbana: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
-                            '🏎️ Autopista: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
-                            '🏞️ Dentro del Parque: 20 km/h (límite fijo para todos)'
+                            'VIA URBANA: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
+                            'VIA INTERURBANA: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
+                            'AUTOPISTA: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
+                            'DENTRO DEL PARQUE: 20 km/h (limite fijo para todos los vehiculos)'
                         ]
                     },
                     {
-                        title: 'Clasificación de Severidad',
+                        title: 'Clasificacion de Severidad',
                         type: 'list',
-                        icon: '⚠️',
                         content: [
-                            '🔴 Grave: Exceso superior a 20 km/h - Requiere acción inmediata',
-                            '🟠 Moderado: Exceso entre 10-20 km/h - Requiere monitoreo',
-                            '🟡 Leve: Exceso entre 1-10 km/h - Variación aceptable'
+                            'GRAVE: Exceso superior a 20 km/h - Requiere accion inmediata',
+                            'MODERADO: Exceso entre 10-20 km/h - Requiere monitoreo',
+                            'LEVE: Exceso entre 1-10 km/h - Variacion aceptable'
                         ]
                     },
                     {
-                        title: 'Análisis de Resultados',
+                        title: 'Analisis de Resultados',
                         type: 'text',
-                        icon: '📊',
-                        content: `Se detectaron ${violations.length} excesos de velocidad en el período analizado. ${graveViolations.length} fueron clasificados como graves (>20 km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${violations.filter(v => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
+                        content: `Se detectaron ${violations.length} excesos de velocidad en el periodo analizado. ${graveViolations.length} fueron clasificados como graves (>20 km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${violations.filter(v => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
                     }
                 ]
             };

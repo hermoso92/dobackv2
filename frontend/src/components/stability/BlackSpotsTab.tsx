@@ -218,32 +218,28 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
 
             const kpis: EnhancedKPIData[] = [
                 {
-                    title: 'Zonas Críticas',
+                    title: 'Zonas Criticas Identificadas',
                     value: ranking.length,
-                    icon: '🗺️',
                     category: ranking.length > 10 ? 'warning' : 'success',
-                    description: 'Número total de zonas identificadas como puntos negros. Áreas con alta concentración de eventos de inestabilidad que requieren atención especial.'
+                    description: 'Numero total de zonas identificadas como puntos negros. Areas con alta concentracion de eventos de inestabilidad que requieren atencion especial.'
                 },
                 {
-                    title: 'Total de Eventos',
+                    title: 'Total de Eventos Registrados',
                     value: totalEvents,
-                    icon: '⚠️',
                     category: totalEvents > 100 ? 'danger' : 'success',
-                    description: 'Suma total de eventos de inestabilidad registrados en todas las zonas críticas. Indica el nivel general de riesgo en la red viaria.'
+                    description: 'Suma total de eventos de inestabilidad registrados en todas las zonas criticas. Indica el nivel general de riesgo en la red viaria.'
                 },
                 {
                     title: 'Zonas con Eventos Graves',
                     value: graveSpots,
-                    icon: '🔴',
                     category: 'danger',
                     description: 'Zonas que registraron al menos un evento de alta severidad. Requieren medidas correctivas urgentes o restricciones operativas.'
                 },
                 {
-                    title: 'Eventos por Zona',
+                    title: 'Promedio Eventos por Zona',
                     value: ranking.length > 0 ? (totalEvents / ranking.length).toFixed(1) : 0,
-                    icon: '📊',
                     category: 'info',
-                    description: 'Promedio de eventos por zona crítica. Indica la concentración de incidencias en cada punto identificado.'
+                    description: 'Promedio de eventos por zona critica. Indica la concentracion de incidencias en cada punto identificado.'
                 }
             ];
 
@@ -268,26 +264,23 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                 blackSpots: blackSpotsDetails,
                 sections: [
                     {
-                        title: 'Metodología de Detección',
+                        title: 'Metodologia de Deteccion',
                         type: 'text',
-                        icon: '🔬',
-                        content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geográfica (clustering). Se consideran zonas críticas aquellas con frecuencia mínima de 2 eventos y se clasifican según la severidad dominante de los incidentes registrados.'
+                        content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geografica (clustering). Se consideran zonas criticas aquellas con frecuencia minima de 2 eventos y se clasifican segun la severidad dominante de los incidentes registrados.'
                     },
                     {
-                        title: 'Criterios de Clasificación',
+                        title: 'Criterios de Clasificacion',
                         type: 'list',
-                        icon: '⚖️',
                         content: [
-                            '🔴 Severidad Grave: Índice de estabilidad 0-20% - Riesgo alto',
-                            '🟠 Severidad Moderada: Índice 20-35% - Riesgo medio',
-                            '🟡 Severidad Leve: Índice 35-50% - Riesgo bajo'
+                            'SEVERIDAD GRAVE: Indice de estabilidad 0-20% - Riesgo alto',
+                            'SEVERIDAD MODERADA: Indice 20-35% - Riesgo medio',
+                            'SEVERIDAD LEVE: Indice 35-50% - Riesgo bajo'
                         ]
                     },
                     {
-                        title: 'Análisis de Patrones',
+                        title: 'Analisis de Patrones Detectados',
                         type: 'text',
-                        icon: '📈',
-                        content: `Se identificaron ${ranking.length} zonas críticas con ${totalEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registró ${ranking[0]?.totalEvents || 0} eventos, indicando un patrón recurrente que requiere investigación y posibles medidas correctivas.`
+                        content: `Se identificaron ${ranking.length} zonas criticas con ${totalEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registro ${ranking[0]?.totalEvents || 0} eventos, indicando un patron recurrente que requiere investigacion y posibles medidas correctivas.`
                     }
                 ]
             };
