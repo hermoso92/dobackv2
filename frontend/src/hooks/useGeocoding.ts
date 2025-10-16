@@ -3,9 +3,9 @@ import { logger } from '../utils/logger';
 
 // Cache global para direcciones
 const addressCache = new Map<string, string>();
-const pendingRequests = new Map<string, Promise<string>>();
+const pendingRequests = new Set<string>();
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 500; // 500ms entre peticiones (más rápido)
+const MIN_REQUEST_INTERVAL = 800; // 800ms entre peticiones (balance entre velocidad y límites)
 
 interface UseGeocodingOptions {
     enabled?: boolean;
@@ -42,33 +42,24 @@ export const useGeocoding = (
             return;
         }
 
-        // Verificar si ya hay una petición pendiente para esta coordenada
+        // Verificar si ya hay una petición pendiente
         if (pendingRequests.has(key)) {
             setLoading(true);
-            // Esperar a que termine la petición pendiente
-            pendingRequests.get(key)!.then((result) => {
-                setAddress(result || null);
-                setLoading(false);
-            });
             return;
         }
 
         let cancelled = false;
         setLoading(true);
 
-        // Crear promesa para compartir entre múltiples llamadas
-        const geocodePromise = (async () => {
-            // Rate limiting
-            const now = Date.now();
-            const timeSinceLastRequest = now - lastRequestTime;
-            const delay = Math.max(0, MIN_REQUEST_INTERVAL - timeSinceLastRequest);
+        // Rate limiting
+        const now = Date.now();
+        const timeSinceLastRequest = now - lastRequestTime;
+        const delay = Math.max(0, MIN_REQUEST_INTERVAL - timeSinceLastRequest);
 
-            if (delay > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
+        const timeoutId = setTimeout(async () => {
+            if (cancelled) return;
 
-            if (cancelled) return '';
-
+            pendingRequests.add(key);
             lastRequestTime = Date.now();
 
             try {
@@ -93,7 +84,7 @@ export const useGeocoding = (
 
                 const data = await response.json();
 
-                if (cancelled) return '';
+                if (cancelled) return;
 
                 // Extraer nombre de la vía de forma más específica
                 let streetName = '';
@@ -124,32 +115,25 @@ export const useGeocoding = (
                 const finalAddress = addr || (fallbackToCoords ? `${lat.toFixed(4)}, ${lon.toFixed(4)}` : null);
 
                 addressCache.set(key, finalAddress || '');
-                return finalAddress || '';
+                setAddress(finalAddress);
+                setLoading(false);
 
             } catch (error: any) {
                 if (!cancelled) {
                     logger.warn('Error en geocodificación inversa:', error.message);
                     const fallback = fallbackToCoords ? `${lat.toFixed(4)}, ${lon.toFixed(4)}` : null;
                     addressCache.set(key, fallback || '');
-                    return fallback || '';
+                    setAddress(fallback);
+                    setLoading(false);
                 }
-                return '';
+            } finally {
+                pendingRequests.delete(key);
             }
-        })();
-
-        // Guardar promesa para compartir
-        pendingRequests.set(key, geocodePromise);
-
-        geocodePromise.then((result) => {
-            if (!cancelled) {
-                setAddress(result || null);
-                setLoading(false);
-            }
-            pendingRequests.delete(key);
-        });
+        }, delay);
 
         return () => {
             cancelled = true;
+            clearTimeout(timeoutId);
         };
     }, [lat, lon, enabled, fallbackToCoords]);
 
