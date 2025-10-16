@@ -62,9 +62,13 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Obtener rama actual
+$currentBranch = git rev-parse --abbrev-ref HEAD
+Write-Host "Rama actual: $currentBranch" -ForegroundColor Cyan
+
 # Subir a GitHub
 Write-Host "Subiendo a GitHub..." -ForegroundColor Yellow
-git push origin main
+git push origin $currentBranch
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
