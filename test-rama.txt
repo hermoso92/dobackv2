@@ -1,0 +1,4 @@
+Prueba de subida a la rama testeo-datos-y-reglas
+Fecha: 2025-10-16
+Este es un archivo de prueba para verificar que subir.ps1 funciona correctamente con la detección automática de rama.
+
