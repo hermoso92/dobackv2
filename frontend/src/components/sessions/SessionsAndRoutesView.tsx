@@ -15,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { apiService } from '../../services/api';
+import { geocodingService } from '../../services/geocodingService';
 import { logger } from '../../utils/logger';
 import RouteMapComponent from '../maps/RouteMapComponent';
 import { VehicleSessionSelector } from '../selectors/VehicleSessionSelector';
@@ -37,7 +38,7 @@ interface Session {
 // Exportar función de exportación para uso desde el dashboard
 export const useRouteExportFunction = () => {
     const { exportRouteReport, captureElementEnhanced } = usePDFExport();
-    
+
     return useCallback(async (selectedSession: any, routeData: any) => {
         if (!selectedSession || !routeData) {
             logger.warn('No hay sesión o ruta seleccionada para exportar');
@@ -66,36 +67,12 @@ export const useRouteExportFunction = () => {
                 mapElement.removeAttribute('id');
             }
 
-            // Geocodificar ubicaciones de eventos
-            logger.info('Geocodificando ubicaciones de eventos...');
+            // Preparar eventos con geocodificación usando el servicio backend
+            logger.info('Preparando eventos para exportación con geocodificación...');
             const eventsWithLocations = await Promise.all(
                 routeData.events.map(async (event: any) => {
-                    let location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
-                    
-                    try {
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${event.lat}&lon=${event.lng}`,
-                            { headers: { 'User-Agent': 'DobackSoft/1.0' } }
-                        );
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.address) {
-                                const road = data.address.road || data.address.street || data.address.highway;
-                                const city = data.address.city || data.address.town || data.address.village;
-                                if (road && city) {
-                                    location = `${road}, ${city}`;
-                                } else if (road) {
-                                    location = road;
-                                }
-                            }
-                        }
-                        
-                        // Rate limiting
-                        await new Promise(resolve => setTimeout(resolve, 600));
-                    } catch (error) {
-                        logger.warn('Error geocodificando evento', { error });
-                    }
+                    // Usar el servicio de geocodificación que funciona a través del backend
+                    const location = await geocodingService.reverseGeocode(event.lat, event.lng);
                     
                     return {
                         id: event.id,

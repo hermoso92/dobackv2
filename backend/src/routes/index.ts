@@ -20,6 +20,7 @@ import eventRoutes from './event.routes';
 import geofenceAlertsRoutes from './geofence-alerts';
 import geofencesRoutes from './geofences';
 // import geofencesAPIRoutes from './geofencesAPI';
+import geocodingRoutes from './geocoding';
 import gestorDeEventosRouter from './gestorDeEventos';
 import hotspotsRoutes from './hotspots';
 // import intelligentAlertsRoutes from './intelligentAlerts';
@@ -577,6 +578,9 @@ router.use('/parks', parksRoutes);
 router.use('/zones', zonesRoutes);
 router.use('/geofences', geofencesRoutes);
 router.use('/geofence-alerts', geofenceAlertsRoutes);
+
+// Rutas de geocodificación
+router.use('/geocoding', geocodingRoutes);
 
 // Rutas de KPIs de parque
 router.use('/park-kpi', parkKPIRoutes);
