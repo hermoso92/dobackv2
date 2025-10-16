@@ -26,6 +26,7 @@ interface SpeedViolation {
 interface SpeedFilters {
     rotativoFilter?: 'all' | 'on' | 'off';
     parkFilter?: 'all' | 'in' | 'out';
+    vehicleCategory?: VehicleCategory;
     violationFilter?: 'all' | 'grave' | 'moderada' | 'leve' | 'correcto';
     vehicleIds?: string[];
     startDate?: string;
@@ -33,31 +34,94 @@ interface SpeedFilters {
     minSpeed?: number;
 }
 
-// Categorías DGT (simplificadas para el backend)
+// Categorías DGT según tipo de vehículo
 const DGT_CATEGORIES = {
+    // Turismos y motocicletas (categorías más comunes)
+    'turismo': {
+        urban: 50,
+        interurban: 90,
+        highway: 120,
+        emergency_urban: 80,
+        emergency_interurban: 120,
+        emergency_highway: 140,
+        inPark: 20
+    },
+    // Furgonetas y derivados de turismo hasta 3500kg
+    'furgoneta': {
+        urban: 50,
+        interurban: 90,
+        highway: 120,
+        emergency_urban: 80,
+        emergency_interurban: 120,
+        emergency_highway: 140,
+        inPark: 20
+    },
+    // Camiones rígidos de más de 3500kg
+    'camion_rigido': {
+        urban: 50,
+        interurban: 80,
+        highway: 90,
+        emergency_urban: 80,
+        emergency_interurban: 100,
+        emergency_highway: 110,
+        inPark: 20
+    },
+    // Autobuses de más de 3500kg
+    'autobus': {
+        urban: 50,
+        interurban: 80,
+        highway: 100,
+        emergency_urban: 80,
+        emergency_interurban: 100,
+        emergency_highway: 110,
+        inPark: 20
+    },
+    // Vehículos con remolque
+    'vehiculo_con_remolque': {
+        urban: 50,
+        interurban: 70,
+        highway: 80,
+        emergency_urban: 70,
+        emergency_interurban: 90,
+        emergency_highway: 100,
+        inPark: 20
+    },
+    // Camiones articulados
+    'camion_articulado': {
+        urban: 50,
+        interurban: 80,
+        highway: 90,
+        emergency_urban: 80,
+        emergency_interurban: 100,
+        emergency_highway: 110,
+        inPark: 20
+    },
+    // Vehículos de emergencia (configuración por defecto actual)
     'vehiculo_emergencia': {
         urban: 50,
         interurban: 90,
         highway: 120,
         emergency_urban: 80,
         emergency_interurban: 120,
-        emergency_highway: 140
-    },
-    'default': {
-        urban: 50,
-        interurban: 90,
-        highway: 120,
-        emergency_urban: 80,
-        emergency_interurban: 120,
-        emergency_highway: 140
+        emergency_highway: 140,
+        inPark: 20
     }
 };
 
-// Función para obtener límite de velocidad
-function getSpeedLimit(vehicleId: string, roadType: 'urban' | 'interurban' | 'highway', rotativoOn: boolean, inPark: boolean): number {
-    if (inPark) return 20; // km/h dentro del parque
+// Tipo de categoría de vehículo
+type VehicleCategory = keyof typeof DGT_CATEGORIES;
 
-    const category = DGT_CATEGORIES['vehiculo_emergencia']; // Todos los vehículos DobackSoft son de emergencia
+// Función para obtener límite de velocidad
+function getSpeedLimit(
+    vehicleId: string,
+    roadType: 'urban' | 'interurban' | 'highway',
+    rotativoOn: boolean,
+    inPark: boolean,
+    vehicleCategory: VehicleCategory = 'vehiculo_emergencia'
+): number {
+    const category = DGT_CATEGORIES[vehicleCategory];
+
+    if (inPark) return category.inPark;
 
     if (rotativoOn) {
         return category[`emergency_${roadType}` as keyof typeof category];
@@ -119,6 +183,7 @@ router.get('/violations', async (req, res) => {
         const filters: SpeedFilters = {
             rotativoFilter: req.query.rotativoOn as any || 'all',
             parkFilter: req.query.inPark as any || 'all',
+            vehicleCategory: (req.query.vehicleCategory as VehicleCategory) || 'vehiculo_emergencia',
             violationFilter: req.query.violationType as any || 'all',
             vehicleIds: req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined,
             startDate: from,
@@ -412,12 +477,12 @@ router.get('/statistics', async (req, res) => {
 
         // Obtener eventos de estabilidad con velocidad
         const { prisma } = await import('../config/prisma');
-        const events = await prisma.stability_events.findMany({
+        const events = await prisma.stabilityEvent.findMany({
             where: whereConditions,
             include: {
                 Session: {
                     include: {
-                        Vehicle: true
+                        vehicle: true
                     }
                 }
             }
@@ -504,6 +569,7 @@ router.get('/critical-zones', async (req, res) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const rotativoFilter = req.query.rotativoOn as string || 'all';
         const violationFilter = req.query.violationType as string || 'all';
+        const vehicleCategory = (req.query.vehicleCategory as VehicleCategory) || 'vehiculo_emergencia';
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
         const startDate = req.query.startDate as string;
         const endDate = req.query.endDate as string;
@@ -605,7 +671,8 @@ router.get('/critical-zones', async (req, res) => {
                     gps.session?.vehicleId || '',
                     roadType,
                     gps.rotativoState ? gps.rotativoState > 0 : false,
-                    inPark
+                    inPark,
+                    vehicleCategory
                 );
                 const violationType = classifySpeedViolation(speedVal, speedLimit);
                 const excess = Math.max(0, speedVal - speedLimit);
@@ -801,7 +868,7 @@ router.get('/diagnostics', async (req, res) => {
             if (!limitVal || limitVal <= 0) {
                 const inPark = isInPark(p.latitude as number, p.longitude as number);
                 const rt = getRoadType(speedVal || 0, inPark);
-                limitVal = getSpeedLimit('', rt, false, inPark);
+                limitVal = getSpeedLimit('', rt, false, inPark, 'vehiculo_emergencia');
                 source = 'fallback';
             }
             samples.push({ ts: p.timestamp.toISOString(), lat: p.latitude as number, lon: p.longitude as number, speed: speedVal, limit: limitVal, excess: speedVal - limitVal, source });
@@ -882,7 +949,7 @@ router.get('/quick-sample', async (req, res) => {
             if (!limitVal || limitVal <= 0) {
                 const inPark = isInPark(p.latitude as number, p.longitude as number);
                 const rt = getRoadType(speedVal || 0, inPark);
-                limitVal = getSpeedLimit('', rt, false, inPark);
+                limitVal = getSpeedLimit('', rt, false, inPark, 'vehiculo_emergencia');
                 source = 'fallback';
             }
             out.push({ ts: new Date(p.timestamp).toISOString(), lat: p.latitude as number, lon: p.longitude as number, speed: Math.round(speedVal * 10) / 10, limit: limitVal, excess: Math.round((speedVal - limitVal) * 10) / 10, source, sid: p.sessionId });

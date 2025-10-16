@@ -46,7 +46,8 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
 }) => {
     // Estados de filtros
     const [rotativoFilter, setRotativoFilter] = useState<'all' | 'on' | 'off'>('all');
-    const [parkFilter, setParkFilter] = useState<'all' | 'in' | 'out'>('all');
+    const [parkFilter] = useState<'all' | 'in' | 'out'>('all'); // Mantenido para compatibilidad con API
+    const [vehicleCategory, setVehicleCategory] = useState<string>('vehiculo_emergencia');
     const [violationFilter, setViolationFilter] = useState<'all' | 'grave' | 'moderado' | 'leve'>('all');
     const [roadTypeFilter, setRoadTypeFilter] = useState<'all' | 'urban' | 'interurban' | 'highway'>('all');
 
@@ -74,7 +75,8 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                 rotativoOn: rotativoFilter,
                 violationType: violationFilter,
                 roadType: roadTypeFilter,
-                inPark: parkFilter
+                inPark: parkFilter,
+                vehicleCategory: vehicleCategory
             });
 
             if (vehicleIds && vehicleIds.length > 0) {
@@ -109,7 +111,7 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
         } finally {
             setLoading(false);
         }
-    }, [organizationId, vehicleIds, startDate, endDate, rotativoFilter, violationFilter, roadTypeFilter, parkFilter]);
+    }, [organizationId, vehicleIds, startDate, endDate, rotativoFilter, violationFilter, roadTypeFilter, parkFilter, vehicleCategory]);
 
     useEffect(() => {
         loadData();
@@ -223,24 +225,26 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                         </div>
                     </div>
 
-                    {/* Filtro de ubicación */}
+                    {/* Selector de tipo de vehículo */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Ubicación
+                            Configuración de Límites
                         </label>
-                        <div className="flex gap-2">
-                            {(['all', 'in', 'out'] as const).map((filter) => (
-                                <button
-                                    key={filter}
-                                    onClick={() => setParkFilter(filter)}
-                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex-1 ${parkFilter === filter
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                        }`}
-                                >
-                                    {filter === 'all' ? 'Todos' : filter === 'in' ? 'En Parque' : 'Fuera'}
-                                </button>
-                            ))}
+                        <select
+                            value={vehicleCategory}
+                            onChange={(e) => setVehicleCategory(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="vehiculo_emergencia">🚒 Vehículo de Emergencia</option>
+                            <option value="turismo">🚗 Turismo</option>
+                            <option value="furgoneta">🚐 Furgoneta (&le;3500kg)</option>
+                            <option value="camion_rigido">🚚 Camión Rígido (&gt;3500kg)</option>
+                            <option value="autobus">🚌 Autobús</option>
+                            <option value="vehiculo_con_remolque">🚛 Vehículo + Remolque</option>
+                            <option value="camion_articulado">🚛 Camión Articulado</option>
+                        </select>
+                        <div className="text-xs text-slate-500 mt-1">
+                            Aplica límites DGT según tipo
                         </div>
                     </div>
 
