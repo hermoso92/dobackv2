@@ -1,4 +1,5 @@
 import {
+    DocumentArrowDownIcon,
     FunnelIcon,
     MapIcon
 } from '@heroicons/react/24/outline';
@@ -15,7 +16,9 @@ import {
 } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { HOTSPOT_ENDPOINTS, MAP_CONFIG } from '../../config/api';
+import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
+import { EnhancedKPIData, EnhancedTabExportData } from '../../services/enhancedPDFExportService';
 import { logger } from '../../utils/logger';
 import ClusterPopup from '../ClusterPopup';
 import EventDetailsErrorBoundary from '../EventDetailsErrorBoundary';
@@ -71,6 +74,9 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
     // Estados para modal de detalles
     const [selectedCluster, setSelectedCluster] = useState<any | null>(null);
     const [showEventDetails, setShowEventDetails] = useState(false);
+
+    // Hook para exportación PDF
+    const { exportEnhancedTabToPDF, isExporting } = usePDFExport();
 
     // Cargar datos
     const loadData = useCallback(async () => {
@@ -204,6 +210,96 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
         setSelectedCluster(null);
     };
 
+    // Exportar reporte detallado a PDF
+    const handleExportPDF = useCallback(async () => {
+        try {
+            const totalEvents = ranking.reduce((sum, spot) => sum + (spot.totalEvents || 0), 0);
+            const graveSpots = ranking.filter(spot => spot.grave > 0).length;
+
+            const kpis: EnhancedKPIData[] = [
+                {
+                    title: 'Zonas Críticas',
+                    value: ranking.length,
+                    icon: '🗺️',
+                    category: ranking.length > 10 ? 'warning' : 'success',
+                    description: 'Número total de zonas identificadas como puntos negros. Áreas con alta concentración de eventos de inestabilidad que requieren atención especial.'
+                },
+                {
+                    title: 'Total de Eventos',
+                    value: totalEvents,
+                    icon: '⚠️',
+                    category: totalEvents > 100 ? 'danger' : 'success',
+                    description: 'Suma total de eventos de inestabilidad registrados en todas las zonas críticas. Indica el nivel general de riesgo en la red viaria.'
+                },
+                {
+                    title: 'Zonas con Eventos Graves',
+                    value: graveSpots,
+                    icon: '🔴',
+                    category: 'danger',
+                    description: 'Zonas que registraron al menos un evento de alta severidad. Requieren medidas correctivas urgentes o restricciones operativas.'
+                },
+                {
+                    title: 'Eventos por Zona',
+                    value: ranking.length > 0 ? (totalEvents / ranking.length).toFixed(1) : 0,
+                    icon: '📊',
+                    category: 'info',
+                    description: 'Promedio de eventos por zona crítica. Indica la concentración de incidencias en cada punto identificado.'
+                }
+            ];
+
+            const blackSpotsDetails = ranking.slice(0, 10).map(spot => ({
+                rank: spot.rank,
+                location: spot.location || `${spot.lat?.toFixed(4)}, ${spot.lng?.toFixed(4)}`,
+                totalEvents: spot.totalEvents,
+                grave: spot.grave || 0,
+                moderada: spot.moderada || 0,
+                leve: spot.leve || 0,
+                frequency: spot.totalEvents,
+                dominantSeverity: spot.dominantSeverity || 'leve',
+                coordinates: { lat: spot.lat, lng: spot.lng }
+            }));
+
+            const exportData: EnhancedTabExportData = {
+                tabName: 'Puntos Negros - Zonas Críticas',
+                tabIndex: 1,
+                subtitle: 'Análisis de Concentración de Incidencias',
+                description: 'Identificación y análisis de zonas con alta concentración de eventos de inestabilidad. Estos puntos negros representan áreas de riesgo que requieren atención especial para prevención de accidentes.',
+                kpis,
+                blackSpots: blackSpotsDetails,
+                sections: [
+                    {
+                        title: 'Metodología de Detección',
+                        type: 'text',
+                        icon: '🔬',
+                        content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geográfica (clustering). Se consideran zonas críticas aquellas con frecuencia mínima de 2 eventos y se clasifican según la severidad dominante de los incidentes registrados.'
+                    },
+                    {
+                        title: 'Criterios de Clasificación',
+                        type: 'list',
+                        icon: '⚖️',
+                        content: [
+                            '🔴 Severidad Grave: Índice de estabilidad 0-20% - Riesgo alto',
+                            '🟠 Severidad Moderada: Índice 20-35% - Riesgo medio',
+                            '🟡 Severidad Leve: Índice 35-50% - Riesgo bajo'
+                        ]
+                    },
+                    {
+                        title: 'Análisis de Patrones',
+                        type: 'text',
+                        icon: '📈',
+                        content: `Se identificaron ${ranking.length} zonas críticas con ${totalEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registró ${ranking[0]?.totalEvents || 0} eventos, indicando un patrón recurrente que requiere investigación y posibles medidas correctivas.`
+                    }
+                ]
+            };
+
+            await exportEnhancedTabToPDF(exportData);
+            logger.info('PDF de puntos negros exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando PDF de puntos negros', { error });
+            alert('Error al exportar PDF. Por favor, inténtelo de nuevo.');
+        }
+    }, [ranking, exportEnhancedTabToPDF]);
+
     // Estadísticas
     const stats = useMemo(() => {
         const totalClusters = apiTotals?.totalClusters ?? clusters.length;
@@ -244,9 +340,19 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
         <div className="space-y-6 p-6">
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <div className="flex items-center gap-2 mb-4">
-                    <FunnelIcon className="h-5 w-5 text-slate-600" />
-                    <h3 className="text-lg font-semibold text-slate-800">Filtros de Análisis</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <FunnelIcon className="h-5 w-5 text-slate-600" />
+                        <h3 className="text-lg font-semibold text-slate-800">Filtros de Análisis</h3>
+                    </div>
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting || ranking.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                        <DocumentArrowDownIcon className="h-5 w-5" />
+                        {isExporting ? 'Generando...' : 'Exportar Reporte Detallado'}
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

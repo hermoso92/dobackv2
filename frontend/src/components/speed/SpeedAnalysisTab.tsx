@@ -1,4 +1,5 @@
 import {
+    DocumentArrowDownIcon,
     ExclamationTriangleIcon,
     FunnelIcon,
     MapIcon
@@ -16,7 +17,9 @@ import {
 } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { MAP_CONFIG, SPEED_ENDPOINTS } from '../../config/api';
+import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
+import { EnhancedKPIData, EnhancedTabExportData } from '../../services/enhancedPDFExportService';
 import { SpeedViolation } from '../../types/deviceControl';
 import { logger } from '../../utils/logger';
 import LocationDisplay from '../LocationDisplay';
@@ -59,6 +62,9 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     const [mapCenter, setMapCenter] = useState<[number, number]>([40.5149, -3.7578]);
     const [mapZoom, setMapZoom] = useState(12);
     const mapRef = useRef<L.Map | null>(null);
+
+    // Hook para exportación PDF
+    const { exportEnhancedTabToPDF, isExporting } = usePDFExport();
 
     // Cargar datos
     const loadData = useCallback(async () => {
@@ -147,6 +153,126 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
         setMapZoom(15);
     };
 
+    // Exportar reporte detallado a PDF
+    const handleExportPDF = useCallback(async () => {
+        try {
+            const graveViolations = violations.filter(v => v.violationType === 'grave');
+            const moderadoViolations = violations.filter(v => v.violationType === 'moderado');
+            const leveViolations = violations.filter(v => v.violationType === 'leve');
+            const avgExcess = violations.length > 0
+                ? violations.reduce((sum, v) => sum + (v.speed - v.speedLimit), 0) / violations.length
+                : 0;
+
+            const kpis: EnhancedKPIData[] = [
+                {
+                    title: 'Total Excesos',
+                    value: violations.length,
+                    icon: '🚗',
+                    category: violations.length > 20 ? 'danger' : 'success',
+                    description: 'Total de excesos de velocidad detectados durante el período. Incluye todas las clasificaciones según normativa DGT para vehículos de emergencia.'
+                },
+                {
+                    title: 'Excesos Graves',
+                    value: graveViolations.length,
+                    icon: '🔴',
+                    category: 'danger',
+                    description: 'Excesos superiores a 20 km/h sobre el límite permitido. Requieren revisión inmediata y pueden indicar necesidad de formación adicional.'
+                },
+                {
+                    title: 'Excesos Moderados',
+                    value: moderadoViolations.length,
+                    icon: '🟠',
+                    category: 'warning',
+                    description: 'Excesos entre 10-20 km/h. Situaciones de riesgo medio que deben monitorearse para evitar recurrencia.'
+                },
+                {
+                    title: 'Excesos Leves',
+                    value: leveViolations.length,
+                    icon: '🟡',
+                    category: 'success',
+                    description: 'Excesos de 1-10 km/h. Variaciones menores que pueden considerarse normales en contexto de emergencias.'
+                },
+                {
+                    title: 'Exceso Promedio',
+                    value: avgExcess.toFixed(2),
+                    unit: 'km/h',
+                    icon: '⚡',
+                    category: avgExcess > 15 ? 'warning' : 'success',
+                    description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de límites.'
+                },
+                {
+                    title: 'Con Rotativo ON',
+                    value: violations.filter(v => v.rotativoOn).length,
+                    icon: '🚨',
+                    category: 'info',
+                    description: 'Excesos ocurridos durante emergencias con rotativo encendido. Límites más permisivos según normativa de vehículos prioritarios.'
+                }
+            ];
+
+            const violationsData = violations.slice(0, 15).map(v => ({
+                timestamp: new Date(v.timestamp).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                vehicleName: v.vehicleName || 'N/A',
+                location: `${v.lat?.toFixed(4)}, ${v.lng?.toFixed(4)}`,
+                speed: v.speed,
+                speedLimit: v.speedLimit,
+                excess: parseFloat((v.speed - v.speedLimit).toFixed(2)),
+                violationType: v.violationType,
+                rotativoOn: v.rotativoOn,
+                roadType: v.roadType,
+                coordinates: { lat: v.lat, lng: v.lng }
+            }));
+
+            const exportData: EnhancedTabExportData = {
+                tabName: 'Análisis de Velocidad',
+                tabIndex: 2,
+                subtitle: 'Control de Excesos de Velocidad según Normativa DGT',
+                description: 'Análisis detallado de excesos de velocidad detectados en la flota, clasificados según normativa DGT para vehículos de emergencia. Incluye límites diferenciados por tipo de vía y estado del rotativo.',
+                kpis,
+                speedViolations: violationsData,
+                sections: [
+                    {
+                        title: 'Límites de Velocidad Aplicados',
+                        type: 'list',
+                        icon: '📏',
+                        content: [
+                            '🏘️ Urbana: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
+                            '🛣️ Interurbana: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
+                            '🏎️ Autopista: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
+                            '🏞️ Dentro del Parque: 20 km/h (límite fijo para todos)'
+                        ]
+                    },
+                    {
+                        title: 'Clasificación de Severidad',
+                        type: 'list',
+                        icon: '⚠️',
+                        content: [
+                            '🔴 Grave: Exceso superior a 20 km/h - Requiere acción inmediata',
+                            '🟠 Moderado: Exceso entre 10-20 km/h - Requiere monitoreo',
+                            '🟡 Leve: Exceso entre 1-10 km/h - Variación aceptable'
+                        ]
+                    },
+                    {
+                        title: 'Análisis de Resultados',
+                        type: 'text',
+                        icon: '📊',
+                        content: `Se detectaron ${violations.length} excesos de velocidad en el período analizado. ${graveViolations.length} fueron clasificados como graves (>20 km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${violations.filter(v => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
+                    }
+                ]
+            };
+
+            await exportEnhancedTabToPDF(exportData);
+            logger.info('PDF de velocidad exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando PDF de velocidad', { error });
+            alert('Error al exportar PDF. Por favor, inténtelo de nuevo.');
+        }
+    }, [violations, exportEnhancedTabToPDF]);
+
     // Estadísticas
     const stats = useMemo(() => {
         const total = violations.length;
@@ -194,9 +320,19 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
         <div className="space-y-6 p-6">
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <div className="flex items-center gap-2 mb-4">
-                    <FunnelIcon className="h-5 w-5 text-slate-600" />
-                    <h3 className="text-lg font-semibold text-slate-800">Filtros de Análisis de Velocidad</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <FunnelIcon className="h-5 w-5 text-slate-600" />
+                        <h3 className="text-lg font-semibold text-slate-800">Filtros de Análisis de Velocidad</h3>
+                    </div>
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting || violations.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                        <DocumentArrowDownIcon className="h-5 w-5" />
+                        {isExporting ? 'Generando...' : 'Exportar Reporte Detallado'}
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
