@@ -169,11 +169,66 @@ class EnhancedPDFExportService {
     }
 
     /**
+     * Geocodifica ubicaciones antes de generar el PDF
+     */
+    private async geocodeLocations(items: any[]): Promise<any[]> {
+        const geocodedItems = [];
+        
+        for (const item of items) {
+            let geocodedLocation = item.location;
+            
+            // Si la ubicación es solo coordenadas, geocodificar
+            if (item.coordinates && /^-?\d+\.?\d*, -?\d+\.?\d*$/.test(item.location)) {
+                try {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.coordinates.lat}&lon=${item.coordinates.lng}`,
+                        {
+                            headers: { 'User-Agent': 'DobackSoft/1.0' }
+                        }
+                    );
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.address) {
+                            const streetName = data.address.road || data.address.street || data.address.highway || '';
+                            const city = data.address.city || data.address.town || '';
+                            geocodedLocation = streetName && city ? `${streetName}, ${city}` : (streetName || item.location);
+                        }
+                    }
+                    
+                    // Rate limiting: esperar 600ms entre peticiones
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                } catch (error) {
+                    logger.warn('Error geocodificando para PDF', { error });
+                }
+            }
+            
+            geocodedItems.push({
+                ...item,
+                location: geocodedLocation
+            });
+        }
+        
+        return geocodedItems;
+    }
+
+    /**
      * Genera PDF mejorado con diseño profesional
      */
     async generateEnhancedTabPDF(exportData: EnhancedTabExportData): Promise<void> {
         try {
             logger.info('Generando PDF mejorado', { tabName: exportData.tabName });
+
+            // GEOCODIFICAR ubicaciones antes de generar PDF
+            if (exportData.speedViolations && exportData.speedViolations.length > 0) {
+                logger.info('Geocodificando ubicaciones de excesos de velocidad...');
+                exportData.speedViolations = await this.geocodeLocations(exportData.speedViolations);
+            }
+
+            if (exportData.blackSpots && exportData.blackSpots.length > 0) {
+                logger.info('Geocodificando ubicaciones de puntos negros...');
+                exportData.blackSpots = await this.geocodeLocations(exportData.blackSpots);
+            }
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -285,13 +340,13 @@ class EnhancedPDFExportService {
         pdf.setFillColor(...this.colors.primary);
         pdf.rect(0, 0, pageWidth, 60, 'F');
 
-            // Logo y título principal
-            pdf.setFontSize(32);
-            pdf.setTextColor(255, 255, 255);
-            pdf.text('Doback Soft', pageWidth / 2, yPosition + 15, { align: 'center' });
-            
-            pdf.setFontSize(14);
-            pdf.text('Sistema de Analisis de Flota', pageWidth / 2, yPosition + 25, { align: 'center' });
+        // Logo y título principal
+        pdf.setFontSize(32);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('Doback Soft', pageWidth / 2, yPosition + 15, { align: 'center' });
+
+        pdf.setFontSize(14);
+        pdf.text('Sistema de Analisis de Flota', pageWidth / 2, yPosition + 25, { align: 'center' });
 
         yPosition += 45;
 
@@ -325,11 +380,11 @@ class EnhancedPDFExportService {
         const now = new Date();
         pdf.setFillColor(...this.colors.light);
         pdf.roundedRect(pageWidth / 2 - 45, yPosition, 90, 15, 3, 3, 'F');
-        
+
         pdf.setFontSize(10);
         pdf.setTextColor(...this.colors.secondary);
         pdf.text('Fecha de Generacion', pageWidth / 2, yPosition + 6, { align: 'center' });
-        
+
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.textSecondary);
         pdf.text(
@@ -345,11 +400,11 @@ class EnhancedPDFExportService {
         if (exportData.filters && (exportData.filters.vehicle || exportData.filters.dateRange || exportData.filters.company)) {
             pdf.setFillColor(239, 246, 255); // Azul claro
             pdf.roundedRect(15, yPosition, pageWidth - 30, 35, 3, 3, 'F');
-            
+
             pdf.setFontSize(11);
             pdf.setTextColor(...this.colors.primary);
             pdf.text('FILTROS APLICADOS', 20, yPosition + 7);
-            
+
             pdf.setFontSize(9);
             pdf.setTextColor(...this.colors.text);
             let filterY = yPosition + 14;
@@ -387,7 +442,7 @@ class EnhancedPDFExportService {
         pdf.setFontSize(18);
         pdf.setTextColor(...this.colors.text);
         pdf.text('INDICE DE CONTENIDOS', margin, yPosition);
-        
+
         yPosition += 12;
         pdf.setDrawColor(...this.colors.border);
         pdf.line(margin, yPosition, pdf.internal.pageSize.getWidth() - margin, yPosition);
@@ -456,19 +511,19 @@ class EnhancedPDFExportService {
         // Caja de resumen ejecutivo
         pdf.setFillColor(254, 249, 235); // Amarillo suave
         pdf.roundedRect(margin, yPosition, contentWidth, 30, 3, 3, 'F');
-        
+
         pdf.setFontSize(12);
         pdf.setTextColor(...this.colors.warning);
         pdf.text('RESUMEN EJECUTIVO', margin + 5, yPosition + 7);
-        
+
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
-        
+
         // Generar resumen basado en los datos
         const summary = this.generateExecutiveSummary(exportData);
         const summaryLines = pdf.splitTextToSize(summary, contentWidth - 10);
         pdf.text(summaryLines, margin + 5, yPosition + 14);
-        
+
         yPosition += 35;
         return yPosition;
     }
@@ -533,9 +588,9 @@ class EnhancedPDFExportService {
             // Indicador visual de categoría (cuadrado de color)
             if (kpi.category) {
                 const catColor = kpi.category === 'success' ? this.colors.success :
-                                kpi.category === 'warning' ? this.colors.warning :
-                                kpi.category === 'danger' ? this.colors.danger :
-                                this.colors.info;
+                    kpi.category === 'warning' ? this.colors.warning :
+                        kpi.category === 'danger' ? this.colors.danger :
+                            this.colors.info;
                 pdf.setFillColor(...catColor);
                 pdf.circle(margin + 8, yPosition + 5, 2, 'F');
             }
@@ -602,23 +657,25 @@ class EnhancedPDFExportService {
         // Caja de estadísticas
         pdf.setFillColor(254, 242, 242); // Rojo suave
         pdf.roundedRect(margin, yPosition, contentWidth, 25, 2, 2, 'F');
-        
+
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
         pdf.text(`Total de Excesos Detectados: ${violations.length}`, margin + 5, yPosition + 6);
         pdf.text(`GRAVES: ${graveCount}  |  MODERADOS: ${moderadoCount}  |  LEVES: ${leveCount}`, margin + 5, yPosition + 12);
         pdf.text(`Exceso Promedio: ${avgExcess.toFixed(2)} km/h`, margin + 5, yPosition + 18);
         pdf.text(`Con Rotativo Activo: ${violations.filter(v => v.rotativoOn).length}`, margin + 5, yPosition + 24);
-        
+
         yPosition += 30;
 
-        // Tabla de excesos (top 10)
-        const topViolations = violations.slice(0, 10);
-
+        // Tabla de excesos (top 20 mejorado)
+        const topViolations = violations.slice(0, 20);
+        
+        pdf.setFillColor(...this.colors.info);
+        pdf.rect(margin, yPosition, contentWidth, 7, 'F');
         pdf.setFontSize(11);
-        pdf.setTextColor(...this.colors.text);
-        pdf.text('Top 10 Excesos de Velocidad', margin, yPosition);
-        yPosition += 7;
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('DETALLE DE EXCESOS DE VELOCIDAD (TOP 20)', margin + 3, yPosition + 5);
+        yPosition += 10;
 
         // Headers de tabla
         const colWidths = [20, 50, 25, 25, 30];
@@ -684,16 +741,83 @@ class EnhancedPDFExportService {
             yPosition += 7;
         });
 
-        if (violations.length > 10) {
+        if (violations.length > 20) {
             yPosition += 3;
             pdf.setFontSize(8);
             pdf.setTextColor(...this.colors.textSecondary);
-            pdf.text(`... y ${violations.length - 10} excesos más`, margin, yPosition);
+            pdf.text(`... y ${violations.length - 20} excesos adicionales no mostrados en este reporte`, margin, yPosition);
             yPosition += 5;
         }
 
+        // NUEVA SECCIÓN: Desglose por vehículo
+        checkPageBreak(50);
+        yPosition += 5;
+        
+        pdf.setFillColor(...this.colors.accent);
+        pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+        pdf.setFontSize(11);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('ANALISIS POR VEHICULO', margin + 3, yPosition + 5);
+        yPosition += 10;
+
+        // Agrupar excesos por vehículo
+        const vehicleStats = this.groupViolationsByVehicle(violations);
+        const topVehicles = vehicleStats.slice(0, 5);
+
+        topVehicles.forEach((vehicleStat, index) => {
+            checkPageBreak(15);
+            
+            pdf.setFillColor(...this.colors.light);
+            pdf.roundedRect(margin, yPosition, contentWidth, 12, 2, 2, 'F');
+            
+            pdf.setFontSize(9);
+            pdf.setTextColor(...this.colors.text);
+            pdf.text(`${index + 1}. ${vehicleStat.vehicleName}`, margin + 3, yPosition + 5);
+            
+            pdf.setFontSize(8);
+            pdf.setTextColor(...this.colors.secondary);
+            pdf.text(
+                `Total: ${vehicleStat.total} | Graves: ${vehicleStat.grave} | Promedio: ${vehicleStat.avgExcess} km/h`,
+                margin + 3,
+                yPosition + 10
+            );
+            
+            yPosition += 14;
+        });
+
         yPosition += 10;
         return yPosition;
+    }
+
+    // Helper: Agrupar violaciones por vehículo
+    private groupViolationsByVehicle(violations: SpeedViolationDetail[]): any[] {
+        const grouped: Record<string, any> = {};
+        
+        violations.forEach(v => {
+            if (!grouped[v.vehicleName]) {
+                grouped[v.vehicleName] = {
+                    vehicleName: v.vehicleName,
+                    total: 0,
+                    grave: 0,
+                    moderado: 0,
+                    leve: 0,
+                    totalExcess: 0
+                };
+            }
+            
+            grouped[v.vehicleName].total++;
+            if (v.violationType === 'grave') grouped[v.vehicleName].grave++;
+            else if (v.violationType === 'moderado') grouped[v.vehicleName].moderado++;
+            else if (v.violationType === 'leve') grouped[v.vehicleName].leve++;
+            grouped[v.vehicleName].totalExcess += v.excess;
+        });
+        
+        return Object.values(grouped)
+            .map(v => ({
+                ...v,
+                avgExcess: (v.totalExcess / v.total).toFixed(2)
+            }))
+            .sort((a, b) => b.total - a.total);
     }
 
     private renderBlackSpotsSection(
@@ -720,17 +844,25 @@ class EnhancedPDFExportService {
 
         pdf.setFillColor(255, 243, 224); // Naranja suave
         pdf.roundedRect(margin, yPosition, contentWidth, 20, 2, 2, 'F');
-        
+
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
         pdf.text(`Zonas Criticas Identificadas: ${blackSpots.length}`, margin + 5, yPosition + 6);
         pdf.text(`Total de Eventos: ${totalEvents}`, margin + 5, yPosition + 12);
         pdf.text(`GRAVES: ${totalGrave}  |  MODERADOS: ${totalModerada}  |  LEVES: ${totalLeve}`, margin + 5, yPosition + 18);
-        
+
         yPosition += 25;
 
+        // Título de tabla
+        pdf.setFillColor(...this.colors.info);
+        pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+        pdf.setFontSize(11);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('RANKING DETALLADO DE ZONAS CRITICAS (TOP 15)', margin + 3, yPosition + 5);
+        yPosition += 10;
+
         // Renderizar cada punto negro
-        blackSpots.slice(0, 10).forEach((spot) => {
+        blackSpots.slice(0, 15).forEach((spot) => {
             checkPageBreak(25);
 
             // Caja del punto negro
@@ -740,20 +872,20 @@ class EnhancedPDFExportService {
             let medalColor: [number, number, number] = this.colors.textSecondary;
             let rankText = `#${spot.rank}`;
             let rankBgColor: [number, number, number] = this.colors.light;
-            
-            if (spot.rank === 1) { 
+
+            if (spot.rank === 1) {
                 rankText = '#1';
-                medalColor = [255, 215, 0]; 
+                medalColor = [255, 215, 0];
                 rankBgColor = [255, 251, 230];
             }
-            else if (spot.rank === 2) { 
+            else if (spot.rank === 2) {
                 rankText = '#2';
-                medalColor = [192, 192, 192]; 
+                medalColor = [192, 192, 192];
                 rankBgColor = [248, 248, 248];
             }
-            else if (spot.rank === 3) { 
+            else if (spot.rank === 3) {
                 rankText = '#3';
-                medalColor = [205, 127, 50]; 
+                medalColor = [205, 127, 50];
                 rankBgColor = [255, 245, 235];
             }
 
@@ -840,7 +972,7 @@ class EnhancedPDFExportService {
                     pdf.setTextColor(...this.colors.text);
                     pdf.text('LEYENDA:', margin, yPosition);
                     yPosition += 5;
-                    
+
                     mapData.legend.forEach(item => {
                         pdf.setFontSize(7);
                         pdf.setTextColor(...this.colors.textSecondary);
@@ -1095,7 +1227,7 @@ class EnhancedPDFExportService {
         const dateStr = now.toISOString().split('T')[0];
         const timeStr = (now.toTimeString().split(' ')[0] || '00-00-00').replace(/:/g, '-');
         const tabName = exportData.tabName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
-        
+
         return `DobackSoft_${tabName}_${dateStr}_${timeStr}.pdf`;
     }
 }

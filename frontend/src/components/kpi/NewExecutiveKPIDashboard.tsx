@@ -668,8 +668,8 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         }
                     ];
 
-                    // Preparar datos de violaciones para la tabla
-                    const violationsData = speedViolations.slice(0, 15).map((v: any) => ({
+                    // Preparar datos de violaciones para la tabla (ampliado a 30 para más detalle)
+                    const violationsData = speedViolations.slice(0, 30).map((v: any) => ({
                         timestamp: new Date(v.timestamp).toLocaleString('es-ES', {
                             day: '2-digit',
                             month: '2-digit',

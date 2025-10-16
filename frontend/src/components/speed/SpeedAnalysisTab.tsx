@@ -203,7 +203,7 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                 }
             ];
 
-            const violationsData = violations.slice(0, 15).map(v => ({
+            const violationsData = violations.slice(0, 30).map(v => ({
                 timestamp: new Date(v.timestamp).toLocaleString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',

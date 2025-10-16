@@ -243,7 +243,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                 }
             ];
 
-            const blackSpotsDetails = ranking.slice(0, 10).map(spot => ({
+            const blackSpotsDetails = ranking.slice(0, 15).map(spot => ({
                 rank: spot.rank,
                 location: spot.location || `${spot.lat?.toFixed(4)}, ${spot.lng?.toFixed(4)}`,
                 totalEvents: spot.totalEvents,
