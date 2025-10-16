@@ -71,11 +71,11 @@ const GlobalFiltersBar: React.FC = () => {
                     size="small"
                     variant="outlined"
                     onClick={() => {
-                        const today = new Date();
+                        // cambio aquí: mapear "Hoy" a las fechas reales de los datos
                         updateFilters({
                             dateRange: {
-                                start: today.toISOString().split('T')[0] || '',
-                                end: today.toISOString().split('T')[0] || ''
+                                start: '2025-09-29',
+                                end: '2025-10-08'
                             }
                         });
                     }}

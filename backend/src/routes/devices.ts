@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Interface para el estado de archivos de un vehículo
 interface VehicleFileStatus {
@@ -36,11 +34,26 @@ interface DeviceControlResponse {
  */
 router.get('/status', async (req, res) => {
     try {
-        const organizationId = (req as any).user?.organizationId || 'default';
+        // Intentar obtener organizationId de múltiples fuentes
+        const organizationId = req.query.organizationId as string ||
+            (req as any).user?.organizationId ||
+            (req as any).orgId;
 
-        logger.info('Obteniendo estado de dispositivos', { organizationId });
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Se requiere organizationId'
+            });
+        }
+
+        logger.info('Obteniendo estado de dispositivos', {
+            organizationId,
+            fromQuery: req.query.organizationId,
+            fromUser: (req as any).user?.organizationId
+        });
 
         // Obtener todos los vehículos de la organización
+        const { prisma } = await import('../config/prisma');
         const vehicles = await prisma.vehicle.findMany({
             where: { organizationId },
             select: {
@@ -61,47 +74,28 @@ router.get('/status', async (req, res) => {
         for (const vehicle of vehicles) {
             const vehicleId = vehicle.id;
 
-            // Obtener la última fecha de subida de cada tipo de archivo
-            const lastUploads = await Promise.all([
-                // Estabilidad
-                prisma.session.findFirst({
-                    where: {
-                        vehicleId,
-                        type: 'estabilidad'
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    select: { createdAt: true }
-                }),
-                // CAN
-                prisma.session.findFirst({
-                    where: {
-                        vehicleId,
-                        type: 'can'
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    select: { createdAt: true }
-                }),
-                // GPS
-                prisma.session.findFirst({
-                    where: {
-                        vehicleId,
-                        type: 'gps'
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    select: { createdAt: true }
-                }),
-                // Rotativo
-                prisma.session.findFirst({
-                    where: {
-                        vehicleId,
-                        type: 'rotativo'
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    select: { createdAt: true }
-                })
+            // Obtener sesiones del vehículo y verificar qué tipos de mediciones tienen
+            const lastSession = await prisma.session.findFirst({
+                where: { vehicleId },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    createdAt: true,
+                    id: true
+                }
+            });
+
+            // Verificar si tiene mediciones de cada tipo
+            const [hasEstabilidad, hasCan, hasGps, hasRotativo] = await Promise.all([
+                prisma.stabilityMeasurement.count({ where: { sessionId: lastSession?.id } }),
+                prisma.canMeasurement.count({ where: { sessionId: lastSession?.id } }),
+                prisma.gpsMeasurement.count({ where: { sessionId: lastSession?.id } }),
+                prisma.rotativoMeasurement.count({ where: { sessionId: lastSession?.id } })
             ]);
 
-            const [estabilidad, can, gps, rotativo] = lastUploads;
+            const estabilidad = hasEstabilidad > 0 ? lastSession : null;
+            const can = hasCan > 0 ? lastSession : null;
+            const gps = hasGps > 0 ? lastSession : null;
+            const rotativo = hasRotativo > 0 ? lastSession : null;
 
             // Determinar el estado de cada archivo
             const filesStatus = {
@@ -200,11 +194,21 @@ router.get('/status', async (req, res) => {
 router.get('/status/:vehicleId', async (req, res) => {
     try {
         const { vehicleId } = req.params;
-        const organizationId = (req as any).user?.organizationId || 'default';
+        const organizationId = req.query.organizationId as string ||
+            (req as any).user?.organizationId ||
+            (req as any).orgId;
+
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Se requiere organizationId'
+            });
+        }
 
         logger.info('Obteniendo estado de vehículo específico', { vehicleId, organizationId });
 
         // Verificar que el vehículo pertenece a la organización
+        const { prisma } = await import('../config/prisma');
         const vehicle = await prisma.vehicle.findFirst({
             where: {
                 id: vehicleId,
@@ -236,8 +240,7 @@ router.get('/status/:vehicleId', async (req, res) => {
                 id: true,
                 type: true,
                 createdAt: true,
-                sessionNumber: true,
-                measurementsCount: true
+                sessionNumber: true
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -250,8 +253,7 @@ router.get('/status/:vehicleId', async (req, res) => {
             acc[upload.type].push({
                 id: upload.id,
                 sessionNumber: upload.sessionNumber,
-                createdAt: upload.createdAt,
-                measurementsCount: upload.measurementsCount
+                createdAt: upload.createdAt
             });
             return acc;
         }, {} as Record<string, any[]>);

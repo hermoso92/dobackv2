@@ -53,6 +53,7 @@ export interface KPIFilters {
     from?: string;  // YYYY-MM-DD
     to?: string;    // YYYY-MM-DD
     vehicleIds?: string[];
+    force?: boolean; // fuerza recálculo en servidor (invalida cache)
 }
 
 class KPIService {
@@ -62,12 +63,17 @@ class KPIService {
     async getStatesSummary(filters?: KPIFilters): Promise<StatesSummary> {
         try {
             const params = this.buildQueryParams(filters);
-            const response = await apiService.get<{ success: boolean; data: StatesSummary }>(
+            const response = await apiService.get<StatesSummary>(
                 `/api/kpis/states${params}`
             );
 
-            if (response.success && response.data) {
-                return response.data;
+            if ((response as any).success !== undefined) {
+                // Soportar ApiResponse envolviendo data
+                const resp = response as unknown as { success: boolean; data: StatesSummary };
+                if (resp.success && resp.data) return resp.data;
+            } else {
+                // Soportar retorno directo de StatesSummary
+                return response as unknown as StatesSummary;
             }
 
             throw new Error('Invalid response from server');
@@ -83,12 +89,15 @@ class KPIService {
     async getActivityMetrics(filters?: KPIFilters): Promise<ActivityMetrics> {
         try {
             const params = this.buildQueryParams(filters);
-            const response = await apiService.get<{ success: boolean; data: ActivityMetrics }>(
+            const response = await apiService.get<ActivityMetrics>(
                 `/api/kpis/activity${params}`
             );
 
-            if (response.success && response.data) {
-                return response.data;
+            if ((response as any).success !== undefined) {
+                const resp = response as unknown as { success: boolean; data: ActivityMetrics };
+                if (resp.success && resp.data) return resp.data;
+            } else {
+                return response as unknown as ActivityMetrics;
             }
 
             throw new Error('Invalid response from server');
@@ -104,12 +113,15 @@ class KPIService {
     async getStabilityMetrics(filters?: KPIFilters): Promise<StabilityMetrics> {
         try {
             const params = this.buildQueryParams(filters);
-            const response = await apiService.get<{ success: boolean; data: StabilityMetrics }>(
+            const response = await apiService.get<StabilityMetrics>(
                 `/api/kpis/stability${params}`
             );
 
-            if (response.success && response.data) {
-                return response.data;
+            if ((response as any).success !== undefined) {
+                const resp = response as unknown as { success: boolean; data: StabilityMetrics };
+                if (resp.success && resp.data) return resp.data;
+            } else {
+                return response as unknown as StabilityMetrics;
             }
 
             throw new Error('Invalid response from server');
@@ -125,12 +137,15 @@ class KPIService {
     async getCompleteSummary(filters?: KPIFilters): Promise<CompleteSummary> {
         try {
             const params = this.buildQueryParams(filters);
-            const response = await apiService.get<{ success: boolean; data: CompleteSummary }>(
+            const response = await apiService.get<CompleteSummary>(
                 `/api/kpis/summary${params}`
             );
 
-            if (response.success && response.data) {
-                return response.data;
+            if ((response as any).success !== undefined) {
+                const resp = response as unknown as { success: boolean; data: CompleteSummary };
+                if (resp.success && resp.data) return resp.data;
+            } else {
+                return response as unknown as CompleteSummary;
             }
 
             throw new Error('Invalid response from server');
@@ -147,23 +162,27 @@ class KPIService {
     /**
      * Construye query params para los filtros
      */
-    private buildQueryParams(filters?: KPIFilters): string {
-        if (!filters) return '';
+    private buildQueryParams(f?: KPIFilters): string {
+        if (!f) return '';
 
         const params = new URLSearchParams();
 
-        if (filters.from) {
-            params.append('from', filters.from);
+        if (f.from) {
+            params.append('from', f.from);
         }
 
-        if (filters.to) {
-            params.append('to', filters.to);
+        if (f.to) {
+            params.append('to', f.to);
         }
 
-        if (filters.vehicleIds && filters.vehicleIds.length > 0) {
-            filters.vehicleIds.forEach(id => {
+        if (f.vehicleIds && f.vehicleIds.length > 0) {
+            f.vehicleIds.forEach(id => {
                 params.append('vehicleIds[]', id);
             });
+        }
+
+        if (f.force) {
+            params.append('force', 'true');
         }
 
         const queryString = params.toString();
@@ -245,7 +264,7 @@ class KPIService {
     /**
      * Calcula velocidad máxima desde datos GPS (pendiente implementar)
      */
-    async getMaxSpeed(filters?: KPIFilters): Promise<number> {
+    async getMaxSpeed(): Promise<number> {
         // TODO: Implementar cuando tengamos endpoint de velocidad máxima
         return 0;
     }

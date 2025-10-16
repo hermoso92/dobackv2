@@ -63,11 +63,14 @@ export async function verificarPuntoEnGeocerca(
 
         logger.debug('Verificando punto en geocerca Radar', { lat, lon });
 
-        const context: any = await radarService.getContext(lat, lon);
+        const response: any = await radarService.getContext(lat, lon);
 
-        if (context && context.geofences && context.geofences.length > 0) {
+        // La respuesta viene en formato: { context: { geofences: [...] } }
+        const geofences = response?.context?.geofences || [];
+
+        if (geofences.length > 0) {
             // El punto está en al menos una geocerca
-            const geocerca = context.geofences[0];
+            const geocerca = geofences[0];
 
             logger.info('Punto dentro de geocerca', {
                 lat,

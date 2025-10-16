@@ -22,13 +22,13 @@ export const useVehicleEvents = (vehicleId: string | null, sessionId: string | n
             setLoading(true);
             try {
                 // Usar el endpoint correcto que filtra por sesión
-                const query = `/api/stability/events/${sessionId}`;
+                const query = `/api/stability/sessions/${sessionId}/events`;
                 const response = await apiService.get<any>(query);
 
                 let eventsArr: any[] = [];
 
-                if (response.data.success && Array.isArray(response.data.events)) {
-                    eventsArr = response.data.events;
+                if (response.data.success && Array.isArray(response.data.data)) {
+                    eventsArr = response.data.data;
                 } else if (Array.isArray(response.data)) {
                     eventsArr = response.data;
                 }

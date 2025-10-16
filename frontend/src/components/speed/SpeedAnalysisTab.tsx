@@ -1,5 +1,4 @@
 import {
-    CheckCircleIcon,
     ExclamationTriangleIcon,
     FunnelIcon,
     MapIcon
@@ -20,6 +19,8 @@ import { MAP_CONFIG, SPEED_ENDPOINTS } from '../../config/api';
 import { apiService } from '../../services/api';
 import { SpeedViolation } from '../../types/deviceControl';
 import { logger } from '../../utils/logger';
+import LocationDisplay from '../LocationDisplay';
+import SpeedViolationPopup from '../SpeedViolationPopup';
 
 interface SpeedAnalysisTabProps {
     organizationId: string;
@@ -46,7 +47,7 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     // Estados de filtros
     const [rotativoFilter, setRotativoFilter] = useState<'all' | 'on' | 'off'>('all');
     const [parkFilter, setParkFilter] = useState<'all' | 'in' | 'out'>('all');
-    const [violationFilter, setViolationFilter] = useState<'all' | 'grave' | 'leve' | 'correcto'>('all');
+    const [violationFilter, setViolationFilter] = useState<'all' | 'grave' | 'moderado' | 'leve'>('all');
     const [roadTypeFilter, setRoadTypeFilter] = useState<'all' | 'urban' | 'interurban' | 'highway'>('all');
 
     // Estados de datos
@@ -119,10 +120,10 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
         switch (violationType) {
             case 'grave':
                 return '#EF4444'; // Rojo
+            case 'moderado':
+                return '#F97316'; // Naranja
             case 'leve':
                 return '#F59E0B'; // Amarillo
-            case 'correcto':
-                return '#3B82F6'; // Azul
             default:
                 return '#9CA3AF'; // Gris
         }
@@ -152,20 +153,20 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     const stats = useMemo(() => {
         const total = violations.length;
         const grave = violations.filter(v => v.violationType === 'grave').length;
+        const moderado = violations.filter(v => v.violationType === 'moderado').length;
         const leve = violations.filter(v => v.violationType === 'leve').length;
-        const correcto = violations.filter(v => v.violationType === 'correcto').length;
         const withRotativo = violations.filter(v => v.rotativoOn).length;
         const withoutRotativo = violations.filter(v => !v.rotativoOn).length;
 
         const avgExcess = violations
-            .filter(v => v.violationType !== 'correcto')
-            .reduce((sum, v) => sum + (v.speed - v.speedLimit), 0) / (total - correcto || 1);
+            .filter(v => v.violationType === 'grave' || v.violationType === 'moderado' || v.violationType === 'leve')
+            .reduce((sum, v) => sum + (v.speed - v.speedLimit), 0) / (grave + moderado + leve || 1);
 
         return {
             total,
             grave,
+            moderado,
             leve,
-            correcto,
             withRotativo,
             withoutRotativo,
             avgExcess: Math.round(avgExcess * 10) / 10
@@ -249,7 +250,7 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                             Clasificación
                         </label>
                         <div className="flex gap-2">
-                            {(['all', 'grave', 'leve', 'correcto'] as const).map((filter) => (
+                            {(['all', 'grave', 'moderado', 'leve'] as const).map((filter) => (
                                 <button
                                     key={filter}
                                     onClick={() => setViolationFilter(filter)}
@@ -308,13 +309,13 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                     <div className="text-xs text-yellow-500 mt-1">Exceso 1-20 km/h</div>
                 </div>
 
-                <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-4">
+                <div className="bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-4">
                     <div className="flex items-center gap-2 mb-1">
-                        <CheckCircleIcon className="h-4 w-4 text-blue-600" />
-                        <div className="text-sm font-medium text-blue-700">Correctos</div>
+                        <ExclamationTriangleIcon className="h-4 w-4 text-orange-600" />
+                        <div className="text-sm font-medium text-orange-700">Moderados</div>
                     </div>
-                    <div className="text-2xl font-bold text-blue-600">{stats.correcto}</div>
-                    <div className="text-xs text-blue-500 mt-1">Dentro del límite</div>
+                    <div className="text-2xl font-bold text-orange-600">{stats.moderado}</div>
+                    <div className="text-xs text-orange-500 mt-1">Exceso moderado</div>
                 </div>
 
                 <div className="bg-slate-50 rounded-xl shadow-sm border border-slate-200 p-4">
@@ -352,8 +353,8 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                                 <span>Leves (exceso 1-20 km/h)</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                <span>Correctos (dentro del límite)</span>
+                                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                <span>Moderados</span>
                             </div>
                         </div>
 
@@ -386,22 +387,11 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                                                 weight: 2
                                             }}
                                         >
-                                            <Popup>
-                                                <div className="p-2">
-                                                    <div className="font-bold text-lg mb-2">
-                                                        {violation.vehicleName} - {violation.speed} km/h
-                                                    </div>
-                                                    <div className="text-sm space-y-1">
-                                                        <div><strong>Velocidad:</strong> {violation.speed} km/h</div>
-                                                        <div><strong>Límite DGT:</strong> {violation.speedLimit} km/h</div>
-                                                        <div><strong>Exceso:</strong> {violation.speed - violation.speedLimit} km/h</div>
-                                                        <div><strong>Clasificación:</strong> {violation.violationType.toUpperCase()}</div>
-                                                        <div><strong>Rotativo:</strong> {violation.rotativoOn ? 'ON' : 'OFF'}</div>
-                                                        <div><strong>Ubicación:</strong> {violation.inPark ? 'En parque' : 'Fuera del parque'}</div>
-                                                        <div><strong>Tipo de vía:</strong> {getRoadTypeText(violation.roadType)}</div>
-                                                        <div><strong>Fecha:</strong> {new Date(violation.timestamp).toLocaleString('es-ES')}</div>
-                                                    </div>
-                                                </div>
+                                            <Popup maxWidth={400} className="speed-event-popup">
+                                                <SpeedViolationPopup
+                                                    violation={violation}
+                                                    getRoadTypeText={getRoadTypeText}
+                                                />
                                             </Popup>
                                             <LeafletTooltip>
                                                 {violation.vehicleName} - {violation.speed} km/h
@@ -439,7 +429,11 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
 
                                         <div className="flex-1">
                                             <div className="font-semibold text-slate-800 mb-1">
-                                                {zone.location}
+                                                <LocationDisplay
+                                                    lat={zone.lat}
+                                                    lng={zone.lng}
+                                                    fallbackText={zone.location}
+                                                />
                                             </div>
 
                                             <div className="text-sm text-slate-600 space-y-1">
@@ -456,6 +450,9 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                                                 <div className="flex gap-2 mt-2">
                                                     <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">
                                                         🔴 {zone.grave}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">
+                                                        🟠 {zone.moderado || 0}
                                                     </span>
                                                     <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">
                                                         🟡 {zone.leve}

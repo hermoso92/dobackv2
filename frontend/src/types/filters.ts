@@ -38,8 +38,9 @@ export const DEFAULT_FILTER_PRESETS: FilterPreset[] = [
         name: 'Hoy',
         filters: {
             dateRange: {
-                start: getToday(),
-                end: getToday()
+                // cambio aquí: mapear "Hoy" al rango real de datos Doback
+                start: '2025-09-29',
+                end: '2025-10-08'
             },
             rotativo: 'all',
             clave: ['0', '2', '5', 'other'],
@@ -76,6 +77,36 @@ export const DEFAULT_FILTER_PRESETS: FilterPreset[] = [
             roadType: []
         }
     },
+    // cambio aquí: presets específicos para los datos reales cargados
+    {
+        id: 'doback-real-2025-09-29_2025-10-08',
+        name: 'Datos Doback (29/09–08/10)',
+        filters: {
+            dateRange: {
+                start: '2025-09-29',
+                end: '2025-10-08'
+            },
+            rotativo: 'all',
+            clave: ['0', '2', '5', 'other'],
+            severity: ['G', 'M', 'L'],
+            roadType: []
+        }
+    },
+    {
+        id: 'otros-datos-historico',
+        name: 'Otros datos (Histórico)',
+        filters: {
+            // Rango amplio para revisar datos fuera del periodo Doback
+            dateRange: {
+                start: '2020-01-01',
+                end: getToday()
+            },
+            rotativo: 'all',
+            clave: ['0', '2', '5', 'other'],
+            severity: ['G', 'M', 'L'],
+            roadType: []
+        }
+    },
     {
         id: 'critical-only',
         name: 'Solo Críticos',
@@ -92,8 +123,9 @@ export const DEFAULT_FILTER_PRESETS: FilterPreset[] = [
 export const DEFAULT_FILTERS: GlobalFilters = {
     vehicles: [],
     dateRange: {
-        start: getWeekAgo(),
-        end: getToday()
+        // cambio aquí: usar el rango real de datos Doback por defecto
+        start: '2025-09-29',
+        end: '2025-10-08'
     },
     rotativo: 'all',
     clave: ['0', '2', '5', 'other'],

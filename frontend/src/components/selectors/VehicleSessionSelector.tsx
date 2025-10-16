@@ -50,9 +50,7 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
         const loadVehicles = async () => {
             setLoading(true);
             try {
-                console.log('🔍 VehicleSessionSelector: cargando vehículos...');
                 const data = await apiService.get('/api/vehicles');
-                console.log('📊 VehicleSessionSelector: respuesta vehículos:', data);
                 if (data.success && data.data && Array.isArray(data.data)) {
                     // Mapear vehículos de PostgreSQL al formato esperado
                     const mappedVehicles: Vehicle[] = data.data.map((v: any) => ({
@@ -62,14 +60,12 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
                         vehicle_type: v.type || 'BOMBA_ESCALERA',
                         is_active: v.active !== false
                     }));
-                    console.log('✅ VehicleSessionSelector: vehículos mapeados:', mappedVehicles);
                     setVehicles(mappedVehicles);
                 } else {
-                    console.warn('⚠️ VehicleSessionSelector: no hay vehículos en la respuesta');
                     setVehicles([]);
                 }
             } catch (error) {
-                console.error('❌ VehicleSessionSelector: error cargando vehículos:', error);
+                logger.error('Error cargando vehículos', { error });
                 setVehicles([]);
             } finally {
                 setLoading(false);
@@ -89,50 +85,20 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
 
             setLoading(true);
             try {
-                console.log('🔍 VehicleSessionSelector: cargando sesiones para vehículo:', selectedVehicleId);
                 const data = await apiService.get(`/api/sessions?vehicleId=${selectedVehicleId}&limit=20`);
-                console.log('📊 VehicleSessionSelector: respuesta sesiones:', data);
                 if (data.success && data.data && Array.isArray(data.data)) {
-                    console.log('🔍 VehicleSessionSelector: primera sesión raw:', data.data[0]);
-                    console.log('🔍 VehicleSessionSelector: campos GPS disponibles:', {
-                        pointsCount: data.data[0]?.pointsCount,
-                        gpsPoints: data.data[0]?.gpsPoints,
-                        gpsCount: data.data[0]?.gpsCount
-                    });
                     // Mapear sesiones de PostgreSQL al formato esperado
                     // Solo incluir sesiones que tienen datos GPS válidos (pointsCount > 0)
                     const sessionsWithGPS = data.data.filter((s: any) => (s.pointsCount || s.gpsPoints || 0) > 0);
-                    console.log('🔍 VehicleSessionSelector: sesiones con GPS:', sessionsWithGPS.length, 'de', data.data.length);
 
                     const mappedSessions: Session[] = sessionsWithGPS
                         .map((s: any) => {
-                            // DEBUG: Logging básico para ver qué campos están disponibles
-                            console.log('🔍 DEBUG: Sesión raw completa:', {
-                                id: s.id,
-                                startTime: s.startTime,
-                                endTime: s.endTime,
-                                startedAt: s.startedAt,
-                                endedAt: s.endedAt,
-                                duration: s.duration,
-                                allFields: Object.keys(s)
-                            });
-
                             // Calcular duración real en minutos desde las fechas de inicio y fin
                             let durationMinutes = 0;
 
                             // Intentar diferentes combinaciones de campos de fecha
                             const startTime = s.startedAt || s.startTime;
                             const endTime = s.endedAt || s.endTime;
-
-                            console.log('🕐 DEBUG: Campos de fecha disponibles:', {
-                                id: s.id,
-                                startedAt: s.startedAt,
-                                endedAt: s.endedAt,
-                                startTime: s.startTime,
-                                endTime: s.endTime,
-                                usingStartTime: startTime,
-                                usingEndTime: endTime
-                            });
 
                             if (startTime && endTime) {
                                 const start = new Date(startTime);
@@ -147,55 +113,14 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
                                     const MIN_REALISTIC_DURATION = 5;   // 5 minutos mínimo
 
                                     if (durationMinutes > MAX_REALISTIC_DURATION) {
-                                        console.log('⚠️ ADVERTENCIA: Duración excesiva detectada:', {
-                                            id: s.id,
-                                            durationMinutes: durationMinutes,
-                                            maxAllowed: MAX_REALISTIC_DURATION,
-                                            startTime: startTime,
-                                            endTime: endTime,
-                                            action: 'Limitando a máximo realista'
-                                        });
                                         durationMinutes = MAX_REALISTIC_DURATION;
                                     } else if (durationMinutes < MIN_REALISTIC_DURATION) {
-                                        console.log('⚠️ ADVERTENCIA: Duración muy corta:', {
-                                            id: s.id,
-                                            durationMinutes: durationMinutes,
-                                            minAllowed: MIN_REALISTIC_DURATION,
-                                            action: 'Ajustando a mínimo realista'
-                                        });
                                         durationMinutes = MIN_REALISTIC_DURATION;
                                     }
-
-                                    console.log('🕐 Duración calculada y validada:', {
-                                        id: s.id,
-                                        startTime: startTime,
-                                        endTime: endTime,
-                                        rawDurationMinutes: Math.floor((end.getTime() - start.getTime()) / (1000 * 60)),
-                                        finalDurationMinutes: durationMinutes,
-                                        formatted: `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`
-                                    });
-                                } else {
-                                    console.log('❌ ERROR: Fechas inválidas:', {
-                                        id: s.id,
-                                        startValid: !isNaN(start.getTime()),
-                                        endValid: !isNaN(end.getTime())
-                                    });
                                 }
                             } else if (s.duration) {
                                 // Fallback: si ya viene en segundos, convertir a minutos
                                 durationMinutes = Math.floor(s.duration / 60);
-                                console.log('🕐 Duración desde campo duration:', {
-                                    id: s.id,
-                                    originalDuration: s.duration,
-                                    durationMinutes: durationMinutes
-                                });
-                            } else {
-                                console.log('❌ ERROR: No hay campos de duración disponibles:', {
-                                    id: s.id,
-                                    startTime: startTime,
-                                    endTime: endTime,
-                                    duration: s.duration
-                                });
                             }
 
                             return {
@@ -208,14 +133,12 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
                                 status: s.status || 'completed'
                             };
                         });
-                    console.log('✅ VehicleSessionSelector: sesiones mapeadas:', mappedSessions);
                     setSessions(mappedSessions);
                 } else {
-                    console.warn('⚠️ VehicleSessionSelector: no hay sesiones en la respuesta');
                     setSessions([]);
                 }
             } catch (error) {
-                console.error('❌ VehicleSessionSelector: error cargando sesiones:', error);
+                logger.error('Error cargando sesiones', { error });
                 setSessions([]);
             } finally {
                 setLoading(false);
@@ -237,9 +160,6 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
         onSessionChange?.(sessionId);
         logger.info('Sesión seleccionada', { sessionId, vehicleId: selectedVehicleId, userId: user?.id });
     };
-
-    const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
-    const selectedSession = sessions.find(s => s.id === selectedSessionId);
 
     return (
         <Box className={`${className}`}>
@@ -302,13 +222,6 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
 
                                     const formatted = `${new Date(session.start_date).toLocaleDateString('es-ES')} - ${durationText}`;
 
-                                    console.log('🔍 Renderizando sesión:', {
-                                        id: session.id,
-                                        start_date: session.start_date,
-                                        duration: session.duration,
-                                        durationText: durationText,
-                                        formatted: formatted
-                                    });
                                     return (
                                         <MenuItem key={session.id} value={session.id}>
                                             <Typography variant="body2">

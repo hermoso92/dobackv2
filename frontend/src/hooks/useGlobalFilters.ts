@@ -284,15 +284,20 @@ export const useGlobalFilters = () => {
 
         // Vehículos
         if (state.filters.vehicles.length > 0) {
+            // Compatibilidad hacia atrás para endpoints antiguos
             query.vehicles = state.filters.vehicles.join(',');
+            // Convención del backend actual: vehicleIds[]
+            query['vehicleIds[]'] = state.filters.vehicles;
         }
 
-        // Rango de fechas
+        // Rango de fechas (respetar exactamente lo seleccionado por el usuario)
         if (state.filters.dateRange.start) {
             query.startDate = state.filters.dateRange.start;
+            query.from = state.filters.dateRange.start;
         }
         if (state.filters.dateRange.end) {
             query.endDate = state.filters.dateRange.end;
+            query.to = state.filters.dateRange.end;
         }
 
         // Rotativo

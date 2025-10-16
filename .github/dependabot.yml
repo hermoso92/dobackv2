@@ -1,0 +1,68 @@
+# 🤖 Dependabot - Actualización automática de dependencias
+# Crea Pull Requests automáticamente cuando hay nuevas versiones
+
+version: 2
+updates:
+  # Backend (Node.js)
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+      - "automerge"
+    commit-message:
+      prefix: "⬆️ Backend"
+    reviewers:
+      - "TU_USUARIO_GITHUB"  # Cambiar por tu usuario
+    assignees:
+      - "TU_USUARIO_GITHUB"  # Cambiar por tu usuario
+    
+  # Frontend (Node.js)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "automerge"
+    commit-message:
+      prefix: "⬆️ Frontend"
+    reviewers:
+      - "TU_USUARIO_GITHUB"  # Cambiar por tu usuario
+    assignees:
+      - "TU_USUARIO_GITHUB"  # Cambiar por tu usuario
+    
+  # Scripts raíz (Node.js)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "scripts"
+    commit-message:
+      prefix: "⬆️ Scripts"
+    
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "⬆️ Actions"
+

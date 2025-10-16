@@ -97,7 +97,7 @@ export class KPIService {
                 where: { sessionId: { in: sessionIds } },
                 orderBy: { timestamp: 'asc' }
             }),
-            prisma.stabilityEvent.findMany({
+            prisma.stability_events.findMany({
                 where: { session_id: { in: sessionIds } },
                 orderBy: { timestamp: 'asc' }
             })

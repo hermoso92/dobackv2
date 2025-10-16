@@ -30,8 +30,8 @@ router.get('/dashboard', async (req, res) => {
         const otros = activeGeofences - parques - talleres;
 
         // 2. Eventos sin GPS
-        const totalEvents = await prisma.stabilityEvent.count();
-        const eventsWithGPS = await prisma.stabilityEvent.count({
+        const totalEvents = await prisma.stability_events.count();
+        const eventsWithGPS = await prisma.stability_events.count({
             where: {
                 AND: [
                     { lat: { not: 0 } },

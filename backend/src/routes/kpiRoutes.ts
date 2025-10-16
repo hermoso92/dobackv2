@@ -22,7 +22,7 @@ router.get('/dashboard-test', async (req: Request, res: Response) => {
         const dateTo = new Date(to);
 
         // Obtener eventos de estabilidad
-        const stabilityEvents = await prisma.stabilityEvent.findMany({
+        const stabilityEvents = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     vehicleId: vehicleId,

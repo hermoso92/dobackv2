@@ -1,325 +1,230 @@
-# 🚀 DobackSoft V3 - StabilSafe
+# 🚗 DobackSoft - StabilSafe V3
 
-**Sistema integral de gestión, análisis y monitorización de flotas de emergencia**
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/hermoso92/dobackv2)
+Sistema profesional de análisis de estabilidad vehicular para flotas profesionales.
 
 ---
 
-## 📋 **Descripción**
+## 🚀 INICIO RÁPIDO
 
-DobackSoft V3 (StabilSafe) es una plataforma profesional diseñada para el análisis en tiempo real de vehículos de emergencia. Procesa datos de estabilidad, telemetría CAN/GPS, genera reportes inteligentes con IA y gestiona geocercas para optimizar operaciones.
+### **Iniciar Sistema Completo**
+```powershell
+.\iniciar.ps1
+```
 
-### **Características Principales**
+Este script único:
+- ✅ Libera puertos 9998 (backend) y 5174 (frontend)
+- ✅ Verifica archivos necesarios
+- ✅ Inicia backend y frontend en ventanas separadas
+- ✅ Abre navegador automáticamente
+- ✅ Muestra credenciales de acceso
 
-✅ **Panel de Control** - KPIs en tiempo real con modo TV Wall  
-✅ **Módulo de Estabilidad** - Análisis de eventos críticos con exportación PDF  
-✅ **Telemetría CAN/GPS** - Monitoreo avanzado con mapas interactivos  
-✅ **Inteligencia Artificial** - Análisis predictivo y recomendaciones  
-✅ **Geofences** - Gestión de zonas con alertas automáticas  
-✅ **Operaciones** - Eventos, alertas y mantenimiento unificado  
-✅ **Reportes Profesionales** - Generación PDF en 1 clic  
-✅ **Multi-organización** - Aislamiento total de datos por empresa  
+### **Acceso**
+- **URL:** http://localhost:5174
+- **Usuario Admin:** admin@dobacksoft.com
+- **Password:** Admin123!
 
 ---
 
-## 🏗️ **Arquitectura**
+## 📚 DOCUMENTACIÓN ORGANIZADA
 
-### **Stack Tecnológico**
+Toda la documentación ha sido organizada en `docs/`:
 
-**Backend:**
-- TypeScript + Node.js + Express
-- PostgreSQL + PostGIS
-- Prisma ORM
-- Python (procesamiento de datos)
+### **📁 01-inicio/**
+Documentos esenciales para comenzar:
+- Instrucciones de instalación
+- Guías de inicio rápido
+- README principal del sistema
 
-**Frontend:**
+### **📁 02-arquitectura/**
+Documentación técnica del sistema:
+- Flujo completo del sistema
+- Arquitectura de módulos
+- Protocolos y estándares
+
+### **📁 03-implementacion/**
+Progreso de desarrollo:
+- Fases completadas
+- Cronogramas
+- Integraciones realizadas
+
+### **📁 04-auditorias/**
+Informes de calidad:
+- Auditorías del sistema
+- Reportes de estado
+- Diagnósticos
+
+### **📁 05-correcciones/**
+Soluciones implementadas:
+- Correcciones aplicadas
+- Problemas resueltos
+- Mejoras realizadas
+
+### **📁 06-guias/**
+Manuales de uso:
+- Guías de funcionalidades
+- Configuración del sistema
+- Licencias y contribución
+
+### **📁 07-verificaciones/**
+Testing y validación:
+- Checklists de pruebas
+- Planes de verificación
+- Tests realizados
+
+### **📁 08-analisis/**
+Análisis técnicos:
+- Análisis de archivos
+- Cálculos de KPIs
+- Descubrimientos técnicos
+
+### **📁 09-historico/**
+Registro histórico:
+- Entregas anteriores
+- Estados previos del sistema
+- Consolidados históricos
+
+---
+
+## 🎯 MÓDULOS PRINCIPALES
+
+### **🏠 Panel de Control**
+- KPIs estratégicos en tiempo real
+- Modo TV Wall automático
+- Bloques de mantenimiento y alertas
+
+### **📊 Estabilidad**
+- Métricas de conducción
+- Eventos críticos detectados
+- Comparador de sesiones
+- Exportación PDF
+
+### **📡 Telemetría**
+- Datos CAN en tiempo real
+- Mapa GPS interactivo
+- Alarmas configurables
+- Comparador CAN/GPS
+
+### **🤖 Inteligencia Artificial**
+- Chat IA especializado
+- Patrones detectados
+- Recomendaciones automáticas
+
+### **🗺️ Geofences**
+- CRUD completo de zonas
+- Eventos de entrada/salida
+- Alertas automáticas
+
+### **🔧 Operaciones**
+- Eventos del sistema
+- Alertas configurables
+- Gestión de mantenimiento
+
+### **📈 Reportes**
+- Generación automática de PDF
+- Reportes personalizables
+- Análisis comparativos
+
+### **⚙️ Administración** (Solo ADMIN)
+- Gestión de organizaciones
+- Usuarios y roles
+- Configuración global
+
+---
+
+## 🛠️ STACK TECNOLÓGICO
+
+### **Backend**
+- Node.js + Express
+- PostgreSQL + Prisma ORM
+- JWT + httpOnly cookies
+- AWS S3 (archivos)
+
+### **Frontend**
 - React 18 + TypeScript
 - Tailwind CSS
 - Leaflet + TomTom (mapas)
 - Recharts (gráficas)
 
----
-
-## 🚀 **Inicio Rápido**
-
-### **Requisitos Previos**
-
-- Node.js 18+
-- Python 3.9+
-- PostgreSQL 14+ con extensión PostGIS
-- Git
-
-### **Instalación**
-
-```bash
-# Clonar repositorio
-git clone https://github.com/hermoso92/dobackv2.git
-cd dobackv2
-
-# Instalar dependencias backend
-cd backend
-npm install
-pip install -r requirements.txt
-
-# Instalar dependencias frontend
-cd ../frontend
-npm install
-
-# Configurar variables de entorno
-# Copiar .env.example a .env y configurar
-```
-
-### **Configuración de Base de Datos**
-
-```bash
-# Crear base de datos
-createdb dobacksoft
-
-# Aplicar migraciones
-cd backend
-npx prisma migrate deploy
-npx prisma db seed
-```
-
-### **Iniciar el Sistema**
-
-**Windows:**
-```powershell
-.\iniciar.ps1
-```
-
-**Linux/Mac:**
-```bash
-./iniciar.sh
-```
-
-El script iniciará automáticamente:
-- Backend en `http://localhost:9998`
-- Frontend en `http://localhost:5174`
+### **Puertos Fijos**
+- Backend: **9998** (no cambiar)
+- Frontend: **5174** (no cambiar)
 
 ---
 
-## 📁 **Estructura del Proyecto**
+## 📦 ESTRUCTURA DEL PROYECTO
 
 ```
 DobackSoft/
-├── backend/                    # Backend TypeScript/Python
-│   ├── src/
-│   │   ├── controllers/        # Controladores de rutas
-│   │   ├── services/           # Lógica de negocio
-│   │   ├── middleware/         # Middlewares (auth, CORS, etc.)
-│   │   ├── routes/             # Definición de endpoints
-│   │   └── utils/              # Utilidades y helpers
-│   ├── prisma/                 # Schema y migraciones
-│   ├── processors/             # Procesadores de datos Python
-│   └── data/                   # Datos de vehículos
-│
-├── frontend/                   # Frontend React
-│   ├── src/
-│   │   ├── components/         # Componentes React
-│   │   ├── pages/              # Páginas principales
-│   │   ├── hooks/              # Custom hooks
-│   │   ├── services/           # Servicios de API
-│   │   ├── config/             # Configuraciones
-│   │   └── styles/             # Estilos CSS
-│   └── public/                 # Assets estáticos
-│
-├── config/                     # Configuraciones del sistema
-├── scripts/                    # Scripts de automatización
-└── docs/                       # Documentación
+├── backend/           # API y lógica de negocio
+├── frontend/          # Interfaz React
+├── docs/             # Documentación organizada (207 archivos)
+│   ├── 01-inicio/           # Guías de inicio
+│   ├── 02-arquitectura/     # Diseño del sistema
+│   ├── 03-implementacion/   # Fases de desarrollo
+│   ├── 04-auditorias/       # Control de calidad
+│   ├── 05-correcciones/     # Soluciones aplicadas
+│   ├── 06-guias/            # Manuales de uso
+│   ├── 07-verificaciones/   # Testing
+│   ├── 08-analisis/         # Análisis técnicos
+│   └── 09-historico/        # Registro histórico
+├── scripts/          # Scripts de desarrollo
+│   ├── analisis/            # Análisis de datos
+│   ├── testing/             # Tests y validación
+│   ├── setup/               # Inicialización
+│   ├── utils/               # Utilidades
+│   └── historico/           # Scripts obsoletos
+├── database/         # Scripts SQL y migraciones
+├── tests/            # Tests automatizados (Playwright)
+├── temp/             # Archivos temporales
+├── logs/             # Logs del sistema
+├── config/           # Configuración
+├── data/             # Datos de prueba
+└── iniciar.ps1       # ⭐ Script de inicio único
 ```
 
 ---
 
-## 🎯 **Módulos del Sistema**
+## 🔐 SEGURIDAD
 
-### **1. Panel de Control**
-Dashboard con KPIs estratégicos:
-- Disponibilidad de flota
-- Tiempo con rotativo encendido
-- Kilómetros recorridos
-- Incidencias por severidad
-- Modo TV Wall para salas de control
-
-### **2. Estabilidad**
-Análisis de eventos de conducción:
-- Métricas de estabilidad (aceleraciones, frenadas)
-- Mapa de eventos GPS
-- Comparador entre sesiones
-- Exportación PDF profesional
-
-### **3. Telemetría**
-Monitoreo CAN/GPS unificado:
-- Visualización de datos CAN en tiempo real
-- Mapas GPS con trazado de rutas
-- Alarmas configurables
-- Comparador de sesiones
-
-### **4. Inteligencia Artificial**
-Copiloto inteligente:
-- Chat con análisis de datos
-- Detección de patrones
-- Recomendaciones automáticas
-- Generación de reportes con IA
-
-### **5. Geofences**
-Gestión de zonas geográficas:
-- CRUD completo de geocercas
-- Detección de entrada/salida
-- Alertas automáticas
-- Integración con mapas
-
-### **6. Operaciones**
-Gestión operativa unificada:
-- Registro de eventos
-- Sistema de alertas configurable
-- Mantenimiento preventivo/correctivo
-- Historial completo
-
-### **7. Reportes**
-Generación de informes:
-- PDF profesional en 1 clic
-- Reportes con gráficas y mapas
-- Análisis IA incluido
-- Exportación CSV/Excel
-
-### **8. Administración**
-Gestión del sistema (solo ADMIN):
-- Usuarios y roles
-- Empresas y flotas
-- Vehículos
-- Base de conocimiento
+- Autenticación JWT con cookies httpOnly
+- Protección CSRF implementada
+- Cifrado S3 (SSE-KMS)
+- Aislamiento por organización
+- Roles ADMIN/MANAGER
 
 ---
 
-## 👥 **Roles de Usuario**
+## 📋 ROLES Y PERMISOS
 
 ### **ADMIN**
 - Acceso total al sistema
-- Gestión de múltiples organizaciones
-- Configuración avanzada
+- Gestión de organizaciones
+- Configuración global
+- Base de conocimiento
 
 ### **MANAGER**
 - Acceso a su organización
 - Gestión de su flota
 - Reportes y análisis
+- Panel de control
 
 ---
 
-## 🔐 **Seguridad**
+## 🚨 REGLAS CRÍTICAS
 
-- ✅ **JWT con cookies httpOnly** - Autenticación segura
-- ✅ **Aislamiento por organización** - Filtrado automático `organizationId`
-- ✅ **Protección CSRF** implementada
-- ✅ **Rate limiting** en endpoints sensibles
-- ✅ **Validación estricta** de inputs
-- ✅ **Logs de auditoría** completos
-
----
-
-## 📊 **Flujo de Datos**
-
-```
-1. Subida de archivos (FTP/Manual)
-   ↓
-2. Procesamiento automático
-   ↓
-3. Detección de eventos
-   ↓
-4. Almacenamiento en BD
-   ↓
-5. Visualización en dashboard
-   ↓
-6. Análisis IA
-   ↓
-7. Generación de reportes
-```
+1. **NUNCA iniciar backend/frontend manualmente** → usar `iniciar.ps1`
+2. **NUNCA cambiar puertos** → 9998 (backend), 5174 (frontend)
+3. **NUNCA hardcodear URLs** → usar `frontend/src/config/api.ts`
+4. **NUNCA usar console.log** → usar `logger` de `utils/logger`
+5. **SIEMPRE filtrar por organizationId** en requests
 
 ---
 
-## 🛠️ **Configuración**
+## 📞 SOPORTE
 
-### **Backend (.env)**
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/dobacksoft
-JWT_SECRET=your-secret-key
-PORT=9998
-OPENAI_API_KEY=your-openai-key
-TOMTOM_API_KEY=your-tomtom-key
-RADAR_SECRET_KEY=your-radar-key
-```
-
-### **Frontend (.env)**
-```env
-VITE_API_URL=http://localhost:9998
-VITE_TOMTOM_API_KEY=your-tomtom-key
-VITE_RADAR_PUBLISHABLE_KEY=your-radar-pk
-```
+Para más información, consulta la documentación en `docs/` o contacta al equipo de desarrollo.
 
 ---
 
-## 🧪 **Testing**
+**DobackSoft © 2025 - Sistema Profesional de Análisis de Estabilidad Vehicular**
 
-```bash
-# Backend
-cd backend
-npm test
-
-# Frontend
-cd frontend
-npm test
-
-# E2E
-npm run test:e2e
-```
-
----
-
-## 📦 **Despliegue**
-
-### **Producción con Docker**
-
-```bash
-docker-compose up -d
-```
-
-### **Manual**
-
-```bash
-# Build frontend
-cd frontend
-npm run build
-
-# Iniciar backend
-cd ../backend
-npm run start:prod
-```
-
----
-
-## 📝 **Licencia**
-
-MIT License - Ver [LICENSE](LICENSE) para más detalles
-
----
-
-## 👤 **Autor**
-
-**Antonio Hermoso**
-- GitHub: [@hermoso92](https://github.com/hermoso92)
-- Email: antoniohermoso92@gmail.com
-
----
-
-## 🔗 **Enlaces**
-
-- **Repositorio**: https://github.com/hermoso92/dobackv2
-- **Documentación completa**: Ver carpeta `/docs`
-- **Issues**: https://github.com/hermoso92/dobackv2/issues
-
----
-
-**DobackSoft V3** - *Innovación en gestión de flotas de emergencia*  
-© 2025 - Todos los derechos reservados

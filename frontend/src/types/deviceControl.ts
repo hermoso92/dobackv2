@@ -71,7 +71,7 @@ export interface SpeedViolation {
     lng: number;
     speed: number;
     speedLimit: number;
-    violationType: 'grave' | 'leve' | 'correcto';
+    violationType: 'grave' | 'moderado' | 'leve';
     rotativoOn: boolean;
     inPark: boolean;
     roadType: 'urban' | 'interurban' | 'highway';

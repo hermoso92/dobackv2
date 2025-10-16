@@ -1,33 +1,32 @@
 import { PrismaClient } from '@prisma/client';
-import { logger } from '../utils/logger';
+import { createLogger } from '../utils/logger';
 
-const prisma = new PrismaClient({
-    log: [
-        {
-            emit: 'event',
-            level: 'query'
-        },
-        {
-            emit: 'event',
-            level: 'error'
-        },
-        {
-            emit: 'event',
-            level: 'info'
-        },
-        {
-            emit: 'event',
-            level: 'warn'
-        }
-    ]
+const logger = createLogger('PrismaClient');
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const isNewInstance = !globalForPrisma.prisma;
+
+export const prisma = globalForPrisma.prisma || new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error']
 });
 
-export { prisma };
+if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
+}
 
-prisma.$on('query', (e) => {
-    logger.info('Query Prisma', { query: e.query, params: e.params, duration: e.duration });
-});
+if (isNewInstance) {
+    logger.info('Prisma Client singleton inicializado');
+    prisma.$connect().catch((error: any) => {
+        logger.error('Error al conectar Prisma', { error: error.message });
+    });
+}
 
-prisma.$on('error', (e) => {
-    logger.error('Error Prisma', { error: e.message, target: e.target });
-});
+export async function disconnectPrisma() {
+    try {
+        await prisma.$disconnect();
+        logger.info('Prisma desconectado exitosamente');
+    } catch (error: any) {
+        logger.error('Error al desconectar Prisma', { error: error.message });
+    }
+}
+
+export default prisma;

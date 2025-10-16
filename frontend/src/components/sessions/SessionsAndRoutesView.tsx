@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
+import { getOrganizationId } from '../../config/organization';
+import { useAuth } from '../../hooks/useAuth';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
@@ -32,6 +34,7 @@ interface Session {
 }
 
 export const SessionsAndRoutesView: React.FC = () => {
+    const { user } = useAuth();
     const { useSessions } = useTelemetryData();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -69,7 +72,7 @@ export const SessionsAndRoutesView: React.FC = () => {
             logger.info('Cargando ranking de sesiones');
 
             const params = new URLSearchParams({
-                organizationId: 'default-org',
+                organizationId: getOrganizationId(user?.organizationId),
                 metric: rankingMetric,
                 limit: '10'
             });
@@ -101,9 +104,6 @@ export const SessionsAndRoutesView: React.FC = () => {
     // Procesar datos de sesiones
     useEffect(() => {
         if (sessionsData && Array.isArray(sessionsData)) {
-            console.log('🔍 SessionsAndRoutesView: procesando', sessionsData.length, 'sesiones');
-            console.log('📊 Primera sesión:', sessionsData[0]);
-
             const processedSessions: Session[] = sessionsData.map((session: any) => {
                 const startTime = session.startTime || session.startedAt;
                 const endTime = session.endTime || session.endedAt;
@@ -125,8 +125,6 @@ export const SessionsAndRoutesView: React.FC = () => {
                 };
             });
 
-            console.log('✅ Sesiones procesadas:', processedSessions.length);
-            console.log('📊 Primera sesión procesada:', processedSessions[0]);
             setSessions(processedSessions);
         }
     }, [sessionsData]);
@@ -148,11 +146,9 @@ export const SessionsAndRoutesView: React.FC = () => {
         if (selectedSessionId && sessions.length > 0) {
             const foundSession = sessions.find(s => s.id === selectedSessionId);
             if (foundSession && (!selectedSession || selectedSession.id !== foundSession.id)) {
-                console.log('🔄 Sincronizando sesión seleccionada:', foundSession);
                 setSelectedSession(foundSession);
             }
         } else if (!selectedSessionId && selectedSession) {
-            console.log('🧹 Limpiando sesión seleccionada');
             setSelectedSession(null);
         }
     }, [selectedSessionId, sessions, selectedSession]);
@@ -167,7 +163,6 @@ export const SessionsAndRoutesView: React.FC = () => {
 
             setLoadingRoute(true);
             try {
-                console.log('🗺️ Cargando datos de ruta para sesión:', selectedSessionId);
                 const data = await apiService.get<any>(`/api/session-route/${selectedSessionId}`);
                 if (data.success && data.data) {
                     const routeDataResponse = data.data as {
@@ -176,16 +171,6 @@ export const SessionsAndRoutesView: React.FC = () => {
                         session?: any;
                         stats?: any;
                     };
-
-                    console.log('✅ Datos de ruta cargados:', routeDataResponse);
-                    console.log('🔍 Detalles de la ruta:', {
-                        routePoints: routeDataResponse.route?.length || 0,
-                        events: routeDataResponse.events?.length || 0,
-                        session: routeDataResponse.session,
-                        stats: routeDataResponse.stats
-                    });
-                    console.log('🔍 Primeros 3 puntos de ruta:', routeDataResponse.route?.slice(0, 3));
-                    console.log('🔍 Eventos encontrados:', routeDataResponse.events);
 
                     // Asegurar que los datos tienen la estructura correcta
                     const formattedData = {
@@ -204,11 +189,10 @@ export const SessionsAndRoutesView: React.FC = () => {
 
                     setRouteData(formattedData);
                 } else {
-                    console.warn('⚠️ No se pudieron cargar los datos de la ruta');
                     setRouteData(null);
                 }
             } catch (error) {
-                console.error('❌ Error cargando datos de ruta:', error);
+                logger.error('Error cargando datos de ruta', { error });
                 setRouteData(null);
             } finally {
                 setLoadingRoute(false);
@@ -228,16 +212,6 @@ export const SessionsAndRoutesView: React.FC = () => {
             </Box>
         );
     }
-
-    console.log('🔍 SessionsAndRoutesView render:', {
-        sessions: sessions.length,
-        selectedVehicleId,
-        selectedSessionId,
-        selectedSession: !!selectedSession,
-        sessionsData: sessionsData?.length,
-        availableSessionIds: sessions.map(s => s.id),
-        selectedSessionFound: sessions.find(s => s.id === selectedSessionId)
-    });
 
     return (
         <Box sx={{ p: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -280,11 +254,6 @@ export const SessionsAndRoutesView: React.FC = () => {
                                             </Box>
                                         ) : routeData ? (
                                             <>
-                                                {console.log('🗺️ Renderizando mapa con datos:', {
-                                                    routePoints: routeData.route.length,
-                                                    events: routeData.events.length,
-                                                    center: routeData.route.length > 0 && routeData.route[0] ? [routeData.route[0].lat, routeData.route[0].lng] : [40.4168, -3.7038]
-                                                })}
                                                 <RouteMapComponent
                                                     center={routeData.route.length > 0 && routeData.route[0] ?
                                                         [routeData.route[0].lat, routeData.route[0].lng] :

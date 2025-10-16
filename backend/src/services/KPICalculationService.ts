@@ -211,7 +211,7 @@ export class KPICalculationService {
         timeRange: { start: Date; end: Date },
         vehicleIds?: string[]
     ): Promise<{ total: number; leve: number; moderada: number; grave: number }> {
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     organizationId,
@@ -287,7 +287,7 @@ export class KPICalculationService {
         vehicleIds?: string[]
     ): Promise<{ "2": string; "5": string }> {
         // Buscar eventos de estabilidad relacionados con claves
-        const clave2Events = await prisma.stabilityEvent.findMany({
+        const clave2Events = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     organizationId,
@@ -303,7 +303,7 @@ export class KPICalculationService {
             }
         });
 
-        const clave5Events = await prisma.stabilityEvent.findMany({
+        const clave5Events = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     organizationId,

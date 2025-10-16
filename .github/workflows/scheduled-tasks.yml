@@ -1,0 +1,155 @@
+# ⏰ Tareas Programadas
+# Ejecuta tareas automáticas de mantenimiento
+
+name: Scheduled Tasks
+
+on:
+  # Ejecutar todos los días a las 3 AM
+  schedule:
+    - cron: '0 3 * * *'
+  # Permitir ejecución manual
+  workflow_dispatch:
+
+jobs:
+  # ✅ Limpieza de logs viejos
+  cleanup-logs:
+    name: 🧹 Limpieza de Logs
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🧹 Identificar logs antiguos
+      run: |
+        echo "🔍 Buscando logs antiguos (>30 días)..."
+        
+        if [ -d "logs" ]; then
+          find logs/ -name "*.log" -mtime +30 -type f | tee old-logs.txt
+          
+          LOG_COUNT=$(cat old-logs.txt | wc -l)
+          echo "📊 Logs antiguos encontrados: $LOG_COUNT"
+          
+          if [ $LOG_COUNT -gt 0 ]; then
+            echo "⚠️ Considera limpiar estos logs manualmente"
+          else
+            echo "✅ No hay logs antiguos para limpiar"
+          fi
+        else
+          echo "ℹ️ Directorio logs/ no existe"
+        fi
+
+  # ✅ Verificar dependencias desactualizadas
+  check-dependencies:
+    name: 📦 Verificar Dependencias
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 🔍 Backend - Dependencias desactualizadas
+      working-directory: ./backend
+      run: |
+        echo "📦 Verificando dependencias del Backend..."
+        npm outdated || echo "Hay paquetes desactualizados"
+        
+    - name: 🔍 Frontend - Dependencias desactualizadas
+      working-directory: ./frontend
+      run: |
+        echo "📦 Verificando dependencias del Frontend..."
+        npm outdated || echo "Hay paquetes desactualizados"
+
+  # ✅ Análisis de seguridad
+  security-audit:
+    name: 🔒 Auditoría de Seguridad
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 🔒 Backend - Audit
+      working-directory: ./backend
+      run: |
+        echo "🔒 Auditando seguridad del Backend..."
+        npm audit --audit-level=moderate || echo "⚠️ Vulnerabilidades encontradas"
+        
+    - name: 🔒 Frontend - Audit
+      working-directory: ./frontend
+      run: |
+        echo "🔒 Auditando seguridad del Frontend..."
+        npm audit --audit-level=moderate || echo "⚠️ Vulnerabilidades encontradas"
+
+  # ✅ Análisis de tamaño del proyecto
+  project-stats:
+    name: 📊 Estadísticas del Proyecto
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 📊 Generar estadísticas
+      run: |
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 ESTADÍSTICAS DOBACKSOFT"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        # Líneas de código
+        echo "📝 Líneas de código:"
+        echo "  Backend (JS):"
+        find backend/ -name "*.js" -type f | xargs wc -l | tail -1
+        echo "  Frontend (TS/TSX):"
+        find frontend/ -name "*.ts" -o -name "*.tsx" -type f | xargs wc -l | tail -1 || echo "    No hay archivos TS/TSX"
+        echo "  Frontend (JSX):"
+        find frontend/ -name "*.jsx" -type f | xargs wc -l | tail -1 || echo "    No hay archivos JSX"
+        echo ""
+        
+        # Archivos por tipo
+        echo "📂 Distribución de archivos:"
+        find . -type f -name "*.*" | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10
+        echo ""
+        
+        # Tamaño del proyecto
+        echo "💾 Tamaño del proyecto:"
+        du -sh backend/ frontend/ 2>/dev/null || echo "  Directorios no encontrados"
+        echo ""
+        
+        # Commits recientes
+        echo "📈 Actividad reciente (últimos 7 días):"
+        git log --since="7 days ago" --oneline | wc -l | xargs echo "  Commits:"
+        echo ""
+        
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # ✅ Resumen de tareas
+  summary:
+    name: 📋 Resumen
+    runs-on: ubuntu-latest
+    needs: [cleanup-logs, check-dependencies, security-audit, project-stats]
+    if: always()
+    
+    steps:
+    - name: 📊 Reporte final
+      run: |
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "⏰ TAREAS PROGRAMADAS COMPLETADAS"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🧹 Limpieza: ${{ needs.cleanup-logs.result }}"
+        echo "📦 Dependencias: ${{ needs.check-dependencies.result }}"
+        echo "🔒 Seguridad: ${{ needs.security-audit.result }}"
+        echo "📊 Estadísticas: ${{ needs.project-stats.result }}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+

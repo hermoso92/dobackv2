@@ -1,0 +1,1167 @@
+{
+  "fechaAnalisis": "2025-10-10T13:59:35.967Z",
+  "totalArchivos": 93,
+  "vehiculos": [
+    "DOBACK023",
+    "DOBACK024",
+    "DOBACK026",
+    "DOBACK027",
+    "DOBACK028"
+  ],
+  "resumenPorVehiculo": [
+    {
+      "vehiculo": "DOBACK023",
+      "totalArchivos": 6,
+      "fechas": [
+        "04/10/2025",
+        "30/09/2025"
+      ],
+      "tipos": {
+        "estabilidad": 2,
+        "gps": 2,
+        "rotativo": 2
+      }
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "totalArchivos": 28,
+      "fechas": [
+        "01/10/2025",
+        "02/10/2025",
+        "03/10/2025",
+        "04/10/2025",
+        "05/10/2025",
+        "06/10/2025",
+        "07/10/2025",
+        "08/10/2025",
+        "09/10/2025",
+        "30/09/2025"
+      ],
+      "tipos": {
+        "estabilidad": 9,
+        "gps": 10,
+        "rotativo": 9
+      }
+    },
+    {
+      "vehiculo": "DOBACK026",
+      "totalArchivos": 2,
+      "fechas": [
+        "26/09/2025"
+      ],
+      "tipos": {
+        "estabilidad": 1,
+        "gps": 1,
+        "rotativo": 0
+      }
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "totalArchivos": 30,
+      "fechas": [
+        "01/10/2025",
+        "02/10/2025",
+        "03/10/2025",
+        "04/10/2025",
+        "05/10/2025",
+        "06/10/2025",
+        "07/10/2025",
+        "08/10/2025",
+        "29/09/2025",
+        "30/09/2025"
+      ],
+      "tipos": {
+        "estabilidad": 10,
+        "gps": 10,
+        "rotativo": 10
+      }
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "totalArchivos": 27,
+      "fechas": [
+        "01/10/2025",
+        "02/10/2025",
+        "03/10/2025",
+        "04/10/2025",
+        "05/10/2025",
+        "06/10/2025",
+        "07/10/2025",
+        "08/10/2025",
+        "30/09/2025"
+      ],
+      "tipos": {
+        "estabilidad": 9,
+        "gps": 9,
+        "rotativo": 9
+      }
+    }
+  ],
+  "archivos": [
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "04/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK023_20251004.txt",
+      "tamañoKB": 2110.2275390625,
+      "totalLineas": 13745,
+      "sesionesDetectadas": 5,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "04/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK023_20251004.txt",
+      "tamañoKB": 81.197265625,
+      "totalLineas": 1149,
+      "sesionesDetectadas": 5,
+      "calidadDatos": 83,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "04/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK023_20251004.txt",
+      "tamañoKB": 2.42578125,
+      "totalLineas": 103,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "30/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK023_20250930.txt",
+      "tamañoKB": 1440.361328125,
+      "totalLineas": 9457,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "30/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK023_20250930.txt",
+      "tamañoKB": 85.587890625,
+      "totalLineas": 1207,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 90,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK023",
+      "fecha": "30/09/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK023_20250930.txt",
+      "tamañoKB": 1.1474609375,
+      "totalLineas": 50,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "01/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251001.txt",
+      "tamañoKB": 15586.0009765625,
+      "totalLineas": 100563,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "01/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251001.txt",
+      "tamañoKB": 113.115234375,
+      "totalLineas": 1612,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 80,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "01/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251001.txt",
+      "tamañoKB": 14.3525390625,
+      "totalLineas": 633,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "02/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251002.txt",
+      "tamañoKB": 15423.515625,
+      "totalLineas": 99746,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "02/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251002.txt",
+      "tamañoKB": 53.259765625,
+      "totalLineas": 766,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 51,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "02/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251002.txt",
+      "tamañoKB": 14.1279296875,
+      "totalLineas": 624,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "03/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251003.txt",
+      "tamañoKB": 19627.6201171875,
+      "totalLineas": 128362,
+      "sesionesDetectadas": 4,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "03/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251003.txt",
+      "tamañoKB": 471.3291015625,
+      "totalLineas": 6651,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 92,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "03/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251003.txt",
+      "tamañoKB": 17.8564453125,
+      "totalLineas": 792,
+      "sesionesDetectadas": 4,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "04/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251004.txt",
+      "tamañoKB": 12710.9677734375,
+      "totalLineas": 82212,
+      "sesionesDetectadas": 10,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "04/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251004.txt",
+      "tamañoKB": 37.3330078125,
+      "totalLineas": 546,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 44,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "04/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251004.txt",
+      "tamañoKB": 12.107421875,
+      "totalLineas": 530,
+      "sesionesDetectadas": 10,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "05/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251005.txt",
+      "tamañoKB": 17220.8623046875,
+      "totalLineas": 111107,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "05/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251005.txt",
+      "tamañoKB": 191.3662109375,
+      "totalLineas": 2703,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 84,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "05/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251005.txt",
+      "tamañoKB": 15.8798828125,
+      "totalLineas": 700,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "06/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251006.txt",
+      "tamañoKB": 12912.9970703125,
+      "totalLineas": 83271,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "06/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251006.txt",
+      "tamañoKB": 138.0361328125,
+      "totalLineas": 1958,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 88,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "06/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251006.txt",
+      "tamañoKB": 11.5224609375,
+      "totalLineas": 512,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "07/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251007.txt",
+      "tamañoKB": 42377.4384765625,
+      "totalLineas": 275119,
+      "sesionesDetectadas": 9,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "07/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251007.txt",
+      "tamañoKB": 387.7451171875,
+      "totalLineas": 5455,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 91,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "07/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251007.txt",
+      "tamañoKB": 38.2734375,
+      "totalLineas": 1696,
+      "sesionesDetectadas": 9,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "08/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20251008.txt",
+      "tamañoKB": 19183.8330078125,
+      "totalLineas": 124200,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "08/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251008.txt",
+      "tamañoKB": 596.748046875,
+      "totalLineas": 8447,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 79,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "08/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20251008.txt",
+      "tamañoKB": 17.5419921875,
+      "totalLineas": 775,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "09/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20251009.txt",
+      "tamañoKB": 697.892578125,
+      "totalLineas": 9796,
+      "sesionesDetectadas": 4,
+      "calidadDatos": 95,
+      "problemas": [
+        "Hora inválida (>24h)",
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "30/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK024_20250930.txt",
+      "tamañoKB": 15145.26953125,
+      "totalLineas": 98033,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "30/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK024_20250930.txt",
+      "tamañoKB": 89.87109375,
+      "totalLineas": 1283,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 79,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK024",
+      "fecha": "30/09/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK024_20250930.txt",
+      "tamañoKB": 13.5439453125,
+      "totalLineas": 602,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK026",
+      "fecha": "26/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK026_20250926.txt",
+      "tamañoKB": 7547.92578125,
+      "totalLineas": 48347,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK026",
+      "fecha": "26/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK026_20250926.txt",
+      "tamañoKB": 8.232421875,
+      "totalLineas": 125,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 0,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "01/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251001.txt",
+      "tamañoKB": 8651.826171875,
+      "totalLineas": 56856,
+      "sesionesDetectadas": 10,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "01/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251001.txt",
+      "tamañoKB": 193.216796875,
+      "totalLineas": 2777,
+      "sesionesDetectadas": 5,
+      "calidadDatos": 68,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "01/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251001.txt",
+      "tamañoKB": 9.0341796875,
+      "totalLineas": 389,
+      "sesionesDetectadas": 14,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "02/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251002.txt",
+      "tamañoKB": 2749.4560546875,
+      "totalLineas": 18112,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "02/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251002.txt",
+      "tamañoKB": 168.5283203125,
+      "totalLineas": 2369,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 91,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "02/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251002.txt",
+      "tamañoKB": 4.4677734375,
+      "totalLineas": 193,
+      "sesionesDetectadas": 4,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "03/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251003.txt",
+      "tamañoKB": 1409.8115234375,
+      "totalLineas": 9023,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "03/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251003.txt",
+      "tamañoKB": 184.83984375,
+      "totalLineas": 2612,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 93,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "03/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251003.txt",
+      "tamañoKB": 4.6494140625,
+      "totalLineas": 206,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "04/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251004.txt",
+      "tamañoKB": 2239.189453125,
+      "totalLineas": 14661,
+      "sesionesDetectadas": 5,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "04/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251004.txt",
+      "tamañoKB": 83.4521484375,
+      "totalLineas": 1195,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 75,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "04/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251004.txt",
+      "tamañoKB": 2.537109375,
+      "totalLineas": 107,
+      "sesionesDetectadas": 5,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "05/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251005.txt",
+      "tamañoKB": 6057.892578125,
+      "totalLineas": 39739,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "05/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251005.txt",
+      "tamañoKB": 132.8564453125,
+      "totalLineas": 1892,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 82,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "05/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251005.txt",
+      "tamañoKB": 6.5361328125,
+      "totalLineas": 286,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "06/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251006.txt",
+      "tamañoKB": 1192.5048828125,
+      "totalLineas": 8018,
+      "sesionesDetectadas": 7,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "06/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251006.txt",
+      "tamañoKB": 19.255859375,
+      "totalLineas": 291,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 0,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "06/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251006.txt",
+      "tamañoKB": 4.7392578125,
+      "totalLineas": 204,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "07/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251007.txt",
+      "tamañoKB": 2772.02734375,
+      "totalLineas": 18732,
+      "sesionesDetectadas": 14,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "07/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251007.txt",
+      "tamañoKB": 320.6484375,
+      "totalLineas": 4532,
+      "sesionesDetectadas": 15,
+      "calidadDatos": 92,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "07/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251007.txt",
+      "tamañoKB": 8.990234375,
+      "totalLineas": 386,
+      "sesionesDetectadas": 15,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "08/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20251008.txt",
+      "tamañoKB": 6556.732421875,
+      "totalLineas": 42738,
+      "sesionesDetectadas": 15,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "08/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20251008.txt",
+      "tamañoKB": 180.0205078125,
+      "totalLineas": 2539,
+      "sesionesDetectadas": 14,
+      "calidadDatos": 83,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "08/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20251008.txt",
+      "tamañoKB": 3.14453125,
+      "totalLineas": 133,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "29/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20250929.txt",
+      "tamañoKB": 14196.1552734375,
+      "totalLineas": 92633,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "29/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20250929.txt",
+      "tamañoKB": 595.4765625,
+      "totalLineas": 8726,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 39,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "29/09/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20250929.txt",
+      "tamañoKB": 3.1669921875,
+      "totalLineas": 139,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "30/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK027_20250930.txt",
+      "tamañoKB": 2539.2158203125,
+      "totalLineas": 16613,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "30/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK027_20250930.txt",
+      "tamañoKB": 96.904296875,
+      "totalLineas": 1368,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 79,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK027",
+      "fecha": "30/09/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK027_20250930.txt",
+      "tamañoKB": 2.671875,
+      "totalLineas": 115,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "01/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251001.txt",
+      "tamañoKB": 16535.619140625,
+      "totalLineas": 108029,
+      "sesionesDetectadas": 10,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "01/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251001.txt",
+      "tamañoKB": 604.30859375,
+      "totalLineas": 8472,
+      "sesionesDetectadas": 14,
+      "calidadDatos": 97,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "01/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251001.txt",
+      "tamañoKB": 15.9970703125,
+      "totalLineas": 699,
+      "sesionesDetectadas": 14,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "02/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251002.txt",
+      "tamañoKB": 9418.8818359375,
+      "totalLineas": 61773,
+      "sesionesDetectadas": 4,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "02/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251002.txt",
+      "tamañoKB": 99.408203125,
+      "totalLineas": 1405,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 94,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "02/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251002.txt",
+      "tamañoKB": 9.1416015625,
+      "totalLineas": 400,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "03/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251003.txt",
+      "tamañoKB": 5464.1806640625,
+      "totalLineas": 35609,
+      "sesionesDetectadas": 12,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "03/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251003.txt",
+      "tamañoKB": 174.326171875,
+      "totalLineas": 2562,
+      "sesionesDetectadas": 12,
+      "calidadDatos": 33,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "03/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251003.txt",
+      "tamañoKB": 8.7685546875,
+      "totalLineas": 373,
+      "sesionesDetectadas": 18,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "04/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251004.txt",
+      "tamañoKB": 4635.90234375,
+      "totalLineas": 30284,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "04/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251004.txt",
+      "tamañoKB": 171.71875,
+      "totalLineas": 2439,
+      "sesionesDetectadas": 6,
+      "calidadDatos": 80,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "04/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251004.txt",
+      "tamañoKB": 4.8740234375,
+      "totalLineas": 210,
+      "sesionesDetectadas": 8,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "05/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251005.txt",
+      "tamañoKB": 9115.74609375,
+      "totalLineas": 59804,
+      "sesionesDetectadas": 15,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "05/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251005.txt",
+      "tamañoKB": 344.9833984375,
+      "totalLineas": 4908,
+      "sesionesDetectadas": 21,
+      "calidadDatos": 81,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "05/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251005.txt",
+      "tamañoKB": 10.3232421875,
+      "totalLineas": 437,
+      "sesionesDetectadas": 23,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "06/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251006.txt",
+      "tamañoKB": 13096.115234375,
+      "totalLineas": 85880,
+      "sesionesDetectadas": 52,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "06/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251006.txt",
+      "tamañoKB": 538.0693359375,
+      "totalLineas": 7556,
+      "sesionesDetectadas": 62,
+      "calidadDatos": 98,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "06/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251006.txt",
+      "tamañoKB": 17.6162109375,
+      "totalLineas": 721,
+      "sesionesDetectadas": 62,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "07/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251007.txt",
+      "tamañoKB": 16527.32421875,
+      "totalLineas": 107895,
+      "sesionesDetectadas": 19,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "07/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251007.txt",
+      "tamañoKB": 606.4609375,
+      "totalLineas": 8531,
+      "sesionesDetectadas": 27,
+      "calidadDatos": 89,
+      "problemas": [
+        "Timestamp corrupto detectado"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "07/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251007.txt",
+      "tamañoKB": 17.291015625,
+      "totalLineas": 742,
+      "sesionesDetectadas": 28,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "08/10/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20251008.txt",
+      "tamañoKB": 30787.1787109375,
+      "totalLineas": 200233,
+      "sesionesDetectadas": 16,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "08/10/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20251008.txt",
+      "tamañoKB": 255.1513671875,
+      "totalLineas": 3615,
+      "sesionesDetectadas": 2,
+      "calidadDatos": 85,
+      "problemas": [
+        "Timestamp corrupto detectado",
+        "Hora inválida (>24h)"
+      ]
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "08/10/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20251008.txt",
+      "tamañoKB": 34.220703125,
+      "totalLineas": 1502,
+      "sesionesDetectadas": 22,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "30/09/2025",
+      "tipo": "ESTABILIDAD",
+      "nombreArchivo": "ESTABILIDAD_DOBACK028_20250930.txt",
+      "tamañoKB": 911.1708984375,
+      "totalLineas": 5956,
+      "sesionesDetectadas": 3,
+      "calidadDatos": 100,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "30/09/2025",
+      "tipo": "GPS",
+      "nombreArchivo": "GPS_DOBACK028_20250930.txt",
+      "tamañoKB": 16.201171875,
+      "totalLineas": 245,
+      "sesionesDetectadas": 1,
+      "calidadDatos": 0,
+      "problemas": []
+    },
+    {
+      "vehiculo": "DOBACK028",
+      "fecha": "30/09/2025",
+      "tipo": "ROTATIVO",
+      "nombreArchivo": "ROTATIVO_DOBACK028_20250930.txt",
+      "tamañoKB": 14.33203125,
+      "totalLineas": 628,
+      "sesionesDetectadas": 11,
+      "calidadDatos": 100,
+      "problemas": []
+    }
+  ]
+}

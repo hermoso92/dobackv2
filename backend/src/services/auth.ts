@@ -179,7 +179,11 @@ export class AuthService {
                     id: true,
                     email: true,
                     role: true,
-                    organizationId: true
+                    organizationId: true,
+                    name: true,
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true
                 }
             });
 
@@ -187,16 +191,34 @@ export class AuthService {
                 throw new AppError('Usuario no encontrado', 404);
             }
 
-            const token = this.generateToken({
+            // Generar nuevo access token
+            const newAccessToken = this.generateToken({
                 id: String(user.id),
                 email: user.email,
                 role: user.role,
                 organizationId: user.organizationId ? String(user.organizationId) : ''
             });
 
+            // Generar nuevo refresh token
+            const newRefreshToken = this.generateToken(
+                {
+                    id: String(user.id),
+                    email: user.email,
+                    role: user.role,
+                    organizationId: user.organizationId ? String(user.organizationId) : ''
+                },
+                true
+            );
+
+            const { password: _, ...userWithoutPassword } = user as any;
+
             return {
                 success: true,
-                data: { token }
+                data: { 
+                    access_token: newAccessToken,
+                    refresh_token: newRefreshToken,
+                    user: userWithoutPassword
+                }
             };
         } catch (error) {
             logger.error('Error al refrescar token', { error });

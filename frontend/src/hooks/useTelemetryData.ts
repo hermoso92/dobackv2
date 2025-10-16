@@ -15,15 +15,7 @@ export const useTelemetryData = (sessionId?: string) => {
         return useQuery({
             queryKey: ['telemetry', 'sessions', params],
             queryFn: async () => {
-                try {
-                    console.log('🔍 Hook useSessions ejecutándose con params:', params);
-                    const result = await TelemetryAPI.getSessions(params);
-                    console.log('✅ Hook useSessions resultado:', result?.length || 0, 'sesiones');
-                    return result;
-                } catch (error) {
-                    console.error('❌ Error en hook useSessions:', error);
-                    throw error;
-                }
+                return await TelemetryAPI.getSessions(params);
             },
             enabled: true, // Siempre habilitado para cargar todas las sesiones
             staleTime: 5 * 60 * 1000, // 5 minutos

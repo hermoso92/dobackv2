@@ -187,7 +187,7 @@ router.post('/reset', async (req, res) => {
         await prisma.canMeasurement.deleteMany();
         await prisma.gpsMeasurement.deleteMany();
         await prisma.rotativoMeasurement.deleteMany();
-        await prisma.stabilityEvent.deleteMany();
+        await prisma.stability_events.deleteMany();
         await prisma.session.deleteMany();
 
         res.json({ message: 'Base de datos limpiada exitosamente' });

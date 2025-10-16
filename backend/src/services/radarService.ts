@@ -68,7 +68,7 @@ export class RadarService {
 
     private buildHeaders(initHeaders?: RequestInit['headers']): HeadersDictionary {
         const headers: HeadersDictionary = {
-            Authorization: this.secretKey as string
+            Authorization: this.secretKey as string // Radar usa key directamente, NO "Bearer"
         };
 
         if (!initHeaders) {

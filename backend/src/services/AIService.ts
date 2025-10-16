@@ -70,7 +70,7 @@ export class AIService {
             });
 
             // OPTIMIZACIÓN: Usar solo los campos necesarios para análisis
-            const stabilityEvents = await prisma.stabilityEvent.findMany({
+            const stabilityEvents = await prisma.stability_events.findMany({
                 where: {
                     Session: {
                         organizationId
@@ -170,7 +170,7 @@ export class AIService {
             const last30Days = new Date();
             last30Days.setDate(last30Days.getDate() - 30);
 
-            const recentEvents = await prisma.stabilityEvent.findMany({
+            const recentEvents = await prisma.stability_events.findMany({
                 where: {
                     Session: { organizationId },
                     timestamp: { gte: last7Days }
@@ -184,7 +184,7 @@ export class AIService {
                 }
             });
 
-            const olderEvents = await prisma.stabilityEvent.findMany({
+            const olderEvents = await prisma.stability_events.findMany({
                 where: {
                     Session: { organizationId },
                     timestamp: {
@@ -1200,7 +1200,7 @@ export class AIService {
             }
 
             // OPTIMIZACIÓN: Consulta única con agregaciones
-            const analysis = await prisma.stabilityEvent.groupBy({
+            const analysis = await prisma.stability_events.groupBy({
                 by: ['type', 'severity'],
                 where: {
                     Session: { organizationId },

@@ -84,6 +84,16 @@ export class PDFExportService {
                 this.buildDashboardEvents(doc, config);
             }
 
+            // ✅ NUEVO: Sección de claves operacionales
+            if ((config as any).kpis?.operationalKeys && (config as any).kpis.operationalKeys.total > 0) {
+                this.buildOperationalKeys(doc, (config as any).kpis.operationalKeys);
+            }
+
+            // ✅ NUEVO: Sección de calidad de datos
+            if ((config as any).kpis?.quality) {
+                this.buildDataQuality(doc, (config as any).kpis.quality);
+            }
+
             if (config.includeRecommendations) {
                 this.buildDashboardRecommendations(doc, config);
             }
@@ -542,6 +552,93 @@ export class PDFExportService {
         doc.fontSize(12).text('• Optimizar rutas para mejorar eficiencia');
         doc.fontSize(12).text('• Implementar mantenimiento predictivo');
         doc.fontSize(12).text('• Revisar políticas de asignación de vehículos');
+        doc.moveDown(2);
+    }
+
+    /**
+     * ✅ NUEVO: Sección de Claves Operacionales
+     */
+    private static buildOperationalKeys(doc: PDFKit.PDFDocument, operationalKeys: any): void {
+        doc.addPage();
+        doc.fontSize(18).text('🔑 Claves Operacionales', { underline: true });
+        doc.moveDown();
+
+        doc.fontSize(14).text(`Total de claves detectadas: ${operationalKeys.total}`);
+        doc.moveDown();
+
+        if (operationalKeys.porTipo && Object.keys(operationalKeys.porTipo).length > 0) {
+            doc.fontSize(16).text('Distribución por Tipo:');
+            doc.moveDown(0.5);
+
+            const nombresClave: Record<number, string> = {
+                0: 'Taller',
+                1: 'Operativo en Parque',
+                2: 'Salida en Emergencia',
+                3: 'En Incendio/Emergencia',
+                5: 'Regreso al Parque'
+            };
+
+            Object.entries(operationalKeys.porTipo).forEach(([tipo, datos]: [string, any]) => {
+                const nombre = nombresClave[parseInt(tipo)] || `Clave ${tipo}`;
+                doc.fontSize(12).text(
+                    `${nombre}: ${datos.cantidad} veces | ` +
+                    `Duración total: ${Math.round(datos.duracion_total / 60)} min | ` +
+                    `Promedio: ${Math.round(datos.duracion_promedio / 60)} min`
+                );
+                doc.moveDown(0.5);
+            });
+        }
+
+        doc.moveDown();
+
+        if (operationalKeys.claves_recientes && operationalKeys.claves_recientes.length > 0) {
+            doc.fontSize(16).text('Claves Recientes:');
+            doc.moveDown(0.5);
+
+            operationalKeys.claves_recientes.slice(0, 10).forEach((clave: any, idx: number) => {
+                const inicio = new Date(clave.inicio).toLocaleString('es-ES');
+                doc.fontSize(10).text(
+                    `${idx + 1}. ${clave.tipoNombre || `Clave ${clave.tipo}`} - ` +
+                    `${inicio} - ${clave.duracion ? Math.round(clave.duracion / 60) : 0} min` +
+                    `${clave.geocerca ? ` - ${clave.geocerca}` : ''}`
+                );
+                doc.moveDown(0.3);
+            });
+        }
+
+        doc.moveDown(2);
+    }
+
+    /**
+     * ✅ NUEVO: Sección de Calidad de Datos
+     */
+    private static buildDataQuality(doc: PDFKit.PDFDocument, quality: any): void {
+        doc.addPage();
+        doc.fontSize(18).text('📊 Calidad de Datos', { underline: true });
+        doc.moveDown();
+
+        // Índice de Estabilidad
+        doc.fontSize(14).text(`Índice de Estabilidad (SI): ${(quality.indice_promedio * 100).toFixed(1)}%`);
+        doc.fontSize(12).text(`Calificación: ${quality.calificacion} ${quality.estrellas}`);
+        doc.fontSize(10).text(`Total de muestras: ${quality.total_muestras.toLocaleString()}`);
+        doc.moveDown();
+
+        // Interpretación
+        doc.fontSize(14).text('Interpretación:');
+        doc.moveDown(0.5);
+
+        let interpretacion = '';
+        if (quality.indice_promedio >= 0.90) {
+            interpretacion = 'Conducción EXCELENTE - Operación muy estable y segura';
+        } else if (quality.indice_promedio >= 0.88) {
+            interpretacion = 'Conducción BUENA - Estabilidad dentro de parámetros';
+        } else if (quality.indice_promedio >= 0.85) {
+            interpretacion = 'Conducción ACEPTABLE - Requiere atención';
+        } else {
+            interpretacion = 'Conducción DEFICIENTE - Requiere intervención inmediata';
+        }
+
+        doc.fontSize(12).text(interpretacion);
         doc.moveDown(2);
     }
 }

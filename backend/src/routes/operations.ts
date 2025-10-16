@@ -90,7 +90,7 @@ router.get('/critical-events', async (req: Request, res: Response) => {
         `;
 
         // Obtener conteo total
-        const totalCount = await prisma.stabilityEvent.count({ where });
+        const totalCount = await prisma.stability_events.count({ where });
 
         // Transformar eventos al formato esperado por el frontend
         const transformedEvents = events.map((event: any) => {
@@ -184,7 +184,7 @@ router.get('/alerts', async (req: Request, res: Response) => {
         });
 
         // Obtener eventos críticos recientes para generar alertas
-        const recentEvents = await prisma.stabilityEvent.findMany({
+        const recentEvents = await prisma.stability_events.findMany({
             where: {
                 Session: {
                     vehicle: {
@@ -239,11 +239,11 @@ router.get('/alerts', async (req: Request, res: Response) => {
                 id: event.id,
                 ruleId: 'auto-generated',
                 ruleName: `Alerta de Estabilidad Automática`,
-                vehicleId: event.Session.vehicleId,
-                vehicleName: event.Session.vehicle.name,
+                vehicleId: event.session.vehicleId,
+                vehicleName: event.session.Vehicle.name,
                 alertType,
                 severity: alertSeverity,
-                message: `${event.Session.vehicle.name} - ${level.toUpperCase()}: ${tipos.join(', ')}`,
+                message: `${event.session.Vehicle.name} - ${level.toUpperCase()}: ${tipos.join(', ')}`,
                 timestamp: event.timestamp.toISOString(),
                 status: 'active' as const,
                 data: {

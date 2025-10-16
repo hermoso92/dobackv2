@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 
-from backend.models.vehicle_state_interval import VehicleStateInterval
+# Usar consultas SQL directas para OperationalStateSegment
 from backend.utils.logger import logger
 
 
@@ -21,7 +21,7 @@ class KPIService:
     
     def get_states_summary(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]] = None,
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None
@@ -40,35 +40,40 @@ class KPIService:
             }
         """
         try:
-            # Construir query base
-            query = self.db.query(
-                VehicleStateInterval.state_key,
-                func.sum(VehicleStateInterval.duration_seconds).label('total_duration'),
-                func.count(VehicleStateInterval.id).label('count')
-            ).filter(
-                VehicleStateInterval.organization_id == organization_id,
-                VehicleStateInterval.duration_seconds.isnot(None)
-            )
+            # Construir query SQL directa
+            from sqlalchemy import text
             
-            # Aplicar filtros
+            # Construir filtros WHERE
+            where_conditions = ["s.\"organizationId\" = :org_id"]
+            params = {'org_id': organization_id}
+            
             if vehicle_ids:
-                query = query.filter(VehicleStateInterval.vehicle_id.in_(vehicle_ids))
+                where_conditions.append("s.\"vehicleId\" = ANY(:vehicle_ids)")
+                params['vehicle_ids'] = vehicle_ids
             
             if from_date:
-                query = query.filter(VehicleStateInterval.start_time >= from_date)
+                where_conditions.append("oss.\"startTime\" >= :from_date")
+                params['from_date'] = from_date
             
             if to_date:
-                query = query.filter(
-                    or_(
-                        VehicleStateInterval.end_time <= to_date,
-                        VehicleStateInterval.end_time.is_(None)
-                    )
-                )
+                where_conditions.append("oss.\"endTime\" <= :to_date")
+                params['to_date'] = to_date
             
-            # Agrupar por clave de estado
-            query = query.group_by(VehicleStateInterval.state_key)
+            where_clause = " AND ".join(where_conditions)
             
-            results = query.all()
+            query = text(f"""
+                SELECT 
+                    oss.clave,
+                    SUM(oss.\"durationSeconds\") as total_duration,
+                    COUNT(oss.id) as count
+                FROM operational_state_segments oss
+                JOIN "Session" s ON oss.\"sessionId\" = s.id
+                WHERE {where_clause}
+                GROUP BY oss.clave
+                ORDER BY oss.clave
+            """)
+            
+            results = self.db.execute(query, params).fetchall()
             
             # Mapeo de nombres de estados
             state_names = {
@@ -85,7 +90,7 @@ class KPIService:
             time_outside = 0  # Claves 2+3+4+5
             
             for row in results:
-                state_key = row.state_key
+                state_key = row.clave
                 duration = int(row.total_duration or 0)
                 count = int(row.count or 0)
                 
@@ -138,7 +143,7 @@ class KPIService:
     
     def get_activity_metrics(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]] = None,
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None
@@ -208,7 +213,7 @@ class KPIService:
     
     def get_stability_metrics(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]] = None,
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None
@@ -283,7 +288,7 @@ class KPIService:
     
     def _calculate_distance_traveled(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]],
         from_date: Optional[datetime],
         to_date: Optional[datetime]
@@ -319,86 +324,125 @@ class KPIService:
     
     def _calculate_driving_time(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]],
         from_date: Optional[datetime],
         to_date: Optional[datetime]
     ) -> int:
         """Calcula tiempo total de conducción (fuera de parque y taller)."""
-        # Sumar duraciones de claves 2, 3, 4, 5
-        query = self.db.query(
-            func.sum(VehicleStateInterval.duration_seconds)
-        ).filter(
-            VehicleStateInterval.organization_id == organization_id,
-            VehicleStateInterval.state_key.in_([2, 3, 4, 5]),
-            VehicleStateInterval.duration_seconds.isnot(None)
-        )
+        from sqlalchemy import text
+        
+        # Construir filtros WHERE
+        where_conditions = [
+            "s.\"organizationId\" = :org_id",
+            "oss.clave IN (2, 3, 4, 5)"
+        ]
+        params = {'org_id': organization_id}
         
         if vehicle_ids:
-            query = query.filter(VehicleStateInterval.vehicle_id.in_(vehicle_ids))
+            where_conditions.append("s.\"vehicleId\" = ANY(:vehicle_ids)")
+            params['vehicle_ids'] = vehicle_ids
         
         if from_date:
-            query = query.filter(VehicleStateInterval.start_time >= from_date)
+            where_conditions.append("oss.\"startTime\" >= :from_date")
+            params['from_date'] = from_date
         
         if to_date:
-            query = query.filter(VehicleStateInterval.end_time <= to_date)
+            where_conditions.append("oss.\"endTime\" <= :to_date")
+            params['to_date'] = to_date
         
-        result = query.scalar()
+        where_clause = " AND ".join(where_conditions)
+        
+        query = text(f"""
+            SELECT SUM(oss.\"durationSeconds\") as total_duration
+            FROM operational_state_segments oss
+            JOIN "Session" s ON oss.\"sessionId\" = s.id
+            WHERE {where_clause}
+        """)
+        
+        result = self.db.execute(query, params).scalar()
         return int(result or 0)
     
     def _calculate_rotativo_time(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]],
         from_date: Optional[datetime],
         to_date: Optional[datetime]
     ) -> int:
         """Calcula tiempo total con rotativo ON (Clave 2 principalmente)."""
-        query = self.db.query(
-            func.sum(VehicleStateInterval.duration_seconds)
-        ).filter(
-            VehicleStateInterval.organization_id == organization_id,
-            VehicleStateInterval.state_key == 2,  # Salida en emergencia
-            VehicleStateInterval.duration_seconds.isnot(None)
-        )
+        from sqlalchemy import text
+        
+        # Construir filtros WHERE
+        where_conditions = [
+            "s.\"organizationId\" = :org_id",
+            "oss.clave = 2"  # Salida en emergencia
+        ]
+        params = {'org_id': organization_id}
         
         if vehicle_ids:
-            query = query.filter(VehicleStateInterval.vehicle_id.in_(vehicle_ids))
+            where_conditions.append("s.\"vehicleId\" = ANY(:vehicle_ids)")
+            params['vehicle_ids'] = vehicle_ids
         
         if from_date:
-            query = query.filter(VehicleStateInterval.start_time >= from_date)
+            where_conditions.append("oss.\"startTime\" >= :from_date")
+            params['from_date'] = from_date
         
         if to_date:
-            query = query.filter(VehicleStateInterval.end_time <= to_date)
+            where_conditions.append("oss.\"endTime\" <= :to_date")
+            params['to_date'] = to_date
         
-        result = query.scalar()
+        where_clause = " AND ".join(where_conditions)
+        
+        query = text(f"""
+            SELECT SUM(oss.\"durationSeconds\") as total_duration
+            FROM operational_state_segments oss
+            JOIN "Session" s ON oss.\"sessionId\" = s.id
+            WHERE {where_clause}
+        """)
+        
+        result = self.db.execute(query, params).scalar()
         return int(result or 0)
     
     def _count_emergency_departures(
         self,
-        organization_id: int,
+        organization_id: str,
         vehicle_ids: Optional[List[str]],
         from_date: Optional[datetime],
         to_date: Optional[datetime]
     ) -> int:
         """Cuenta número de salidas en emergencia (inicios de Clave 2)."""
-        query = self.db.query(
-            func.count(VehicleStateInterval.id)
-        ).filter(
-            VehicleStateInterval.organization_id == organization_id,
-            VehicleStateInterval.state_key == 2
-        )
+        from sqlalchemy import text
+        
+        # Construir filtros WHERE
+        where_conditions = [
+            "s.\"organizationId\" = :org_id",
+            "oss.clave = 2"  # Salida en emergencia
+        ]
+        params = {'org_id': organization_id}
         
         if vehicle_ids:
-            query = query.filter(VehicleStateInterval.vehicle_id.in_(vehicle_ids))
+            where_conditions.append("s.\"vehicleId\" = ANY(:vehicle_ids)")
+            params['vehicle_ids'] = vehicle_ids
         
         if from_date:
-            query = query.filter(VehicleStateInterval.start_time >= from_date)
+            where_conditions.append("oss.\"startTime\" >= :from_date")
+            params['from_date'] = from_date
         
         if to_date:
-            query = query.filter(VehicleStateInterval.start_time <= to_date)
+            where_conditions.append("oss.\"startTime\" <= :to_date")
+            params['to_date'] = to_date
         
-        result = query.scalar()
+        where_clause = " AND ".join(where_conditions)
+        
+        query = text(f"""
+            SELECT COUNT(oss.id) as count
+            FROM operational_state_segments oss
+            JOIN "Session" s ON oss.\"sessionId\" = s.id
+            WHERE {where_clause}
+        """)
+        
+        result = self.db.execute(query, params).scalar()
         return int(result or 0)
     
     def _format_duration(self, seconds: int) -> str:

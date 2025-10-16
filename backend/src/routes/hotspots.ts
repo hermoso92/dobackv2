@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 
 /**
@@ -30,12 +28,20 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 /**
  * Agrupa eventos por proximidad geográfica
  */
+/**
+ * MANDAMIENTO M5: Clustering con IDs únicos
+ * Radio en metros, frecuencia = eventos distintos (no duplicados)
+ */
 function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
     const clusters: any[] = [];
     const usedEvents = new Set<number>();
 
     events.forEach((event, i) => {
         if (usedEvents.has(i)) return;
+
+        // MANDAMIENTO M5.2: Usar Set para IDs únicos
+        const eventIds = new Set<string>();
+        eventIds.add(event.id);
 
         // Crear nuevo cluster
         const cluster: any = {
@@ -49,10 +55,10 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
                 moderada: event.severity === 'moderada' ? 1 : 0,
                 leve: event.severity === 'leve' ? 1 : 0
             },
-            frequency: 1,
+            frequency: 1, // Se actualizará al final con eventIds.size
             vehicleIds: [event.vehicleId],
             lastOccurrence: event.timestamp,
-            dominantSeverity: event.severity || 'leve' // Inicializar con severidad del primer evento
+            dominantSeverity: event.severity || 'leve'
         };
 
         usedEvents.add(i);
@@ -68,9 +74,10 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
                 otherEvent.lng
             );
 
+            // MANDAMIENTO M5.1: Radio en metros
             if (distance <= radiusMeters) {
                 cluster.events.push(otherEvent);
-                cluster.frequency++;
+                eventIds.add(otherEvent.id); // Añadir ID único
 
                 const severity = otherEvent.severity || 'leve';
                 cluster.severity_counts[severity as keyof typeof cluster.severity_counts] =
@@ -92,6 +99,9 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
         // Calcular centro del cluster (promedio de coordenadas)
         cluster.lat = cluster.events.reduce((sum: number, e: any) => sum + e.lat, 0) / cluster.events.length;
         cluster.lng = cluster.events.reduce((sum: number, e: any) => sum + e.lng, 0) / cluster.events.length;
+
+        // MANDAMIENTO M5.2: Frecuencia = número de IDs únicos
+        cluster.frequency = eventIds.size;
 
         // Determinar severidad dominante
         const maxSeverity = Object.entries(cluster.severity_counts)
@@ -115,64 +125,86 @@ router.get('/critical-points', async (req, res) => {
         const organizationId = req.query.organizationId as string || 'default-org';
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
         const severityFilter = req.query.severity as string || 'all';
-        const minFrequency = parseInt(req.query.minFrequency as string) || 1;
+        const minFrequency = Number.isFinite(parseInt(req.query.minFrequency as string))
+            ? parseInt(req.query.minFrequency as string)
+            : 2; // default más estricto para reducir ruido
         const rotativoFilter = req.query.rotativoOn as string || 'all';
-        const clusterRadius = parseFloat(req.query.clusterRadius as string) || 20;
-        const startDate = req.query.startDate as string;
-        const endDate = req.query.endDate as string;
+        const clusterRadius = Number.isFinite(parseFloat(req.query.clusterRadius as string))
+            ? parseFloat(req.query.clusterRadius as string)
+            : 30; // default más amplio para agrupar mejor
+        // Aceptar ambos formatos: from/to y startDate/endDate
+        const from = (req.query.from as string) || (req.query.startDate as string);
+        const to = (req.query.to as string) || (req.query.endDate as string);
+        const mode = (req.query.mode as string) || 'cluster'; // 'cluster' | 'single'
 
-        logger.info('Obteniendo puntos críticos con eventDetector', { organizationId, severityFilter, minFrequency, clusterRadius });
+        logger.info('Obteniendo puntos críticos con eventDetector', { organizationId, severityFilter, minFrequency, clusterRadius, from, to, vehicleIds });
 
-        // Construir filtros para sesiones
-        const sessionsWhere: any = { organizationId };
+        const { prisma } = await import('../config/prisma');
 
-        if (vehicleIds && vehicleIds.length > 0) {
-            sessionsWhere.vehicleId = { in: vehicleIds };
+        // LEER EVENTOS DESDE BD filtrando por timestamp, organización y vehículos
+        let eventosDB;
+
+        if (from && to && vehicleIds && vehicleIds.length > 0) {
+            eventosDB = await prisma.$queryRaw`
+                SELECT 
+                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                FROM stability_events se
+                JOIN "Session" s ON se."session_id" = s.id
+                JOIN "Vehicle" v ON s."vehicleId" = v.id
+                WHERE se.lat != 0 AND se.lon != 0
+                AND s."organizationId" = ${organizationId}
+                AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
+                AND s."vehicleId" = ANY(${vehicleIds})
+            ` as any[];
+        } else if (from && to) {
+            eventosDB = await prisma.$queryRaw`
+                SELECT 
+                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                FROM stability_events se
+                JOIN "Session" s ON se."session_id" = s.id
+                JOIN "Vehicle" v ON s."vehicleId" = v.id
+                WHERE se.lat != 0 AND se.lon != 0
+                AND s."organizationId" = ${organizationId}
+                AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
+            ` as any[];
+        } else if (vehicleIds && vehicleIds.length > 0) {
+            eventosDB = await prisma.$queryRaw`
+                SELECT 
+                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                FROM stability_events se
+                JOIN "Session" s ON se."session_id" = s.id
+                JOIN "Vehicle" v ON s."vehicleId" = v.id
+                WHERE se.lat != 0 AND se.lon != 0
+                AND s."organizationId" = ${organizationId}
+                AND s."vehicleId" = ANY(${vehicleIds})
+            ` as any[];
+        } else {
+            eventosDB = await prisma.$queryRaw`
+                SELECT 
+                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                FROM stability_events se
+                JOIN "Session" s ON se."session_id" = s.id
+                JOIN "Vehicle" v ON s."vehicleId" = v.id
+                WHERE se.lat != 0 AND se.lon != 0
+                AND s."organizationId" = ${organizationId}
+            ` as any[];
         }
 
-        if (startDate || endDate) {
-            sessionsWhere.startTime = {};
-            if (startDate) sessionsWhere.startTime.gte = new Date(startDate);
-            if (endDate) sessionsWhere.startTime.lte = new Date(endDate);
-        }
-
-        // Obtener sesiones filtradas
-        const sessions = await prisma.session.findMany({
-            where: sessionsWhere,
-            select: { id: true, vehicleId: true },
-            take: 100 // Limitar para performance
-        });
-
-        const sessionIds = sessions.map(s => s.id);
-
-        logger.info(`📍 Buscando eventos en ${sessionIds.length} sesiones`, {
-            vehicleIds,
-            startDate,
-            endDate
-        });
-
-        // ✅ LEER EVENTOS DESDE BD (NO recalcular)
-        const eventosDB = await prisma.stabilityEvent.findMany({
-            where: {
-                session_id: { in: sessionIds },
-                lat: { not: 0 },
-                lon: { not: 0 }
-            },
-            include: {
-                Session: {
-                    include: {
-                        vehicle: true
-                    }
-                }
-            }
-        });
-
-        logger.info(`📍 Eventos encontrados en BD: ${eventosDB.length}`);
+        logger.info(`Eventos encontrados en BD: ${eventosDB.length}`);
 
         // Convertir eventos a formato del endpoint
         const eventos = eventosDB.map(e => {
             const details = e.details as any || {};
-            const si = details.si || 0;
+            // CORREGIDO: El SI está en details.valores.si, no en details.si
+            const si = details.valores?.si || details.si || 0;
+            const roll = details.valores?.roll || details.roll || 0;
+            const ay = details.valores?.ay || details.ay || 0;
+            const gx = details.valores?.gx || details.gx || 0;
+            const speed = details.valores?.speed || details.speed || 0;
 
             // Calcular severidad basada en SI
             let severity = 'leve';
@@ -184,18 +216,25 @@ router.get('/critical-points', async (req, res) => {
                 lat: e.lat,
                 lng: e.lon,
                 timestamp: e.timestamp.toISOString(),
-                vehicleId: e.Session.vehicleId,
-                vehicleName: e.Session.vehicle?.name || e.Session.vehicle?.identifier || 'unknown',
-                eventType: e.type,
+                vehicleId: e.vehicleId,
+                vehicleName: e.vehicleName || e.vehicleIdentifier || 'unknown',
+                type: e.type, // ✅ Cambiado de eventType a type
+                eventType: e.type, // ✅ Mantener para compatibilidad
                 severity,
                 si,
+                roll,
+                ay,
+                gx,
+                speed,
                 rotativo: e.rotativoState === 1,
+                rotativoState: e.rotativoState,
                 location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`,
-                descripcion: e.type
+                descripcion: e.type,
+                details // ✅ Incluir detalles completos
             };
         });
 
-        logger.info(`📍 Eventos procesados: ${eventos.length}`);
+        logger.info(`Eventos procesados: ${eventos.length}`);
 
         // Aplicar filtro de rotativo
         let filteredEvents = eventos;
@@ -212,11 +251,86 @@ router.get('/critical-points', async (req, res) => {
             filteredEvents = filteredEvents.filter(e => e.severity === severityFilter);
         }
 
-        // Realizar clustering
-        const clusters = clusterEvents(filteredEvents, clusterRadius);
+        // Realizar clustering (o forzar modo individual)
+        let clusters = mode === 'single' ? [] : clusterEvents(filteredEvents, clusterRadius);
 
-        // Filtrar por frecuencia mínima
-        const filteredClusters = clusters.filter(cluster => cluster.frequency >= minFrequency);
+        // Filtrar por frecuencia mínima (si hay clustering)
+        let filteredClusters = mode === 'single'
+            ? []
+            : clusters.filter(cluster => cluster.frequency >= minFrequency);
+
+        // Fallback: si no hay clusters pero sí eventos, mostrar eventos individuales como clusters
+        if ((filteredClusters.length === 0 || mode === 'single') && filteredEvents.length > 0) {
+            logger.warn('[Hotspots] Sin clusters con los parámetros actuales; usando fallback de eventos individuales', {
+                filteredEvents: filteredEvents.length,
+                clusterRadius,
+                minFrequency
+            });
+
+            filteredClusters = filteredEvents.map((e, idx) => ({
+                id: `single_${idx}`,
+                lat: e.lat,
+                lng: e.lng,
+                location: e.location,
+                events: [e],
+                severity_counts: {
+                    grave: e.severity === 'grave' ? 1 : 0,
+                    moderada: e.severity === 'moderada' ? 1 : 0,
+                    leve: e.severity === 'leve' ? 1 : 0
+                },
+                frequency: 1,
+                vehicleIds: [e.vehicleId],
+                lastOccurrence: e.timestamp,
+                dominantSeverity: e.severity
+            }));
+        }
+
+        // Fallback 2: si no hay eventos de estabilidad, intentar con excesos de velocidad como puntos críticos
+        if (eventos.length === 0 && filteredClusters.length === 0) {
+            try {
+                const { analizarVelocidades } = await import('../services/speedAnalyzer');
+                // Mantener compatibilidad: si no hay eventos, no forzamos análisis fuera del alcance de la función
+                const analisis = await analizarVelocidades([]);
+                const excesos = analisis.excesos || [];
+
+                logger.info('[Hotspots] Usando excesos de velocidad como eventos críticos de fallback', { total: excesos.length });
+
+                const eventosVel = excesos.map((ex: any) => ({
+                    id: ex.id || `${ex.sessionId}_${ex.timestamp}`,
+                    lat: ex.lat,
+                    lng: ex.lon || ex.lng,
+                    timestamp: new Date(ex.timestamp).toISOString(),
+                    vehicleId: ex.vehicleId,
+                    vehicleName: ex.vehicleName || ex.vehicleId,
+                    eventType: 'EXCESO_VELOCIDAD',
+                    severity: ex.excess > 20 ? 'grave' : 'leve',
+                    si: 0,
+                    rotativo: !!ex.justificado,
+                    location: `${Number(ex.lat).toFixed(4)}, ${Number(ex.lon || ex.lng).toFixed(4)}`
+                })).filter((e: any) => Number.isFinite(e.lat) && Number.isFinite(e.lng));
+
+                const clustersVel = clusterEvents(eventosVel, Math.max(20, clusterRadius));
+                filteredClusters = clustersVel.length > 0 ? clustersVel : eventosVel.map((e: any, idx: number) => ({
+                    id: `speed_${idx}`,
+                    lat: e.lat,
+                    lng: e.lng,
+                    location: e.location,
+                    events: [e],
+                    severity_counts: {
+                        grave: e.severity === 'grave' ? 1 : 0,
+                        moderada: 0,
+                        leve: e.severity === 'leve' ? 1 : 0
+                    },
+                    frequency: 1,
+                    vehicleIds: [e.vehicleId],
+                    lastOccurrence: e.timestamp,
+                    dominantSeverity: e.severity
+                }));
+
+            } catch (fallbackErr) {
+                logger.error('[Hotspots] Error en fallback de velocidad:', fallbackErr);
+            }
+        }
 
         // Ordenar por frecuencia y severidad
         filteredClusters.sort((a, b) => {
@@ -238,7 +352,8 @@ router.get('/critical-points', async (req, res) => {
                     severity: severityFilter,
                     minFrequency,
                     rotativo: rotativoFilter,
-                    clusterRadius
+                    clusterRadius,
+                    mode
                 }
             }
         });
@@ -270,6 +385,8 @@ router.get('/ranking', async (req, res) => {
 
         logger.info('Obteniendo ranking de hotspots con eventDetector', { organizationId, limit });
 
+        const { prisma } = await import('../config/prisma');
+
         // Construir filtros para sesiones
         const sessionsWhere: any = { organizationId };
 
@@ -292,23 +409,31 @@ router.get('/ranking', async (req, res) => {
 
         const sessionIds = sessions.map(s => s.id);
 
-        logger.info(`📍 Buscando eventos para ranking en ${sessionIds.length} sesiones`);
+        logger.info(`Buscando eventos para ranking en ${sessionIds.length} sesiones`);
 
-        // ✅ LEER EVENTOS DESDE BD (NO recalcular)
-        const eventosDB = await prisma.stabilityEvent.findMany({
-            where: {
-                session_id: { in: sessionIds },
-                lat: { not: 0 },
-                lon: { not: 0 }
-            }
-        });
+        // LEER EVENTOS DESDE BD (NO recalcular)
+        const eventosDB = await prisma.$queryRaw`
+            SELECT 
+                se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+            FROM stability_events se
+            JOIN "Session" s ON se."session_id" = s.id
+            JOIN "Vehicle" v ON s."vehicleId" = v.id
+            WHERE se.lat != 0 AND se.lon != 0
+            AND se."session_id" = ANY(${sessionIds})
+        ` as any[];
 
-        logger.info(`📍 Eventos encontrados para ranking: ${eventosDB.length}`);
+        logger.info(`Eventos encontrados para ranking: ${eventosDB.length}`);
 
         // Convertir eventos a formato del endpoint
         const eventos = eventosDB.map(e => {
             const details = e.details as any || {};
-            const si = details.si || 0;
+            // CORREGIDO: El SI está en details.valores.si, no en details.si
+            const si = details.valores?.si || details.si || 0;
+            const roll = details.valores?.roll || details.roll || 0;
+            const ay = details.valores?.ay || details.ay || 0;
+            const gx = details.valores?.gx || details.gx || 0;
+            const speed = details.valores?.speed || details.speed || 0;
 
             // Calcular severidad basada en SI
             let severity = 'leve';
@@ -320,9 +445,17 @@ router.get('/ranking', async (req, res) => {
                 lng: e.lon,
                 severity,
                 timestamp: e.timestamp,
-                eventType: e.type,
+                type: e.type, // ✅ Cambiado de eventType a type
+                eventType: e.type, // ✅ Mantener para compatibilidad
+                si,
+                roll,
+                ay,
+                gx,
+                speed,
                 rotativo: e.rotativoState === 1,
-                location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`
+                rotativoState: e.rotativoState,
+                location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`,
+                details // ✅ Incluir detalles completos
             };
         });
 
