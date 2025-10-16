@@ -26,7 +26,7 @@ import OperationalKeysTab from '../operations/OperationalKeysTab';
 import DeviceMonitoringPanel from '../panel/DeviceMonitoringPanel';
 import { ProcessingTrackingDashboard } from '../processing/ProcessingTrackingDashboard';
 import { DashboardReportsTab } from '../reports/DashboardReportsTab';
-import { SessionsAndRoutesView } from '../sessions/SessionsAndRoutesView';
+import { SessionsAndRoutesView, useRouteExportFunction } from '../sessions/SessionsAndRoutesView';
 import SpeedAnalysisTab from '../speed/SpeedAnalysisTab';
 import BlackSpotsTab from '../stability/BlackSpotsTab';
 import { Button } from '../ui/Button';
@@ -79,6 +79,12 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     const [speedViolations, setSpeedViolations] = useState<any[]>([]);
     const [blackSpotsData, setBlackSpotsData] = useState<any>({ clusters: [], ranking: [] });
 
+    // Estado para datos de sesión seleccionada
+    const [selectedSessionData, setSelectedSessionData] = useState<{
+        session: any;
+        routeData: any;
+    } | null>(null);
+
     // Estados para KPIs de Parques
     const [parksKPIs, setParksKPIs] = useState<any>({
         vehiclesInParks: 0,
@@ -93,6 +99,9 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
     // Hook de exportación de PDF
     const { exportTabToPDF, isExporting, captureElement, exportEnhancedTabToPDF, captureElementEnhanced } = usePDFExport();
+
+    // Hook de exportación de recorridos
+    const exportRouteFunction = useRouteExportFunction();
 
     // Hook de filtros globales
     const { filters, updateTrigger } = useGlobalFilters();
@@ -366,9 +375,9 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         tabIndex: 1,
                         appliedFilters,
                         kpis: [
-                            { title: 'Eventos Graves', value: heatmapData.points.filter((p: any) => p.severity === 'critical').length, subtitle: '0-20% estabilidad' },
-                            { title: 'Eventos Moderados', value: heatmapData.points.filter((p: any) => p.severity === 'severe').length, subtitle: '20-35% estabilidad' },
-                            { title: 'Eventos Leves', value: heatmapData.points.filter((p: any) => p.severity === 'light').length, subtitle: '35-50% estabilidad' },
+                            { title: 'Eventos Graves', value: heatmapData.points.filter((p: any) => p.severity === 'grave').length, subtitle: '0-20% estabilidad' },
+                            { title: 'Eventos Moderados', value: heatmapData.points.filter((p: any) => p.severity === 'moderada').length, subtitle: '20-35% estabilidad' },
+                            { title: 'Eventos Leves', value: heatmapData.points.filter((p: any) => p.severity === 'leve').length, subtitle: '35-50% estabilidad' },
                             { title: 'Total de Puntos', value: heatmapData.points.length, subtitle: 'Total de eventos registrados' }
                         ],
                         mapData: {
@@ -1114,11 +1123,20 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         variant="outline"
                         size="sm"
                         className="flex items-center gap-1 text-xs px-2 py-1"
-                        onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF : handleExportPDF}
+                        onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF : 
+                                activeTab === 4 ? () => {
+                                    if (selectedSessionData?.session && selectedSessionData?.routeData) {
+                                        exportRouteFunction(selectedSessionData.session, selectedSessionData.routeData);
+                                    } else {
+                                        logger.warn('No hay sesión seleccionada para exportar');
+                                    }
+                                } : handleExportPDF}
                         disabled={isExporting}
                     >
                         <ChartBarIcon className="h-3 w-3" />
-                        {isExporting ? 'GENERANDO...' : (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' : 'EXPORTAR PDF'}
+                        {isExporting ? 'GENERANDO...' : 
+                         (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' : 
+                         activeTab === 4 ? 'EXPORTAR RECORRIDO' : 'EXPORTAR PDF'}
                     </Button>
                 </div>
             </div>
@@ -1159,7 +1177,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 )}
                 {activeTab === 4 && (
                     <div className="h-full w-full bg-white overflow-auto">
-                        <SessionsAndRoutesView />
+                        <SessionsAndRoutesView 
+                            onSessionDataChange={(session, routeData) => {
+                                setSelectedSessionData({ session, routeData });
+                            }}
+                        />
                     </div>
                 )}
                 {activeTab === 5 && (

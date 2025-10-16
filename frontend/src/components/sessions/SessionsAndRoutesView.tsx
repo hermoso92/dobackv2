@@ -3,11 +3,9 @@ import {
 } from '@mui/icons-material';
 import {
     Box,
-    Button,
     Card,
     CardContent,
     LinearProgress,
-    Tooltip,
     Typography
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -36,10 +34,126 @@ interface Session {
     maxSpeed: number;
 }
 
-export const SessionsAndRoutesView: React.FC = () => {
+// Exportar función de exportación para uso desde el dashboard
+export const useRouteExportFunction = () => {
+    const { exportRouteReport, captureElementEnhanced } = usePDFExport();
+    
+    return useCallback(async (selectedSession: any, routeData: any) => {
+        if (!selectedSession || !routeData) {
+            logger.warn('No hay sesión o ruta seleccionada para exportar');
+            return;
+        }
+
+        try {
+            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
+
+            // Capturar mapa del elemento con ID específico
+            const mapElement = document.querySelector('.leaflet-container');
+            let mapImage: string | null = null;
+
+            if (mapElement) {
+                // Darle un ID temporal si no lo tiene
+                const tempId = 'route-map-export';
+                mapElement.id = tempId;
+
+                // Esperar un poco para que el mapa se renderice completamente con la ruta
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Capturar el mapa con mayor calidad
+                mapImage = await captureElementEnhanced(tempId, 3);
+
+                // Limpiar ID temporal
+                mapElement.removeAttribute('id');
+            }
+
+            // Geocodificar ubicaciones de eventos
+            logger.info('Geocodificando ubicaciones de eventos...');
+            const eventsWithLocations = await Promise.all(
+                routeData.events.map(async (event: any) => {
+                    let location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
+                    
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${event.lat}&lon=${event.lng}`,
+                            { headers: { 'User-Agent': 'DobackSoft/1.0' } }
+                        );
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.address) {
+                                const road = data.address.road || data.address.street || data.address.highway;
+                                const city = data.address.city || data.address.town || data.address.village;
+                                if (road && city) {
+                                    location = `${road}, ${city}`;
+                                } else if (road) {
+                                    location = road;
+                                }
+                            }
+                        }
+                        
+                        // Rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    } catch (error) {
+                        logger.warn('Error geocodificando evento', { error });
+                    }
+                    
+                    return {
+                        id: event.id,
+                        lat: event.lat,
+                        lng: event.lng,
+                        location: location,
+                        type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                        severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
+                                 event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
+                                 event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
+                                 'Desconocida',
+                        timestamp: new Date(event.timestamp)
+                    };
+                })
+            );
+
+            // Preparar datos para el PDF con nombres reales y formato correcto
+            const exportData = {
+                sessionId: selectedSession.id,
+                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
+                startTime: selectedSession.startTime,
+                endTime: selectedSession.endTime,
+                duration: selectedSession.duration,
+                distance: selectedSession.distance,
+                avgSpeed: selectedSession.avgSpeed,
+                maxSpeed: selectedSession.maxSpeed,
+                route: routeData.route.map((point: any) => ({
+                    lat: point.lat,
+                    lng: point.lng,
+                    speed: point.speed,
+                    timestamp: new Date(point.timestamp)
+                })),
+                events: eventsWithLocations,
+                stats: {
+                    validRoutePoints: routeData.stats.validRoutePoints,
+                    validEvents: routeData.stats.validEvents,
+                    totalGpsPoints: routeData.stats.totalGpsPoints,
+                    totalEvents: routeData.stats.totalEvents
+                },
+                mapImage: mapImage || undefined
+            };
+
+            await exportRouteReport(exportData);
+
+            logger.info('Recorrido exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando recorrido', { error });
+        }
+    }, [captureElementEnhanced, exportRouteReport]);
+};
+
+interface SessionsAndRoutesViewProps {
+    onSessionDataChange?: (session: any, routeData: any) => void;
+}
+
+export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ onSessionDataChange }) => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
-    const { exportRouteReport, captureElementEnhanced, isExporting } = usePDFExport();
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -207,114 +321,13 @@ export const SessionsAndRoutesView: React.FC = () => {
         loadRouteData();
     }, [selectedSessionId]);
 
-    // Exportar recorrido completo a PDF con geocodificación
-    const handleExportRoute = useCallback(async () => {
-        if (!selectedSession || !routeData) {
-            logger.warn('No hay sesión o ruta seleccionada para exportar');
-            return;
+    // Notificar cambios en los datos de la sesión al componente padre
+    useEffect(() => {
+        if (selectedSession && routeData && onSessionDataChange) {
+            onSessionDataChange(selectedSession, routeData);
         }
+    }, [selectedSession, routeData, onSessionDataChange]);
 
-        try {
-            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
-
-            // Capturar mapa del elemento con ID específico
-            const mapElement = document.querySelector('.leaflet-container');
-            let mapImage: string | null = null;
-
-            if (mapElement) {
-                // Darle un ID temporal si no lo tiene
-                const tempId = 'route-map-export';
-                mapElement.id = tempId;
-
-                // Esperar un poco para que el mapa se renderice completamente con la ruta
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Capturar el mapa con mayor calidad
-                mapImage = await captureElementEnhanced(tempId, 3);
-
-                // Limpiar ID temporal
-                mapElement.removeAttribute('id');
-            }
-
-            // Geocodificar ubicaciones de eventos
-            logger.info('Geocodificando ubicaciones de eventos...');
-            const eventsWithLocations = await Promise.all(
-                routeData.events.map(async (event: any) => {
-                    let location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
-                    
-                    try {
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${event.lat}&lon=${event.lng}`,
-                            { headers: { 'User-Agent': 'DobackSoft/1.0' } }
-                        );
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.address) {
-                                const road = data.address.road || data.address.street || data.address.highway;
-                                const city = data.address.city || data.address.town || data.address.village;
-                                if (road && city) {
-                                    location = `${road}, ${city}`;
-                                } else if (road) {
-                                    location = road;
-                                }
-                            }
-                        }
-                        
-                        // Rate limiting
-                        await new Promise(resolve => setTimeout(resolve, 600));
-                    } catch (error) {
-                        logger.warn('Error geocodificando evento', { error });
-                    }
-                    
-                    return {
-                        id: event.id,
-                        lat: event.lat,
-                        lng: event.lng,
-                        location: location,
-                        type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
-                        severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
-                                 event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
-                                 event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
-                                 'Desconocida',
-                        timestamp: new Date(event.timestamp)
-                    };
-                })
-            );
-
-            // Preparar datos para el PDF con nombres reales y formato correcto
-            const exportData = {
-                sessionId: selectedSession.id,
-                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
-                startTime: selectedSession.startTime,
-                endTime: selectedSession.endTime,
-                duration: selectedSession.duration,
-                distance: selectedSession.distance,
-                avgSpeed: selectedSession.avgSpeed,
-                maxSpeed: selectedSession.maxSpeed,
-                route: routeData.route.map((point: any) => ({
-                    lat: point.lat,
-                    lng: point.lng,
-                    speed: point.speed,
-                    timestamp: new Date(point.timestamp)
-                })),
-                events: eventsWithLocations,
-                stats: {
-                    validRoutePoints: routeData.stats.validRoutePoints,
-                    validEvents: routeData.stats.validEvents,
-                    totalGpsPoints: routeData.stats.totalGpsPoints,
-                    totalEvents: routeData.stats.totalEvents
-                },
-                mapImage: mapImage || undefined
-            };
-
-            await exportRouteReport(exportData);
-
-            logger.info('Recorrido exportado exitosamente');
-        } catch (error) {
-            logger.error('Error exportando recorrido', { error });
-        }
-    }, [selectedSession, routeData, captureElementEnhanced, exportRouteReport]);
 
     if (sessionsLoading) {
         return (
@@ -348,39 +361,11 @@ export const SessionsAndRoutesView: React.FC = () => {
                         <CardContent sx={{ height: '100%', p: 0 }}>
                             {(selectedSession || (selectedSessionId && sessions.length > 0)) ? (
                                 <Box sx={{ height: '100%', position: 'relative' }}>
-                                    {/* Header con título y botón de exportación */}
-                                    <Box sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        p: 1,
-                                        pb: 0.5
-                                    }}>
+                                    {/* Header con título */}
+                                    <Box sx={{ p: 1, pb: 0.5 }}>
                                         <Typography variant="h6" sx={{ fontSize: '1rem' }}>
                                             Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
                                         </Typography>
-
-                                        {/* Botón de exportación */}
-                                        {routeData && routeData.route.length > 0 && (
-                                            <Tooltip title="Exportar recorrido completo a PDF con mapa y eventos">
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    onClick={handleExportRoute}
-                                                    disabled={isExporting}
-                                                    sx={{
-                                                        bgcolor: 'info.main',
-                                                        '&:hover': { bgcolor: 'info.dark' },
-                                                        textTransform: 'none',
-                                                        fontSize: '0.75rem',
-                                                        py: 0.5,
-                                                        px: 1.5
-                                                    }}
-                                                >
-                                                    {isExporting ? 'Generando...' : 'Exportar Recorrido PDF'}
-                                                </Button>
-                                            </Tooltip>
-                                        )}
                                     </Box>
 
                                     {/* Mapa real con datos GPS */}
