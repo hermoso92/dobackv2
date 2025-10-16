@@ -56,7 +56,7 @@ export const useRouteExportFunction = () => {
                 try {
                     // Importar html2canvas dinámicamente
                     const html2canvas = (await import('html2canvas')).default;
-                    
+
                     // Esperar un poco para que el mapa se renderice completamente
                     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -267,8 +267,10 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
             }
 
             setLoadingRoute(true);
+            logger.info('Cargando datos de ruta', { selectedSessionId });
             try {
                 const data = await apiService.get<any>(`/api/session-route/${selectedSessionId}`);
+                logger.info('Respuesta del endpoint session-route', { data });
                 if (data.success && data.data) {
                     const routeDataResponse = data.data as {
                         route?: any[];
@@ -293,7 +295,13 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
                     };
 
                     setRouteData(formattedData);
+                    logger.info('Datos de ruta cargados exitosamente', { 
+                        routePoints: formattedData.route.length,
+                        events: formattedData.events.length,
+                        stats: formattedData.stats
+                    });
                 } else {
+                    logger.warn('Respuesta del endpoint sin datos válidos', { data });
                     setRouteData(null);
                 }
             } catch (error) {
@@ -365,7 +373,7 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
                                             }}>
                                                 <LinearProgress sx={{ width: '50%' }} />
                                                 <Typography variant="body2" sx={{ ml: 2 }}>
-                                                    Cargando ruta...
+                                                    Cargando ruta... Session: {selectedSessionId}
                                                 </Typography>
                                             </Box>
                                         ) : routeData ? (
