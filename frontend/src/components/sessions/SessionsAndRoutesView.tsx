@@ -48,23 +48,32 @@ export const useRouteExportFunction = () => {
         try {
             logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
 
-            // Capturar mapa del elemento con ID específico
+            // Capturar mapa usando html2canvas directamente sin modificar el DOM
             const mapElement = document.querySelector('.leaflet-container');
             let mapImage: string | null = null;
 
             if (mapElement) {
-                // Darle un ID temporal si no lo tiene
-                const tempId = 'route-map-export';
-                mapElement.id = tempId;
+                try {
+                    // Importar html2canvas dinámicamente
+                    const html2canvas = (await import('html2canvas')).default;
+                    
+                    // Esperar un poco para que el mapa se renderice completamente
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
-                // Esperar un poco para que el mapa se renderice completamente con la ruta
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Capturar el mapa directamente con html2canvas
+                    const canvas = await html2canvas(mapElement as HTMLElement, {
+                        scale: 3,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
 
-                // Capturar el mapa con mayor calidad
-                mapImage = await captureElementEnhanced(tempId, 3);
-
-                // Limpiar ID temporal
-                mapElement.removeAttribute('id');
+                    mapImage = canvas.toDataURL('image/png');
+                    logger.info('Mapa capturado exitosamente');
+                } catch (error) {
+                    logger.warn('Error capturando mapa', { error });
+                }
             }
 
             // Preparar eventos con geocodificación usando el servicio backend
@@ -73,7 +82,7 @@ export const useRouteExportFunction = () => {
                 routeData.events.map(async (event: any) => {
                     // Usar el servicio de geocodificación que funciona a través del backend
                     const location = await geocodingService.reverseGeocode(event.lat, event.lng);
-                    
+
                     return {
                         id: event.id,
                         lat: event.lat,
@@ -81,9 +90,9 @@ export const useRouteExportFunction = () => {
                         location: location,
                         type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
                         severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
-                                 event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
-                                 event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
-                                 'Desconocida',
+                            event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
+                                event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
+                                    'Desconocida',
                         timestamp: new Date(event.timestamp)
                     };
                 })
