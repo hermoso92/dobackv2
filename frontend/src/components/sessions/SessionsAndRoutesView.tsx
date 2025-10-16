@@ -7,7 +7,6 @@ import {
     Card,
     CardContent,
     LinearProgress,
-    Tooltip,
     Typography
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -266,10 +265,10 @@ export const SessionsAndRoutesView: React.FC = () => {
                     lat: event.lat,
                     lng: event.lng,
                     type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Evento',
-                    severity: event.severity === 'HIGH' ? 'Grave' : 
-                             event.severity === 'MEDIUM' ? 'Moderada' : 
-                             event.severity === 'LOW' ? 'Leve' : 
-                             event.severity?.toLowerCase() || 'Desconocida',
+                    severity: event.severity === 'HIGH' ? 'Grave' :
+                        event.severity === 'MEDIUM' ? 'Moderada' :
+                            event.severity === 'LOW' ? 'Leve' :
+                                event.severity?.toLowerCase() || 'Desconocida',
                     timestamp: new Date(event.timestamp)
                 })),
                 stats: {
@@ -302,6 +301,41 @@ export const SessionsAndRoutesView: React.FC = () => {
 
     return (
         <Box sx={{ p: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Barra de herramientas superior */}
+            <Box sx={{ mb: 1, flexShrink: 0 }}>
+                <Card sx={{ boxShadow: 1, border: '1px solid #e2e8f0' }}>
+                    <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="h6" sx={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                                📍 Sesiones y Recorridos
+                            </Typography>
+                            
+                            {/* Botón de exportar PDF */}
+                            {routeData && routeData.route.length > 0 && (
+                                <Button
+                                    onClick={handleExportRoute}
+                                    disabled={isExporting}
+                                    variant="contained"
+                                    sx={{
+                                        bgcolor: '#2563eb',
+                                        '&:hover': { bgcolor: '#1d4ed8' },
+                                        '&:disabled': { bgcolor: '#cbd5e1', cursor: 'not-allowed' },
+                                        textTransform: 'none',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                        px: 2,
+                                        py: 1,
+                                        gap: 1
+                                    }}
+                                >
+                                    📄 {isExporting ? 'Generando...' : 'Exportar Reporte Detallado'}
+                                </Button>
+                            )}
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Box>
+
             {/* Selectores compactos */}
             <Box sx={{ mb: 1, flexShrink: 0 }}>
                 <VehicleSessionSelector
@@ -460,8 +494,8 @@ export const SessionsAndRoutesView: React.FC = () => {
                                                 <Button
                                                     size="small"
                                                     onClick={() => setSelectedEvent(null)}
-                                                    sx={{ 
-                                                        minWidth: 'auto', 
+                                                    sx={{
+                                                        minWidth: 'auto',
                                                         p: 0.5,
                                                         fontSize: '0.7rem',
                                                         color: 'text.secondary'
@@ -476,17 +510,17 @@ export const SessionsAndRoutesView: React.FC = () => {
                                                 showAcousticInfo={true}
                                                 showLabels={true}
                                             />
-                                            <Typography variant="caption" color="text.secondary" sx={{ 
-                                                display: 'block', 
-                                                mt: 1, 
+                                            <Typography variant="caption" color="text.secondary" sx={{
+                                                display: 'block',
+                                                mt: 1,
                                                 fontSize: '0.7rem',
                                                 textAlign: 'center'
                                             }}>
                                                 Evento: {new Date(selectedEvent.timestamp).toLocaleTimeString()}
                                             </Typography>
                                             {selectedEvent.type && (
-                                                <Typography variant="caption" color="text.secondary" sx={{ 
-                                                    display: 'block', 
+                                                <Typography variant="caption" color="text.secondary" sx={{
+                                                    display: 'block',
                                                     fontSize: '0.7rem',
                                                     textAlign: 'center'
                                                 }}>
@@ -544,30 +578,6 @@ export const SessionsAndRoutesView: React.FC = () => {
                     {/* Panel de Ranking */}
                     <Card sx={{ flex: 1, boxShadow: 1 }}>
                         <CardContent sx={{ p: 2 }}>
-                            {/* Botón de exportar PDF */}
-                            {routeData && routeData.route.length > 0 && (
-                                <Box sx={{ mb: 2 }}>
-                                    <Tooltip title="Exportar recorrido completo a PDF con mapa y eventos">
-                                        <Button
-                                            variant="contained"
-                                            fullWidth
-                                            onClick={handleExportRoute}
-                                            disabled={isExporting}
-                                            sx={{
-                                                bgcolor: 'info.main',
-                                                '&:hover': { bgcolor: 'info.dark' },
-                                                textTransform: 'none',
-                                                fontSize: '0.875rem',
-                                                py: 1,
-                                                mb: 2
-                                            }}
-                                        >
-                                            {isExporting ? 'Generando PDF...' : '📄 Exportar Recorrido PDF'}
-                                        </Button>
-                                    </Tooltip>
-                                </Box>
-                            )}
-
                             <Typography variant="h6" sx={{ mb: 2, fontSize: '1rem', fontWeight: 'bold' }}>
                                 🏆 Ranking de Sesiones
                             </Typography>
