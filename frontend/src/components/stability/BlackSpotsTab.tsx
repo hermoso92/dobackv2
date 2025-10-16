@@ -27,6 +27,7 @@ interface BlackSpotsTabProps {
     vehicleIds?: string[];
     startDate?: string;
     endDate?: string;
+    onDataLoaded?: (data: { clusters: any[]; ranking: any[] }) => void; // Callback para compartir datos
 }
 
 // Componente para actualizar el mapa
@@ -45,7 +46,8 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
     organizationId,
     vehicleIds,
     startDate,
-    endDate
+    endDate,
+    onDataLoaded
 }) => {
     // Estados de filtros
     const [severityFilter, setSeverityFilter] = useState<'all' | 'grave' | 'moderada' | 'leve'>('all');
@@ -140,10 +142,20 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
                 `${HOTSPOT_ENDPOINTS.RANKING}?${params.toString()}`
             );
 
+            let rankingData: any[] = [];
             if (rankingResponse.success && rankingResponse.data) {
                 const rootRank: any = rankingResponse as any;
                 const dataRank: any = (rootRank.data && rootRank.data.data) ? rootRank.data.data : rankingResponse.data;
-                setRanking(Array.isArray(dataRank?.ranking) ? dataRank.ranking : []);
+                rankingData = Array.isArray(dataRank?.ranking) ? dataRank.ranking : [];
+                setRanking(rankingData);
+            }
+
+            // Compartir datos con el componente padre para exportación
+            if (onDataLoaded) {
+                onDataLoaded({
+                    clusters: clustersResponse.data?.clusters || [],
+                    ranking: rankingData
+                });
             }
 
             logger.info(`Puntos negros cargados: ${clustersResponse.data?.clusters?.length || 0} clusters`);

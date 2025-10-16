@@ -17,6 +17,7 @@ import { useKPIs } from '../../hooks/useKPIs';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
 import { TabExportData } from '../../services/pdfExportService';
+import { EnhancedTabExportData, EnhancedKPIData } from '../../services/enhancedPDFExportService';
 import { logger } from '../../utils/logger';
 import { AlertSystemManager } from '../alerts/AlertSystemManager';
 import DiagnosticPanel from '../DiagnosticPanel';
@@ -76,6 +77,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     // Estados para mapas (mantenidos para exportación PDF)
     const [heatmapData, setHeatmapData] = useState<any>({ points: [], routes: [], geofences: [] });
     const [speedViolations, setSpeedViolations] = useState<any[]>([]);
+    const [blackSpotsData, setBlackSpotsData] = useState<any>({ clusters: [], ranking: [] });
 
     // Estados para KPIs de Parques
     const [parksKPIs, setParksKPIs] = useState<any>({
@@ -90,7 +92,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     // const [mapError, setMapError] = useState<string | null>(null);
 
     // Hook de exportación de PDF
-    const { exportTabToPDF, isExporting, captureElement } = usePDFExport();
+    const { exportTabToPDF, isExporting, captureElement, exportEnhancedTabToPDF, captureElementEnhanced } = usePDFExport();
 
     // Hook de filtros globales
     const { filters, updateTrigger } = useGlobalFilters();
@@ -485,6 +487,382 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
         }
     }, [activeTab, heatmapData, speedViolations, exportTabToPDF, captureElement, filters]);
 
+    // Función MEJORADA para exportar la pestaña actual a PDF con diseño profesional
+    const handleExportEnhancedPDF = useCallback(async () => {
+        try {
+            logger.info('Iniciando exportación de PDF mejorado', { activeTab, filters });
+
+            let exportData: EnhancedTabExportData | null = null;
+
+            switch (activeTab) {
+                case 0: // Estados & Tiempos - CON EXPLICACIONES DETALLADAS
+                    const avgSpeed = activity?.km_total && activity?.driving_hours && activity.driving_hours > 0.1
+                        ? Math.round(activity.km_total / activity.driving_hours)
+                        : 0;
+
+                    const kpisEstados: EnhancedKPIData[] = [
+                        {
+                            title: 'Horas de Conducción',
+                            value: activity?.driving_hours_formatted || '00:00:00',
+                            icon: '🚗',
+                            category: 'info',
+                            description: 'Tiempo total que los vehículos han estado en movimiento durante el período seleccionado. Incluye tiempo en emergencias y servicios regulares.'
+                        },
+                        {
+                            title: 'Kilómetros Recorridos',
+                            value: activity?.km_total || 0,
+                            unit: 'km',
+                            icon: '📍',
+                            category: 'success',
+                            description: 'Distancia total recorrida por la flota. Calculada a partir de coordenadas GPS con filtrado de anomalías. Incluye todos los trayectos registrados.'
+                        },
+                        {
+                            title: 'Tiempo en Parque',
+                            value: getStateDuration(1),
+                            icon: '🏠',
+                            category: 'info',
+                            description: 'Tiempo que los vehículos permanecieron dentro del parque de bomberos (Clave 1). Indica disponibilidad para respuesta inmediata.'
+                        },
+                        {
+                            title: '% Rotativo Activo',
+                            value: activity?.rotativo_on_percentage || 0,
+                            unit: '%',
+                            icon: '🚨',
+                            category: activity && activity.rotativo_on_percentage > 30 ? 'warning' : 'success',
+                            description: 'Porcentaje de tiempo que el rotativo estuvo encendido. Indica la proporción de tiempo en emergencias reales vs servicios regulares.'
+                        },
+                        {
+                            title: 'Tiempo Fuera Parque',
+                            value: getStateDuration(3),
+                            icon: '🚦',
+                            category: 'info',
+                            description: 'Tiempo en servicio externo fuera del parque (Clave 3). Incluye emergencias, servicios y otros desplazamientos oficiales.'
+                        },
+                        {
+                            title: 'Tiempo en Taller',
+                            value: getStateDuration(4),
+                            icon: '🔧',
+                            category: 'warning',
+                            description: 'Tiempo total en mantenimiento preventivo o correctivo (Clave 4). Vehículos no disponibles para servicio.'
+                        },
+                        {
+                            title: 'Tiempo Clave 2',
+                            value: getStateDuration(2),
+                            icon: '🚨',
+                            category: 'danger',
+                            description: 'Emergencias con rotativo encendido (Clave 2). Situaciones prioritarias que requieren respuesta inmediata con señalización activa.'
+                        },
+                        {
+                            title: 'Tiempo Clave 5',
+                            value: getStateDuration(5),
+                            icon: '📋',
+                            category: 'info',
+                            description: 'Servicios sin rotativo (Clave 5). Incluye inspecciones, traslados programados y actividades no urgentes.'
+                        },
+                        {
+                            title: 'Total Incidencias',
+                            value: stability?.total_incidents || 0,
+                            icon: '⚠️',
+                            category: (stability?.total_incidents || 0) > 50 ? 'danger' : 'success',
+                            description: 'Total de eventos de inestabilidad detectados. Incluye aceleraciones bruscas, frenazos y giros cerrados que afectan la estabilidad.'
+                        },
+                        {
+                            title: 'Incidencias Graves',
+                            value: stability?.critical || 0,
+                            icon: '🔴',
+                            category: 'danger',
+                            description: 'Eventos con índice de estabilidad 0-20%. Requieren atención inmediata: revisar condiciones del vehículo y formación del conductor.'
+                        },
+                        {
+                            title: 'Incidencias Moderadas',
+                            value: stability?.moderate || 0,
+                            icon: '🟠',
+                            category: 'warning',
+                            description: 'Eventos con índice 20-35%. Situaciones de riesgo medio que deben monitorearse para evitar escalada a gravedad.'
+                        },
+                        {
+                            title: 'Incidencias Leves',
+                            value: stability?.light || 0,
+                            icon: '🟡',
+                            category: 'success',
+                            description: 'Eventos con índice 35-50%. Situaciones menores que forman parte de la conducción normal en emergencias.'
+                        },
+                        {
+                            title: 'Velocidad Promedio',
+                            value: avgSpeed,
+                            unit: 'km/h',
+                            icon: '⏱️',
+                            category: avgSpeed > 80 ? 'warning' : 'success',
+                            description: 'Velocidad media de la flota calculada sobre el tiempo en movimiento. Valor esperado: 40-70 km/h según tipo de servicio.'
+                        }
+                    ];
+
+                    exportData = {
+                        tabName: 'Estados & Tiempos',
+                        tabIndex: 0,
+                        subtitle: 'Análisis Operativo de la Flota',
+                        description: 'Este reporte presenta un análisis detallado de los estados operacionales y métricas de tiempo de la flota de vehículos de emergencia, incluyendo tiempos de conducción, kilómetros recorridos y distribución por claves operacionales.',
+                        kpis: kpisEstados,
+                        sections: [
+                            {
+                                title: 'Interpretación de Claves Operacionales',
+                                type: 'list',
+                                icon: '🔑',
+                                content: [
+                                    'Clave 1 (En Parque): Vehículo en base, disponible para respuesta inmediata',
+                                    'Clave 2 (Emergencia con Rotativo): Respuesta prioritaria con señalización activa',
+                                    'Clave 3 (Fuera de Parque): En servicio externo, emergencias o traslados',
+                                    'Clave 4 (En Taller): Mantenimiento preventivo o correctivo, no disponible',
+                                    'Clave 5 (Sin Rotativo): Servicios programados sin carácter urgente'
+                                ]
+                            },
+                            {
+                                title: 'Análisis de Disponibilidad',
+                                type: 'text',
+                                icon: '📊',
+                                content: `La flota ha registrado ${activity?.driving_hours_formatted || '00:00'} horas de conducción con ${activity?.km_total || 0} km recorridos. El ${activity?.rotativo_on_percentage || 0}% del tiempo operativo fue en emergencias con rotativo activo. Se detectaron ${stability?.total_incidents || 0} eventos de inestabilidad, de los cuales ${stability?.critical || 0} fueron clasificados como graves y requieren seguimiento.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0 
+                                ? `${filters.vehicles.length} vehículo(s)` 
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                case 2: // Velocidad - MEJORADO CON TABLA DE EVENTOS
+                    const graveViolations = speedViolations.filter((v: any) => v.violationType === 'grave');
+                    const moderadoViolations = speedViolations.filter((v: any) => v.violationType === 'moderado');
+                    const leveViolations = speedViolations.filter((v: any) => v.violationType === 'leve');
+                    const avgExcess = speedViolations.length > 0
+                        ? speedViolations.reduce((sum: number, v: any) => sum + (v.speed - v.speedLimit), 0) / speedViolations.length
+                        : 0;
+
+                    const kpisVelocidad: EnhancedKPIData[] = [
+                        {
+                            title: 'Total Excesos',
+                            value: speedViolations.length,
+                            icon: '🚗',
+                            category: speedViolations.length > 20 ? 'danger' : 'success',
+                            description: 'Total de excesos de velocidad detectados durante el período. Incluye todas las clasificaciones según normativa DGT para vehículos de emergencia.'
+                        },
+                        {
+                            title: 'Excesos Graves',
+                            value: graveViolations.length,
+                            icon: '🔴',
+                            category: 'danger',
+                            description: 'Excesos superiores a 20 km/h sobre el límite permitido. Requieren revisión inmediata y pueden indicar necesidad de formación adicional.'
+                        },
+                        {
+                            title: 'Excesos Moderados',
+                            value: moderadoViolations.length,
+                            icon: '🟠',
+                            category: 'warning',
+                            description: 'Excesos entre 10-20 km/h. Situaciones de riesgo medio que deben monitorearse para evitar recurrencia.'
+                        },
+                        {
+                            title: 'Excesos Leves',
+                            value: leveViolations.length,
+                            icon: '🟡',
+                            category: 'success',
+                            description: 'Excesos de 1-10 km/h. Variaciones menores que pueden considerarse normales en contexto de emergencias.'
+                        },
+                        {
+                            title: 'Exceso Promedio',
+                            value: avgExcess.toFixed(2),
+                            unit: 'km/h',
+                            icon: '⚡',
+                            category: avgExcess > 15 ? 'warning' : 'success',
+                            description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de límites.'
+                        },
+                        {
+                            title: 'Con Rotativo ON',
+                            value: speedViolations.filter((v: any) => v.rotativoOn).length,
+                            icon: '🚨',
+                            category: 'info',
+                            description: 'Excesos ocurridos durante emergencias con rotativo encendido. Límites más permisivos según normativa de vehículos prioritarios.'
+                        }
+                    ];
+
+                    // Preparar datos de violaciones para la tabla
+                    const violationsData = speedViolations.slice(0, 15).map((v: any) => ({
+                        timestamp: new Date(v.timestamp).toLocaleString('es-ES', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        }),
+                        vehicleName: v.vehicleName || 'N/A',
+                        location: v.location || `${v.lat?.toFixed(4)}, ${v.lng?.toFixed(4)}`,
+                        speed: v.speed,
+                        speedLimit: v.speedLimit,
+                        excess: parseFloat((v.speed - v.speedLimit).toFixed(2)),
+                        violationType: v.violationType,
+                        rotativoOn: v.rotativoOn,
+                        roadType: v.roadType,
+                        coordinates: { lat: v.lat, lng: v.lng }
+                    }));
+
+                    exportData = {
+                        tabName: 'Análisis de Velocidad',
+                        tabIndex: 2,
+                        subtitle: 'Control de Excesos de Velocidad según Normativa DGT',
+                        description: 'Análisis detallado de excesos de velocidad detectados en la flota, clasificados según normativa DGT para vehículos de emergencia. Incluye límites diferenciados por tipo de vía y estado del rotativo.',
+                        kpis: kpisVelocidad,
+                        speedViolations: violationsData,
+                        sections: [
+                            {
+                                title: 'Límites de Velocidad Aplicados',
+                                type: 'list',
+                                icon: '📏',
+                                content: [
+                                    '🏘️ Urbana: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
+                                    '🛣️ Interurbana: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
+                                    '🏎️ Autopista: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
+                                    '🏞️ Dentro del Parque: 20 km/h (límite fijo para todos)'
+                                ]
+                            },
+                            {
+                                title: 'Clasificación de Severidad',
+                                type: 'list',
+                                icon: '⚠️',
+                                content: [
+                                    '🔴 Grave: Exceso superior a 20 km/h - Requiere acción inmediata',
+                                    '🟠 Moderado: Exceso entre 10-20 km/h - Requiere monitoreo',
+                                    '🟡 Leve: Exceso entre 1-10 km/h - Variación aceptable'
+                                ]
+                            },
+                            {
+                                title: 'Análisis de Resultados',
+                                type: 'text',
+                                icon: '📊',
+                                content: `Se detectaron ${speedViolations.length} excesos de velocidad en el período analizado. ${graveViolations.length} fueron clasificados como graves (>${20} km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${speedViolations.filter((v: any) => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0 
+                                ? `${filters.vehicles.length} vehículo(s)` 
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                case 1: // Puntos Negros - MEJORADO CON RANKING DETALLADO
+                    const ranking = blackSpotsData.ranking || [];
+                    const totalBlackSpotsEvents = ranking.reduce((sum: number, spot: any) => sum + (spot.totalEvents || 0), 0);
+                    const graveSpots = ranking.filter((spot: any) => spot.grave > 0).length;
+
+                    const kpisPuntosNegros: EnhancedKPIData[] = [
+                        {
+                            title: 'Zonas Críticas',
+                            value: ranking.length,
+                            icon: '🗺️',
+                            category: ranking.length > 10 ? 'warning' : 'success',
+                            description: 'Número total de zonas identificadas como puntos negros. Áreas con alta concentración de eventos de inestabilidad que requieren atención especial.'
+                        },
+                        {
+                            title: 'Total de Eventos',
+                            value: totalBlackSpotsEvents,
+                            icon: '⚠️',
+                            category: totalBlackSpotsEvents > 100 ? 'danger' : 'success',
+                            description: 'Suma total de eventos de inestabilidad registrados en todas las zonas críticas. Indica el nivel general de riesgo en la red viaria.'
+                        },
+                        {
+                            title: 'Zonas con Eventos Graves',
+                            value: graveSpots,
+                            icon: '🔴',
+                            category: 'danger',
+                            description: 'Zonas que registraron al menos un evento de alta severidad. Requieren medidas correctivas urgentes o restricciones operativas.'
+                        },
+                        {
+                            title: 'Eventos por Zona',
+                            value: ranking.length > 0 ? (totalBlackSpotsEvents / ranking.length).toFixed(1) : 0,
+                            icon: '📊',
+                            category: 'info',
+                            description: 'Promedio de eventos por zona crítica. Indica la concentración de incidencias en cada punto identificado.'
+                        }
+                    ];
+
+                    // Preparar datos del ranking para el PDF
+                    const blackSpotsDetails = ranking.slice(0, 10).map((spot: any) => ({
+                        rank: spot.rank,
+                        location: spot.location || `${spot.lat?.toFixed(4)}, ${spot.lng?.toFixed(4)}`,
+                        totalEvents: spot.totalEvents,
+                        grave: spot.grave || 0,
+                        moderada: spot.moderada || 0,
+                        leve: spot.leve || 0,
+                        frequency: spot.totalEvents,
+                        dominantSeverity: spot.dominantSeverity || 'leve',
+                        coordinates: { lat: spot.lat, lng: spot.lng }
+                    }));
+
+                    exportData = {
+                        tabName: 'Puntos Negros - Zonas Críticas',
+                        tabIndex: 1,
+                        subtitle: 'Análisis de Concentración de Incidencias',
+                        description: 'Identificación y análisis de zonas con alta concentración de eventos de inestabilidad. Estos puntos negros representan áreas de riesgo que requieren atención especial para prevención de accidentes.',
+                        kpis: kpisPuntosNegros,
+                        blackSpots: blackSpotsDetails,
+                        sections: [
+                            {
+                                title: 'Metodología de Detección',
+                                type: 'text',
+                                icon: '🔬',
+                                content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geográfica (clustering). Se consideran zonas críticas aquellas con frecuencia mínima de 2 eventos y se clasifican según la severidad dominante de los incidentes registrados.'
+                            },
+                            {
+                                title: 'Criterios de Clasificación',
+                                type: 'list',
+                                icon: '⚖️',
+                                content: [
+                                    '🔴 Severidad Grave: Índice de estabilidad 0-20% - Riesgo alto',
+                                    '🟠 Severidad Moderada: Índice 20-35% - Riesgo medio',
+                                    '🟡 Severidad Leve: Índice 35-50% - Riesgo bajo'
+                                ]
+                            },
+                            {
+                                title: 'Análisis de Patrones',
+                                type: 'text',
+                                icon: '📈',
+                                content: `Se identificaron ${ranking.length} zonas críticas con ${totalBlackSpotsEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registró ${ranking[0]?.totalEvents || 0} eventos, indicando un patrón recurrente que requiere investigación y posibles medidas correctivas.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0 
+                                ? `${filters.vehicles.length} vehículo(s)` 
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                default:
+                    return; // Usar método antiguo para otras pestañas
+            }
+
+            if (exportData) {
+                await exportEnhancedTabToPDF(exportData);
+                logger.info('PDF mejorado exportado exitosamente', { tabName: exportData.tabName });
+            }
+
+        } catch (error) {
+            logger.error('Error exportando PDF mejorado', { error });
+            alert('Error al exportar PDF mejorado. Por favor, inténtelo de nuevo.');
+        }
+    }, [activeTab, activity, stability, getStateDuration, exportEnhancedTabToPDF, captureElementEnhanced, filters, speedViolations, blackSpotsData]);
+
     // Renderizar contenido de Estados & Tiempos
     const renderEstadosTiempos = () => {
         // Calcular velocidad promedio
@@ -767,11 +1145,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         variant="outline"
                         size="sm"
                         className="flex items-center gap-1 text-xs px-2 py-1"
-                        onClick={handleExportPDF}
+                        onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF : handleExportPDF}
                         disabled={isExporting}
                     >
                         <ChartBarIcon className="h-3 w-3" />
-                        {isExporting ? 'GENERANDO...' : 'EXPORTAR PDF'}
+                        {isExporting ? 'GENERANDO...' : (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' : 'EXPORTAR PDF'}
                     </Button>
                 </div>
             </div>
@@ -786,6 +1164,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
                             startDate={filters.dateRange?.start}
                             endDate={filters.dateRange?.end}
+                            onDataLoaded={(data) => setBlackSpotsData(data)}
                         />
                     </div>
                 )}

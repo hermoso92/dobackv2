@@ -1,12 +1,15 @@
 import { useCallback, useState } from 'react';
 import { pdfExportService, TabExportData } from '../services/pdfExportService';
+import { enhancedPDFExportService, EnhancedTabExportData } from '../services/enhancedPDFExportService';
 import { logger } from '../utils/logger';
 import { useGlobalFilters } from './useGlobalFilters';
+import { useAuth } from './useAuth';
 
 export const usePDFExport = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [exportError, setExportError] = useState<string | null>(null);
     const { filters } = useGlobalFilters();
+    const { user } = useAuth();
 
     /**
      * Exporta una pestaña específica a PDF
@@ -123,6 +126,51 @@ export const usePDFExport = () => {
         }
     }, []);
 
+    /**
+     * Exporta una pestaña con el servicio mejorado
+     */
+    const exportEnhancedTabToPDF = useCallback(async (exportData: EnhancedTabExportData) => {
+        try {
+            setIsExporting(true);
+            setExportError(null);
+
+            // Agregar filtros globales y usuario al exportData
+            exportData.filters = {
+                ...exportData.filters,
+                vehicle: filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles.join(', ') : undefined,
+                dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                    start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                    end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                } : undefined
+            };
+
+            exportData.generatedBy = user?.username || 'Usuario';
+
+            await enhancedPDFExportService.generateEnhancedTabPDF(exportData);
+
+            logger.info('PDF mejorado exportado exitosamente', { tabName: exportData.tabName });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al exportar PDF';
+            setExportError(errorMessage);
+            logger.error('Error exportando PDF mejorado', { error });
+            throw error;
+        } finally {
+            setIsExporting(false);
+        }
+    }, [filters, user]);
+
+    /**
+     * Captura elemento con el servicio mejorado (mayor calidad)
+     */
+    const captureElementEnhanced = useCallback(async (elementId: string, scale: number = 3): Promise<string | null> => {
+        try {
+            return await enhancedPDFExportService.captureElement(elementId, scale);
+        } catch (error) {
+            logger.error('Error capturando elemento mejorado', { elementId, error });
+            return null;
+        }
+    }, []);
+
     return {
         isExporting,
         exportError,
@@ -131,6 +179,9 @@ export const usePDFExport = () => {
         captureElement,
         captureElements,
         exportToCSV,
-        exportToExcel
+        exportToExcel,
+        // Nuevas funciones mejoradas
+        exportEnhancedTabToPDF,
+        captureElementEnhanced
     };
 };
