@@ -3,22 +3,25 @@ import {
 } from '@mui/icons-material';
 import {
     Box,
+    Button,
     Card,
     CardContent,
     LinearProgress,
-    Typography,
-    Button,
-    Tooltip
+    Tooltip,
+    Typography
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
 import { getOrganizationId } from '../../config/organization';
 import { useAuth } from '../../hooks/useAuth';
-import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { usePDFExport } from '../../hooks/usePDFExport';
+import { useStabilityCalculation } from '../../hooks/useStabilityCalculation';
+import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
+import LEDIndicator from '../indicators/LEDIndicator';
 import RouteMapComponent from '../maps/RouteMapComponent';
+import RoutePlaybackWithLEDs from '../playback/RoutePlaybackWithLEDs';
 import { VehicleSessionSelector } from '../selectors/VehicleSessionSelector';
 
 interface Session {
@@ -40,7 +43,7 @@ export const SessionsAndRoutesView: React.FC = () => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
     const { exportRouteReport, captureElementEnhanced, isExporting } = usePDFExport();
-    
+
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
     const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
@@ -64,6 +67,12 @@ export const SessionsAndRoutesView: React.FC = () => {
     const [ranking, setRanking] = useState<any[]>([]);
     const [rankingMetric, setRankingMetric] = useState<'events' | 'distance' | 'duration' | 'speed'>('events');
     const [loadingRanking, setLoadingRanking] = useState(false);
+
+    // Estados para el indicador LED
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+    // Hook para calcular estabilidad del evento seleccionado
+    const stabilityPercentage = useStabilityCalculation(selectedEvent);
 
     // Obtener sesiones reales
     const { data: sessionsData, isLoading: sessionsLoading } = useSessions({
@@ -220,25 +229,28 @@ export const SessionsAndRoutesView: React.FC = () => {
             // Capturar mapa del elemento con ID específico
             const mapElement = document.querySelector('.leaflet-container');
             let mapImage: string | null = null;
-            
+
             if (mapElement) {
                 // Darle un ID temporal si no lo tiene
                 const tempId = 'route-map-export';
                 mapElement.id = tempId;
-                
-                // Capturar el mapa
-                mapImage = await captureElementEnhanced(tempId, 2);
-                
+
+                // Esperar un poco para que el mapa se renderice completamente con la ruta
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Capturar el mapa con mayor calidad
+                mapImage = await captureElementEnhanced(tempId, 3);
+
                 // Limpiar ID temporal
                 mapElement.removeAttribute('id');
             }
 
-            // Preparar datos para el PDF
+            // Preparar datos para el PDF con nombres reales y formato correcto
             const exportData = {
                 sessionId: selectedSession.id,
-                vehicleName: selectedSession.vehicleName,
-                startTime: new Date(selectedSession.startTime).toLocaleString('es-ES'),
-                endTime: new Date(selectedSession.endTime).toLocaleString('es-ES'),
+                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
+                startTime: selectedSession.startTime,
+                endTime: selectedSession.endTime,
                 duration: selectedSession.duration,
                 distance: selectedSession.distance,
                 avgSpeed: selectedSession.avgSpeed,
@@ -253,8 +265,11 @@ export const SessionsAndRoutesView: React.FC = () => {
                     id: event.id,
                     lat: event.lat,
                     lng: event.lng,
-                    type: event.type,
-                    severity: event.severity,
+                    type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) || 'Evento',
+                    severity: event.severity === 'HIGH' ? 'Grave' : 
+                             event.severity === 'MEDIUM' ? 'Moderada' : 
+                             event.severity === 'LOW' ? 'Leve' : 
+                             event.severity?.toLowerCase() || 'Desconocida',
                     timestamp: new Date(event.timestamp)
                 })),
                 stats: {
@@ -298,7 +313,7 @@ export const SessionsAndRoutesView: React.FC = () => {
                 />
             </Box>
 
-            {/* Grid: Mapa + Ranking */}
+            {/* Grid: Mapa + Panel lateral */}
             <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 1 }}>
                 {/* Mapa con ruta y eventos */}
                 <Box sx={{ height: '100%' }}>
@@ -306,39 +321,11 @@ export const SessionsAndRoutesView: React.FC = () => {
                         <CardContent sx={{ height: '100%', p: 0 }}>
                             {(selectedSession || (selectedSessionId && sessions.length > 0)) ? (
                                 <Box sx={{ height: '100%', position: 'relative' }}>
-                                    {/* Header con título y botón de exportación */}
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'space-between', 
-                                        alignItems: 'center',
-                                        p: 1, 
-                                        pb: 0.5 
-                                    }}>
+                                    {/* Header con título */}
+                                    <Box sx={{ p: 1, pb: 0.5 }}>
                                         <Typography variant="h6" sx={{ fontSize: '1rem' }}>
                                             Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
                                         </Typography>
-                                        
-                                        {/* Botón de exportación */}
-                                        {routeData && routeData.route.length > 0 && (
-                                            <Tooltip title="Exportar recorrido completo a PDF con mapa y eventos">
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    onClick={handleExportRoute}
-                                                    disabled={isExporting}
-                                                    sx={{ 
-                                                        bgcolor: 'info.main',
-                                                        '&:hover': { bgcolor: 'info.dark' },
-                                                        textTransform: 'none',
-                                                        fontSize: '0.75rem',
-                                                        py: 0.5,
-                                                        px: 1.5
-                                                    }}
-                                                >
-                                                    {isExporting ? 'Generando...' : 'Exportar Recorrido PDF'}
-                                                </Button>
-                                            </Tooltip>
-                                        )}
                                     </Box>
 
                                     {/* Mapa real con datos GPS */}
@@ -367,6 +354,7 @@ export const SessionsAndRoutesView: React.FC = () => {
                                                     route={routeData.route}
                                                     events={routeData.events}
                                                     vehicleName={routeData.session.vehicleName}
+                                                    onEventSelect={setSelectedEvent}
                                                 />
                                             </>
                                         ) : (
@@ -451,6 +439,62 @@ export const SessionsAndRoutesView: React.FC = () => {
                                             )}
                                         </Box>
                                     )}
+
+                                    {/* Indicador LED cuando hay evento seleccionado */}
+                                    {selectedEvent && (
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: 60,
+                                            right: 16,
+                                            bgcolor: 'rgba(255,255,255,0.95)',
+                                            p: 2,
+                                            borderRadius: 2,
+                                            zIndex: 1000,
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                            minWidth: '280px'
+                                        }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                    🔴 Indicador LED del Dispositivo
+                                                </Typography>
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => setSelectedEvent(null)}
+                                                    sx={{ 
+                                                        minWidth: 'auto', 
+                                                        p: 0.5,
+                                                        fontSize: '0.7rem',
+                                                        color: 'text.secondary'
+                                                    }}
+                                                >
+                                                    ✕
+                                                </Button>
+                                            </Box>
+                                            <LEDIndicator
+                                                stabilityPercentage={stabilityPercentage}
+                                                size="medium"
+                                                showAcousticInfo={true}
+                                                showLabels={true}
+                                            />
+                                            <Typography variant="caption" color="text.secondary" sx={{ 
+                                                display: 'block', 
+                                                mt: 1, 
+                                                fontSize: '0.7rem',
+                                                textAlign: 'center'
+                                            }}>
+                                                Evento: {new Date(selectedEvent.timestamp).toLocaleTimeString()}
+                                            </Typography>
+                                            {selectedEvent.type && (
+                                                <Typography variant="caption" color="text.secondary" sx={{ 
+                                                    display: 'block', 
+                                                    fontSize: '0.7rem',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    Tipo: {selectedEvent.type}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
                                 </Box>
                             ) : (
                                 <Box sx={{
@@ -483,10 +527,47 @@ export const SessionsAndRoutesView: React.FC = () => {
                     </Card>
                 </Box>
 
-                {/* Panel de Ranking */}
-                <Box sx={{ height: '100%', overflow: 'auto' }}>
-                    <Card sx={{ height: '100%', boxShadow: 1 }}>
+                {/* Panel lateral: Ranking + Playback */}
+                <Box sx={{ height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {/* Playback con LEDs */}
+                    {routeData && routeData.route.length > 0 && (
+                        <RoutePlaybackWithLEDs
+                            route={routeData.route}
+                            events={routeData.events.map(event => ({
+                                ...event,
+                                timestamp: event.timestamp instanceof Date ? event.timestamp.toISOString() : event.timestamp
+                            }))}
+                            className="flex-shrink-0"
+                        />
+                    )}
+
+                    {/* Panel de Ranking */}
+                    <Card sx={{ flex: 1, boxShadow: 1 }}>
                         <CardContent sx={{ p: 2 }}>
+                            {/* Botón de exportar PDF */}
+                            {routeData && routeData.route.length > 0 && (
+                                <Box sx={{ mb: 2 }}>
+                                    <Tooltip title="Exportar recorrido completo a PDF con mapa y eventos">
+                                        <Button
+                                            variant="contained"
+                                            fullWidth
+                                            onClick={handleExportRoute}
+                                            disabled={isExporting}
+                                            sx={{
+                                                bgcolor: 'info.main',
+                                                '&:hover': { bgcolor: 'info.dark' },
+                                                textTransform: 'none',
+                                                fontSize: '0.875rem',
+                                                py: 1,
+                                                mb: 2
+                                            }}
+                                        >
+                                            {isExporting ? 'Generando PDF...' : '📄 Exportar Recorrido PDF'}
+                                        </Button>
+                                    </Tooltip>
+                                </Box>
+                            )}
+
                             <Typography variant="h6" sx={{ mb: 2, fontSize: '1rem', fontWeight: 'bold' }}>
                                 🏆 Ranking de Sesiones
                             </Typography>

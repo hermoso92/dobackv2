@@ -1597,8 +1597,8 @@ class EnhancedPDFExportService {
 
                 Object.entries(eventsBySeverity).forEach(([severity, count]) => {
                     const color = severity === 'grave' ? this.colors.danger :
-                                 severity === 'moderada' ? this.colors.warning :
-                                 this.colors.info;
+                        severity === 'moderada' ? this.colors.warning :
+                            this.colors.info;
 
                     pdf.setTextColor(...color);
                     pdf.text(`${severity.toUpperCase()}: ${count}`, xOffset, yPosition);
@@ -1651,8 +1651,8 @@ class EnhancedPDFExportService {
                     }
 
                     const textColor = event.severity === 'grave' ? this.colors.danger :
-                                     event.severity === 'moderada' ? this.colors.warning :
-                                     this.colors.text;
+                        event.severity === 'moderada' ? this.colors.warning :
+                            this.colors.text;
                     pdf.setTextColor(...textColor);
 
                     xPos = margin + 2;
@@ -1666,8 +1666,10 @@ class EnhancedPDFExportService {
                     pdf.text(type, xPos, yPosition + 5);
                     xPos += colWidths[1] || 50;
 
-                    const location = `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
-                    pdf.text(location, xPos, yPosition + 5);
+                    // Usar ubicación geocodificada si está disponible, sino coordenadas
+                    const location = event.location || `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
+                    const locationText = location.length > 20 ? location.substring(0, 18) + '...' : location;
+                    pdf.text(locationText, xPos, yPosition + 5);
                     xPos += colWidths[2] || 40;
 
                     pdf.setTextColor(...textColor);
