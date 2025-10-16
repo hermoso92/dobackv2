@@ -646,13 +646,13 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
         // Cleanup
         return () => {
             logger.info('RouteMapComponent: Limpiando mapa');
-            
+
             // Cancelar timeout pendiente
             if (initTimeoutRef.current) {
                 clearTimeout(initTimeoutRef.current);
                 initTimeoutRef.current = null;
             }
-            
+
             // Limpiar mapa
             if (mapRef.current) {
                 try {
@@ -662,11 +662,11 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                 }
                 mapRef.current = null;
             }
-            
+
             // Resetear el flag de inicialización para permitir re-inicialización
             isInitializingRef.current = false;
         };
-    }, [center, zoom, route, events, vehicleName]);
+    }, []); // Solo inicializar una vez, sin dependencias que causen re-renders
 
     return (
         <Box
