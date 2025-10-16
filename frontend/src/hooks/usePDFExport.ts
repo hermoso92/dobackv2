@@ -171,6 +171,40 @@ export const usePDFExport = () => {
         }
     }, []);
 
+    /**
+     * Exporta reporte individual de un vehículo
+     */
+    const exportVehicleReport = useCallback(async (vehicleData: {
+        vehicleName: string;
+        vehicleId: string;
+        totalEvents: number;
+        speedViolations: any[];
+        stabilityEvents?: any[];
+        period: { start: string; end: string };
+        stats: {
+            totalKm: number;
+            totalHours: string;
+            avgSpeed: number;
+            rotativoPercentage: number;
+        };
+    }) => {
+        try {
+            setIsExporting(true);
+            setExportError(null);
+
+            await enhancedPDFExportService.generateVehicleReport(vehicleData);
+
+            logger.info('PDF de vehiculo exportado exitosamente', { vehicleName: vehicleData.vehicleName });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al exportar vehiculo';
+            setExportError(errorMessage);
+            logger.error('Error exportando PDF de vehiculo', { error });
+            throw error;
+        } finally {
+            setIsExporting(false);
+        }
+    }, []);
+
     return {
         isExporting,
         exportError,
@@ -182,6 +216,7 @@ export const usePDFExport = () => {
         exportToExcel,
         // Nuevas funciones mejoradas
         exportEnhancedTabToPDF,
-        captureElementEnhanced
+        captureElementEnhanced,
+        exportVehicleReport
     };
 };

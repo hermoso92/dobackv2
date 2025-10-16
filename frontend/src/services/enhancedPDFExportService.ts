@@ -173,10 +173,10 @@ class EnhancedPDFExportService {
      */
     private async geocodeLocations(items: any[]): Promise<any[]> {
         const geocodedItems = [];
-        
+
         for (const item of items) {
             let geocodedLocation = item.location;
-            
+
             // Si la ubicación es solo coordenadas, geocodificar
             if (item.coordinates && /^-?\d+\.?\d*, -?\d+\.?\d*$/.test(item.location)) {
                 try {
@@ -186,7 +186,7 @@ class EnhancedPDFExportService {
                             headers: { 'User-Agent': 'DobackSoft/1.0' }
                         }
                     );
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         if (data.address) {
@@ -195,20 +195,20 @@ class EnhancedPDFExportService {
                             geocodedLocation = streetName && city ? `${streetName}, ${city}` : (streetName || item.location);
                         }
                     }
-                    
+
                     // Rate limiting: esperar 600ms entre peticiones
                     await new Promise(resolve => setTimeout(resolve, 600));
                 } catch (error) {
                     logger.warn('Error geocodificando para PDF', { error });
                 }
             }
-            
+
             geocodedItems.push({
                 ...item,
                 location: geocodedLocation
             });
         }
-        
+
         return geocodedItems;
     }
 
@@ -669,7 +669,7 @@ class EnhancedPDFExportService {
 
         // Tabla de excesos (top 20 mejorado)
         const topViolations = violations.slice(0, 20);
-        
+
         pdf.setFillColor(...this.colors.info);
         pdf.rect(margin, yPosition, contentWidth, 7, 'F');
         pdf.setFontSize(11);
@@ -752,7 +752,7 @@ class EnhancedPDFExportService {
         // NUEVA SECCIÓN: Desglose por vehículo
         checkPageBreak(50);
         yPosition += 5;
-        
+
         pdf.setFillColor(...this.colors.accent);
         pdf.rect(margin, yPosition, contentWidth, 7, 'F');
         pdf.setFontSize(11);
@@ -766,14 +766,14 @@ class EnhancedPDFExportService {
 
         topVehicles.forEach((vehicleStat, index) => {
             checkPageBreak(15);
-            
+
             pdf.setFillColor(...this.colors.light);
             pdf.roundedRect(margin, yPosition, contentWidth, 12, 2, 2, 'F');
-            
+
             pdf.setFontSize(9);
             pdf.setTextColor(...this.colors.text);
             pdf.text(`${index + 1}. ${vehicleStat.vehicleName}`, margin + 3, yPosition + 5);
-            
+
             pdf.setFontSize(8);
             pdf.setTextColor(...this.colors.secondary);
             pdf.text(
@@ -781,7 +781,7 @@ class EnhancedPDFExportService {
                 margin + 3,
                 yPosition + 10
             );
-            
+
             yPosition += 14;
         });
 
@@ -792,7 +792,7 @@ class EnhancedPDFExportService {
     // Helper: Agrupar violaciones por vehículo
     private groupViolationsByVehicle(violations: SpeedViolationDetail[]): any[] {
         const grouped: Record<string, any> = {};
-        
+
         violations.forEach(v => {
             if (!grouped[v.vehicleName]) {
                 grouped[v.vehicleName] = {
@@ -804,14 +804,14 @@ class EnhancedPDFExportService {
                     totalExcess: 0
                 };
             }
-            
+
             grouped[v.vehicleName].total++;
             if (v.violationType === 'grave') grouped[v.vehicleName].grave++;
             else if (v.violationType === 'moderado') grouped[v.vehicleName].moderado++;
             else if (v.violationType === 'leve') grouped[v.vehicleName].leve++;
             grouped[v.vehicleName].totalExcess += v.excess;
         });
-        
+
         return Object.values(grouped)
             .map(v => ({
                 ...v,
@@ -1229,6 +1229,200 @@ class EnhancedPDFExportService {
         const tabName = exportData.tabName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
 
         return `DobackSoft_${tabName}_${dateStr}_${timeStr}.pdf`;
+    }
+
+    /**
+     * Genera PDF de un vehículo individual con todos sus eventos
+     */
+    async generateVehicleReport(vehicleData: {
+        vehicleName: string;
+        vehicleId: string;
+        totalEvents: number;
+        speedViolations: SpeedViolationDetail[];
+        stabilityEvents?: any[];
+        period: { start: string; end: string };
+        stats: {
+            totalKm: number;
+            totalHours: string;
+            avgSpeed: number;
+            rotativoPercentage: number;
+        };
+    }): Promise<void> {
+        try {
+            logger.info('Generando reporte individual de vehiculo', { vehicleName: vehicleData.vehicleName });
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            const contentWidth = pageWidth - (2 * margin);
+            let yPosition = margin;
+
+            // PORTADA ESPECÍFICA DE VEHÍCULO
+            pdf.setFillColor(...this.colors.primary);
+            pdf.rect(0, 0, pageWidth, 70, 'F');
+
+            pdf.setFontSize(28);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text('REPORTE INDIVIDUAL DE VEHICULO', pageWidth / 2, yPosition + 15, { align: 'center' });
+
+            pdf.setFontSize(20);
+            pdf.text(vehicleData.vehicleName, pageWidth / 2, yPosition + 25, { align: 'center' });
+
+            pdf.setFontSize(12);
+            pdf.text(`ID: ${vehicleData.vehicleId}`, pageWidth / 2, yPosition + 32, { align: 'center' });
+
+            yPosition += 50;
+
+            // Período
+            pdf.setFillColor(...this.colors.light);
+            pdf.roundedRect(pageWidth / 2 - 50, yPosition, 100, 15, 3, 3, 'F');
+            pdf.setFontSize(10);
+            pdf.setTextColor(...this.colors.text);
+            pdf.text(`Periodo: ${vehicleData.period.start} - ${vehicleData.period.end}`, pageWidth / 2, yPosition + 10, { align: 'center' });
+
+            // Nueva página para contenido
+            pdf.addPage();
+            yPosition = margin;
+
+            const checkPageBreak = (requiredHeight: number): boolean => {
+                if (yPosition + requiredHeight > pageHeight - margin - 15) {
+                    pdf.addPage();
+                    yPosition = margin;
+                    return true;
+                }
+                return false;
+            };
+
+            // ESTADÍSTICAS DEL VEHÍCULO
+            pdf.setFontSize(16);
+            pdf.setTextColor(...this.colors.text);
+            pdf.text('ESTADISTICAS GENERALES', margin, yPosition);
+            yPosition += 10;
+
+            const statsData = [
+                { label: 'Kilometros Recorridos', value: `${vehicleData.stats.totalKm} km` },
+                { label: 'Horas de Conduccion', value: vehicleData.stats.totalHours },
+                { label: 'Velocidad Promedio', value: `${vehicleData.stats.avgSpeed} km/h` },
+                { label: 'Rotativo Activo', value: `${vehicleData.stats.rotativoPercentage}%` },
+                { label: 'Total Excesos', value: vehicleData.speedViolations.length },
+                { label: 'Total Eventos Estabilidad', value: vehicleData.stabilityEvents?.length || 0 }
+            ];
+
+            statsData.forEach((stat, index) => {
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const xPos = margin + col * (contentWidth / 2 + 5);
+                const statYPos = yPosition + row * 18;
+
+                checkPageBreak(18);
+
+                pdf.setFillColor(...this.colors.light);
+                pdf.roundedRect(xPos, statYPos, contentWidth / 2 - 2, 15, 2, 2, 'F');
+
+                pdf.setFontSize(8);
+                pdf.setTextColor(...this.colors.secondary);
+                pdf.text(stat.label, xPos + 3, statYPos + 6);
+
+                pdf.setFontSize(14);
+                pdf.setTextColor(...this.colors.text);
+                pdf.text(String(stat.value), xPos + 3, statYPos + 12);
+            });
+
+            yPosition += Math.ceil(statsData.length / 2) * 18 + 10;
+
+            // EXCESOS DE VELOCIDAD DEL VEHÍCULO
+            if (vehicleData.speedViolations.length > 0) {
+                checkPageBreak(60);
+
+                pdf.setFillColor(...this.colors.danger);
+                pdf.rect(margin, yPosition, contentWidth, 8, 'F');
+                pdf.setFontSize(14);
+                pdf.setTextColor(255, 255, 255);
+                pdf.text(`EXCESOS DE VELOCIDAD (${vehicleData.speedViolations.length} EVENTOS)`, margin + 3, yPosition + 6);
+                yPosition += 12;
+
+                // Tabla de todos los excesos del vehículo
+                const colWidths = [25, 55, 25, 25, 25];
+                const headers = ['Fecha', 'Ubicacion', 'Vel.', 'Lim.', 'Exceso'];
+
+                pdf.setFillColor(...this.colors.primary);
+                pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                pdf.setFontSize(8);
+                pdf.setTextColor(255, 255, 255);
+
+                let xPos = margin + 2;
+                headers.forEach((header, i) => {
+                    pdf.text(header, xPos, yPosition + 5);
+                    xPos += colWidths[i] || 30;
+                });
+
+                yPosition += 7;
+
+                // Renderizar todas las violaciones del vehículo
+                pdf.setFontSize(7);
+                vehicleData.speedViolations.forEach((violation, idx) => {
+                    checkPageBreak(7);
+
+                    if (idx % 2 === 0) {
+                        pdf.setFillColor(...this.colors.light);
+                        pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+                    }
+
+                    const textColor = violation.violationType === 'grave' ? this.colors.danger :
+                                     violation.violationType === 'moderado' ? this.colors.warning :
+                                     this.colors.text;
+                    pdf.setTextColor(...textColor);
+
+                    xPos = margin + 2;
+
+                    const date = new Date(violation.timestamp).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                    pdf.text(date, xPos, yPosition + 5);
+                    xPos += colWidths[0] || 25;
+
+                    pdf.setTextColor(...this.colors.text);
+                    const location = violation.location.length > 25 ? violation.location.substring(0, 22) + '...' : violation.location;
+                    pdf.text(location, xPos, yPosition + 5);
+                    xPos += colWidths[1] || 55;
+
+                    pdf.text(`${violation.speed}`, xPos, yPosition + 5);
+                    xPos += colWidths[2] || 25;
+
+                    pdf.text(`${violation.speedLimit}`, xPos, yPosition + 5);
+                    xPos += colWidths[3] || 25;
+
+                    pdf.setTextColor(...textColor);
+                    pdf.text(`+${violation.excess.toFixed(2)}`, xPos, yPosition + 5);
+
+                    yPosition += 7;
+                });
+            }
+
+            // PIE DE PÁGINA
+            this.addFooterToAllPages(pdf, {
+                tabName: `Vehiculo_${vehicleData.vehicleName}`,
+                tabIndex: 99,
+                kpis: [],
+                generatedBy: 'Sistema'
+            } as any, pageWidth, pageHeight, margin);
+
+            // Guardar
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const fileName = `DobackSoft_Vehiculo_${vehicleData.vehicleName}_${dateStr}.pdf`;
+            pdf.save(fileName);
+
+            logger.info('PDF de vehiculo generado exitosamente', { vehicleName: vehicleData.vehicleName, fileName });
+        } catch (error) {
+            logger.error('Error generando PDF de vehiculo', { error });
+            throw error;
+        }
     }
 }
 
