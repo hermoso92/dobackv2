@@ -57,16 +57,51 @@ export const useRouteExportFunction = () => {
                     // Importar html2canvas dinámicamente
                     const html2canvas = (await import('html2canvas')).default;
 
-                    // Esperar un poco para que el mapa se renderice completamente
+                    // Esperar a que el mapa esté completamente renderizado
+                    // Verificar que el mapa tenga contenido antes de capturar
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    
+                    while (attempts < maxAttempts) {
+                        // Verificar que el mapa tenga tiles cargados
+                        const mapTiles = mapElement.querySelectorAll('.leaflet-tile');
+                        const routeLine = mapElement.querySelector('.leaflet-interactive');
+                        
+                        if (mapTiles.length > 0 && routeLine) {
+                            logger.info('Mapa completamente renderizado', { 
+                                tiles: mapTiles.length, 
+                                hasRoute: !!routeLine,
+                                attempt: attempts + 1 
+                            });
+                            break;
+                        }
+                        
+                        logger.info(`Esperando renderizado del mapa... intento ${attempts + 1}/${maxAttempts}`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        attempts++;
+                    }
+
+                    // Esperar un poco más para asegurar que todo esté estable
                     await new Promise(resolve => setTimeout(resolve, 1000));
 
-                    // Capturar el mapa directamente con html2canvas
+                    // Capturar el mapa directamente con html2canvas con configuración optimizada
                     const canvas = await html2canvas(mapElement as HTMLElement, {
-                        scale: 3,
+                        scale: 2, // Reducir escala para mejor rendimiento
                         useCORS: true,
                         allowTaint: true,
                         backgroundColor: '#ffffff',
-                        logging: false
+                        logging: false,
+                        width: mapElement.clientWidth,
+                        height: mapElement.clientHeight,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: mapElement.clientWidth,
+                        windowHeight: mapElement.clientHeight,
+                        ignoreElements: (element) => {
+                            // Ignorar elementos que pueden causar problemas
+                            return element.classList.contains('leaflet-control') || 
+                                   element.classList.contains('leaflet-popup');
+                        }
                     });
 
                     mapImage = canvas.toDataURL('image/png');
@@ -76,27 +111,65 @@ export const useRouteExportFunction = () => {
                 }
             }
 
-            // Preparar eventos con geocodificación usando el servicio backend
-            logger.info('Preparando eventos para exportación con geocodificación...');
-            const eventsWithLocations = await Promise.all(
-                routeData.events.map(async (event: any) => {
-                    // Usar el servicio de geocodificación que funciona a través del backend
-                    const location = await geocodingService.reverseGeocode(event.lat, event.lng);
+            // Preparar eventos con geocodificación usando el servicio backend (TODOS los eventos)
+            logger.info('Preparando eventos para exportación con geocodificación...', { totalEvents: routeData.events.length });
+            
+            // Procesar eventos en lotes para evitar sobrecarga
+            const batchSize = 10;
+            const eventsWithLocations = [];
+            
+            for (let i = 0; i < routeData.events.length; i += batchSize) {
+                const batch = routeData.events.slice(i, i + batchSize);
+                logger.info(`Procesando lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(routeData.events.length/batchSize)}`, { 
+                    batchStart: i, 
+                    batchEnd: i + batch.length 
+                });
+                
+                const batchResults = await Promise.all(
+                    batch.map(async (event: any) => {
+                        try {
+                            // Usar el servicio de geocodificación que funciona a través del backend
+                            const location = await geocodingService.reverseGeocode(event.lat, event.lng);
 
-                    return {
-                        id: event.id,
-                        lat: event.lat,
-                        lng: event.lng,
-                        location: location,
-                        type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
-                        severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
-                            event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
-                                event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
-                                    'Desconocida',
-                        timestamp: new Date(event.timestamp)
-                    };
-                })
-            );
+                            return {
+                                id: event.id,
+                                lat: event.lat,
+                                lng: event.lng,
+                                location: location,
+                                type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                                severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
+                                    event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
+                                        event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
+                                            'Desconocida',
+                                timestamp: new Date(event.timestamp)
+                            };
+                        } catch (error) {
+                            logger.warn('Error geocodificando evento', { error, event });
+                            return {
+                                id: event.id,
+                                lat: event.lat,
+                                lng: event.lng,
+                                location: `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`,
+                                type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                                severity: event.severity === 'HIGH' || event.severity === 'grave' ? 'Grave' :
+                                    event.severity === 'MEDIUM' || event.severity === 'moderada' ? 'Moderada' :
+                                        event.severity === 'LOW' || event.severity === 'leve' ? 'Leve' :
+                                            'Desconocida',
+                                timestamp: new Date(event.timestamp)
+                            };
+                        }
+                    })
+                );
+                
+                eventsWithLocations.push(...batchResults);
+                
+                // Pequeña pausa entre lotes para no sobrecargar el servicio
+                if (i + batchSize < routeData.events.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+            
+            logger.info('Geocodificación completada', { processedEvents: eventsWithLocations.length });
 
             // Preparar datos para el PDF con nombres reales y formato correcto
             const exportData = {

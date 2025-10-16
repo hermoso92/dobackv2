@@ -1621,9 +1621,9 @@ class EnhancedPDFExportService {
 
                 yPosition += 5;
 
-                // Tabla de eventos (top 20)
+                // Tabla de eventos (TODOS los eventos)
                 checkPageBreak(40);
-                const topEvents = routeData.events.slice(0, 20);
+                const topEvents = routeData.events; // Mostrar TODOS los eventos
 
                 pdf.setFillColor(...this.colors.primary);
                 pdf.rect(margin, yPosition, contentWidth, 7, 'F');
@@ -1678,13 +1678,7 @@ class EnhancedPDFExportService {
                     yPosition += 7;
                 });
 
-                if (routeData.events.length > 20) {
-                    yPosition += 3;
-                    pdf.setFontSize(8);
-                    pdf.setTextColor(...this.colors.textSecondary);
-                    pdf.text(`... y ${routeData.events.length - 20} eventos adicionales`, margin, yPosition);
-                    yPosition += 5;
-                }
+                // Ya no necesitamos este mensaje porque mostramos todos los eventos
             }
 
             // PIE DE PÁGINA

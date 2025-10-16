@@ -286,7 +286,11 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                     }).addTo(mapRef.current);
 
                     logger.info('RouteMapComponent: Ruta añadida al mapa', {
-                        routePoints: routeCoordinates.length
+                        routePoints: routeCoordinates.length,
+                        firstPoint: routeCoordinates[0],
+                        lastPoint: routeCoordinates[routeCoordinates.length - 1],
+                        color: '#1976d2',
+                        weight: 3
                     });
 
                     // Ajustar vista para mostrar toda la ruta
