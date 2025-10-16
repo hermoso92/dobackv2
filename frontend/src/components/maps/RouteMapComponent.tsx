@@ -132,16 +132,38 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const isInitializingRef = useRef<boolean>(false);
 
+    // Log de debugging
+    logger.info('RouteMapComponent renderizado', { 
+        center, 
+        zoom, 
+        routeLength: route?.length, 
+        eventsLength: events?.length, 
+        vehicleName 
+    });
+
     useEffect(() => {
+        logger.info('RouteMapComponent useEffect ejecutado', { 
+            hasRoute: !!route, 
+            routeLength: route?.length,
+            hasMapContainer: !!mapContainerRef.current,
+            isInitializing: isInitializingRef.current
+        });
+
         // Solo inicializar si tenemos datos de ruta
         if (!route || route.length === 0) {
+            logger.warn('RouteMapComponent: No hay datos de ruta, saltando inicialización');
             return;
         }
 
         if (!mapContainerRef.current || isInitializingRef.current) {
+            logger.warn('RouteMapComponent: No se puede inicializar', { 
+                hasContainer: !!mapContainerRef.current, 
+                isInitializing: isInitializingRef.current 
+            });
             return;
         }
 
+        logger.info('RouteMapComponent: Iniciando creación del mapa');
         // Marcar como inicializando
         isInitializingRef.current = true;
 
@@ -171,6 +193,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
             }
 
             try {
+                logger.info('RouteMapComponent: Creando instancia del mapa Leaflet');
                 // Crear mapa con configuración mejorada
                 mapRef.current = L.map(mapContainerRef.current, {
                     center: center,
@@ -194,6 +217,8 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                     maxZoom: 19,
                     minZoom: 1
                 }).addTo(mapRef.current);
+
+                logger.info('RouteMapComponent: Capa de tiles añadida al mapa');
 
                 // Agregar marcador de inicio
                 if (route.length > 0) {
@@ -253,6 +278,10 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                         smoothFactor: 1.0
                     }).addTo(mapRef.current);
 
+                    logger.info('RouteMapComponent: Ruta añadida al mapa', { 
+                        routePoints: routeCoordinates.length 
+                    });
+
                     // Ajustar vista para mostrar toda la ruta
                     if (routeCoordinates.length > 0) {
                         const group = L.featureGroup();
@@ -282,6 +311,9 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                 }
 
                 // Agregar eventos si existen
+                logger.info('RouteMapComponent: Añadiendo eventos al mapa', { 
+                    eventsCount: events.length 
+                });
                 events.forEach(event => {
                     if (event.lat && event.lng) {
                         const eventIcon = createCustomIcon('#ff9800', 'alert');
@@ -599,6 +631,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
             } catch (error) {
                 logger.error('Error inicializando mapa', { error });
             } finally {
+                logger.info('RouteMapComponent: Inicialización del mapa completada');
                 isInitializingRef.current = false;
             }
         }, 100);
