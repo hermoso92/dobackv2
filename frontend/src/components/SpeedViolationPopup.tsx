@@ -132,7 +132,7 @@ const SpeedViolationPopup: React.FC<SpeedViolationPopupProps> = ({ violation, ge
                 }}>
                     <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>EXCESO</div>
                     <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#f57c00' }}>
-                        +{violation.speed - violation.speedLimit} km/h
+                        +{(violation.speed - violation.speedLimit).toFixed(2)} km/h
                     </div>
                 </div>
             </div>
