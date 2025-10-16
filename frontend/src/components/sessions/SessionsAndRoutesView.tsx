@@ -6,13 +6,16 @@ import {
     Card,
     CardContent,
     LinearProgress,
-    Typography
+    Typography,
+    Button,
+    Tooltip
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
 import { getOrganizationId } from '../../config/organization';
 import { useAuth } from '../../hooks/useAuth';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
+import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
 import RouteMapComponent from '../maps/RouteMapComponent';
@@ -36,6 +39,8 @@ interface Session {
 export const SessionsAndRoutesView: React.FC = () => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
+    const { exportRouteReport, captureElementEnhanced, isExporting } = usePDFExport();
+    
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
     const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
@@ -202,6 +207,73 @@ export const SessionsAndRoutesView: React.FC = () => {
         loadRouteData();
     }, [selectedSessionId]);
 
+    // Exportar recorrido completo a PDF
+    const handleExportRoute = useCallback(async () => {
+        if (!selectedSession || !routeData) {
+            logger.warn('No hay sesión o ruta seleccionada para exportar');
+            return;
+        }
+
+        try {
+            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
+
+            // Capturar mapa del elemento con ID específico
+            const mapElement = document.querySelector('.leaflet-container');
+            let mapImage: string | null = null;
+            
+            if (mapElement) {
+                // Darle un ID temporal si no lo tiene
+                const tempId = 'route-map-export';
+                mapElement.id = tempId;
+                
+                // Capturar el mapa
+                mapImage = await captureElementEnhanced(tempId, 2);
+                
+                // Limpiar ID temporal
+                mapElement.removeAttribute('id');
+            }
+
+            // Preparar datos para el PDF
+            const exportData = {
+                sessionId: selectedSession.id,
+                vehicleName: selectedSession.vehicleName,
+                startTime: new Date(selectedSession.startTime).toLocaleString('es-ES'),
+                endTime: new Date(selectedSession.endTime).toLocaleString('es-ES'),
+                duration: selectedSession.duration,
+                distance: selectedSession.distance,
+                avgSpeed: selectedSession.avgSpeed,
+                maxSpeed: selectedSession.maxSpeed,
+                route: routeData.route.map(point => ({
+                    lat: point.lat,
+                    lng: point.lng,
+                    speed: point.speed,
+                    timestamp: new Date(point.timestamp)
+                })),
+                events: routeData.events.map(event => ({
+                    id: event.id,
+                    lat: event.lat,
+                    lng: event.lng,
+                    type: event.type,
+                    severity: event.severity,
+                    timestamp: new Date(event.timestamp)
+                })),
+                stats: {
+                    validRoutePoints: routeData.stats.validRoutePoints,
+                    validEvents: routeData.stats.validEvents,
+                    totalGpsPoints: routeData.stats.totalGpsPoints,
+                    totalEvents: routeData.stats.totalEvents
+                },
+                mapImage: mapImage || undefined
+            };
+
+            await exportRouteReport(exportData);
+
+            logger.info('Recorrido exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando recorrido', { error });
+        }
+    }, [selectedSession, routeData, captureElementEnhanced, exportRouteReport]);
+
     if (sessionsLoading) {
         return (
             <Box sx={{ p: 3 }}>
@@ -234,9 +306,40 @@ export const SessionsAndRoutesView: React.FC = () => {
                         <CardContent sx={{ height: '100%', p: 0 }}>
                             {(selectedSession || (selectedSessionId && sessions.length > 0)) ? (
                                 <Box sx={{ height: '100%', position: 'relative' }}>
-                                    <Typography variant="h6" sx={{ p: 1, pb: 0.5, fontSize: '1rem' }}>
-                                        Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
-                                    </Typography>
+                                    {/* Header con título y botón de exportación */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between', 
+                                        alignItems: 'center',
+                                        p: 1, 
+                                        pb: 0.5 
+                                    }}>
+                                        <Typography variant="h6" sx={{ fontSize: '1rem' }}>
+                                            Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
+                                        </Typography>
+                                        
+                                        {/* Botón de exportación */}
+                                        {routeData && routeData.route.length > 0 && (
+                                            <Tooltip title="Exportar recorrido completo a PDF con mapa y eventos">
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    onClick={handleExportRoute}
+                                                    disabled={isExporting}
+                                                    sx={{ 
+                                                        bgcolor: 'info.main',
+                                                        '&:hover': { bgcolor: 'info.dark' },
+                                                        textTransform: 'none',
+                                                        fontSize: '0.75rem',
+                                                        py: 0.5,
+                                                        px: 1.5
+                                                    }}
+                                                >
+                                                    {isExporting ? 'Generando...' : 'Exportar Recorrido PDF'}
+                                                </Button>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
 
                                     {/* Mapa real con datos GPS */}
                                     <Box sx={{ height: 'calc(100vh - 150px)', position: 'relative' }}>
