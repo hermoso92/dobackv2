@@ -11,21 +11,21 @@ export interface EnhancedTabExportData {
     tabIndex: number;
     subtitle?: string;
     description?: string;
-    
+
     // Datos principales
     kpis: EnhancedKPIData[];
     sections?: PDFSection[];
-    
+
     // Elementos visuales
     mapData?: MapExportData;
     charts?: ChartData[];
     tables?: EnhancedTableData[];
-    
+
     // Datos específicos por módulo
     speedViolations?: SpeedViolationDetail[];
     blackSpots?: BlackSpotDetail[];
     timelineEvents?: TimelineEvent[];
-    
+
     // Metadatos
     filters?: FilterData;
     appliedFilters?: Record<string, string>;
@@ -190,7 +190,7 @@ class EnhancedPDFExportService {
 
             // ===== PORTADA MEJORADA =====
             yPosition = this.renderEnhancedCover(pdf, exportData, pageWidth, yPosition);
-            
+
             // ===== ÍNDICE (si hay secciones múltiples) =====
             if (this.shouldAddIndex(exportData)) {
                 pdf.addPage();
@@ -285,13 +285,13 @@ class EnhancedPDFExportService {
         pdf.setFillColor(...this.colors.primary);
         pdf.rect(0, 0, pageWidth, 60, 'F');
 
-        // Logo y título principal
-        pdf.setFontSize(32);
-        pdf.setTextColor(255, 255, 255);
-        pdf.text('StabilSafe V3', pageWidth / 2, yPosition + 15, { align: 'center' });
-        
-        pdf.setFontSize(14);
-        pdf.text('Sistema de Análisis de Flota', pageWidth / 2, yPosition + 25, { align: 'center' });
+            // Logo y título principal
+            pdf.setFontSize(32);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text('Doback Soft', pageWidth / 2, yPosition + 15, { align: 'center' });
+            
+            pdf.setFontSize(14);
+            pdf.text('Sistema de Analisis de Flota', pageWidth / 2, yPosition + 25, { align: 'center' });
 
         yPosition += 45;
 
@@ -328,7 +328,7 @@ class EnhancedPDFExportService {
         
         pdf.setFontSize(10);
         pdf.setTextColor(...this.colors.secondary);
-        pdf.text('📅 Fecha de Generación', pageWidth / 2, yPosition + 6, { align: 'center' });
+        pdf.text('Fecha de Generacion', pageWidth / 2, yPosition + 6, { align: 'center' });
         
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.textSecondary);
@@ -348,24 +348,24 @@ class EnhancedPDFExportService {
             
             pdf.setFontSize(11);
             pdf.setTextColor(...this.colors.primary);
-            pdf.text('🔍 Filtros Aplicados', 20, yPosition + 7);
+            pdf.text('FILTROS APLICADOS', 20, yPosition + 7);
             
             pdf.setFontSize(9);
             pdf.setTextColor(...this.colors.text);
             let filterY = yPosition + 14;
 
             if (exportData.filters.vehicle) {
-                pdf.text(`• Vehículo: ${exportData.filters.vehicle}`, 20, filterY);
+                pdf.text(`- Vehiculo: ${exportData.filters.vehicle}`, 20, filterY);
                 filterY += 5;
             }
 
             if (exportData.filters.dateRange) {
-                pdf.text(`• Período: ${exportData.filters.dateRange.start} - ${exportData.filters.dateRange.end}`, 20, filterY);
+                pdf.text(`- Periodo: ${exportData.filters.dateRange.start} - ${exportData.filters.dateRange.end}`, 20, filterY);
                 filterY += 5;
             }
 
             if (exportData.filters.company) {
-                pdf.text(`• Empresa: ${exportData.filters.company}`, 20, filterY);
+                pdf.text(`- Empresa: ${exportData.filters.company}`, 20, filterY);
             }
 
             yPosition += 42;
@@ -375,18 +375,18 @@ class EnhancedPDFExportService {
     }
 
     private shouldAddIndex(exportData: EnhancedTabExportData): boolean {
-        const sectionsCount = (exportData.sections?.length || 0) + 
-                             (exportData.speedViolations?.length || 0 > 0 ? 1 : 0) + 
-                             (exportData.blackSpots?.length || 0 > 0 ? 1 : 0) + 
-                             (exportData.tables?.length || 0) +
-                             (exportData.charts?.length || 0);
+        const sectionsCount = (exportData.sections?.length || 0) +
+            (exportData.speedViolations?.length || 0 > 0 ? 1 : 0) +
+            (exportData.blackSpots?.length || 0 > 0 ? 1 : 0) +
+            (exportData.tables?.length || 0) +
+            (exportData.charts?.length || 0);
         return sectionsCount > 3;
     }
 
     private renderIndex(pdf: jsPDF, exportData: EnhancedTabExportData, margin: number, yPosition: number): number {
         pdf.setFontSize(18);
         pdf.setTextColor(...this.colors.text);
-        pdf.text('📋 Índice de Contenidos', margin, yPosition);
+        pdf.text('INDICE DE CONTENIDOS', margin, yPosition);
         
         yPosition += 12;
         pdf.setDrawColor(...this.colors.border);
@@ -400,14 +400,14 @@ class EnhancedPDFExportService {
 
         // KPIs
         if (exportData.kpis && exportData.kpis.length > 0) {
-            pdf.text(`${indexNum}. Métricas Principales`, margin + 3, yPosition);
+            pdf.text(`${indexNum}. Metricas Principales`, margin + 3, yPosition);
             yPosition += 6;
             indexNum++;
         }
 
         // Contenido específico
         if (exportData.speedViolations && exportData.speedViolations.length > 0) {
-            pdf.text(`${indexNum}. Análisis de Excesos de Velocidad`, margin + 3, yPosition);
+            pdf.text(`${indexNum}. Analisis de Excesos de Velocidad`, margin + 3, yPosition);
             yPosition += 6;
             indexNum++;
         }
@@ -420,7 +420,7 @@ class EnhancedPDFExportService {
 
         // Mapas
         if (exportData.mapData) {
-            pdf.text(`${indexNum}. Visualización Geográfica`, margin + 3, yPosition);
+            pdf.text(`${indexNum}. Visualizacion Geografica`, margin + 3, yPosition);
             yPosition += 6;
             indexNum++;
         }
@@ -428,7 +428,9 @@ class EnhancedPDFExportService {
         // Secciones personalizadas
         if (exportData.sections) {
             exportData.sections.forEach(section => {
-                pdf.text(`${indexNum}. ${section.title}`, margin + 3, yPosition);
+                // Remover emojis del título
+                const cleanTitle = this.removeEmojis(section.title);
+                pdf.text(`${indexNum}. ${cleanTitle}`, margin + 3, yPosition);
                 yPosition += 6;
                 indexNum++;
             });
@@ -437,11 +439,17 @@ class EnhancedPDFExportService {
         return yPosition;
     }
 
+    // Método helper para remover emojis y caracteres especiales
+    private removeEmojis(text: string): string {
+        // Remover emojis, mantener solo texto ASCII extendido
+        return text.replace(/[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}|\u{1F900}-\u{1F9FF}|\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
+    }
+
     private renderExecutiveSummary(
-        pdf: jsPDF, 
-        exportData: EnhancedTabExportData, 
-        margin: number, 
-        contentWidth: number, 
+        pdf: jsPDF,
+        exportData: EnhancedTabExportData,
+        margin: number,
+        contentWidth: number,
         yPosition: number,
         checkPageBreak: (height: number) => boolean
     ): number {
@@ -451,7 +459,7 @@ class EnhancedPDFExportService {
         
         pdf.setFontSize(12);
         pdf.setTextColor(...this.colors.warning);
-        pdf.text('⭐ Resumen Ejecutivo', margin + 5, yPosition + 7);
+        pdf.text('RESUMEN EJECUTIVO', margin + 5, yPosition + 7);
         
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
@@ -467,9 +475,9 @@ class EnhancedPDFExportService {
 
     private generateExecutiveSummary(exportData: EnhancedTabExportData): string {
         const kpiCount = exportData.kpis?.length || 0;
-        
+
         let summary = `Este reporte contiene ${kpiCount} métricas principales`;
-        
+
         if (exportData.speedViolations && exportData.speedViolations.length > 0) {
             const graveCount = exportData.speedViolations.filter(v => v.violationType === 'grave').length;
             summary += ` y análisis de ${exportData.speedViolations.length} excesos de velocidad`;
@@ -477,13 +485,13 @@ class EnhancedPDFExportService {
                 summary += ` (${graveCount} graves)`;
             }
         }
-        
+
         if (exportData.blackSpots && exportData.blackSpots.length > 0) {
             summary += `, incluyendo ${exportData.blackSpots.length} puntos críticos identificados`;
         }
-        
+
         summary += '. Los datos reflejan el estado actual del sistema según los filtros aplicados.';
-        
+
         return summary;
     }
 
@@ -498,16 +506,16 @@ class EnhancedPDFExportService {
         // Título de sección
         pdf.setFontSize(16);
         pdf.setTextColor(...this.colors.text);
-        pdf.text('📊 Métricas Principales', margin, yPosition);
+        pdf.text('METRICAS PRINCIPALES', margin, yPosition);
         yPosition += 10;
 
-            // Renderizar cada KPI con su explicación
+        // Renderizar cada KPI con su explicación
         kpis.forEach((kpi) => {
             checkPageBreak(40);
 
             // Caja del KPI
             const kpiHeight = kpi.description ? 35 : 25;
-            
+
             // Color de borde según categoría
             let borderColor = this.colors.info;
             if (kpi.category === 'success') borderColor = this.colors.success;
@@ -517,34 +525,38 @@ class EnhancedPDFExportService {
             // Fondo
             pdf.setFillColor(...this.colors.light);
             pdf.roundedRect(margin, yPosition, contentWidth, kpiHeight, 2, 2, 'F');
-            
+
             // Borde izquierdo de color
             pdf.setFillColor(...borderColor);
             pdf.rect(margin, yPosition, 3, kpiHeight);
 
-            // Icono
-            if (kpi.icon) {
-                pdf.setFontSize(16);
-                pdf.text(kpi.icon, margin + 6, yPosition + 8);
+            // Indicador visual de categoría (cuadrado de color)
+            if (kpi.category) {
+                const catColor = kpi.category === 'success' ? this.colors.success :
+                                kpi.category === 'warning' ? this.colors.warning :
+                                kpi.category === 'danger' ? this.colors.danger :
+                                this.colors.info;
+                pdf.setFillColor(...catColor);
+                pdf.circle(margin + 8, yPosition + 5, 2, 'F');
             }
 
             // Título
             pdf.setFontSize(10);
             pdf.setTextColor(...this.colors.secondary);
-            pdf.text(kpi.title, margin + 15, yPosition + 7);
+            pdf.text(kpi.title, margin + 13, yPosition + 7);
 
             // Valor
             pdf.setFontSize(18);
             pdf.setTextColor(...this.colors.text);
             const valueText = `${kpi.value}${kpi.unit ? ' ' + kpi.unit : ''}`;
-            pdf.text(valueText, margin + 15, yPosition + 17);
+            pdf.text(valueText, margin + 13, yPosition + 17);
 
             // Tendencia (si existe)
             if (kpi.trend && kpi.trendValue) {
                 const trendIcon = kpi.trend === 'up' ? '↑' : kpi.trend === 'down' ? '↓' : '→';
-                const trendColor = kpi.trend === 'up' ? this.colors.success : 
-                                  kpi.trend === 'down' ? this.colors.danger : this.colors.textSecondary;
-                
+                const trendColor = kpi.trend === 'up' ? this.colors.success :
+                    kpi.trend === 'down' ? this.colors.danger : this.colors.textSecondary;
+
                 pdf.setFontSize(10);
                 pdf.setTextColor(...trendColor);
                 pdf.text(`${trendIcon} ${kpi.trendValue}`, contentWidth + margin - 25, yPosition + 17, { align: 'right' });
@@ -574,10 +586,12 @@ class EnhancedPDFExportService {
         checkPageBreak: (height: number) => boolean
     ): number {
         // Título de sección
-        pdf.setFontSize(16);
-        pdf.setTextColor(...this.colors.text);
-        pdf.text('🚗 Análisis de Excesos de Velocidad', margin, yPosition);
-        yPosition += 10;
+        pdf.setFillColor(...this.colors.danger);
+        pdf.rect(margin, yPosition, contentWidth, 8, 'F');
+        pdf.setFontSize(14);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('ANALISIS DE EXCESOS DE VELOCIDAD', margin + 5, yPosition + 6);
+        yPosition += 12;
 
         // Estadísticas rápidas
         const graveCount = violations.filter(v => v.violationType === 'grave').length;
@@ -587,19 +601,20 @@ class EnhancedPDFExportService {
 
         // Caja de estadísticas
         pdf.setFillColor(254, 242, 242); // Rojo suave
-        pdf.roundedRect(margin, yPosition, contentWidth, 22, 2, 2, 'F');
+        pdf.roundedRect(margin, yPosition, contentWidth, 25, 2, 2, 'F');
         
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
-        pdf.text(`Total de Excesos: ${violations.length}`, margin + 5, yPosition + 6);
-        pdf.text(`🔴 Graves: ${graveCount} | 🟠 Moderados: ${moderadoCount} | 🟡 Leves: ${leveCount}`, margin + 5, yPosition + 12);
+        pdf.text(`Total de Excesos Detectados: ${violations.length}`, margin + 5, yPosition + 6);
+        pdf.text(`GRAVES: ${graveCount}  |  MODERADOS: ${moderadoCount}  |  LEVES: ${leveCount}`, margin + 5, yPosition + 12);
         pdf.text(`Exceso Promedio: ${avgExcess.toFixed(2)} km/h`, margin + 5, yPosition + 18);
+        pdf.text(`Con Rotativo Activo: ${violations.filter(v => v.rotativoOn).length}`, margin + 5, yPosition + 24);
         
-        yPosition += 27;
+        yPosition += 30;
 
         // Tabla de excesos (top 10)
         const topViolations = violations.slice(0, 10);
-        
+
         pdf.setFontSize(11);
         pdf.setTextColor(...this.colors.text);
         pdf.text('Top 10 Excesos de Velocidad', margin, yPosition);
@@ -608,19 +623,19 @@ class EnhancedPDFExportService {
         // Headers de tabla
         const colWidths = [20, 50, 25, 25, 30];
         const headers = ['Hora', 'Ubicación', 'Velocidad', 'Límite', 'Exceso'];
-        
+
         pdf.setFillColor(...this.colors.primary);
         pdf.rect(margin, yPosition, contentWidth, 7, 'F');
-        
+
         pdf.setFontSize(8);
         pdf.setTextColor(255, 255, 255);
-        
+
         let xPos = margin + 2;
         headers.forEach((header, i) => {
             pdf.text(header, xPos, yPosition + 5);
             xPos += colWidths[i] || 30;
         });
-        
+
         yPosition += 7;
 
         // Filas
@@ -638,11 +653,11 @@ class EnhancedPDFExportService {
             let textColor = this.colors.text;
             if (violation.violationType === 'grave') textColor = this.colors.danger;
             else if (violation.violationType === 'moderado') textColor = this.colors.warning;
-            
+
             pdf.setTextColor(...textColor);
 
             xPos = margin + 2;
-            
+
             // Hora
             const time = new Date(violation.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
             pdf.text(time, xPos, yPosition + 5);
@@ -690,24 +705,29 @@ class EnhancedPDFExportService {
         checkPageBreak: (height: number) => boolean
     ): number {
         // Título de sección
-        pdf.setFontSize(16);
-        pdf.setTextColor(...this.colors.text);
-        pdf.text('🗺️ Ranking de Puntos Negros', margin, yPosition);
-        yPosition += 10;
+        pdf.setFillColor(...this.colors.warning);
+        pdf.rect(margin, yPosition, contentWidth, 8, 'F');
+        pdf.setFontSize(14);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('RANKING DE PUNTOS NEGROS', margin + 5, yPosition + 6);
+        yPosition += 12;
 
         // Estadísticas
         const totalEvents = blackSpots.reduce((sum, spot) => sum + spot.totalEvents, 0);
         const totalGrave = blackSpots.reduce((sum, spot) => sum + spot.grave, 0);
+        const totalModerada = blackSpots.reduce((sum, spot) => sum + spot.moderada, 0);
+        const totalLeve = blackSpots.reduce((sum, spot) => sum + spot.leve, 0);
 
         pdf.setFillColor(255, 243, 224); // Naranja suave
-        pdf.roundedRect(margin, yPosition, contentWidth, 15, 2, 2, 'F');
+        pdf.roundedRect(margin, yPosition, contentWidth, 20, 2, 2, 'F');
         
         pdf.setFontSize(9);
         pdf.setTextColor(...this.colors.text);
-        pdf.text(`Zonas Críticas Identificadas: ${blackSpots.length}`, margin + 5, yPosition + 6);
-        pdf.text(`Total de Eventos: ${totalEvents} | Graves: ${totalGrave}`, margin + 5, yPosition + 12);
+        pdf.text(`Zonas Criticas Identificadas: ${blackSpots.length}`, margin + 5, yPosition + 6);
+        pdf.text(`Total de Eventos: ${totalEvents}`, margin + 5, yPosition + 12);
+        pdf.text(`GRAVES: ${totalGrave}  |  MODERADOS: ${totalModerada}  |  LEVES: ${totalLeve}`, margin + 5, yPosition + 18);
         
-        yPosition += 20;
+        yPosition += 25;
 
         // Renderizar cada punto negro
         blackSpots.slice(0, 10).forEach((spot) => {
@@ -715,36 +735,52 @@ class EnhancedPDFExportService {
 
             // Caja del punto negro
             const boxHeight = 22;
-            
-            // Color según ranking
-            let medalColor = this.colors.textSecondary;
-            let medal = `${spot.rank}º`;
-            if (spot.rank === 1) { medal = '🥇'; medalColor = [255, 215, 0]; }
-            else if (spot.rank === 2) { medal = '🥈'; medalColor = [192, 192, 192]; }
-            else if (spot.rank === 3) { medal = '🥉'; medalColor = [205, 127, 50]; }
 
-            pdf.setFillColor(...this.colors.light);
+            // Color según ranking
+            let medalColor: [number, number, number] = this.colors.textSecondary;
+            let rankText = `#${spot.rank}`;
+            let rankBgColor: [number, number, number] = this.colors.light;
+            
+            if (spot.rank === 1) { 
+                rankText = '#1';
+                medalColor = [255, 215, 0]; 
+                rankBgColor = [255, 251, 230];
+            }
+            else if (spot.rank === 2) { 
+                rankText = '#2';
+                medalColor = [192, 192, 192]; 
+                rankBgColor = [248, 248, 248];
+            }
+            else if (spot.rank === 3) { 
+                rankText = '#3';
+                medalColor = [205, 127, 50]; 
+                rankBgColor = [255, 245, 235];
+            }
+
+            pdf.setFillColor(...rankBgColor);
             pdf.roundedRect(margin, yPosition, contentWidth, boxHeight, 2, 2, 'F');
 
-            // Medalla/Ranking
-            pdf.setFontSize(14);
-            pdf.setTextColor(...medalColor);
-            pdf.text(medal, margin + 5, yPosition + 8);
+            // Badge de ranking
+            pdf.setFillColor(...medalColor);
+            pdf.circle(margin + 8, yPosition + 8, 5, 'F');
+            pdf.setFontSize(10);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text(rankText, margin + 8, yPosition + 10, { align: 'center' });
 
             // Ubicación
             pdf.setFontSize(10);
             pdf.setTextColor(...this.colors.text);
             const locText = spot.location.length > 45 ? spot.location.substring(0, 42) + '...' : spot.location;
-            pdf.text(locText, margin + 15, yPosition + 7);
+            pdf.text(locText, margin + 18, yPosition + 7);
 
             // Total eventos
             pdf.setFontSize(8);
             pdf.setTextColor(...this.colors.secondary);
-            pdf.text(`Total: ${spot.totalEvents} eventos`, margin + 15, yPosition + 13);
+            pdf.text(`Total: ${spot.totalEvents} eventos`, margin + 18, yPosition + 13);
 
             // Distribución por severidad
             pdf.setFontSize(7);
-            pdf.text(`🔴 ${spot.grave}  🟠 ${spot.moderada}  🟡 ${spot.leve}`, margin + 15, yPosition + 18);
+            pdf.text(`GRAVES: ${spot.grave}  |  MODERADOS: ${spot.moderada}  |  LEVES: ${spot.leve}`, margin + 18, yPosition + 18);
 
             yPosition += boxHeight + 3;
         });
@@ -760,20 +796,22 @@ class EnhancedPDFExportService {
         contentWidth: number,
         yPosition: number
     ): number {
-        pdf.setFontSize(14);
-        pdf.setTextColor(...this.colors.text);
-        pdf.text(`🗺️ Visualización Geográfica - ${this.getMapTypeLabel(mapData.type)}`, margin, yPosition);
-        yPosition += 8;
+        pdf.setFillColor(...this.colors.info);
+        pdf.rect(margin, yPosition, contentWidth, 8, 'F');
+        pdf.setFontSize(13);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`VISUALIZACION GEOGRAFICA - ${this.getMapTypeLabel(mapData.type)}`, margin + 5, yPosition + 6);
+        yPosition += 12;
 
         if (mapData.image) {
             try {
                 const mapHeight = 110;
-                
+
                 // Borde del mapa
                 pdf.setDrawColor(...this.colors.border);
                 pdf.setLineWidth(0.5);
                 pdf.rect(margin, yPosition, contentWidth, mapHeight);
-                
+
                 // Imagen del mapa
                 pdf.addImage(
                     mapData.image,
@@ -783,7 +821,7 @@ class EnhancedPDFExportService {
                     contentWidth - 2,
                     mapHeight - 2
                 );
-                
+
                 yPosition += mapHeight + 5;
 
                 // Información del mapa
@@ -800,13 +838,14 @@ class EnhancedPDFExportService {
                 if (mapData.legend && mapData.legend.length > 0) {
                     pdf.setFontSize(8);
                     pdf.setTextColor(...this.colors.text);
-                    pdf.text('Leyenda:', margin, yPosition);
+                    pdf.text('LEYENDA:', margin, yPosition);
                     yPosition += 5;
                     
                     mapData.legend.forEach(item => {
                         pdf.setFontSize(7);
                         pdf.setTextColor(...this.colors.textSecondary);
-                        pdf.text(`• ${item}`, margin + 3, yPosition);
+                        const cleanItem = this.removeEmojis(item);
+                        pdf.text(`- ${cleanItem}`, margin + 3, yPosition);
                         yPosition += 4;
                     });
                 }
@@ -841,7 +880,8 @@ class EnhancedPDFExportService {
         // Título de sección
         pdf.setFontSize(13);
         pdf.setTextColor(...this.colors.text);
-        const titleText = section.icon ? `${section.icon} ${section.title}` : section.title;
+        const cleanTitle = this.removeEmojis(section.title);
+        const titleText = cleanTitle.toUpperCase();
         pdf.text(titleText, margin, yPosition);
         yPosition += 8;
 
@@ -850,13 +890,15 @@ class EnhancedPDFExportService {
         pdf.setTextColor(...this.colors.secondary);
 
         if (section.type === 'text' && typeof section.content === 'string') {
-            const lines = pdf.splitTextToSize(section.content, contentWidth);
+            const cleanContent = this.removeEmojis(section.content);
+            const lines = pdf.splitTextToSize(cleanContent, contentWidth);
             pdf.text(lines, margin + 3, yPosition);
             yPosition += lines.length * 5 + 5;
         } else if (section.type === 'list' && Array.isArray(section.content)) {
             section.content.forEach(item => {
                 checkPageBreak(6);
-                pdf.text(`• ${item}`, margin + 5, yPosition);
+                const cleanItem = this.removeEmojis(item);
+                pdf.text(`- ${cleanItem}`, margin + 5, yPosition);
                 yPosition += 5;
             });
             yPosition += 3;
@@ -887,23 +929,23 @@ class EnhancedPDFExportService {
         }
 
         // Calcular anchos de columnas
-        const colWidths = table.columnWidths || 
-                         Array(table.headers.length).fill(contentWidth / table.headers.length);
+        const colWidths = table.columnWidths ||
+            Array(table.headers.length).fill(contentWidth / table.headers.length);
         const rowHeight = 7;
 
         // Headers
         pdf.setFillColor(...this.colors.primary);
         pdf.rect(margin, yPosition, contentWidth, rowHeight, 'F');
-        
+
         pdf.setFontSize(8);
         pdf.setTextColor(255, 255, 255);
-        
+
         let xPos = margin + 2;
         table.headers.forEach((header, i) => {
             pdf.text(header, xPos, yPosition + 5);
             xPos += colWidths[i];
         });
-        
+
         yPosition += rowHeight;
 
         // Filas
@@ -913,30 +955,30 @@ class EnhancedPDFExportService {
         for (let r = 0; r < maxRows; r++) {
             checkPageBreak(rowHeight);
 
-                    const row = table.rows[r];
-                    if (!row) continue; // Saltar si la fila no existe
-                    
-                    const isHighlighted = table.highlightRows?.includes(r);
+            const row = table.rows[r];
+            if (!row) continue; // Saltar si la fila no existe
 
-                    // Fondo
-                    if (isHighlighted) {
-                        pdf.setFillColor(255, 251, 235); // Amarillo suave
-                    } else if (r % 2 === 0) {
-                        pdf.setFillColor(...this.colors.light);
-                    } else {
-                        pdf.setFillColor(255, 255, 255);
-                    }
-                    pdf.rect(margin, yPosition, contentWidth, rowHeight, 'F');
+            const isHighlighted = table.highlightRows?.includes(r);
 
-                    pdf.setTextColor(...this.colors.text);
-                    xPos = margin + 2;
+            // Fondo
+            if (isHighlighted) {
+                pdf.setFillColor(255, 251, 235); // Amarillo suave
+            } else if (r % 2 === 0) {
+                pdf.setFillColor(...this.colors.light);
+            } else {
+                pdf.setFillColor(255, 255, 255);
+            }
+            pdf.rect(margin, yPosition, contentWidth, rowHeight, 'F');
 
-                    row.forEach((cell, c) => {
-                        const cellText = String(cell);
-                        const truncated = cellText.length > 30 ? cellText.substring(0, 27) + '...' : cellText;
-                        pdf.text(truncated, xPos, yPosition + 5);
-                        xPos += colWidths[c] || 30;
-                    });
+            pdf.setTextColor(...this.colors.text);
+            xPos = margin + 2;
+
+            row.forEach((cell, c) => {
+                const cellText = String(cell);
+                const truncated = cellText.length > 30 ? cellText.substring(0, 27) + '...' : cellText;
+                pdf.text(truncated, xPos, yPosition + 5);
+                xPos += colWidths[c] || 30;
+            });
 
             yPosition += rowHeight;
         }
@@ -1010,14 +1052,14 @@ class EnhancedPDFExportService {
         margin: number
     ): void {
         const totalPages = pdf.internal.pages.length - 1;
-        
+
         for (let i = 1; i <= totalPages; i++) {
             pdf.setPage(i);
-            
+
             // Línea superior del footer
             pdf.setDrawColor(...this.colors.border);
             pdf.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-            
+
             // Número de página
             pdf.setFontSize(8);
             pdf.setTextColor(...this.colors.textSecondary);
@@ -1027,16 +1069,16 @@ class EnhancedPDFExportService {
                 pageHeight - 10,
                 { align: 'center' }
             );
-            
+
             // Marca de agua
             pdf.setTextColor(200, 200, 200);
             pdf.text(
-                'StabilSafe V3 - DobackSoft',
+                'Doback Soft V3',
                 pageWidth - margin,
                 pageHeight - 10,
                 { align: 'right' }
             );
-            
+
             // Usuario generador (si existe)
             if (exportData.generatedBy) {
                 pdf.text(
@@ -1054,7 +1096,7 @@ class EnhancedPDFExportService {
         const timeStr = (now.toTimeString().split(' ')[0] || '00-00-00').replace(/:/g, '-');
         const tabName = exportData.tabName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
         
-        return `StabilSafe_${tabName}_${dateStr}_${timeStr}.pdf`;
+        return `DobackSoft_${tabName}_${dateStr}_${timeStr}.pdf`;
     }
 }
 

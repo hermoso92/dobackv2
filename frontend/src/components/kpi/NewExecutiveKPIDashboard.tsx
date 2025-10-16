@@ -16,8 +16,8 @@ import { useGlobalFilters } from '../../hooks/useGlobalFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
+import { EnhancedKPIData, EnhancedTabExportData } from '../../services/enhancedPDFExportService';
 import { TabExportData } from '../../services/pdfExportService';
-import { EnhancedTabExportData, EnhancedKPIData } from '../../services/enhancedPDFExportService';
 import { logger } from '../../utils/logger';
 import { AlertSystemManager } from '../alerts/AlertSystemManager';
 import DiagnosticPanel from '../DiagnosticPanel';
@@ -502,98 +502,85 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
                     const kpisEstados: EnhancedKPIData[] = [
                         {
-                            title: 'Horas de Conducción',
+                            title: 'Horas de Conduccion',
                             value: activity?.driving_hours_formatted || '00:00:00',
-                            icon: '🚗',
                             category: 'info',
-                            description: 'Tiempo total que los vehículos han estado en movimiento durante el período seleccionado. Incluye tiempo en emergencias y servicios regulares.'
+                            description: 'Tiempo total que los vehiculos han estado en movimiento durante el periodo seleccionado. Incluye tiempo en emergencias y servicios regulares.'
                         },
                         {
-                            title: 'Kilómetros Recorridos',
+                            title: 'Kilometros Recorridos',
                             value: activity?.km_total || 0,
                             unit: 'km',
-                            icon: '📍',
                             category: 'success',
-                            description: 'Distancia total recorrida por la flota. Calculada a partir de coordenadas GPS con filtrado de anomalías. Incluye todos los trayectos registrados.'
+                            description: 'Distancia total recorrida por la flota. Calculada a partir de coordenadas GPS con filtrado de anomalias. Incluye todos los trayectos registrados.'
                         },
                         {
-                            title: 'Tiempo en Parque',
+                            title: 'Tiempo en Parque (Clave 1)',
                             value: getStateDuration(1),
-                            icon: '🏠',
                             category: 'info',
-                            description: 'Tiempo que los vehículos permanecieron dentro del parque de bomberos (Clave 1). Indica disponibilidad para respuesta inmediata.'
+                            description: 'Tiempo que los vehiculos permanecieron dentro del parque de bomberos. Indica disponibilidad para respuesta inmediata.'
                         },
                         {
-                            title: '% Rotativo Activo',
+                            title: 'Porcentaje Rotativo Activo',
                             value: activity?.rotativo_on_percentage || 0,
                             unit: '%',
-                            icon: '🚨',
                             category: activity && activity.rotativo_on_percentage > 30 ? 'warning' : 'success',
-                            description: 'Porcentaje de tiempo que el rotativo estuvo encendido. Indica la proporción de tiempo en emergencias reales vs servicios regulares.'
+                            description: 'Porcentaje de tiempo que el rotativo estuvo encendido. Indica la proporcion de tiempo en emergencias reales vs servicios regulares.'
                         },
                         {
-                            title: 'Tiempo Fuera Parque',
+                            title: 'Tiempo Fuera Parque (Clave 3)',
                             value: getStateDuration(3),
-                            icon: '🚦',
                             category: 'info',
-                            description: 'Tiempo en servicio externo fuera del parque (Clave 3). Incluye emergencias, servicios y otros desplazamientos oficiales.'
+                            description: 'Tiempo en servicio externo fuera del parque. Incluye emergencias, servicios y otros desplazamientos oficiales.'
                         },
                         {
-                            title: 'Tiempo en Taller',
+                            title: 'Tiempo en Taller (Clave 4)',
                             value: getStateDuration(4),
-                            icon: '🔧',
                             category: 'warning',
-                            description: 'Tiempo total en mantenimiento preventivo o correctivo (Clave 4). Vehículos no disponibles para servicio.'
+                            description: 'Tiempo total en mantenimiento preventivo o correctivo. Vehiculos no disponibles para servicio.'
                         },
                         {
-                            title: 'Tiempo Clave 2',
+                            title: 'Emergencias Rotativo (Clave 2)',
                             value: getStateDuration(2),
-                            icon: '🚨',
                             category: 'danger',
-                            description: 'Emergencias con rotativo encendido (Clave 2). Situaciones prioritarias que requieren respuesta inmediata con señalización activa.'
+                            description: 'Emergencias con rotativo encendido. Situaciones prioritarias que requieren respuesta inmediata con senalizacion activa.'
                         },
                         {
-                            title: 'Tiempo Clave 5',
+                            title: 'Servicios sin Rotativo (Clave 5)',
                             value: getStateDuration(5),
-                            icon: '📋',
                             category: 'info',
-                            description: 'Servicios sin rotativo (Clave 5). Incluye inspecciones, traslados programados y actividades no urgentes.'
+                            description: 'Servicios programados sin rotativo. Incluye inspecciones, traslados programados y actividades no urgentes.'
                         },
                         {
-                            title: 'Total Incidencias',
+                            title: 'Total Incidencias de Estabilidad',
                             value: stability?.total_incidents || 0,
-                            icon: '⚠️',
                             category: (stability?.total_incidents || 0) > 50 ? 'danger' : 'success',
                             description: 'Total de eventos de inestabilidad detectados. Incluye aceleraciones bruscas, frenazos y giros cerrados que afectan la estabilidad.'
                         },
                         {
-                            title: 'Incidencias Graves',
+                            title: 'Incidencias Graves (0-20%)',
                             value: stability?.critical || 0,
-                            icon: '🔴',
                             category: 'danger',
-                            description: 'Eventos con índice de estabilidad 0-20%. Requieren atención inmediata: revisar condiciones del vehículo y formación del conductor.'
+                            description: 'Eventos con indice de estabilidad 0-20%. Requieren atencion inmediata: revisar condiciones del vehiculo y formacion del conductor.'
                         },
                         {
-                            title: 'Incidencias Moderadas',
+                            title: 'Incidencias Moderadas (20-35%)',
                             value: stability?.moderate || 0,
-                            icon: '🟠',
                             category: 'warning',
-                            description: 'Eventos con índice 20-35%. Situaciones de riesgo medio que deben monitorearse para evitar escalada a gravedad.'
+                            description: 'Eventos con indice 20-35%. Situaciones de riesgo medio que deben monitorearse para evitar escalada a gravedad.'
                         },
                         {
-                            title: 'Incidencias Leves',
+                            title: 'Incidencias Leves (35-50%)',
                             value: stability?.light || 0,
-                            icon: '🟡',
                             category: 'success',
-                            description: 'Eventos con índice 35-50%. Situaciones menores que forman parte de la conducción normal en emergencias.'
+                            description: 'Eventos con indice 35-50%. Situaciones menores que forman parte de la conduccion normal en emergencias.'
                         },
                         {
-                            title: 'Velocidad Promedio',
+                            title: 'Velocidad Promedio de Flota',
                             value: avgSpeed,
                             unit: 'km/h',
-                            icon: '⏱️',
                             category: avgSpeed > 80 ? 'warning' : 'success',
-                            description: 'Velocidad media de la flota calculada sobre el tiempo en movimiento. Valor esperado: 40-70 km/h según tipo de servicio.'
+                            description: 'Velocidad media de la flota calculada sobre el tiempo en movimiento. Valor esperado: 40-70 km/h segun tipo de servicio.'
                         }
                     ];
 
@@ -605,27 +592,25 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         kpis: kpisEstados,
                         sections: [
                             {
-                                title: 'Interpretación de Claves Operacionales',
+                                title: 'Interpretacion de Claves Operacionales',
                                 type: 'list',
-                                icon: '🔑',
                                 content: [
-                                    'Clave 1 (En Parque): Vehículo en base, disponible para respuesta inmediata',
-                                    'Clave 2 (Emergencia con Rotativo): Respuesta prioritaria con señalización activa',
-                                    'Clave 3 (Fuera de Parque): En servicio externo, emergencias o traslados',
-                                    'Clave 4 (En Taller): Mantenimiento preventivo o correctivo, no disponible',
-                                    'Clave 5 (Sin Rotativo): Servicios programados sin carácter urgente'
+                                    'Clave 1 - En Parque: Vehiculo en base, disponible para respuesta inmediata',
+                                    'Clave 2 - Emergencia con Rotativo: Respuesta prioritaria con senalizacion activa',
+                                    'Clave 3 - Fuera de Parque: En servicio externo, emergencias o traslados',
+                                    'Clave 4 - En Taller: Mantenimiento preventivo o correctivo, no disponible',
+                                    'Clave 5 - Sin Rotativo: Servicios programados sin caracter urgente'
                                 ]
                             },
                             {
-                                title: 'Análisis de Disponibilidad',
+                                title: 'Analisis de Disponibilidad',
                                 type: 'text',
-                                icon: '📊',
-                                content: `La flota ha registrado ${activity?.driving_hours_formatted || '00:00'} horas de conducción con ${activity?.km_total || 0} km recorridos. El ${activity?.rotativo_on_percentage || 0}% del tiempo operativo fue en emergencias con rotativo activo. Se detectaron ${stability?.total_incidents || 0} eventos de inestabilidad, de los cuales ${stability?.critical || 0} fueron clasificados como graves y requieren seguimiento.`
+                                content: `La flota ha registrado ${activity?.driving_hours_formatted || '00:00'} horas de conduccion con ${activity?.km_total || 0} km recorridos. El ${activity?.rotativo_on_percentage || 0}% del tiempo operativo fue en emergencias con rotativo activo. Se detectaron ${stability?.total_incidents || 0} eventos de inestabilidad, de los cuales ${stability?.critical || 0} fueron clasificados como graves y requieren seguimiento.`
                             }
                         ],
                         filters: {
-                            vehicle: filters.vehicles && filters.vehicles.length > 0 
-                                ? `${filters.vehicles.length} vehículo(s)` 
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
                                 : 'Todos los vehículos',
                             dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
                                 start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
@@ -691,11 +676,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
                     // Preparar datos de violaciones para la tabla
                     const violationsData = speedViolations.slice(0, 15).map((v: any) => ({
-                        timestamp: new Date(v.timestamp).toLocaleString('es-ES', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                        timestamp: new Date(v.timestamp).toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
                         }),
                         vehicleName: v.vehicleName || 'N/A',
                         location: v.location || `${v.lat?.toFixed(4)}, ${v.lng?.toFixed(4)}`,
@@ -745,8 +730,8 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             }
                         ],
                         filters: {
-                            vehicle: filters.vehicles && filters.vehicles.length > 0 
-                                ? `${filters.vehicles.length} vehículo(s)` 
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
                                 : 'Todos los vehículos',
                             dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
                                 start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
@@ -837,8 +822,8 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             }
                         ],
                         filters: {
-                            vehicle: filters.vehicles && filters.vehicles.length > 0 
-                                ? `${filters.vehicles.length} vehículo(s)` 
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
                                 : 'Todos los vehículos',
                             dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
                                 start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
