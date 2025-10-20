@@ -52,7 +52,7 @@
         "axios": "^1.11.0",
         "bcrypt": "^6.0.0",
         "bcryptjs": "^3.0.2",
-        "better-sqlite3": "^11.9.1",
+        "better-sqlite3": "^12.4.1",
         "chokidar": "^4.0.3",
         "compression": "^1.8.0",
         "cors": "^2.8.5",
