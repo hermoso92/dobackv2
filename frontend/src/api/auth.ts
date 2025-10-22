@@ -1,5 +1,6 @@
 import { apiService } from './api';
 import { ENDPOINTS } from './config';
+import { logger } from '../utils/logger';
 
 export interface LoginCredentials {
   email: string;
@@ -109,7 +110,7 @@ class AuthApiService {
 
       return JSON.parse(jsonPayload).user;
     } catch (error) {
-      console.error('Error parsing token:', error);
+      logger.error('Error parsing token:', error);
       return null;
     }
   }

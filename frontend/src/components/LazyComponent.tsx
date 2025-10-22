@@ -1,5 +1,6 @@
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import React, { ComponentType, Suspense, lazy } from 'react';
+import { logger } from '../utils/logger';
 
 interface LazyComponentProps {
     fallback?: React.ReactNode;
@@ -75,7 +76,7 @@ class LazyErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error('Error en componente lazy:', error, errorInfo);
+        logger.error('Error en componente lazy:', error, errorInfo);
     }
 
     render() {

@@ -1,12 +1,13 @@
 import { AuthResponse, LoginForm, RegisterForm, User } from '../types';
 import { get, post } from './api';
+import { logger } from '../utils/logger';
 
 export const userService = {
   login: async (data: LoginForm): Promise<AuthResponse> => {
     try {
       return await post<AuthResponse>('/api/auth/login', data);
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       throw error;
     }
   },
@@ -15,7 +16,7 @@ export const userService = {
     try {
       return await post<AuthResponse>('/api/auth/register', data);
     } catch (error) {
-      console.error('Register error:', error);
+      logger.error('Register error:', error);
       throw error;
     }
   },
@@ -24,7 +25,7 @@ export const userService = {
     try {
       return await get<User>('/api/auth/me');
     } catch (error) {
-      console.error('Get current user error:', error);
+      logger.error('Get current user error:', error);
       throw error;
     }
   },
@@ -33,7 +34,7 @@ export const userService = {
     try {
       return await get<User[]>('/users');
     } catch (error) {
-      console.error('Get all users error:', error);
+      logger.error('Get all users error:', error);
       throw error;
     }
   },
@@ -42,7 +43,7 @@ export const userService = {
     try {
       return await get<User>(`/users/${id}`);
     } catch (error) {
-      console.error('Get user by id error:', error);
+      logger.error('Get user by id error:', error);
       throw error;
     }
   },
@@ -51,7 +52,7 @@ export const userService = {
     try {
       return await post<User>('/users', data);
     } catch (error) {
-      console.error('Create user error:', error);
+      logger.error('Create user error:', error);
       throw error;
     }
   },
@@ -60,7 +61,7 @@ export const userService = {
     try {
       return await post<User>(`/users/${id}`, data);
     } catch (error) {
-      console.error('Update user error:', error);
+      logger.error('Update user error:', error);
       throw error;
     }
   },
@@ -69,7 +70,7 @@ export const userService = {
     try {
       await post<void>(`/users/${id}/delete`);
     } catch (error) {
-      console.error('Delete user error:', error);
+      logger.error('Delete user error:', error);
       throw error;
     }
   },

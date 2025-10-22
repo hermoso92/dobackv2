@@ -4,12 +4,13 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimit';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const authController = new AuthController();
 const prisma = new PrismaClient();
 
-console.log('🔧 Módulo auth.ts cargado - Endpoint /register disponible');
+logger.info('🔧 Módulo auth.ts cargado - Endpoint /register disponible');
 
 // Endpoint de prueba simple
 router.get('/test-simple', (req, res) => {
@@ -31,7 +32,7 @@ router.post('/login', authLimiter, authController.login);
 
 // Endpoint de registro de usuarios
 router.post('/register', async (req, res) => {
-    console.log('🔧 Endpoint /register llamado con body:', req.body);
+    logger.info('🔧 Endpoint /register llamado con body:', req.body);
     try {
         const { username, email, password, firstName, lastName, role } = req.body;
 
@@ -105,7 +106,7 @@ router.post('/register', async (req, res) => {
             user: newUser
         });
     } catch (error) {
-        console.error('Error creando usuario:', error);
+        logger.error('Error creando usuario:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'
@@ -198,7 +199,7 @@ router.post('/create-superadmin', async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Error creando Super Admin:', error);
+        logger.error('Error creando Super Admin:', error);
         res.status(500).json({
             success: false,
             message: 'Error al crear usuario Super Admin',
@@ -210,7 +211,7 @@ router.post('/create-superadmin', async (req, res) => {
 // Endpoint temporal para crear organización de prueba
 router.post('/create-test-organization', async (req, res) => {
     try {
-        console.log('🏢 Creando organización de prueba...');
+        logger.info('🏢 Creando organización de prueba...');
 
         // 1. Crear la organización
         const organization = await prisma.organization.create({
@@ -353,7 +354,7 @@ router.post('/create-test-organization', async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Error creando organización de prueba:', error);
+        logger.error('Error creando organización de prueba:', error);
         res.status(500).json({
             success: false,
             message: 'Error al crear organización de prueba',

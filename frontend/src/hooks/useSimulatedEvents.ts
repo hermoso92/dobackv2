@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TelemetryData } from './useStabilityData';
+import { logger } from '../utils/logger';
 export interface SimulatedEvent {
     tipos: string[];
     lat: number;
@@ -99,7 +100,7 @@ export const useSimulatedEvents = (telemetryData: TelemetryData[] | null) => {
             };
         });
 
-        console.log('Eventos simulados generados:', events);
+        logger.info('Eventos simulados generados:', events);
         setSimulatedEvents(events);
     }, [telemetryData]);
 

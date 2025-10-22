@@ -1,5 +1,6 @@
 import InfoIcon from '@mui/icons-material/Info';
 import {
+import { logger } from '../utils/logger';
     Box,
     Checkbox,
     FormControlLabel,
@@ -288,7 +289,7 @@ const formatTime = (seconds: number): string => {
         const secs = Math.floor(seconds % 60);
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     } catch (error) {
-        console.error('Error al formatear tiempo:', error);
+        logger.error('Error al formatear tiempo:', error);
         return '00:00:00';
     }
 };

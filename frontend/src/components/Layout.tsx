@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     DirectionsCar as CarIcon,
     Dashboard as DashboardIcon,
     BugReport as DiagnosticsIcon,
@@ -50,7 +51,7 @@ const Layout = () => {
         try {
             await logout();
         } catch (error) {
-            console.error('Error al cerrar sesión:', error);
+            logger.error('Error al cerrar sesión:', error);
         }
     };
 

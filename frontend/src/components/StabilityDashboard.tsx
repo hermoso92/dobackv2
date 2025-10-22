@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     DeleteSweep as ClearIcon,
     Pause as PauseIcon,
     PlayArrow as PlayIcon
@@ -65,14 +66,14 @@ const StabilityDashboard: React.FC = () => {
 
         // Si tenemos parámetros, cargar datos reales automáticamente
         if (vehicleId && sessionId) {
-            console.log(`Cargando datos reales para vehículo ${vehicleId} y sesión ${sessionId}`);
+            logger.info(`Cargando datos reales para vehículo ${vehicleId} y sesión ${sessionId}`);
             setDataSimulationEnabled(false);
         }
     }, []);
 
     // Log para depuración
     useEffect(() => {
-        console.log(`StabilityDashboard: Datos de telemetría actualizados, ${telemetryData.length} puntos`);
+        logger.info(`StabilityDashboard: Datos de telemetría actualizados, ${telemetryData.length} puntos`);
     }, [telemetryData]);
 
     // Manejar cambio de ventana de tiempo

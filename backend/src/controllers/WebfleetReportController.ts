@@ -1,8 +1,8 @@
 
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import { prisma } from '../lib/prisma';
 import { webfleetStyleReportService } from '../services/WebfleetStyleReportService';
 import { logger } from '../utils/logger';
 
@@ -14,9 +14,9 @@ export class WebfleetReportController {
      * POST /api/reports/webfleet
      */
     async generateWebfleetReport(req: Request, res: Response) {
-        console.log('=== INICIO WEBFLEET REPORT ===');
-        console.log('Body:', req.body);
-        console.log('User:', (req as any).user);
+        logger.info('=== INICIO WEBFLEET REPORT ===');
+        logger.info('Body:', req.body);
+        logger.info('User:', (req as any).user);
 
         try {
             const {
@@ -30,7 +30,7 @@ export class WebfleetReportController {
                 fuelReferenceBase = 7.5
             } = req.body;
 
-            console.log('Datos parseados:', {
+            logger.info('Datos parseados:', {
                 startDate,
                 endDate,
                 vehicleIds,
@@ -39,7 +39,7 @@ export class WebfleetReportController {
 
             // Validaciones básicas
             if (!startDate || !endDate) {
-                console.log('ERROR: Fechas faltantes');
+                logger.info('ERROR: Fechas faltantes');
                 return res.status(400).json({
                     success: false,
                     message: 'startDate y endDate son requeridos'
@@ -49,14 +49,14 @@ export class WebfleetReportController {
             // Obtener organizationId del usuario autenticado
             const organizationId = (req as any).user?.organizationId;
             if (!organizationId) {
-                console.log('ERROR: organizationId faltante');
+                logger.info('ERROR: organizationId faltante');
                 return res.status(401).json({
                     success: false,
                     message: 'Usuario no autenticado o sin organización'
                 });
             }
 
-            console.log('OrganizationId:', organizationId);
+            logger.info('OrganizationId:', organizationId);
 
             const config = {
                 startDate: new Date(startDate),
@@ -70,16 +70,16 @@ export class WebfleetReportController {
                 fuelReferenceBase
             };
 
-            console.log('Configuración del reporte:', config);
+            logger.info('Configuración del reporte:', config);
 
             // Generar el reporte real usando el servicio
-            console.log('Generando reporte con WebfleetStyleReportService...');
+            logger.info('Generando reporte con WebfleetStyleReportService...');
             const { filePath, size } = await webfleetStyleReportService.generateWebfleetStyleReport(
                 config
             );
-            console.log('Reporte PDF generado:', { filePath, size });
+            logger.info('Reporte PDF generado:', { filePath, size });
 
-            console.log('Intentando guardar en BD...');
+            logger.info('Intentando guardar en BD...');
             const report = await prisma.report.create({
                 data: {
                     filePath,
@@ -97,7 +97,7 @@ export class WebfleetReportController {
                 }
             });
 
-            console.log('Reporte guardado:', report.id);
+            logger.info('Reporte guardado:', report.id);
 
             res.json({
                 success: true,
@@ -112,7 +112,7 @@ export class WebfleetReportController {
                 }
             });
         } catch (error: any) {
-            console.error('ERROR en generateWebfleetReport:', error);
+            logger.error('ERROR en generateWebfleetReport:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
@@ -127,8 +127,8 @@ export class WebfleetReportController {
      */
     async downloadWebfleetReport(req: Request, res: Response) {
         try {
-            console.log('=== DESCARGA WEBFLEET REPORT ===');
-            console.log('ReportId:', req.params.reportId);
+            logger.info('=== DESCARGA WEBFLEET REPORT ===');
+            logger.info('ReportId:', req.params.reportId);
 
             const { reportId } = req.params;
             const organizationId = (req as any).user?.organizationId;
@@ -140,7 +140,7 @@ export class WebfleetReportController {
                 });
             }
 
-            console.log('Buscando reporte en BD...');
+            logger.info('Buscando reporte en BD...');
             const report = await prisma.report.findFirst({
                 where: {
                     id: reportId,
@@ -149,14 +149,14 @@ export class WebfleetReportController {
             });
 
             if (!report) {
-                console.log('Reporte no encontrado');
+                logger.info('Reporte no encontrado');
                 return res.status(404).json({
                     success: false,
                     message: 'Reporte no encontrado'
                 });
             }
 
-            console.log('Reporte encontrado:', {
+            logger.info('Reporte encontrado:', {
                 id: report.id,
                 filePath: report.filePath,
                 size: report.sizeBytes
@@ -164,14 +164,14 @@ export class WebfleetReportController {
 
             const filePath = report.filePath;
             if (!filePath || !fs.existsSync(filePath)) {
-                console.log('Archivo no existe:', filePath);
+                logger.info('Archivo no existe:', filePath);
                 return res.status(404).json({
                     success: false,
                     message: 'Archivo no encontrado'
                 });
             }
 
-            console.log('Enviando archivo...');
+            logger.info('Enviando archivo...');
 
             // Configurar headers para descarga
             const fileName = path.basename(filePath);
@@ -184,9 +184,9 @@ export class WebfleetReportController {
 
             res.send(fileContent);
 
-            console.log('Archivo enviado exitosamente');
+            logger.info('Archivo enviado exitosamente');
         } catch (error: any) {
-            console.error('ERROR en downloadWebfleetReport:', error);
+            logger.error('ERROR en downloadWebfleetReport:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error descargando el reporte',

@@ -2,6 +2,7 @@ import { ChartBarIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { DashboardComparison } from '../../api/kpi';
+import { logger } from '../../utils/logger';
 
 interface ComparisonModalProps {
     isOpen: boolean;
@@ -56,7 +57,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
             // setComparisonData(data);
         } catch (error) {
             toast.error('Error cargando datos de comparativa');
-            console.error('Error loading comparison data:', error);
+            logger.error('Error loading comparison data:', error);
         } finally {
             setLoading(false);
         }

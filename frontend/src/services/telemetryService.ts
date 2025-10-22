@@ -2,6 +2,7 @@ import { store } from '../store';
 import { addTelemetryData, setError } from '../store/slices/telemetrySlice';
 import { TelemetryData } from '../types';
 import { apiService } from './api';
+import { logger } from '../utils/logger';
 class TelemetryService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -17,7 +18,7 @@ class TelemetryService {
       this.ws = new WebSocket(`ws://localhost:8080/telemetry/${vehicleId}`);
 
       this.ws.onopen = () => {
-        console.log('WebSocket connection established');
+        logger.info('WebSocket connection established');
         this.reconnectAttempts = 0;
         this.reconnectTimeout = 1000;
       };
@@ -27,22 +28,22 @@ class TelemetryService {
           const data: TelemetryData = JSON.parse(event.data);
           store.dispatch(addTelemetryData(data));
         } catch (error) {
-          console.error('Error parsing telemetry data:', error);
+          logger.error('Error parsing telemetry data:', error);
           store.dispatch(setError('Error processing telemetry data'));
         }
       };
 
       this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
+        logger.info('WebSocket connection closed');
         this.attemptReconnect(vehicleId);
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        logger.error('WebSocket error:', error);
         store.dispatch(setError('WebSocket connection error'));
       };
     } catch (error) {
-      console.error('Error establishing WebSocket connection:', error);
+      logger.error('Error establishing WebSocket connection:', error);
       store.dispatch(setError('Failed to establish WebSocket connection'));
       this.attemptReconnect(vehicleId);
     }
@@ -50,14 +51,14 @@ class TelemetryService {
 
   private attemptReconnect(vehicleId: number) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      console.log(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+      logger.info(`Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
       setTimeout(() => {
         this.reconnectAttempts++;
         this.reconnectTimeout *= 2; // Exponential backoff
         this.connect(vehicleId);
       }, this.reconnectTimeout);
     } else {
-      console.error('Max reconnection attempts reached');
+      logger.error('Max reconnection attempts reached');
       store.dispatch(setError('Unable to establish connection after multiple attempts'));
     }
   }

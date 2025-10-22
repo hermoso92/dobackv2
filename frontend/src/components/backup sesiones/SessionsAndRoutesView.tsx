@@ -1,4 +1,5 @@
 import {
+import { logger } from '../../utils/logger';
     Route
 } from '@mui/icons-material';
 import {
@@ -55,8 +56,8 @@ export const SessionsAndRoutesView: React.FC = () => {
     // Procesar datos de sesiones
     useEffect(() => {
         if (sessionsData && Array.isArray(sessionsData)) {
-            console.log('🔍 SessionsAndRoutesView: procesando', sessionsData.length, 'sesiones');
-            console.log('📊 Primera sesión:', sessionsData[0]);
+            logger.info('🔍 SessionsAndRoutesView: procesando', sessionsData.length, 'sesiones');
+            logger.info('📊 Primera sesión:', sessionsData[0]);
 
             const processedSessions: Session[] = sessionsData.map((session: any) => {
                 const startTime = session.startTime || session.startedAt;
@@ -79,8 +80,8 @@ export const SessionsAndRoutesView: React.FC = () => {
                 };
             });
 
-            console.log('✅ Sesiones procesadas:', processedSessions.length);
-            console.log('📊 Primera sesión procesada:', processedSessions[0]);
+            logger.info('✅ Sesiones procesadas:', processedSessions.length);
+            logger.info('📊 Primera sesión procesada:', processedSessions[0]);
             setSessions(processedSessions);
         }
     }, [sessionsData]);
@@ -102,11 +103,11 @@ export const SessionsAndRoutesView: React.FC = () => {
         if (selectedSessionId && sessions.length > 0) {
             const foundSession = sessions.find(s => s.id === selectedSessionId);
             if (foundSession && (!selectedSession || selectedSession.id !== foundSession.id)) {
-                console.log('🔄 Sincronizando sesión seleccionada:', foundSession);
+                logger.info('🔄 Sincronizando sesión seleccionada:', foundSession);
                 setSelectedSession(foundSession);
             }
         } else if (!selectedSessionId && selectedSession) {
-            console.log('🧹 Limpiando sesión seleccionada');
+            logger.info('🧹 Limpiando sesión seleccionada');
             setSelectedSession(null);
         }
     }, [selectedSessionId, sessions, selectedSession]);
@@ -121,23 +122,23 @@ export const SessionsAndRoutesView: React.FC = () => {
 
             setLoadingRoute(true);
             try {
-                console.log('🗺️ Cargando datos de ruta para sesión:', selectedSessionId);
+                logger.info('🗺️ Cargando datos de ruta para sesión:', selectedSessionId);
                 const response = await fetch(`/api/session-route/${selectedSessionId}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.data) {
-                        console.log('✅ Datos de ruta cargados:', data.data);
+                        logger.info('✅ Datos de ruta cargados:', data.data);
                         setRouteData(data.data);
                     } else {
-                        console.warn('⚠️ No se pudieron cargar los datos de la ruta');
+                        logger.warn('⚠️ No se pudieron cargar los datos de la ruta');
                         setRouteData(null);
                     }
                 } else {
-                    console.error('❌ Error cargando datos de ruta:', response.status);
+                    logger.error('❌ Error cargando datos de ruta:', response.status);
                     setRouteData(null);
                 }
             } catch (error) {
-                console.error('❌ Error cargando datos de ruta:', error);
+                logger.error('❌ Error cargando datos de ruta:', error);
                 setRouteData(null);
             } finally {
                 setLoadingRoute(false);
@@ -158,7 +159,7 @@ export const SessionsAndRoutesView: React.FC = () => {
         );
     }
 
-    console.log('🔍 SessionsAndRoutesView render:', {
+    logger.info('🔍 SessionsAndRoutesView render:', {
         sessions: sessions.length,
         selectedVehicleId,
         selectedSessionId,
@@ -207,7 +208,7 @@ export const SessionsAndRoutesView: React.FC = () => {
                                         </Box>
                                     ) : routeData ? (
                                         <>
-                                            {console.log('🗺️ Renderizando mapa con datos:', {
+                                            {logger.info('🗺️ Renderizando mapa con datos:', {
                                                 routePoints: routeData.route.length,
                                                 events: routeData.events.length,
                                                 center: routeData.route.length > 0 && routeData.route[0] ? [routeData.route[0].lat, routeData.route[0].lng] : [40.4168, -3.7038]

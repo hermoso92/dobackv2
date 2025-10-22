@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../services/api';
+import { logger } from '../utils/logger';
 
 export interface GPSData {
     vehicleId: string;
@@ -93,7 +94,7 @@ export const useEmergencyDashboard = () => {
             }
 
         } catch (error) {
-            console.error('Error cargando dashboard:', error);
+            logger.error('Error cargando dashboard:', error);
             setState(prev => ({
                 ...prev,
                 loading: false,
@@ -111,7 +112,7 @@ export const useEmergencyDashboard = () => {
             await api.post('/api/dashboard/refresh');
             await loadDashboardData();
         } catch (error) {
-            console.error('Error en actualización forzada:', error);
+            logger.error('Error en actualización forzada:', error);
             setState(prev => ({
                 ...prev,
                 error: 'Error en actualización forzada'
@@ -130,7 +131,7 @@ export const useEmergencyDashboard = () => {
             }
             return null;
         } catch (error) {
-            console.error('Error obteniendo vehículo:', error);
+            logger.error('Error obteniendo vehículo:', error);
             return null;
         }
     }, []);
@@ -147,7 +148,7 @@ export const useEmergencyDashboard = () => {
             }
             return [];
         } catch (error) {
-            console.error('Error obteniendo emergencias:', error);
+            logger.error('Error obteniendo emergencias:', error);
             return [];
         }
     }, []);
@@ -164,7 +165,7 @@ export const useEmergencyDashboard = () => {
             }
             return [];
         } catch (error) {
-            console.error('Error obteniendo vehículos disponibles:', error);
+            logger.error('Error obteniendo vehículos disponibles:', error);
             return [];
         }
     }, []);
@@ -181,7 +182,7 @@ export const useEmergencyDashboard = () => {
             }
             return null;
         } catch (error) {
-            console.error('Error obteniendo estado del servicio:', error);
+            logger.error('Error obteniendo estado del servicio:', error);
             return null;
         }
     }, []);
@@ -199,7 +200,7 @@ export const useEmergencyDashboard = () => {
             }
             return false;
         } catch (error) {
-            console.error('Error iniciando monitoreo:', error);
+            logger.error('Error iniciando monitoreo:', error);
             return false;
         }
     }, [loadDashboardData]);
@@ -217,7 +218,7 @@ export const useEmergencyDashboard = () => {
             }
             return false;
         } catch (error) {
-            console.error('Error deteniendo monitoreo:', error);
+            logger.error('Error deteniendo monitoreo:', error);
             return false;
         }
     }, [loadDashboardData]);

@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 const fs = require('fs');
 const path = require('path');
 const { format } = require('date-fns');
@@ -126,5 +128,5 @@ const csv = [headers, ...rows].join('\n');
 // Guardar archivo
 const filePath = './data/stability_data.csv';
 fs.writeFileSync(filePath, csv, 'utf-8');
-console.log(`Datos guardados en: ${filePath}`);
-console.log(`Total de registros: ${data.length}`); 
+logger.info(`Datos guardados en: ${filePath}`);
+logger.info(`Total de registros: ${data.length}`); 

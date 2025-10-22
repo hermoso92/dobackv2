@@ -5,6 +5,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 import { CacheService } from '../services/CacheService';
+import { logger } from '../utils/logger';
 
 // Instancia única de CacheService
 const cacheService = new CacheService();
@@ -183,7 +184,7 @@ export const performanceMetricsMiddleware = (req: Request, res: Response, next: 
         const duration = Date.now() - startTime;
 
         // Log de métricas de rendimiento
-        console.log(`[PERFORMANCE] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+        logger.info(`[PERFORMANCE] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
 
         // Añadir headers de métricas
         res.setHeader('X-Response-Time', `${duration}ms`);

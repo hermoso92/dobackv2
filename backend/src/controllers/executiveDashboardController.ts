@@ -15,7 +15,7 @@ export const getExecutiveDashboardHandler = async (req: Request, res: Response) 
         const startDateParam = req.query.startDate as string;
         const endDateParam = req.query.endDate as string;
 
-        console.log('🔍 DEBUG Dashboard - Parámetros recibidos:', {
+        logger.info('🔍 DEBUG Dashboard - Parámetros recibidos:', {
             period,
             vehicle_id,
             vehicle_ids,
@@ -191,7 +191,7 @@ export const getExecutiveDashboardHandler = async (req: Request, res: Response) 
         // Distribuir tiempo basado en eventos reales (SIN Math.random())
         const totalTimeHours = Math.max(1, totalSessionTime || (totalEvents * 0.1)); // Mínimo 1 hora
 
-        console.log('🔍 DEBUG Dashboard - Cálculos de tiempo:', {
+        logger.info('🔍 DEBUG Dashboard - Cálculos de tiempo:', {
             totalEvents,
             totalSessionTime,
             totalTimeHours,
@@ -215,7 +215,7 @@ export const getExecutiveDashboardHandler = async (req: Request, res: Response) 
         const timeInEnclave2 = timeWithRotary * 0.7; // 70% del tiempo con rotativo es clave 2 (emergencia)
         const timeOutOfParkWithRotary = timeWithRotary * 0.5; // 50% del tiempo con rotativo fuera de parque
 
-        console.log('🔍 DEBUG Dashboard - Tiempos calculados:', {
+        logger.info('🔍 DEBUG Dashboard - Tiempos calculados:', {
             timeInPark,
             timeOutOfPark,
             timeInParkWithRotary,

@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     Close as CloseIcon,
     ExpandLess as ExpandLessIcon,
     ExpandMore as ExpandMoreIcon,
@@ -70,7 +71,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     // 🔍 Debug: Ver qué datos estamos recibiendo
     React.useEffect(() => {
         if (open && validEvents.length > 0) {
-            console.log('📋 EventDetailsModal - Primeros 3 eventos:', validEvents.slice(0, 3));
+            logger.info('📋 EventDetailsModal - Primeros 3 eventos:', validEvents.slice(0, 3));
         }
     }, [open, validEvents]);
 

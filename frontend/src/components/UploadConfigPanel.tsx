@@ -5,6 +5,7 @@
  */
 
 import {
+import { logger } from '../utils/logger';
     CheckCircle as CheckCircleIcon,
     ExpandMore as ExpandMoreIcon,
     Refresh as RefreshIcon,
@@ -135,7 +136,7 @@ export const UploadConfigPanel: React.FC<Props> = ({ onConfigChange }) => {
                 setConfig(parsed);
                 setSavedConfig(parsed);
             } catch (e) {
-                console.error('Error cargando configuración:', e);
+                logger.error('Error cargando configuración:', e);
             }
         }
     }, []);

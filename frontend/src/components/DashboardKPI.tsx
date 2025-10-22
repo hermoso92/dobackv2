@@ -6,6 +6,7 @@ import { Box, Card, CardContent, CircularProgress, Grid, Typography } from '@mui
 import React, { useEffect, useState } from 'react';
 import { t } from '../i18n';
 import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface DashboardMetrics {
     totalVehicles?: number;
@@ -31,7 +32,7 @@ const DashboardKPI: React.FC = () => {
                 const data = response.data ?? response;
                 setMetrics(data as DashboardMetrics);
             } catch (err) {
-                console.error(err);
+                logger.error(err);
             } finally {
                 setLoading(false);
             }

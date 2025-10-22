@@ -127,7 +127,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
             setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Error desconocido');
-            console.error('Error fetching dashboard data:', err);
+            logger.error('Error fetching dashboard data:', err);
         } finally {
             setLoading(false);
         }
@@ -253,7 +253,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 setHeatmapData({ points: [], routes: [], geofences: [] });
             }
         } catch (err) {
-            console.error('Error fetching heatmap data:', err);
+            logger.error('Error fetching heatmap data:', err);
             setHeatmapData({ points: [], routes: [], geofences: [] });
         }
     }, [user?.organizationId, filters.vehicles, filters.dateRange?.start, filters.dateRange?.end]);
@@ -299,7 +299,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 setSpeedViolations([]);
             }
         } catch (err) {
-            console.error('Error fetching speed violations:', err);
+            logger.error('Error fetching speed violations:', err);
             setSpeedViolations([]);
         }
     }, [user?.organizationId, filters.vehicles, filters.dateRange?.start, filters.dateRange?.end]);

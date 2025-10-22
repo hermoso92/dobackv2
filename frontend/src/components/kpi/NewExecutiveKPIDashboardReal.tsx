@@ -1,4 +1,5 @@
 import {
+import { logger } from '../../utils/logger';
     ChartBarIcon,
     ClockIcon,
     DocumentTextIcon,
@@ -140,7 +141,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 setLoading(true);
                 setError(null);
 
-                console.log('🔄 Cargando datos reales desde PostgreSQL...');
+                logger.info('🔄 Cargando datos reales desde PostgreSQL...');
 
                 // 1. Obtener datos reales del dashboard desde PostgreSQL
                 const dashboardResponse = await fetch('/api/kpi/dashboard', {
@@ -157,7 +158,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 }
 
                 const dashboardData = await dashboardResponse.json();
-                console.log('✅ Datos del dashboard obtenidos:', dashboardData);
+                logger.info('✅ Datos del dashboard obtenidos:', dashboardData);
 
                 // 2. Usar datos reales del backend
                 const realData: DashboardData = {
@@ -178,10 +179,10 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 };
 
                 setData(realData);
-                console.log('✅ Datos reales cargados:', realData);
+                logger.info('✅ Datos reales cargados:', realData);
 
             } catch (error) {
-                console.error('❌ Error cargando datos reales:', error);
+                logger.error('❌ Error cargando datos reales:', error);
                 setError(`Error cargando datos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
 
                 // Fallback a datos de prueba si hay error
@@ -211,7 +212,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
 
     // Función para calcular KPIs reales desde datos de PostgreSQL
     const calculateRealKPIs = (sessions: any[]) => {
-        console.log('🧮 Calculando KPIs reales desde', sessions.length, 'sesiones');
+        logger.info('🧮 Calculando KPIs reales desde', sessions.length, 'sesiones');
 
         let totalKm = 0;
         let totalHours = 0;
@@ -275,14 +276,14 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     const handleGenerateReport = async () => {
         try {
             setIsGeneratingReport(true);
-            console.log('📊 Generando reporte PDF...');
+            logger.info('📊 Generando reporte PDF...');
 
             // TODO: Implementar generación de reporte PDF real
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            console.log('✅ Reporte PDF generado');
+            logger.info('✅ Reporte PDF generado');
         } catch (error) {
-            console.error('❌ Error generando reporte:', error);
+            logger.error('❌ Error generando reporte:', error);
         } finally {
             setIsGeneratingReport(false);
         }

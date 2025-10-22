@@ -555,7 +555,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                                                     }
                                                 }, 100);
                                             } catch (error) {
-                                                console.warn('Error cerrando popup:', error);
+                                                logger.warn('Error cerrando popup:', error);
                                             }
                                         " style="
                                             position: absolute;
@@ -612,7 +612,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                                     }, 100);
                                 }
                             } catch (error) {
-                                console.warn('⚠️ Error en zoom al evento:', error);
+                                logger.warn('⚠️ Error en zoom al evento:', error);
                             }
                         });
 
@@ -623,7 +623,7 @@ const RouteMapComponent: React.FC<RouteMapComponentProps> = ({
                                 window.currentPopup = undefined;
                                 window.popupIsOpen = false;
                             } catch (error) {
-                                console.warn('⚠️ Error cerrando popup:', error);
+                                logger.warn('⚠️ Error cerrando popup:', error);
                             }
                         });
                     }

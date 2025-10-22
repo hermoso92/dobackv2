@@ -738,7 +738,7 @@ export class ReportsController {
     // Generar reporte del dashboard (versión funcional)
     generateDashboardReport = async (req: Request, res: Response) => {
         try {
-            console.log('📊 Generando reporte del dashboard...');
+            logger.info('📊 Generando reporte del dashboard...');
             const { filters, includeCharts = true, includeMaps = true } = req.body;
 
             // Datos de ejemplo
@@ -858,7 +858,7 @@ export class ReportsController {
             const filePath = path.join(reportsDir, fileName);
             await fs.writeFile(filePath, html);
 
-            console.log('✅ Reporte HTML generado exitosamente:', filePath);
+            logger.info('✅ Reporte HTML generado exitosamente:', filePath);
 
             res.json({
                 success: true,
@@ -871,7 +871,7 @@ export class ReportsController {
             });
 
         } catch (error) {
-            console.error('❌ Error generando reporte del dashboard:', error);
+            logger.error('❌ Error generando reporte del dashboard:', error);
             res.status(500).json({
                 success: false,
                 error: `Error interno del servidor: ${error.message}`

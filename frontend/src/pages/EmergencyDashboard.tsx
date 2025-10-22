@@ -4,6 +4,7 @@
  */
 
 import {
+import { logger } from '../utils/logger';
     Warning as AlertIcon,
     CheckCircle as AvailableIcon,
     Warning as EmergencyIcon,
@@ -353,7 +354,7 @@ const EmergencyDashboard: React.FC = () => {
             const diffDays = Math.floor(diffHours / 24);
             return `${diffDays}d`;
         } catch (error) {
-            console.warn('Error formateando fecha:', error);
+            logger.warn('Error formateando fecha:', error);
             return 'Error de fecha';
         }
     };
@@ -561,7 +562,7 @@ const EmergencyDashboard: React.FC = () => {
                                                 // Validación robusta de datos GPS
                                                 if (!vehicle.gpsData.latitude || !vehicle.gpsData.longitude ||
                                                     isNaN(vehicle.gpsData.latitude) || isNaN(vehicle.gpsData.longitude)) {
-                                                    console.warn(`Datos GPS inválidos para vehículo ${vehicle.vehicleId}:`, vehicle.gpsData);
+                                                    logger.warn(`Datos GPS inválidos para vehículo ${vehicle.vehicleId}:`, vehicle.gpsData);
                                                     return null;
                                                 }
 
@@ -733,7 +734,7 @@ const EmergencyDashboard: React.FC = () => {
                                         // Validación robusta de datos GPS
                                         if (!vehicle.gpsData.latitude || !vehicle.gpsData.longitude ||
                                             isNaN(vehicle.gpsData.latitude) || isNaN(vehicle.gpsData.longitude)) {
-                                            console.warn(`Datos GPS inválidos para vehículo ${vehicle.vehicleId}:`, vehicle.gpsData);
+                                            logger.warn(`Datos GPS inválidos para vehículo ${vehicle.vehicleId}:`, vehicle.gpsData);
                                             return null;
                                         }
 

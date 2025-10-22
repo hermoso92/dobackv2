@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useRef, useState } from 'react';
 import { Geofence } from '../../types/geofence';
+import { logger } from '../../utils/logger';
 
 // Configuración de iconos de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -59,7 +60,7 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
             setError(null);
 
         } catch (err) {
-            console.error('Error inicializando mapa:', err);
+            logger.error('Error inicializando mapa:', err);
             setError('Error al cargar el mapa');
         }
 
@@ -82,7 +83,7 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
             try {
                 addGeofenceToMap(geofence);
             } catch (err) {
-                console.error(`Error agregando geofence ${geofence.name}:`, err);
+                logger.error(`Error agregando geofence ${geofence.name}:`, err);
             }
         });
 
@@ -145,10 +146,10 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
             }
 
             // Fallback: coordenadas por defecto de Madrid si no hay datos
-            console.warn(`No se pudo determinar el centro para geofence ${geofence.name}, usando Madrid por defecto`);
+            logger.warn(`No se pudo determinar el centro para geofence ${geofence.name}, usando Madrid por defecto`);
             return madridCenter;
         } catch (err) {
-            console.error('Error calculando centro de geofence:', err);
+            logger.error('Error calculando centro de geofence:', err);
             return madridCenter;
         }
     };
@@ -164,7 +165,7 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
 
         const center = getGeofenceCenter(geofence);
         if (!center) {
-            console.warn(`No se pudo obtener centro para geofence ${geofence.name}`);
+            logger.warn(`No se pudo obtener centro para geofence ${geofence.name}`);
             return;
         }
 
@@ -259,7 +260,7 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
                     break;
             }
         } catch (err) {
-            console.error(`Error renderizando geometría para ${geofence.name}:`, err);
+            logger.error(`Error renderizando geometría para ${geofence.name}:`, err);
         }
 
         // Agregar marcador al grupo

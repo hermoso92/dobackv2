@@ -94,7 +94,7 @@ export class DashboardController {
             logger.info('Sesiones recientes obtenidas exitosamente');
             res.json(sessions);
         } catch (error) {
-            console.error('Error getting recent sessions:', error);
+            logger.error('Error getting recent sessions:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
@@ -108,7 +108,7 @@ export class DashboardController {
             const alarms = await this.dashboardService.getAlarmsByType(organizationId);
             res.json(alarms);
         } catch (error) {
-            console.error('Error getting alarms by type:', error);
+            logger.error('Error getting alarms by type:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }

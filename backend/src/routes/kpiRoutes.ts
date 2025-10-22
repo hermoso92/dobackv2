@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { compareDashboardPeriodsHandler, getExecutiveDashboardHandler } from '../controllers/executiveDashboardController';
 import { getHeatmapHandler, getSpeedingHandler } from '../controllers/kpiController';
 import { authenticate } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -15,7 +16,7 @@ router.get('/dashboard-test', async (req: Request, res: Response) => {
         const to = req.query.to as string || '2025-10-08';
         const vehicleId = req.query.vehicleId as string || '0d0c4f74-e196-4d32-b413-752b22530583';
 
-        console.log('🔍 DEBUG Dashboard Test - Parámetros:', { from, to, vehicleId, organizationId });
+        logger.info('🔍 DEBUG Dashboard Test - Parámetros:', { from, to, vehicleId, organizationId });
 
         // Construir filtros de fecha
         const dateFrom = new Date(from);
@@ -64,7 +65,7 @@ router.get('/dashboard-test', async (req: Request, res: Response) => {
         const rolloverRiskEvents = stabilityEvents.filter(e => e.type === 'rollover_risk').length;
         const rotaryOnEvents = stabilityEvents.filter(e => (e as any).rotativoState === 1).length;
 
-        console.log('🔍 DEBUG Dashboard Test - Resultados:', {
+        logger.info('🔍 DEBUG Dashboard Test - Resultados:', {
             totalEvents: stabilityEvents.length,
             totalSessionTime,
             dangerousDriftEvents,
@@ -93,7 +94,7 @@ router.get('/dashboard-test', async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Error en dashboard test:', error);
+        logger.error('Error en dashboard test:', error);
         res.status(500).json({
             success: false,
             error: error.message,

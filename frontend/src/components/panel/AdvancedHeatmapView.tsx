@@ -1,4 +1,5 @@
 import {
+import { logger } from '../../utils/logger';
     DirectionsCar,
     Download,
     FilterList,
@@ -156,14 +157,14 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
 
     // Procesar datos del heatmap
     const processedData = useMemo(() => {
-        console.log('🔍 Procesando datos del heatmap:', { data, vehicles });
+        logger.info('🔍 Procesando datos del heatmap:', { data, vehicles });
 
         if (!data || !data.points) {
-            console.log('❌ No hay datos o puntos');
+            logger.info('❌ No hay datos o puntos');
             return { points: [], routes: [], geofences: [] };
         }
 
-        console.log('📊 Puntos originales:', data.points.length);
+        logger.info('📊 Puntos originales:', data.points.length);
 
         const points: HeatmapPoint[] = data.points.map(point => ({
             ...point,
@@ -171,14 +172,14 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
             street: point.street || 'Dirección no disponible'
         }));
 
-        console.log('🚗 Puntos procesados:', points.length);
+        logger.info('🚗 Puntos procesados:', points.length);
 
         // Filtrar por vehículos seleccionados
         const filteredPoints = selectedVehicles.length > 0
             ? points.filter(p => selectedVehicles.includes(p.vehicleId))
             : points;
 
-        console.log('🎯 Puntos filtrados por vehículos:', filteredPoints.length);
+        logger.info('🎯 Puntos filtrados por vehículos:', filteredPoints.length);
 
         // Filtrar por tipo de evento
         const typeFilteredPoints = selectedType === 'all'
@@ -196,7 +197,7 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
                 }
             });
 
-        console.log('📈 Puntos filtrados por tipo:', typeFilteredPoints.length, 'tipo:', selectedType);
+        logger.info('📈 Puntos filtrados por tipo:', typeFilteredPoints.length, 'tipo:', selectedType);
 
         // Filtrar por rotativo
         const rotativoFilteredPoints = rotativoFilter === 'all'
@@ -207,7 +208,7 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
                 return true;
             });
 
-        console.log('🔄 Puntos filtrados por rotativo:', rotativoFilteredPoints.length);
+        logger.info('🔄 Puntos filtrados por rotativo:', rotativoFilteredPoints.length);
 
         // Generar rutas por vehículo
         const routes = vehicles.map(vehicle => {
@@ -223,7 +224,7 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
             };
         }).filter(route => route.points.length > 1);
 
-        console.log('🛣️ Rutas generadas:', routes.length);
+        logger.info('🛣️ Rutas generadas:', routes.length);
 
         const result = {
             points: rotativoFilteredPoints,
@@ -231,7 +232,7 @@ export const AdvancedHeatmapView: React.FC<AdvancedHeatmapViewProps> = ({
             geofences: [] // TODO: Implementar geocercas
         };
 
-        console.log('✅ Resultado final:', result);
+        logger.info('✅ Resultado final:', result);
         return result;
     }, [data, vehicles, selectedVehicles, selectedType, rotativoFilter]);
 

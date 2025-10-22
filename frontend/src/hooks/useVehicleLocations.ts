@@ -86,7 +86,7 @@ export const useVehicleLocations = () => {
             logger.error('Error obteniendo ubicaciones de vehículos:', { error: err });
             setError(errorMessage);
             // Mostrar error al usuario
-            console.error('Error obteniendo ubicaciones:', errorMessage);
+            logger.error('Error obteniendo ubicaciones:', errorMessage);
         } finally {
             setLoading(false);
         }

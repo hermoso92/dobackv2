@@ -3,6 +3,7 @@ import { Button } from 'antd';
 import React from 'react';
 import { useStabilityExport } from '../hooks/useStabilityExport';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 interface StabilityExportProps {
     sessionId: string;
@@ -20,7 +21,7 @@ export const StabilityExport: React.FC<StabilityExportProps> = ({ sessionId, fil
     const handleExport = () => {
         exportReport({ sessionId, filters }, {
             onSuccess: (blob) => {
-                console.log('PDF descargado:', blob.size, 'bytes');
+                logger.info('PDF descargado:', blob.size, 'bytes');
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -31,7 +32,7 @@ export const StabilityExport: React.FC<StabilityExportProps> = ({ sessionId, fil
                 window.URL.revokeObjectURL(url);
             },
             onError: (error) => {
-                console.error('Error al exportar:', error);
+                logger.error('Error al exportar:', error);
                 // Aquí podrías mostrar un mensaje de error al usuario
             },
         });

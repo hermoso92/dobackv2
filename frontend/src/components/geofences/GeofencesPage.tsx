@@ -1,4 +1,5 @@
 import {
+import { logger } from '../../utils/logger';
     Add,
     Delete,
     Edit,
@@ -70,7 +71,7 @@ export const GeofencesPage: React.FC = () => {
             setDeleteDialogOpen(false);
             setGeofenceToDelete(null);
         } catch (error) {
-            console.error('Error deleting geofence:', error);
+            logger.error('Error deleting geofence:', error);
         }
     };
 

@@ -1,6 +1,7 @@
 import { ErrorOutline as ErrorIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Alert, Box, Button, Typography } from '@mui/material';
 import React from 'react';
+import { logger } from '../utils/logger';
 
 interface ErrorBoundaryState {
     hasError: boolean;
@@ -27,7 +28,7 @@ class EventDetailsErrorBoundary extends React.Component<ErrorBoundaryProps, Erro
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error('EventDetailsErrorBoundary capturó un error:', error, errorInfo);
+        logger.error('EventDetailsErrorBoundary capturó un error:', error, errorInfo);
         this.setState({
             error,
             errorInfo

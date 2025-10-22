@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { authService } from './auth';
+import { logger } from '../utils/logger';
 
 export interface Report {
     id: string;
@@ -65,7 +66,7 @@ class ReportService {
             // El backend devuelve los datos directamente, no en un wrapper
             return response.data;
         } catch (error) {
-            console.error('Error obteniendo reportes:', error);
+            logger.error('Error obteniendo reportes:', error);
             throw new Error('Error obteniendo lista de reportes');
         }
     }
@@ -119,7 +120,7 @@ class ReportService {
 
             return report;
         } catch (error) {
-            console.error('Error creando reporte:', error);
+            logger.error('Error creando reporte:', error);
             throw new Error('Error creando nuevo reporte');
         }
     }
@@ -149,7 +150,7 @@ class ReportService {
 
             window.URL.revokeObjectURL(downloadUrl);
         } catch (error) {
-            console.error('Error descargando reporte:', error);
+            logger.error('Error descargando reporte:', error);
             throw error;
         }
     }
@@ -165,7 +166,7 @@ class ReportService {
             const response = await axios.post<Report>(url, {}, { headers });
             return response.data;
         } catch (error) {
-            console.error('Error reintentando reporte:', error);
+            logger.error('Error reintentando reporte:', error);
             throw new Error('Error reintentando generación del reporte');
         }
     }
@@ -194,7 +195,7 @@ class ReportService {
                 window.URL.revokeObjectURL(blobUrl);
             }, 100);
         } catch (error) {
-            console.error('Error abriendo reporte:', error);
+            logger.error('Error abriendo reporte:', error);
             throw error;
         }
     }

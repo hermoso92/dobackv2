@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     DirectionsCar as CarIcon
 } from '@mui/icons-material';
 import {
@@ -54,17 +55,17 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 
             try {
                 const response = await apiService.get('/api/vehicles');
-                console.log('VehicleSelector - Respuesta del servidor:', response);
+                logger.info('VehicleSelector - Respuesta del servidor:', response);
 
                 // El apiService ya maneja la autenticación y devuelve { success: true, data: [...] }
                 if (response.success && Array.isArray(response.data)) {
                     setVehicles(response.data);
                 } else {
-                    console.error('VehicleSelector - Formato de respuesta inválido:', response);
+                    logger.error('VehicleSelector - Formato de respuesta inválido:', response);
                     setVehicles([]);
                 }
             } catch (err) {
-                console.error('VehicleSelector - Error fetching vehicles:', err);
+                logger.error('VehicleSelector - Error fetching vehicles:', err);
                 setError(err instanceof Error ? err.message : 'Error desconocido');
             } finally {
                 setLoading(false);

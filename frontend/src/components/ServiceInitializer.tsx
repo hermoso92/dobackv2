@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { websocketService } from '../services/websocket';
+import { logger } from '../utils/logger';
 interface ServiceInitializerProps {
     children: React.ReactNode;
 }
@@ -10,7 +11,7 @@ const ServiceInitializer: React.FC<ServiceInitializerProps> = ({ children }) => 
             try {
                 await websocketService.initialize();
             } catch (error) {
-                console.error('Error initializing WebSocket:', error);
+                logger.error('Error initializing WebSocket:', error);
             }
         };
 
@@ -30,7 +31,7 @@ const ServiceInitializer: React.FC<ServiceInitializerProps> = ({ children }) => 
             try {
                 websocketService.disconnect();
             } catch (error) {
-                console.warn('Error during WebSocket disconnection:', error);
+                logger.warn('Error during WebSocket disconnection:', error);
             }
         };
     }, []);

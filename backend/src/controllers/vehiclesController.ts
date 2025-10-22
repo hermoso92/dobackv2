@@ -1,11 +1,12 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
 
 
 
 export async function getVehicles(req: Request, res: Response) {
-    console.log('\n\n🚨🚨🚨 VEHICLES CONTROLLER GET VEHICLES CALLED 🚨🚨🚨\n\n');
+    logger.info('\n\n🚨🚨🚨 VEHICLES CONTROLLER GET VEHICLES CALLED 🚨🚨🚨\n\n');
     try {
         const organizationId = (req as any).organizationId;
         const userRole = (req as any).user?.role;
@@ -47,8 +48,8 @@ export async function getVehicles(req: Request, res: Response) {
             location: null // No existe campo location, así que se pone null
         }));
 
-        console.log('🚗 [VEHICLES CONTROLLER] Devolviendo vehículos:', vehiclesWithLocation.length);
-        console.log('🚗 [VEHICLES CONTROLLER] Ejemplo con parkId:', {
+        logger.info('🚗 [VEHICLES CONTROLLER] Devolviendo vehículos:', vehiclesWithLocation.length);
+        logger.info('🚗 [VEHICLES CONTROLLER] Ejemplo con parkId:', {
             name: vehiclesWithLocation[0]?.name,
             parkId: vehiclesWithLocation[0]?.parkId
         });
@@ -58,7 +59,7 @@ export async function getVehicles(req: Request, res: Response) {
             data: vehiclesWithLocation
         });
     } catch (err) {
-        console.error('Error obteniendo vehículos:', err);
+        logger.error('Error obteniendo vehículos:', err);
         res.status(500).json({ success: false, error: 'Error al obtener vehículos' });
     }
 }

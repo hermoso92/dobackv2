@@ -19,7 +19,7 @@
 $ErrorActionPreference = "Stop"
 
 # Actualizar PATH para incluir GitHub CLI
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
 # Colores para output
 function Write-Success { param($msg) Write-Host "[OK] $msg" -ForegroundColor Green }
@@ -48,7 +48,8 @@ try {
     $versionOutput = & gh version 2>&1 | Out-String
     if ($versionOutput -match "gh version (\d+\.\d+\.\d+)") {
         Write-Success "GitHub CLI instalado: v$($matches[1])"
-    } else {
+    }
+    else {
         Write-Err "GitHub CLI instalado pero no responde correctamente"
         exit 1
     }
@@ -64,7 +65,8 @@ try {
     $authStatus = gh auth status 2>&1 | Out-String
     if ($authStatus -match "Logged in") {
         Write-Success "Autenticado correctamente"
-    } else {
+    }
+    else {
         Write-Err "No estas autenticado"
         Write-Inf "Ejecuta: .\scripts\setup\autenticar-github.ps1"
         exit 1
@@ -149,7 +151,8 @@ gh api --method POST `
 
 if ($LASTEXITCODE -eq 0) {
     Write-Success "Ruleset 'doback-main' creado correctamente"
-} else {
+}
+else {
     Write-Err "Error creando ruleset 'doback-main'"
     Write-Host $errorOutput -ForegroundColor Yellow
 }
@@ -191,7 +194,8 @@ gh api --method POST `
 
 if ($LASTEXITCODE -eq 0) {
     Write-Success "Ruleset 'doback-dev' creado correctamente"
-} else {
+}
+else {
     Write-Err "Error creando ruleset 'doback-dev'"
     Write-Host $errorOutput -ForegroundColor Yellow
 }
@@ -223,7 +227,8 @@ try {
     if ($mainRuleset -and $devRuleset) {
         Write-Success "`nRulesets configurados correctamente"
         Write-Inf "Las ramas main y dev ahora estan protegidas"
-    } else {
+    }
+    else {
         Write-Warn "`nAlgunos rulesets no se crearon correctamente"
         if (-not $mainRuleset) { Write-Err "Falta: doback-main" }
         if (-not $devRuleset) { Write-Err "Falta: doback-dev" }

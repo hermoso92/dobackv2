@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { TelemetryV2Controller } from '../controllers/TelemetryV2Controller';
 import { attachOrg } from '../middleware/attachOrg';
 import { authenticate } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const telemetryController = new TelemetryV2Controller();
@@ -92,7 +93,7 @@ router.get('/debug-sessions', async (req, res) => {
 
         await prisma.$disconnect();
     } catch (error) {
-        console.error('Error en debug-sessions:', error);
+        logger.error('Error en debug-sessions:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor',
@@ -202,7 +203,7 @@ router.get('/debug-sessions', async (req, res) => {
 
         await prisma.$disconnect();
     } catch (error) {
-        console.error('Error en debug-sessions:', error);
+        logger.error('Error en debug-sessions:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor',

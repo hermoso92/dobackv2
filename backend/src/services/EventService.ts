@@ -1,6 +1,7 @@
 import { EventStatus } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { CreateEventDTO } from '../types/event';
+import { logger } from '../utils/logger';
 
 export class EventService {
     async getEventsBySession(sessionId: string) {
@@ -27,7 +28,7 @@ export class EventService {
         dateTo?: string;
     }) {
         try {
-            console.log('🔍 Filtros recibidos:', filters);
+            logger.info('🔍 Filtros recibidos:', filters);
 
             // Construir where clause para la consulta SQL
             const where: any = {};
@@ -65,7 +66,7 @@ export class EventService {
                 };
             }
 
-            console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
+            logger.info('🔍 Where clause:', JSON.stringify(where, null, 2));
 
             // Consulta directa con filtros en SQL
             const events = await prisma.stability_events.findMany({
@@ -81,9 +82,9 @@ export class EventService {
                 }
             });
 
-            console.log('🔍 Eventos encontrados (con filtros SQL):', events.length);
+            logger.info('🔍 Eventos encontrados (con filtros SQL):', events.length);
             if (events.length > 0) {
-                console.log('🔍 Primer evento:', {
+                logger.info('🔍 Primer evento:', {
                     id: events[0].id,
                     lat: events[0].lat,
                     lon: events[0].lon,
@@ -103,14 +104,14 @@ export class EventService {
                 vehicleIdentifier: ev.Session?.vehicleId || 'unknown'
             }));
 
-            console.log('🔍 Resultado final:', result.length, 'eventos');
+            logger.info('🔍 Resultado final:', result.length, 'eventos');
             if (result.length > 0) {
-                console.log('🔍 Primer resultado:', result[0]);
+                logger.info('🔍 Primer resultado:', result[0]);
             }
 
             return result;
         } catch (error) {
-            console.error('Error en getEvents:', error);
+            logger.error('Error en getEvents:', error);
             throw error;
         }
     }

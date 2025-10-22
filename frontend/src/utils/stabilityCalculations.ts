@@ -5,6 +5,7 @@
 
 import { ALARM_THRESHOLDS, DANGER_WEIGHTS, GRAVITY } from '../config/stabilityConfig';
 import { Alarm, DangerInfo, StabilityMetrics, TelemetryData, TrendInfo } from '../types/stability';
+import { logger } from '../utils/logger';
 
 interface StabilityInput {
     lateral_acc?: number;
@@ -288,7 +289,7 @@ export function checkAlarms(
 
         return alarms;
     } catch (error) {
-        console.error('Error checking alarms:', error);
+        logger.error('Error checking alarms:', error);
         return [];
     }
 }

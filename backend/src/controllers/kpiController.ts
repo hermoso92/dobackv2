@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { logger } from '../utils/logger';
 
 function parseDate(value?: string): Date | undefined {
     if (!value) return undefined;
@@ -7,7 +8,7 @@ function parseDate(value?: string): Date | undefined {
 }
 
 export async function getKpiDashboardHandler(req: Request, res: Response) {
-    console.log('🎯 Ejecutando getKpiDashboardHandler');
+    logger.info('🎯 Ejecutando getKpiDashboardHandler');
 
     // Datos mock para el dashboard ejecutivo
     const mockData = {
@@ -53,7 +54,7 @@ export async function getKpiDashboardHandler(req: Request, res: Response) {
         totalSessions: 25
     };
 
-    console.log('📊 Enviando datos del dashboard ejecutivo:', mockData);
+    logger.info('📊 Enviando datos del dashboard ejecutivo:', mockData);
 
     res.json({
         success: true,

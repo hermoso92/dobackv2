@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
 
 
 
@@ -44,7 +45,7 @@ export async function getZones(req: Request, res: Response) {
             count: zones.length
         });
     } catch (err) {
-        console.error('Error obteniendo zonas:', err);
+        logger.error('Error obteniendo zonas:', err);
         res.status(500).json({
             success: false,
             error: 'Error al obtener zonas'

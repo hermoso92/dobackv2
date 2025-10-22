@@ -7,6 +7,7 @@ import { Alert, Box, Card, CardContent, CircularProgress, Typography } from '@mu
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useRef, useState } from 'react';
+import { logger } from '../../utils/logger';
 
 // Configuración de iconos de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -78,7 +79,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
             setError(null);
 
         } catch (err) {
-            console.error('Error inicializando mapa:', err);
+            logger.error('Error inicializando mapa:', err);
             setError('Error al cargar el mapa');
         }
 
@@ -101,7 +102,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
             try {
                 addVehicleToMap(vehicle);
             } catch (err) {
-                console.error(`Error agregando vehículo ${vehicle.name}:`, err);
+                logger.error(`Error agregando vehículo ${vehicle.name}:`, err);
             }
         });
 
@@ -130,7 +131,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
                     mapInstanceRef.current.setView(madridCenter, 11);
                 }
             } catch (error) {
-                console.warn('Error ajustando vista del mapa:', error);
+                logger.warn('Error ajustando vista del mapa:', error);
                 mapInstanceRef.current.setView(madridCenter, 11);
             }
         } else {
@@ -207,7 +208,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
 
     const addVehicleToMap = (vehicle: VehicleData) => {
         if (!mapInstanceRef.current || !vehicle.gpsData || !vehicle.isActive) {
-            console.warn(`Vehículo ${vehicle.name} no válido para mostrar en mapa`);
+            logger.warn(`Vehículo ${vehicle.name} no válido para mostrar en mapa`);
             return;
         }
 
@@ -216,7 +217,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
         // Validación de coordenadas
         if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude) ||
             latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-            console.warn(`Coordenadas inválidas para vehículo ${vehicle.name}: lat=${latitude}, lng=${longitude}`);
+            logger.warn(`Coordenadas inválidas para vehículo ${vehicle.name}: lat=${latitude}, lng=${longitude}`);
             return;
         }
 
@@ -262,7 +263,7 @@ export const RealTimeGPSMap: React.FC<RealTimeGPSMapProps> = ({
             // Agregar marcador al grupo
             marker.addTo(markersRef.current);
         } catch (error) {
-            console.error(`Error creando marcador para vehículo ${vehicle.name}:`, error);
+            logger.error(`Error creando marcador para vehículo ${vehicle.name}:`, error);
         }
     };
 

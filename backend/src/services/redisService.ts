@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * Servicio Redis para caché distribuido
  * Optimización de rendimiento para Bomberos Madrid
@@ -42,10 +44,10 @@ class RedisService {
             // const redis = require('redis');
             // this.client = redis.createClient(this.config);
 
-            console.log('✅ Redis service initialized (simulation mode)');
+            logger.info('✅ Redis service initialized (simulation mode)');
             this.connected = true;
         } catch (error) {
-            console.error('❌ Error connecting to Redis:', error);
+            logger.error('❌ Error connecting to Redis:', error);
             this.connected = false;
         }
     }
@@ -76,7 +78,7 @@ class RedisService {
 
             return true;
         } catch (error) {
-            console.error('Error setting Redis key:', error);
+            logger.error('Error setting Redis key:', error);
             return false;
         }
     }
@@ -105,7 +107,7 @@ class RedisService {
 
             return parsed.data;
         } catch (error) {
-            console.error('Error getting Redis key:', error);
+            logger.error('Error getting Redis key:', error);
             return null;
         }
     }
@@ -121,7 +123,7 @@ class RedisService {
 
             return this.client.delete(key);
         } catch (error) {
-            console.error('Error deleting Redis key:', error);
+            logger.error('Error deleting Redis key:', error);
             return false;
         }
     }
@@ -141,7 +143,7 @@ class RedisService {
 
             return true;
         } catch (error) {
-            console.error('Error in Redis mset:', error);
+            logger.error('Error in Redis mset:', error);
             return false;
         }
     }
@@ -161,7 +163,7 @@ class RedisService {
 
             return values;
         } catch (error) {
-            console.error('Error in Redis mget:', error);
+            logger.error('Error in Redis mget:', error);
             return keys.map(() => null);
         }
     }
@@ -181,7 +183,7 @@ class RedisService {
 
             return newValue;
         } catch (error) {
-            console.error('Error in Redis incr:', error);
+            logger.error('Error in Redis incr:', error);
             return 0;
         }
     }
@@ -215,7 +217,7 @@ class RedisService {
             const remaining = Math.ceil((parsed.ttl - Date.now()) / 1000);
             return remaining > 0 ? remaining : -2;
         } catch (error) {
-            console.error('Error getting TTL:', error);
+            logger.error('Error getting TTL:', error);
             return -1;
         }
     }
@@ -232,7 +234,7 @@ class RedisService {
             const regex = new RegExp(pattern.replace(/\*/g, '.*'));
             return Array.from(this.client.keys()).filter(key => regex.test(key));
         } catch (error) {
-            console.error('Error getting keys:', error);
+            logger.error('Error getting keys:', error);
             return [];
         }
     }
@@ -257,7 +259,7 @@ class RedisService {
 
             return deleted;
         } catch (error) {
-            console.error('Error deleting pattern:', error);
+            logger.error('Error deleting pattern:', error);
             return 0;
         }
     }
@@ -289,9 +291,9 @@ class RedisService {
         try {
             this.client.clear();
             this.connected = false;
-            console.log('Redis connection closed');
+            logger.info('Redis connection closed');
         } catch (error) {
-            console.error('Error closing Redis connection:', error);
+            logger.error('Error closing Redis connection:', error);
         }
     }
 
@@ -307,7 +309,7 @@ class RedisService {
             this.client.clear();
             return true;
         } catch (error) {
-            console.error('Error flushing Redis:', error);
+            logger.error('Error flushing Redis:', error);
             return false;
         }
     }

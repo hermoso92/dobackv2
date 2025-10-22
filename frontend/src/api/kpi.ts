@@ -1,5 +1,6 @@
 import { apiService } from '../services/api';
 import { ApiResponse } from '../types/api';
+import { logger } from '../utils/logger';
 
 export interface KpiDashboardResponse {
     totalGeofenceEvents: number;
@@ -279,7 +280,7 @@ export const getVehicles = async (organizationId?: string) => {
         }
         return VEHICLES; // Fallback
     } catch (error) {
-        console.error('Error obteniendo vehículos:', error);
+        logger.error('Error obteniendo vehículos:', error);
         return VEHICLES; // Fallback
     }
 };
@@ -292,15 +293,15 @@ export const getDashboardData = (filters: DashboardFilters) => {
 
     if (filters.scope === 'vehicles') {
         queryParams.append('vehicleIds', filters.vehicleIds.join(','));
-        console.log('🚗 Enviando filtros de vehículos:', filters.vehicleIds);
+        logger.info('🚗 Enviando filtros de vehículos:', filters.vehicleIds);
     } else if (filters.scope === 'park' && filters.parkId) {
         queryParams.append('parkId', filters.parkId);
-        console.log('🏢 Enviando filtros de parque:', filters.parkId);
+        logger.info('🏢 Enviando filtros de parque:', filters.parkId);
     }
 
     const url = `/api/kpis/summary?${queryParams.toString()}`;
-    console.log('📡 URL de la petición:', url);
-    console.log('📋 Parámetros enviados:', queryParams.toString());
+    logger.info('📡 URL de la petición:', url);
+    logger.info('📋 Parámetros enviados:', queryParams.toString());
 
     return handleResponse<DashboardData>(apiService.get(url));
 };

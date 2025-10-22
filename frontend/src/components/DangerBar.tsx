@@ -2,6 +2,7 @@ import { Box, Paper, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import React, { useMemo } from 'react';
 import {
+import { logger } from '../utils/logger';
     CartesianGrid,
     Legend,
     Line,
@@ -72,7 +73,7 @@ const DangerBar: React.FC<DangerBarProps> = ({
     // Calcular información de peligrosidad con el último dato
     const dangerInfo: DangerInfo = useMemo(() => {
         if (!telemetryData.length) {
-            console.log('DangerBar: No hay datos de telemetría');
+            logger.info('DangerBar: No hay datos de telemetría');
             return {
                 dangerLevel: 0,
                 level: 'safe',
@@ -84,16 +85,16 @@ const DangerBar: React.FC<DangerBarProps> = ({
             };
         }
 
-        console.log(`DangerBar: Procesando ${telemetryData.length} puntos de datos`);
+        logger.info(`DangerBar: Procesando ${telemetryData.length} puntos de datos`);
         const latestData = telemetryData[telemetryData.length - 1];
-        console.log('DangerBar: Último dato de telemetría:', latestData);
+        logger.info('DangerBar: Último dato de telemetría:', latestData);
 
         try {
             const info = calculateDangerInfo(latestData, vehicleConfig);
-            console.log('DangerBar: Info de peligrosidad calculada:', info);
+            logger.info('DangerBar: Info de peligrosidad calculada:', info);
             return info;
         } catch (error) {
-            console.error('DangerBar: Error al calcular info de peligrosidad:', error);
+            logger.error('DangerBar: Error al calcular info de peligrosidad:', error);
             return {
                 dangerLevel: 0,
                 level: 'safe',

@@ -5,6 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { CacheService } from './CacheService';
+import { logger } from '../utils/logger';
 
 // Instancia de cache para vehículos
 const cacheService = new CacheService({ ttl: 5 * 60 * 1000 });
@@ -129,7 +130,7 @@ class OptimizedVehicleService extends EventEmitter {
             return vehicles;
 
         } catch (error) {
-            console.error('Error obteniendo vehículos:', error);
+            logger.error('Error obteniendo vehículos:', error);
             throw error;
         }
     }

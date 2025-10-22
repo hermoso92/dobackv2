@@ -2,6 +2,7 @@ import { store } from '../store';
 import { addAlert } from '../store/slices/alertSlice';
 import { addStabilityData } from '../store/slices/stabilitySlice';
 import { addTelemetryData } from '../store/slices/telemetrySlice';
+import { logger } from '../utils/logger';
 
 type MessageType = 'telemetry' | 'stability' | 'alert' | 'welcome' | 'pong' | 'error';
 type MessageHandler = (data: any) => void;
@@ -38,10 +39,10 @@ class WebSocketService {
         this.messageHandlers.set('telemetry', (data) => store.dispatch(addTelemetryData(data)));
         this.messageHandlers.set('stability', (data) => store.dispatch(addStabilityData(data)));
         this.messageHandlers.set('alert', (data) => store.dispatch(addAlert(data)));
-        this.messageHandlers.set('welcome', (data) => console.log('Conexión WebSocket establecida:', data));
-        this.messageHandlers.set('pong', (data) => console.log('Pong recibido:', data));
+        this.messageHandlers.set('welcome', (data) => logger.info('Conexión WebSocket establecida:', data));
+        this.messageHandlers.set('pong', (data) => logger.info('Pong recibido:', data));
         this.messageHandlers.set('error', (data) => {
-            console.error('Error del servidor WebSocket:', data);
+            logger.error('Error del servidor WebSocket:', data);
             store.dispatch(addAlert({
                 id: Date.now().toString(),
                 type: 'error',
@@ -50,7 +51,7 @@ class WebSocketService {
             }));
         });
 
-        console.log(`WebSocket en modo simulación: ${this.simulationMode ? 'activado' : 'desactivado'}`);
+        logger.info(`WebSocket en modo simulación: ${this.simulationMode ? 'activado' : 'desactivado'}`);
     }
 
     public static getInstance(): WebSocketService {
@@ -62,7 +63,7 @@ class WebSocketService {
 
     public async initialize(): Promise<void> {
         if (this.simulationMode) {
-            console.log('WebSocket en modo simulación - no se intentará conectar al servidor');
+            logger.info('WebSocket en modo simulación - no se intentará conectar al servidor');
             return Promise.resolve();
         }
 
@@ -95,11 +96,11 @@ class WebSocketService {
             const wsPath = '/ws';
             const wsUrl = `${protocol}//${host}:${port}${wsPath}`;
 
-            console.log(`Conectando WebSocket a: ${wsUrl}`);
+            logger.info(`Conectando WebSocket a: ${wsUrl}`);
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {
-                console.log('WebSocket conectado');
+                logger.info('WebSocket conectado');
                 this.connected = true;
                 this.reconnectAttempts = 0;
                 this.isConnecting = false;
@@ -113,22 +114,22 @@ class WebSocketService {
 
             this.ws.onmessage = (event: MessageEvent) => {
                 this.handleMessage(event).catch(error => {
-                    console.error('Error en handleMessage:', error);
+                    logger.error('Error en handleMessage:', error);
                 });
             };
 
             this.ws.onclose = (event: CloseEvent) => {
-                console.log('WebSocket desconectado:', event.code, event.reason);
+                logger.info('WebSocket desconectado:', event.code, event.reason);
                 this.cleanup();
                 this.handleReconnect();
             };
 
             this.ws.onerror = (error: Event) => {
-                console.error('Error en WebSocket:', error);
+                logger.error('Error en WebSocket:', error);
                 this.cleanup();
             };
         } catch (error) {
-            console.error('Error conectando WebSocket:', error);
+            logger.error('Error conectando WebSocket:', error);
             this.cleanup();
             this.handleReconnect();
         }
@@ -150,7 +151,7 @@ class WebSocketService {
             const message = JSON.parse(event.data) as WebSocketMessage;
 
             if (!this.isValidMessage(message)) {
-                console.warn('Mensaje inválido recibido:', message);
+                logger.warn('Mensaje inválido recibido:', message);
                 return;
             }
 
@@ -158,10 +159,10 @@ class WebSocketService {
             if (handler) {
                 handler(message.data);
             } else {
-                console.warn('Tipo de mensaje desconocido:', message.type);
+                logger.warn('Tipo de mensaje desconocido:', message.type);
             }
         } catch (error) {
-            console.error('Error procesando mensaje:', error);
+            logger.error('Error procesando mensaje:', error);
             throw error;
         }
     }
@@ -195,13 +196,13 @@ class WebSocketService {
 
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`Intentando reconectar (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+            logger.info(`Intentando reconectar (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
             setTimeout(() => this.connect(), this.reconnectTimeout * this.reconnectAttempts);
         } else {
-            console.error('Máximo número de intentos de reconexión alcanzado');
+            logger.error('Máximo número de intentos de reconexión alcanzado');
 
             if (!this.fallbackMode) {
-                console.log('Activando modo de simulación de fallback debido a fallos de conexión');
+                logger.info('Activando modo de simulación de fallback debido a fallos de conexión');
                 this.fallbackMode = true;
                 this.startFallbackSimulation();
             }
@@ -257,12 +258,12 @@ class WebSocketService {
             try {
                 this.ws.send(JSON.stringify(message));
             } catch (error) {
-                console.error('Error enviando mensaje:', error);
+                logger.error('Error enviando mensaje:', error);
                 this.cleanup();
                 this.handleReconnect();
             }
         } else {
-            console.warn('WebSocket no está conectado. No se puede enviar el mensaje.');
+            logger.warn('WebSocket no está conectado. No se puede enviar el mensaje.');
         }
     }
 

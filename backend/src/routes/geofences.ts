@@ -11,7 +11,7 @@ const router = express.Router();
 // Endpoint de prueba sin autenticación (temporal)
 router.get('/test', async (req: Request, res: Response) => {
     try {
-        console.log('🧪 Endpoint de prueba llamado');
+        logger.info('🧪 Endpoint de prueba llamado');
 
         // Obtener todas las geocercas sin filtro de organización
         const allGeofences = await prisma.geofence.findMany({
@@ -19,7 +19,7 @@ router.get('/test', async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        console.log(`📊 Total de geocercas en DB: ${allGeofences.length}`);
+        logger.info(`📊 Total de geocercas en DB: ${allGeofences.length}`);
 
         res.json({
             success: true,
@@ -28,7 +28,7 @@ router.get('/test', async (req: Request, res: Response) => {
             message: 'Endpoint de prueba - sin autenticación'
         });
     } catch (error) {
-        console.error('❌ Error en endpoint de prueba:', error);
+        logger.error('❌ Error en endpoint de prueba:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
@@ -39,7 +39,7 @@ router.get('/test', async (req: Request, res: Response) => {
 // Endpoint para crear datos reales de geofences (temporal)
 router.post('/create-real-data', async (req: Request, res: Response) => {
     try {
-        console.log('🚨 Creando geofences reales para Bomberos Madrid...');
+        logger.info('🚨 Creando geofences reales para Bomberos Madrid...');
 
         // Datos reales de geofences para Bomberos Madrid
         const realGeofences = [
@@ -210,7 +210,7 @@ router.post('/create-real-data', async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error('❌ Error creando geofences reales:', error);
+        logger.error('❌ Error creando geofences reales:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'

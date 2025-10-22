@@ -4,6 +4,7 @@ import React from 'react';
 import * as Yup from 'yup';
 import FormField from '../FormField';
 import { t } from "../../i18n";
+import { logger } from '../../utils/logger';
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required('El título es requerido'),
@@ -30,7 +31,7 @@ const incidentTypes = [
 
 const IncidentForm: React.FC = () => {
   const handleSubmit = (values: typeof initialValues) => {
-    console.log(values);
+    logger.info(values);
   };
 
   return (
