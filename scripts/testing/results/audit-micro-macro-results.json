@@ -1,0 +1,208 @@
+{
+  "timestamp": "2025-10-21T22:54:37.073Z",
+  "summary": {
+    "micro": {
+      "total": 5,
+      "passed": 0,
+      "failed": 5,
+      "successRate": "0.00%"
+    },
+    "medio": {
+      "total": 5,
+      "passed": 0,
+      "failed": 5,
+      "successRate": "0.00%"
+    },
+    "macro": {
+      "total": 4,
+      "passed": 2,
+      "failed": 2,
+      "successRate": "50.00%"
+    },
+    "overall": {
+      "total": 14,
+      "passed": 2,
+      "failed": 12,
+      "successRate": "14.29%"
+    }
+  },
+  "details": {
+    "timestamp": "2025-10-21T22:54:37.073Z",
+    "micro": [
+      {
+        "test": "OSM Map Loads",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:06.874Z",
+        "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Puntos Negros\")')\n"
+      },
+      {
+        "test": "KPIs Display Values",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:36.936Z",
+        "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Estados & Tiempos\")')\n"
+      },
+      {
+        "test": "PDF Export Button Available",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:36.939Z",
+        "error": "PDF button not found"
+      },
+      {
+        "test": "Date Filters Present",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:36.943Z",
+        "dateInputsFound": 0
+      },
+      {
+        "test": "All Navigation Tabs Present",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:36.955Z",
+        "expectedTabs": 5,
+        "foundTabs": 0
+      }
+    ],
+    "medio": [
+      {
+        "test": "Upload System Available",
+        "pass": false,
+        "timestamp": "2025-10-21T22:56:37.219Z",
+        "error": "Upload link not found in menu"
+      },
+      {
+        "test": "Sessions Data Loads",
+        "pass": false,
+        "timestamp": "2025-10-21T22:57:11.007Z",
+        "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Sesiones\")')\n"
+      },
+      {
+        "test": "Filters Affect Data",
+        "pass": false,
+        "timestamp": "2025-10-21T22:57:11.013Z",
+        "error": "No date filter found to test"
+      },
+      {
+        "test": "Map Markers Clickable",
+        "pass": false,
+        "timestamp": "2025-10-21T22:57:41.076Z",
+        "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Puntos Negros\")')\n"
+      },
+      {
+        "test": "Charts Render",
+        "pass": false,
+        "timestamp": "2025-10-21T22:58:11.133Z",
+        "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Estados & Tiempos\")')\n"
+      }
+    ],
+    "macro": [
+      {
+        "test": "Complete Navigation Flow",
+        "pass": false,
+        "timestamp": "2025-10-21T23:00:41.431Z",
+        "totalTabs": 5,
+        "successfulTabs": 0,
+        "tabDetails": [
+          {
+            "name": "Estados & Tiempos",
+            "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Estados & Tiempos\")')\n"
+          },
+          {
+            "name": "Puntos Negros",
+            "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Puntos Negros\")')\n"
+          },
+          {
+            "name": "Velocidad",
+            "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Velocidad\")')\n"
+          },
+          {
+            "name": "Sesiones",
+            "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Sesiones\")')\n"
+          },
+          {
+            "name": "Reportes",
+            "error": "page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Reportes\")')\n"
+          }
+        ]
+      },
+      {
+        "test": "KPIs Calculate With Real Data",
+        "pass": false,
+        "timestamp": "2025-10-21T23:00:45.565Z",
+        "error": "Insufficient numeric data found"
+      },
+      {
+        "test": "No-Scroll Rule Compliance",
+        "pass": true,
+        "timestamp": "2025-10-21T23:00:45.572Z",
+        "violations": [],
+        "message": "All main containers comply"
+      },
+      {
+        "test": "Minimal Console Errors",
+        "pass": true,
+        "timestamp": "2025-10-21T23:00:45.572Z",
+        "totalErrors": 6,
+        "sample": [
+          {
+            "type": "console",
+            "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+            "timestamp": "2025-10-21T22:58:38.614Z"
+          },
+          {
+            "type": "console",
+            "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+            "timestamp": "2025-10-21T22:58:38.615Z"
+          },
+          {
+            "type": "console",
+            "message": "[ERROR] Error en login: Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+            "timestamp": "2025-10-21T22:58:38.615Z"
+          }
+        ]
+      }
+    ],
+    "screenshots": [
+      "00-login-form-filled.png",
+      "01-after-login-click.png",
+      "02-dashboard-loaded.png",
+      "micro-05-tabs.png"
+    ],
+    "errors": [
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:38.614Z"
+      },
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:38.615Z"
+      },
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login: Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:38.615Z"
+      },
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:48.265Z"
+      },
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:48.265Z"
+      },
+      {
+        "type": "console",
+        "message": "[ERROR] Error en login: Error: Error en la respuesta del servidor\n    at AuthService.login (http://localhost:5174/src/services/auth.ts:81:15)\n    at async login (http://localhost:5174/src/contexts/AuthContext.tsx:66:7)\n    at async handleLogin (http://localhost:5174/src/pages/Login.tsx:597:7)",
+        "timestamp": "2025-10-21T22:58:48.265Z"
+      }
+    ]
+  },
+  "screenshots": [
+    "00-login-form-filled.png",
+    "01-after-login-click.png",
+    "02-dashboard-loaded.png",
+    "micro-05-tabs.png"
+  ]
+}

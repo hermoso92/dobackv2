@@ -3,10 +3,11 @@
  * Sistema de alertas por entrada/salida y permanencia en parques
  */
 
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
+
+
 
 export interface GeofenceAlert {
     id: string;

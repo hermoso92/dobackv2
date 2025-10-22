@@ -2,8 +2,6 @@ import { PrismaClient, SessionStatus, SessionType, StabilityMeasurement } from '
 import { logger } from '../utils/logger';
 
 class SessionRepository {
-    private prisma: PrismaClient;
-
     constructor() {
         this.prisma = new PrismaClient();
     }
@@ -15,7 +13,7 @@ class SessionRepository {
      */
     async findSessionsByVehicle(vehicleId: string) {
         try {
-            return await this.prisma.session.findMany({
+            return await prisma.session.findMany({
                 where: { vehicleId },
                 orderBy: {
                     startTime: 'desc'
@@ -38,7 +36,7 @@ class SessionRepository {
         organizationId: string
     ) {
         try {
-            return await this.prisma.session.findMany({
+            return await prisma.session.findMany({
                 where: {
                     ...(vehicleId && { vehicleId }),
                     organizationId
@@ -64,7 +62,7 @@ class SessionRepository {
      */
     async findActiveSession(id: string) {
         try {
-            return await this.prisma.session.findFirst({
+            return await prisma.session.findFirst({
                 where: {
                     id,
                     status: 'ACTIVE'
@@ -83,7 +81,7 @@ class SessionRepository {
      */
     async findSessionById(id: string) {
         try {
-            return await this.prisma.session.findUnique({
+            return await prisma.session.findUnique({
                 where: { id }
             });
         } catch (error) {
@@ -100,7 +98,7 @@ class SessionRepository {
      */
     async findSessionByIdAndOrganization(id: string, organizationId: string) {
         try {
-            return await this.prisma.session.findFirst({
+            return await prisma.session.findFirst({
                 where: {
                     id,
                     organizationId
@@ -123,7 +121,7 @@ class SessionRepository {
      */
     async createSession(data: any) {
         try {
-            return await this.prisma.session.create({
+            return await prisma.session.create({
                 data
             });
         } catch (error) {
@@ -145,7 +143,7 @@ class SessionRepository {
     }) {
         try {
             const { id, ...updateData } = data;
-            return await this.prisma.session.update({
+            return await prisma.session.update({
                 where: { id },
                 data: updateData
             });
@@ -163,36 +161,36 @@ class SessionRepository {
     async deleteSession(id: string) {
         try {
             // Primero eliminamos los registros relacionados
-            await this.prisma.stabilityMeasurement.deleteMany({
+            await prisma.stabilityMeasurement.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.canMeasurement.deleteMany({
+            await prisma.canMeasurement.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.gpsMeasurement.deleteMany({
+            await prisma.gpsMeasurement.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.ejecucionEvento.deleteMany({
+            await prisma.ejecucionEvento.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.archivoSubido.deleteMany({
+            await prisma.archivoSubido.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.informeGenerado.deleteMany({
+            await prisma.informeGenerado.deleteMany({
                 where: { sessionId: id }
             });
 
-            await this.prisma.sugerenciaIA.deleteMany({
+            await prisma.sugerenciaIA.deleteMany({
                 where: { sessionId: id }
             });
 
             // Finalmente eliminamos la sesión
-            return await this.prisma.session.delete({
+            return await prisma.session.delete({
                 where: { id }
             });
         } catch (error) {
@@ -209,7 +207,7 @@ class SessionRepository {
      */
     async endSession(id: string, endTime: Date) {
         try {
-            return await this.prisma.session.update({
+            return await prisma.session.update({
                 where: { id },
                 data: {
                     status: 'COMPLETED',
@@ -232,7 +230,7 @@ class SessionRepository {
         try {
             const { startDate, endDate, type, severity } = filters;
 
-            return await this.prisma.ejecucionEvento.findMany({
+            return await prisma.ejecucionEvento.findMany({
                 where: {
                     vehicleId,
                     ...(type && { event: { type } }),
@@ -262,7 +260,7 @@ class SessionRepository {
      */
     async getVehicleMetrics(vehicleId: string, startDate?: Date, endDate?: Date) {
         try {
-            const sessions = await this.prisma.session.findMany({
+            const sessions = await prisma.session.findMany({
                 where: {
                     vehicleId,
                     ...(startDate && { startTime: { gte: startDate } }),
@@ -336,7 +334,7 @@ class SessionRepository {
      */
     async getSessionStability(sessionId: string) {
         try {
-            const session = await this.prisma.session.findUnique({
+            const session = await prisma.session.findUnique({
                 where: { id: sessionId },
                 include: {
                     stabilityMeasurements: true
@@ -361,7 +359,7 @@ class SessionRepository {
      */
     async getSessionStatistics(sessionId: string) {
         try {
-            const session = await this.prisma.session.findUnique({
+            const session = await prisma.session.findUnique({
                 where: { id: sessionId },
                 include: {
                     stabilityMeasurements: true,

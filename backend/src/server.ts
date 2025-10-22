@@ -2,19 +2,41 @@ import express from 'express';
 import helmet from 'helmet';
 import { app, prisma, server, webSocketService } from './app';
 import { expressLogger, logger } from './config/logger';
+import { initializeCronJobs } from './cron';
 import { corsErrorHandler, corsMiddleware, ensureCorsHeaders } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
 import rateLimiter from './middleware/rateLimiter';
 
 const PORT = process.env.PORT || 9998;
 
-// Iniciar servidor HTTP (que incluye WebSocket)
-server.listen(PORT, () => {
-    logger.info(`Servidor HTTP iniciado en el puerto ${PORT}`);
-    logger.info('Servicios de geocercas iniciados:');
-    logger.info('  - WebSocket: /ws/geofence');
-    logger.info('  - Motor de reglas: activo');
-});
+// ✅ Función asíncrona para iniciar el servidor después de conectar Prisma
+async function startServer() {
+    try {
+        logger.info('🔌 Conectando Prisma Client...');
+
+        // ✅ CRÍTICO: Esperar a que Prisma se conecte ANTES de aceptar peticiones
+        await prisma.$connect();
+
+        logger.info('✅ Prisma Client conectado y listo para recibir peticiones');
+
+        // ✅ Inicializar cron jobs (alertas diarias y reportes programados)
+        initializeCronJobs();
+
+        // Iniciar servidor HTTP (que incluye WebSocket)
+        server.listen(PORT, () => {
+            logger.info(`🚀 Servidor iniciado en 0.0.0.0:${PORT}`);
+            logger.info(`📍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+            logger.info(`🌐 URL: http://0.0.0.0:${PORT}`);
+            logger.info(`💚 Health: http://0.0.0.0:${PORT}/health`);
+        });
+    } catch (error: any) {
+        logger.error('❌ Error crítico iniciando servidor:', error);
+        process.exit(1);
+    }
+}
+
+// Iniciar el servidor
+startServer();
 
 // Manejo de cierre graceful
 process.on('SIGTERM', async () => {

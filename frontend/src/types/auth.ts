@@ -1,10 +1,16 @@
-export type UserRole = 'ADMIN' | 'USER' | 'OPERATOR';
+// ✅ Roles del sistema - UNIFICADOS (sincronizado con backend)
+export enum UserRole {
+  ADMIN = 'ADMIN',      // Acceso total al sistema
+  MANAGER = 'MANAGER',  // Admin de parque/organización específica
+  OPERATOR = 'OPERATOR',// Usuario operativo (futuro)
+  VIEWER = 'VIEWER'     // Solo lectura (futuro)
+}
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: UserRole;  // ✅ Usar enum consistente
   organizationId: string | null;
   status: string;
   createdAt: string;

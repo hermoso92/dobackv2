@@ -1,6 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+
+
+
 
 // Función simple de logger para consola
 const logger = {

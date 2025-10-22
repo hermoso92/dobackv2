@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+
 import * as fs from 'fs';
 import * as path from 'path';
 
-const prisma = new PrismaClient();
+
 
 const BASE_PATH = path.resolve(__dirname, '../../uploads/cosigein/doback003/05032025');
 const FILES = {

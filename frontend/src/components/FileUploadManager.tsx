@@ -1,6 +1,7 @@
 import {
     Add as AddIcon,
     Error as AlertCircleIcon,
+    Assessment as AssessmentIcon,
     AutoAwesome as AutoAwesomeIcon,
     BarChart as BarChartIcon,
     CheckCircle as CheckCircleIcon,
@@ -37,7 +38,8 @@ import {
     Tabs,
     Typography
 } from '@mui/material';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { FEATURE_FLAGS, isFeatureEnabled } from '../config/features';
 import { apiService } from '../services/api';
 import { logger } from '../utils/logger';
 import { SimpleProcessingReport } from './SimpleProcessingReport';
@@ -131,6 +133,48 @@ const FileUploadManager: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // ✅ MEJORA: Cargar reporte con cleanup para evitar memory leaks
+    useEffect(() => {
+        let mounted = true;
+
+        const loadLastReport = async () => {
+            if (!mounted) return;
+
+            try {
+                // 1. Intentar cargar desde localStorage
+                const savedReport = localStorage.getItem('lastProcessingReport');
+                if (savedReport && mounted) {
+                    const report = JSON.parse(savedReport);
+                    setAutoProcessResults(report);
+                    logger.info('📊 Reporte de procesamiento cargado desde localStorage', report);
+                }
+
+                // 2. Intentar cargar desde la API (último reporte guardado en BD)
+                try {
+                    const response = await apiService.get('/api/processing-reports/latest');
+                    if (mounted && response && (response as any).reportData) {
+                        setAutoProcessResults((response as any).reportData);
+                        logger.info('📊 Reporte de procesamiento cargado desde API', (response as any).reportData);
+                    }
+                } catch (apiError) {
+                    if (mounted) {
+                        logger.warn('No se pudo cargar el reporte desde la API:', apiError);
+                    }
+                }
+            } catch (error) {
+                if (mounted) {
+                    logger.error('Error cargando reporte:', error);
+                }
+            }
+        };
+
+        loadLastReport();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
         if (files.length > 0) {
@@ -173,31 +217,34 @@ const FileUploadManager: React.FC = () => {
         setUploadError(null);
 
         try {
-            // PASO 1: Limpiar base de datos antes de subir (para testing)
-            logger.info('🧹 Limpiando base de datos antes de subir archivos...');
-            try {
-                const cleanResponse = await apiService.post('/api/clean-all-sessions', {});
-                if (cleanResponse.success) {
-                    logger.info('✅ Base de datos limpiada correctamente', cleanResponse.data);
-                } else {
-                    logger.warn('⚠️ No se pudo limpiar la base de datos, continuando con la subida...');
+            // ✅ MEJORA: Limpieza BD solo si feature flag está activo (testing/dev)
+            if (isFeatureEnabled('allowDatabaseCleanup')) {
+                logger.warn('🧹 [TESTING MODE] Limpiando base de datos antes de subir archivos...');
+                try {
+                    const cleanResponse = await apiService.post('/api/clean-all-sessions', {});
+                    if (cleanResponse.success) {
+                        logger.info('✅ Base de datos limpiada correctamente', cleanResponse.data);
+                    } else {
+                        logger.warn('⚠️ No se pudo limpiar la base de datos, continuando con la subida...');
+                    }
+                } catch (cleanError) {
+                    logger.warn('⚠️ Error al limpiar base de datos, continuando con la subida...', cleanError);
                 }
-            } catch (cleanError) {
-                logger.warn('⚠️ Error al limpiar base de datos, continuando con la subida...', cleanError);
             }
 
-            // PASO 2: Subir archivos
+            // PASO 1: Subir archivos
             logger.info('📤 Subiendo archivos...');
             const formData = new FormData();
             selectedFiles.forEach(file => {
                 formData.append('files', file);
             });
 
+            // ✅ MEJORA: Timeout aumentado de 2 min → configurable (5 min en prod, 10 min en dev)
             const response = await apiService.post('/api/upload/multiple', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 },
-                timeout: 120000 // 2 minutos para uploads grandes
+                timeout: FEATURE_FLAGS.uploadTimeoutMs
             });
 
             if (response.success) {
@@ -276,13 +323,32 @@ const FileUploadManager: React.FC = () => {
     };
 
     const handleAutoProcess = async () => {
+        // ✅ MEJORA: Verificar rate limit antes de procesar
+        const lastProcessing = localStorage.getItem('lastProcessingTimestamp');
+        if (lastProcessing) {
+            const timeSince = Date.now() - parseInt(lastProcessing);
+            if (timeSince < FEATURE_FLAGS.processingRateLimitMs) {
+                const minutesLeft = Math.ceil((FEATURE_FLAGS.processingRateLimitMs - timeSince) / 60000);
+                setAutoProcessError(`⏱️ Rate limit: Espera ${minutesLeft} minutos antes de procesar nuevamente`);
+                return;
+            }
+        }
+
         setIsProcessingAuto(true);
         setAutoProcessError(null);
         setAutoProcessResults(null);
         setAutoProcessProgress(0);
 
+        // ✅ MEJORA: useRef para manejar cleanup de intervals/timeouts
+        let pollInterval: NodeJS.Timeout | null = null;
+        let timeoutId: NodeJS.Timeout | null = null;
+        let mounted = true;
+
         try {
             logger.info('🚀 Iniciando procesamiento automático de todos los vehículos...');
+
+            // ✅ MEJORA: Guardar timestamp del procesamiento (rate limiting)
+            localStorage.setItem('lastProcessingTimestamp', Date.now().toString());
 
             // ✅ NUEVO: Leer configuración guardada de localStorage
             let uploadConfig = null;
@@ -302,14 +368,88 @@ const FileUploadManager: React.FC = () => {
             // Llamar al endpoint de procesamiento automático CON configuración
             const response = await apiService.post('/api/upload/process-all-cmadrid', {
                 config: uploadConfig // ✅ NUEVO: Pasar configuración al backend
-            }, {
-                timeout: 600000 // ✅ 10 minutos para procesamiento completo (era 5min, insuficiente)
             });
 
-            setAutoProcessProgress(100);
+            // ✅ El backend ahora devuelve inmediatamente con el ID del reporte
+            if (response.success && (response.data as any)?.reportId) {
+                const reportId = (response.data as any).reportId;
+                logger.info(`📝 Procesamiento iniciado con reportId: ${reportId}`);
 
-            if (response.success) {
+                setAutoProcessProgress(20);
+
+                // ✅ MEJORA: Polling con cleanup automático
+                pollInterval = setInterval(async () => {
+                    if (!mounted) {
+                        if (pollInterval) clearInterval(pollInterval);
+                        return;
+                    }
+
+                    try {
+                        const statusResponse = await apiService.get(`/api/processing-reports/status/${reportId}`);
+
+                        if (statusResponse.success && (statusResponse as any).report) {
+                            const report = (statusResponse as any).report;
+
+                            if (report.status === 'COMPLETED') {
+                                if (pollInterval) clearInterval(pollInterval);
+                                if (timeoutId) clearTimeout(timeoutId);
+                                setAutoProcessProgress(100);
+                                setAutoProcessResults(report.reportData);
+                                setShowReportModal(true);
+
+                                logger.info('✅ Procesamiento completado', {
+                                    duration: report.duration,
+                                    totalFiles: report.totalFiles,
+                                    totalSessions: report.totalSessions
+                                });
+
+                                // Actualizar datos
+                                if (mounted) {
+                                    fetchRecentSessions();
+                                }
+                            } else if (report.status === 'FAILED') {
+                                if (pollInterval) clearInterval(pollInterval);
+                                if (timeoutId) clearTimeout(timeoutId);
+                                setAutoProcessError(report.errorMessage || 'Error en el procesamiento');
+                                setAutoProcessProgress(0);
+                            } else if (report.status === 'PROCESSING') {
+                                // Simular progreso basado en tiempo
+                                setAutoProcessProgress(prev => Math.min(prev + 5, 90));
+                            }
+                        }
+                    } catch (error) {
+                        logger.error('Error consultando estado del reporte:', error);
+                    }
+                }, 5000); // Consultar cada 5 segundos
+
+                // ✅ MEJORA: Timeout de seguridad con cleanup
+                timeoutId = setTimeout(() => {
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (mounted && autoProcessResults === null) {
+                        setAutoProcessError('Timeout: El procesamiento está tardando más de lo esperado. Usa el botón "Ver Último Reporte" para verificar.');
+                        setIsProcessingAuto(false);
+                    }
+                }, 900000); // 15 minutos
+
+                // ✅ MEJORA: Cleanup function
+                return () => {
+                    mounted = false;
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (timeoutId) clearTimeout(timeoutId);
+                };
+
+            } else if (response.success) {
+                // Fallback para compatibilidad con respuesta antigua
+                setAutoProcessProgress(100);
                 setAutoProcessResults(response.data);
+
+                // ✅ NUEVO: Guardar reporte en localStorage
+                try {
+                    localStorage.setItem('lastProcessingReport', JSON.stringify(response.data));
+                    logger.info('💾 Reporte de procesamiento guardado en localStorage');
+                } catch (error) {
+                    logger.error('Error guardando reporte en localStorage:', error);
+                }
 
                 // ✅ Debug: Verificar eventos en la respuesta
                 const responseData = response.data as any;
@@ -346,6 +486,26 @@ const FileUploadManager: React.FC = () => {
             }
         } finally {
             setIsProcessingAuto(false);
+        }
+    };
+
+    const handleViewLastReport = async () => {
+        try {
+            logger.info('📊 Consultando último reporte de procesamiento...');
+
+            const response = await apiService.get('/api/processing-reports/latest');
+
+            if (response.success && (response as any).report) {
+                setAutoProcessResults((response as any).report);
+                setShowReportModal(true);
+                logger.info('✅ Reporte cargado exitosamente');
+            } else {
+                setAutoProcessError('No se encontró ningún reporte de procesamiento previo');
+            }
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error?.message || 'Error al cargar el reporte';
+            setAutoProcessError(errorMessage);
+            logger.error('Error cargando último reporte:', error);
         }
     };
 
@@ -403,9 +563,22 @@ const FileUploadManager: React.FC = () => {
         }
     };
 
+    // ✅ MEJORA: useEffect con cleanup para evitar memory leaks
     React.useEffect(() => {
-        fetchUploadedFiles();
-        fetchRecentSessions();
+        let mounted = true;
+
+        const fetchData = async () => {
+            if (mounted) {
+                await fetchUploadedFiles();
+                await fetchRecentSessions();
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     const formatFileSize = (bytes: number) => {
@@ -1105,6 +1278,16 @@ const FileUploadManager: React.FC = () => {
                                 size="large"
                             >
                                 {isProcessingAuto ? 'Procesando...' : 'Iniciar Procesamiento Automático'}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="success"
+                                onClick={handleViewLastReport}
+                                disabled={isProcessingAuto}
+                                startIcon={<AssessmentIcon />}
+                                size="large"
+                            >
+                                Ver Último Reporte
                             </Button>
                         </Box>
 

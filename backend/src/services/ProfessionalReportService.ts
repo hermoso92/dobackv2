@@ -1,11 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+
 import fs from 'fs';
+import { prisma } from '../lib/prisma';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import { logger } from '../utils/logger';
 import { getStabilityEvents } from './StabilityEventService';
 
-const prisma = new PrismaClient();
+
 
 interface ReportConfig {
     sessionId: string;

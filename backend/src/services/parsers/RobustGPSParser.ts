@@ -157,26 +157,37 @@ export function parseGPSRobust(buffer: Buffer, fechaSesion?: Date): GPSParsingRe
                 continue;
             }
 
+            // ✅ VALIDACIÓN 4: Velocidad razonable (< 200 km/h)
+            if (!isNaN(speed) && speed > 200) {
+                contadores.coordenadasInvalidas++;
+                problemas.push({
+                    tipo: 'VELOCIDAD_INVALIDA',
+                    linea: i + 1,
+                    descripcion: `Velocidad imposible detectada (${speed.toFixed(2)} km/h). Datos corruptos de inicialización GPS.`
+                });
+                continue;
+            }
+
             // ✅ VALIDACIÓN 4: Rango España (36-44°N, -10 a 5°E)
-            // NOTA: Esto es una advertencia, no un error fatal
+            // Rechazar coordenadas fuera de España (filtrar datos corruptos)
             if (lat < 36 || lat > 44) {
-                logger.warn(`⚠️ Latitud fuera de rango España (36-44): ${lat} en línea ${i + 1}`);
+                contadores.coordenadasInvalidas++;
                 problemas.push({
                     tipo: 'LATITUD_FUERA_ESPAÑA',
                     linea: i + 1,
-                    descripcion: `Latitud ${lat} fuera del rango España (36-44)`
+                    descripcion: `Latitud ${lat} fuera del rango España (36-44). Datos corruptos.`
                 });
-                // No continue - permitimos coordenadas fuera de España
+                continue; // ← Filtrar coordenadas fuera de España
             }
 
             if (lon < -10 || lon > 5) {
-                logger.warn(`⚠️ Longitud fuera de rango España (-10 a 5): ${lon} en línea ${i + 1}`);
+                contadores.coordenadasInvalidas++;
                 problemas.push({
                     tipo: 'LONGITUD_FUERA_ESPAÑA',
                     linea: i + 1,
-                    descripcion: `Longitud ${lon} fuera del rango España (-10 a 5)`
+                    descripcion: `Longitud ${lon} fuera del rango España (-10 a 5). Datos corruptos.`
                 });
-                // No continue - permitimos coordenadas fuera de España
+                continue; // ← Filtrar coordenadas fuera de España
             }
 
             // ✅ VALIDACIÓN 5: Detectar saltos GPS (> 1km entre mediciones consecutivas)

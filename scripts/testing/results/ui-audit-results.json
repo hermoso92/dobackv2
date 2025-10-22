@@ -1,0 +1,140 @@
+{
+  "timestamp": "2025-10-21T22:20:19.442Z",
+  "config": {
+    "baseUrl": "http://localhost:5174",
+    "dashboardPath": "/dashboard",
+    "credentials": {
+      "email": "test@bomberosmadrid.es",
+      "password": "admin123"
+    },
+    "screenshots": {
+      "enabled": true,
+      "directory": "./scripts/testing/results/screenshots",
+      "fullPage": true
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "timeouts": {
+      "navigation": 30000,
+      "element": 10000,
+      "action": 5000
+    }
+  },
+  "results": {
+    "tests": {
+      "login": {
+        "pass": true,
+        "error": null
+      },
+      "dashboardLoad": {
+        "pass": true,
+        "loadTimeMs": 7387,
+        "threshold": 3000,
+        "meetsThreshold": false,
+        "error": null
+      },
+      "noScrollMainContainer": {
+        "pass": false,
+        "details": [
+          {
+            "selector": ".app-layout",
+            "overflowY": "auto"
+          },
+          {
+            "selector": ".main-content",
+            "overflowY": "auto"
+          }
+        ],
+        "error": "Scroll detected on main container (violates StabilSafe V2 rule)"
+      },
+      "tabs": [
+        {
+          "name": "Estados & Tiempos",
+          "pass": true,
+          "loadTimeMs": 2148,
+          "error": null
+        },
+        {
+          "name": "Puntos Negros",
+          "pass": true,
+          "loadTimeMs": 2183,
+          "error": null
+        },
+        {
+          "name": "Velocidad",
+          "pass": true,
+          "loadTimeMs": 2182,
+          "error": null
+        },
+        {
+          "name": "Sesiones",
+          "pass": true,
+          "loadTimeMs": 2200,
+          "error": null
+        },
+        {
+          "name": "Reportes",
+          "pass": true,
+          "loadTimeMs": 2222,
+          "error": null
+        }
+      ],
+      "globalFilters": {
+        "pass": false,
+        "vehiclesFound": 0,
+        "error": "page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n  - waiting for locator('select[name=\"vehicle\"], select[id*=\"vehicle\"]') to be visible\n"
+      },
+      "pdfExport": {
+        "pass": true,
+        "available": true,
+        "error": null
+      }
+    },
+    "screenshots": [
+      "login-form.png",
+      "dashboard-initial.png",
+      "tab-estados_&_tiempos.png",
+      "tab-puntos_negros.png",
+      "tab-velocidad.png",
+      "tab-sesiones.png",
+      "tab-reportes.png"
+    ],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_HTTP2_SERVER_REFUSED_STREAM",
+      "Failed to load resource: net::ERR_HTTP2_SERVER_REFUSED_STREAM",
+      "Failed to load resource: net::ERR_HTTP2_SERVER_REFUSED_STREAM",
+      "Failed to load resource: net::ERR_HTTP2_SERVER_REFUSED_STREAM",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: http://localhost:9998/api/speed/violations?organiz…dType=all&startDate=2025-09-29&endDate=2025-10-08, status: 500, message: Request failed with status code 500, requestCount: 29}",
+      "[ERROR] Error cargando datos de velocidad: AxiosError",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: /api/speed/violations?organizationId=a5dfb0b4-c608…ivoOn=all&violationType=all&inPark=all&minSpeed=0, status: 500, message: Request failed with status code 500, requestCount: 29}",
+      "Error fetching speed violations: AxiosError",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: http://localhost:9998/api/speed/violations?organiz…dType=all&startDate=2025-09-29&endDate=2025-10-08, status: 500, message: Request failed with status code 500, requestCount: 29}",
+      "[ERROR] Error cargando datos de velocidad: AxiosError",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: /api/telemetry-v2/sessions, status: 500, message: Request failed with status code 500, requestCount: 33}",
+      "[ERROR] Error obteniendo sesiones de telemetría {error: AxiosError, params: Object}",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: http://localhost:9998/api/sessions/ranking?organiz…608-4a9e-b47b-d57a2e4d8c26&metric=events&limit=10, status: 500, message: Request failed with status code 500, requestCount: 33}",
+      "[ERROR] Error cargando ranking de sesiones: AxiosError",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: http://localhost:9998/api/sessions/ranking?organiz…608-4a9e-b47b-d57a2e4d8c26&metric=events&limit=10, status: 500, message: Request failed with status code 500, requestCount: 33}",
+      "[ERROR] Error cargando ranking de sesiones: AxiosError",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "[ERROR] Error en respuesta del servidor {url: /api/telemetry-v2/sessions, status: 500, message: Request failed with status code 500, requestCount: 35}",
+      "[ERROR] Error obteniendo sesiones de telemetría {error: AxiosError, params: Object}",
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  "summary": {
+    "totalTests": 10,
+    "passed": 8,
+    "failed": 2,
+    "successRate": "80.00"
+  }
+}

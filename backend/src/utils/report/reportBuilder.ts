@@ -10,7 +10,7 @@ import { logger } from '../../utils/logger';
 import { createSpeedStabilityChart } from './chart';
 import { fetchMapboxStatic } from './mapbox';
 
-const prisma = new PrismaClient();
+
 
 interface BuildResult {
     filePath: string;

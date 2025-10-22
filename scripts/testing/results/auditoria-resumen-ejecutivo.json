@@ -1,0 +1,284 @@
+{
+  "timestamp": "2025-10-21T22:20:00Z",
+  "version": "StabilSafe V3",
+  "auditType": "Comprehensive Functional Audit",
+  "summary": {
+    "overallStatus": "FUNCTIONAL_WITH_ISSUES",
+    "successRate": "60%",
+    "totalTests": 15,
+    "passed": 10,
+    "failed": 5,
+    "criticalIssues": 4,
+    "highPriorityIssues": 4,
+    "mediumPriorityIssues": 3
+  },
+  "services": {
+    "backend": {
+      "status": "OPERATIONAL",
+      "port": 9998,
+      "health": "OK",
+      "issues": [
+        "3 endpoints returning 500 errors",
+        "2 endpoints exceed performance thresholds"
+      ]
+    },
+    "frontend": {
+      "status": "OPERATIONAL",
+      "port": 5174,
+      "health": "OK",
+      "issues": [
+        "Violates No-Scroll rule",
+        "Global filters not detected",
+        "27 console errors during navigation"
+      ]
+    },
+    "database": {
+      "status": "OPERATIONAL",
+      "type": "PostgreSQL",
+      "health": "OK",
+      "issues": []
+    }
+  },
+  "authentication": {
+    "status": "FUNCTIONAL",
+    "loginTest": "PASS",
+    "jwtGeneration": "PASS",
+    "tokenRefresh": "NOT_TESTED"
+  },
+  "apiEndpoints": {
+    "tested": 5,
+    "working": 2,
+    "failing": 3,
+    "details": [
+      {
+        "endpoint": "/api/kpis/summary",
+        "method": "GET",
+        "status": 200,
+        "responseTime": 2571,
+        "result": "PASS"
+      },
+      {
+        "endpoint": "/api/events",
+        "method": "GET",
+        "status": 200,
+        "responseTime": 3261,
+        "result": "PASS_SLOW"
+      },
+      {
+        "endpoint": "/api/devices/status",
+        "method": "GET",
+        "status": 200,
+        "responseTime": 3096,
+        "result": "PASS_SLOW"
+      },
+      {
+        "endpoint": "/api/sessions",
+        "method": "GET",
+        "status": 500,
+        "responseTime": 124,
+        "result": "FAIL",
+        "error": "Internal Server Error"
+      },
+      {
+        "endpoint": "/api/speed/violations",
+        "method": "GET",
+        "status": 500,
+        "responseTime": null,
+        "result": "FAIL",
+        "error": "Internal Server Error"
+      },
+      {
+        "endpoint": "/api/telemetry-v2/sessions",
+        "method": "GET",
+        "status": 500,
+        "responseTime": null,
+        "result": "FAIL",
+        "error": "Internal Server Error"
+      },
+      {
+        "endpoint": "/api/sessions/ranking",
+        "method": "GET",
+        "status": 500,
+        "responseTime": null,
+        "result": "FAIL",
+        "error": "Internal Server Error"
+      }
+    ]
+  },
+  "uiTests": {
+    "tested": 10,
+    "working": 8,
+    "failing": 2,
+    "details": {
+      "login": "PASS",
+      "dashboardLoad": "PASS_SLOW",
+      "noScrollRule": "FAIL",
+      "tabEstados": "PASS",
+      "tabPuntosNegros": "PASS",
+      "tabVelocidad": "PASS_WITH_ERRORS",
+      "tabSesiones": "PASS_WITH_ERRORS",
+      "tabReportes": "PASS",
+      "globalFilters": "FAIL",
+      "pdfExportButton": "PASS"
+    }
+  },
+  "performance": {
+    "dashboardLoadTime": {
+      "actual": 7387,
+      "threshold": 3000,
+      "status": "EXCEEDS_THRESHOLD"
+    },
+    "apiAverageResponseTime": {
+      "summary": 2571,
+      "devices": 3096,
+      "events": 3261
+    },
+    "thresholds": {
+      "summaryEndpoint": 3000,
+      "otherEndpoints": 1000
+    }
+  },
+  "criticalIssues": [
+    {
+      "id": "C1",
+      "severity": "CRITICAL",
+      "category": "BACKEND",
+      "title": "/api/sessions returns 500",
+      "impact": "Sessions functionality blocked",
+      "estimatedEffort": "2-4 hours",
+      "priority": 1
+    },
+    {
+      "id": "C2",
+      "severity": "CRITICAL",
+      "category": "UI",
+      "title": "Violates No-Scroll rule (StabilSafe V2)",
+      "impact": "Design specification violation",
+      "estimatedEffort": "1-2 hours",
+      "priority": 1
+    },
+    {
+      "id": "C3",
+      "severity": "CRITICAL",
+      "category": "BACKEND",
+      "title": "/api/speed/violations returns 500",
+      "impact": "Speed analysis tab non-functional",
+      "estimatedEffort": "3-6 hours",
+      "priority": 1
+    },
+    {
+      "id": "C4",
+      "severity": "CRITICAL",
+      "category": "BACKEND",
+      "title": "/api/telemetry-v2/sessions returns 500",
+      "impact": "Telemetry sessions tab shows no data",
+      "estimatedEffort": "3-6 hours",
+      "priority": 1
+    }
+  ],
+  "highPriorityIssues": [
+    {
+      "id": "A1",
+      "severity": "HIGH",
+      "category": "PERFORMANCE",
+      "title": "Dashboard loads in 7.4s (exceeds 3s threshold)",
+      "impact": "Poor user experience",
+      "estimatedEffort": "4-8 hours",
+      "priority": 2
+    },
+    {
+      "id": "A2",
+      "severity": "HIGH",
+      "category": "PERFORMANCE",
+      "title": "/api/devices/status takes 3.1s",
+      "impact": "Slow dashboard refresh",
+      "estimatedEffort": "2-4 hours",
+      "priority": 2
+    },
+    {
+      "id": "A3",
+      "severity": "HIGH",
+      "category": "BACKEND",
+      "title": "/api/sessions/ranking returns 500",
+      "impact": "Session ranking not available",
+      "estimatedEffort": "2-3 hours",
+      "priority": 2
+    },
+    {
+      "id": "A4",
+      "severity": "HIGH",
+      "category": "UI",
+      "title": "Global filters not detected",
+      "impact": "Cannot verify filter functionality",
+      "estimatedEffort": "1-2 hours",
+      "priority": 2
+    }
+  ],
+  "consoleErrors": {
+    "total": 27,
+    "http2Errors": 4,
+    "error500": 15,
+    "error401": 2,
+    "other": 6
+  },
+  "screenshots": {
+    "total": 7,
+    "location": "scripts/testing/results/screenshots/",
+    "files": [
+      "login-form.png",
+      "dashboard-initial.png",
+      "tab-estados_&_tiempos.png",
+      "tab-puntos_negros.png",
+      "tab-velocidad.png",
+      "tab-sesiones.png",
+      "tab-reportes.png"
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Fix /api/sessions endpoint (500 error)",
+      "Apply No-Scroll CSS rule",
+      "Fix /api/speed/violations endpoint",
+      "Fix /api/telemetry-v2/sessions endpoint"
+    ],
+    "shortTerm": [
+      "Implement caching system (Redis recommended)",
+      "Optimize dashboard load time to <3s",
+      "Add database indexes for slow queries",
+      "Fix global filters in UI"
+    ],
+    "longTerm": [
+      "Implement APM monitoring",
+      "Configure automatic alerts for slow endpoints",
+      "Expand automated test coverage",
+      "Implement CI/CD with automatic audits"
+    ]
+  },
+  "generatedFiles": {
+    "reports": [
+      "scripts/testing/results/20251022_001911/audit-report.md",
+      "scripts/testing/results/20251022_001911/audit-data.json",
+      "scripts/testing/results/ui-audit-results.json",
+      "scripts/testing/results/AUDITORIA_COMPLETA_FINAL_21OCT2025.md",
+      "scripts/testing/results/auditoria-resumen-ejecutivo.json"
+    ],
+    "screenshots": "scripts/testing/results/screenshots/ (7 files)",
+    "logs": [
+      "scripts/testing/results/20251022_001911/audit-debug.log"
+    ]
+  },
+  "metadata": {
+    "executedBy": "Automated System (Cursor AI)",
+    "environment": "Local Development (Windows)",
+    "tools": [
+      "PowerShell 5.1+",
+      "Playwright 1.40+",
+      "Node.js 18+"
+    ],
+    "duration": "~30 minutes",
+    "testUser": "test@bomberosmadrid.es",
+    "organization": "Bomberos Madrid",
+    "organizationId": "a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26"
+  }
+}
+

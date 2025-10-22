@@ -1,12 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { readFile } from 'fs/promises';
 import { OverspeedProcessorService } from '../services/OverspeedProcessorService';
 import { StabilityAnalysisService } from '../services/StabilityAnalysisService';
 import { CANFrame, GPSPoint, parseCANFile, parseGPSFile } from '../utils/fileParser';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 // Instancia mínima del servicio de estabilidad para reutilizar su parser.
 // Se pasan objetos vacíos porque solo usaremos parseStabilityFile, el cual no

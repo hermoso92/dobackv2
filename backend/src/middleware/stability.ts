@@ -1,6 +1,6 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { AppError } from './error';
 
 interface StabilityData {
@@ -46,8 +46,8 @@ const calculateStabilityMetrics = (data: StabilityData): StabilityMetrics => {
         overallStatus: Object.values(metrics).some((m) => m.status === 'CRITICAL')
             ? 'CRITICAL'
             : Object.values(metrics).some((m) => m.status === 'WARNING')
-            ? 'WARNING'
-            : 'SAFE'
+                ? 'WARNING'
+                : 'SAFE'
     };
 };
 
@@ -161,11 +161,11 @@ export const stabilityHistoryMiddleware = async (
                 );
                 return matches
                     ? {
-                          ltr: parseFloat(matches[1]),
-                          ssf: parseFloat(matches[2]),
-                          drs: parseFloat(matches[3]),
-                          timestamp: event.createdAt
-                      }
+                        ltr: parseFloat(matches[1]),
+                        ssf: parseFloat(matches[2]),
+                        drs: parseFloat(matches[3]),
+                        timestamp: event.createdAt
+                    }
                     : null;
             })
             .filter((data): data is NonNullable<typeof data> => data !== null);
@@ -178,7 +178,7 @@ export const stabilityHistoryMiddleware = async (
                 trend:
                     stabilityData.length > 1
                         ? (stabilityData[stabilityData.length - 1].ltr - stabilityData[0].ltr) /
-                          days
+                        days
                         : 0
             },
             ssf: {
@@ -187,7 +187,7 @@ export const stabilityHistoryMiddleware = async (
                 trend:
                     stabilityData.length > 1
                         ? (stabilityData[stabilityData.length - 1].ssf - stabilityData[0].ssf) /
-                          days
+                        days
                         : 0
             },
             drs: {
@@ -196,7 +196,7 @@ export const stabilityHistoryMiddleware = async (
                 trend:
                     stabilityData.length > 1
                         ? (stabilityData[stabilityData.length - 1].drs - stabilityData[0].drs) /
-                          days
+                        days
                         : 0
             }
         };

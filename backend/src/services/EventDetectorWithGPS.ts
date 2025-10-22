@@ -1,9 +1,10 @@
 import { EventSeverity, PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { createLogger } from '../utils/logger';
 import { dataCorrelationService } from './DataCorrelationService';
 
 const logger = createLogger('EventDetectorWithGPS');
-const prisma = new PrismaClient();
+
 
 export interface EventoDetectado {
     timestamp: Date;

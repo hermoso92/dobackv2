@@ -1,6 +1,7 @@
 import { PrismaClient, Vehicle, VehicleStatus, VehicleType } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 export class VehicleService {
     async getVehicles(organizationId: string): Promise<Vehicle[]> {

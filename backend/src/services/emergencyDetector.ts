@@ -3,11 +3,12 @@
  * Detecta parques, clasifica sesiones y correlaciona salidas/vueltas
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { createLogger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 import { haversineDistance } from './kpiCalculator';
 
-const prisma = new PrismaClient();
+
 const logger = createLogger('EmergencyDetector');
 
 // ============================================================================

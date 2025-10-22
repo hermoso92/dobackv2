@@ -1,349 +1,398 @@
-import nodemailer from 'nodemailer';
-import { WebSocket } from 'ws';
+/**
+ * AlertService - Servicio de Alertas
+ * 
+ * Gestiona alertas de archivos faltantes:
+ * - Detección automática diaria
+ * - Creación de alertas
+ * - Notificaciones por email
+ * - Resolución de alertas
+ */
+
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
-// Tipos de alertas
-export interface EmergencyAlert {
-    id: string;
-    type: 'FIRE' | 'MEDICAL' | 'RESCUE' | 'HAZMAT' | 'ROUTINE' | 'MAINTENANCE';
-    location: string;
-    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    description: string;
-    vehicleId: string;
-    vehicleName?: string;
-    timestamp: Date;
-    organizationId: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-    metadata?: Record<string, any>;
-}
-
-export interface VehicleAlert {
-    id: string;
-    vehicleId: string;
-    vehicleName: string;
-    type: 'STATUS_CHANGE' | 'MAINTENANCE_DUE' | 'FUEL_LOW' | 'SPEED_EXCEEDED' | 'GEOFENCE_VIOLATION';
-    message: string;
-    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    timestamp: Date;
-    organizationId: string;
-    metadata?: Record<string, any>;
-}
-
-export interface GeofenceAlert {
-    id: string;
-    geofenceId: string;
-    geofenceName: string;
-    vehicleId: string;
-    vehicleName: string;
-    type: 'ENTER' | 'EXIT' | 'VIOLATION';
-    timestamp: Date;
-    organizationId: string;
-    coordinates: {
-        latitude: number;
-        longitude: number;
-    };
-    metadata?: Record<string, any>;
-}
+const prisma = new PrismaClient();
 
 export class AlertService {
-    private static transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: false,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
-    });
-
-    private static webSocketClients: Set<WebSocket> = new Set();
-
-    // Registrar cliente WebSocket
-    static registerWebSocketClient(ws: WebSocket) {
-        this.webSocketClients.add(ws);
-        logger.info('Cliente WebSocket registrado para alertas', {
-            totalClients: this.webSocketClients.size
-        });
-
-        ws.on('close', () => {
-            this.webSocketClients.delete(ws);
-            logger.info('Cliente WebSocket desconectado de alertas', {
-                totalClients: this.webSocketClients.size
-            });
-        });
-    }
-
-    // Enviar alerta de emergencia
-    static async sendEmergencyAlert(alert: EmergencyAlert): Promise<void> {
+    /**
+     * Verificar archivos faltantes del día anterior
+     * Ejecutar diariamente a las 08:00 AM
+     */
+    static async checkMissingFiles(): Promise<any[]> {
         try {
-            logger.info('Enviando alerta de emergencia', { alertId: alert.id, type: alert.type });
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(0, 0, 0, 0);
 
-            // Enviar por email
-            if (process.env.ALERT_EMAIL_ENABLED === 'true') {
-                await this.sendEmergencyEmail(alert);
-            }
+            const endOfYesterday = new Date(yesterday);
+            endOfYesterday.setHours(23, 59, 59, 999);
 
-            // Enviar por WebSocket
-            await this.broadcastWebSocketAlert({
-                type: 'EMERGENCY_ALERT',
-                data: alert,
-                timestamp: new Date().toISOString(),
-            });
+            logger.info('🔍 Verificando archivos faltantes', { date: yesterday.toISOString() });
 
-            // Enviar por webhook si está configurado
-            if (process.env.ALERT_WEBHOOK_URL) {
-                await this.sendWebhookAlert(alert);
-            }
-
-            logger.info('Alerta de emergencia enviada exitosamente', { alertId: alert.id });
-        } catch (error) {
-            logger.error('Error enviando alerta de emergencia', { error, alertId: alert.id });
-            throw error;
-        }
-    }
-
-    // Enviar alerta de vehículo
-    static async sendVehicleAlert(alert: VehicleAlert): Promise<void> {
-        try {
-            logger.info('Enviando alerta de vehículo', { alertId: alert.id, vehicleId: alert.vehicleId });
-
-            // Enviar por email si es crítica
-            if (alert.severity === 'CRITICAL' && process.env.ALERT_EMAIL_ENABLED === 'true') {
-                await this.sendVehicleEmail(alert);
-            }
-
-            // Enviar por WebSocket
-            await this.broadcastWebSocketAlert({
-                type: 'VEHICLE_ALERT',
-                data: alert,
-                timestamp: new Date().toISOString(),
-            });
-
-            logger.info('Alerta de vehículo enviada exitosamente', { alertId: alert.id });
-        } catch (error) {
-            logger.error('Error enviando alerta de vehículo', { error, alertId: alert.id });
-            throw error;
-        }
-    }
-
-    // Enviar alerta de geocerca
-    static async sendGeofenceAlert(alert: GeofenceAlert): Promise<void> {
-        try {
-            logger.info('Enviando alerta de geocerca', { alertId: alert.id, geofenceId: alert.geofenceId });
-
-            // Enviar por WebSocket
-            await this.broadcastWebSocketAlert({
-                type: 'GEOFENCE_ALERT',
-                data: alert,
-                timestamp: new Date().toISOString(),
-            });
-
-            logger.info('Alerta de geocerca enviada exitosamente', { alertId: alert.id });
-        } catch (error) {
-            logger.error('Error enviando alerta de geocerca', { error, alertId: alert.id });
-            throw error;
-        }
-    }
-
-    // Enviar email de emergencia
-    private static async sendEmergencyEmail(alert: EmergencyAlert): Promise<void> {
-        const subject = `🚨 ALERTA DE EMERGENCIA - ${alert.type} - ${alert.severity}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #D32F2F; color: white; padding: 20px; text-align: center;">
-          <h1>🚨 ALERTA DE EMERGENCIA</h1>
-        </div>
-        <div style="padding: 20px; background-color: #f5f5f5;">
-          <h2>Detalles de la Emergencia</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Tipo:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.type}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Severidad:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.severity}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Ubicación:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.location}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Vehículo:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.vehicleName || alert.vehicleId}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Hora:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.timestamp.toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Descripción:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.description}</td>
-            </tr>
-          </table>
-        </div>
-        <div style="background-color: #D32F2F; color: white; padding: 10px; text-align: center;">
-          <p>Bomberos Madrid - Sistema DobackSoft</p>
-        </div>
-      </div>
-    `;
-
-        await this.transporter.sendMail({
-            from: process.env.SMTP_FROM || 'noreply@bomberosmadrid.es',
-            to: 'emergencias@bomberosmadrid.es',
-            subject,
-            html,
-        });
-
-        logger.info('Email de emergencia enviado', { alertId: alert.id });
-    }
-
-    // Enviar email de vehículo
-    private static async sendVehicleEmail(alert: VehicleAlert): Promise<void> {
-        const subject = `⚠️ ALERTA DE VEHÍCULO - ${alert.vehicleName}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #FFA000; color: white; padding: 20px; text-align: center;">
-          <h1>⚠️ ALERTA DE VEHÍCULO</h1>
-        </div>
-        <div style="padding: 20px; background-color: #f5f5f5;">
-          <h2>Detalles de la Alerta</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Vehículo:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.vehicleName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Tipo:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.type}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Severidad:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.severity}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Hora:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.timestamp.toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Mensaje:</strong></td>
-              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${alert.message}</td>
-            </tr>
-          </table>
-        </div>
-        <div style="background-color: #FFA000; color: white; padding: 10px; text-align: center;">
-          <p>Bomberos Madrid - Sistema DobackSoft</p>
-        </div>
-      </div>
-    `;
-
-        await this.transporter.sendMail({
-            from: process.env.SMTP_FROM || 'noreply@bomberosmadrid.es',
-            to: 'mantenimiento@bomberosmadrid.es',
-            subject,
-            html,
-        });
-
-        logger.info('Email de vehículo enviado', { alertId: alert.id });
-    }
-
-    // Enviar alerta por WebSocket
-    private static async broadcastWebSocketAlert(alert: any): Promise<void> {
-        const message = JSON.stringify(alert);
-        let sentCount = 0;
-
-        this.webSocketClients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                try {
-                    client.send(message);
-                    sentCount++;
-                } catch (error) {
-                    logger.error('Error enviando alerta por WebSocket', { error });
-                    this.webSocketClients.delete(client);
-                }
-            } else {
-                this.webSocketClients.delete(client);
-            }
-        });
-
-        logger.info('Alerta enviada por WebSocket', {
-            sentCount,
-            totalClients: this.webSocketClients.size
-        });
-    }
-
-    // Enviar alerta por webhook
-    private static async sendWebhookAlert(alert: EmergencyAlert): Promise<void> {
-        try {
-            const response = await fetch(process.env.ALERT_WEBHOOK_URL!, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+            // Obtener todos los vehículos activos
+            const vehicles = await prisma.vehicle.findMany({
+                where: {
+                    active: true,
+                    status: 'ACTIVE'
                 },
-                body: JSON.stringify({
-                    type: 'EMERGENCY_ALERT',
-                    data: alert,
-                    timestamp: new Date().toISOString(),
-                    source: 'DobackSoft',
-                }),
+                include: {
+                    Organization: true
+                }
             });
 
-            if (!response.ok) {
-                throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
+            const alerts: any[] = [];
+            const expectedFileTypes = ['CAN', 'ESTABILIDAD', 'GPS', 'ROTATIVO'];
+
+            for (const vehicle of vehicles) {
+                // Verificar archivos subidos ayer
+                const uploadedFiles = await prisma.archivoSubido.findMany({
+                    where: {
+                        vehicleId: vehicle.id,
+                        uploadedAt: {
+                            gte: yesterday,
+                            lte: endOfYesterday
+                        }
+                    },
+                    select: {
+                        fileType: true
+                    }
+                });
+
+                const uploadedTypes = [...new Set(uploadedFiles.map(f => f.fileType))];
+                const missingTypes = expectedFileTypes.filter(type => !uploadedTypes.includes(type));
+
+                if (missingTypes.length > 0) {
+                    // Calcular severidad
+                    const severity = this.calculateSeverity(missingTypes.length, expectedFileTypes.length);
+
+                    // Crear o actualizar alerta
+                    const alert = await prisma.missingFileAlert.upsert({
+                        where: {
+                            organizationId_vehicleId_date: {
+                                organizationId: vehicle.organizationId,
+                                vehicleId: vehicle.id,
+                                date: yesterday
+                            }
+                        },
+                        update: {
+                            missingFiles: missingTypes,
+                            uploadedFiles: uploadedTypes,
+                            status: 'PENDING',
+                            severity,
+                            updatedAt: new Date()
+                        },
+                        create: {
+                            organizationId: vehicle.organizationId,
+                            vehicleId: vehicle.id,
+                            date: yesterday,
+                            expectedFiles: expectedFileTypes,
+                            missingFiles: missingTypes,
+                            uploadedFiles: uploadedTypes,
+                            status: 'PENDING',
+                            severity
+                        },
+                        include: {
+                            Vehicle: true,
+                            Organization: true
+                        }
+                    });
+
+                    alerts.push(alert);
+
+                    // Notificar usuarios MANAGER
+                    await this.notifyManagers(vehicle.organizationId, alert, vehicle);
+                }
             }
 
-            logger.info('Alerta enviada por webhook', { alertId: alert.id });
+            logger.info('✅ Verificación de archivos completada', {
+                totalVehicles: vehicles.length,
+                alertsCreated: alerts.length
+            });
+
+            return alerts;
         } catch (error) {
-            logger.error('Error enviando alerta por webhook', { error, alertId: alert.id });
+            logger.error('❌ Error verificando archivos faltantes', error);
+            throw error;
         }
     }
 
-    // Crear alerta de emergencia
-    static createEmergencyAlert(data: Partial<EmergencyAlert>): EmergencyAlert {
-        return {
-            id: `emergency-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-            type: data.type || 'ROUTINE',
-            location: data.location || 'Ubicación no especificada',
-            severity: data.severity || 'MEDIUM',
-            description: data.description || 'Sin descripción',
-            vehicleId: data.vehicleId || 'unknown',
-            timestamp: data.timestamp || new Date(),
-            organizationId: data.organizationId || 'unknown',
-            ...data,
-        };
+    /**
+     * Calcular severidad según cantidad de archivos faltantes
+     */
+    private static calculateSeverity(missing: number, total: number): string {
+        const percentage = (missing / total) * 100;
+        if (percentage >= 75) return 'CRITICAL';  // 3-4 archivos faltantes
+        if (percentage >= 50) return 'ERROR';     // 2 archivos faltantes
+        if (percentage >= 25) return 'WARNING';   // 1 archivo faltante
+        return 'INFO';
     }
 
-    // Crear alerta de vehículo
-    static createVehicleAlert(data: Partial<VehicleAlert>): VehicleAlert {
-        return {
-            id: `vehicle-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-            vehicleId: data.vehicleId || 'unknown',
-            vehicleName: data.vehicleName || 'Vehículo desconocido',
-            type: data.type || 'STATUS_CHANGE',
-            message: data.message || 'Sin mensaje',
-            severity: data.severity || 'MEDIUM',
-            timestamp: data.timestamp || new Date(),
-            organizationId: data.organizationId || 'unknown',
-            ...data,
-        };
+    /**
+     * Notificar a usuarios MANAGER de la organización
+     */
+    private static async notifyManagers(
+        organizationId: string,
+        alert: any,
+        vehicle: any
+    ): Promise<void> {
+        try {
+            // Buscar MANAGERS de la organización
+            const managers = await prisma.user.findMany({
+                where: {
+                    organizationId,
+                    role: 'MANAGER',
+                    status: 'ACTIVE'
+                },
+                include: {
+                    UserConfig: true
+                }
+            });
+
+            const notifiedUserIds: string[] = [];
+
+            for (const manager of managers) {
+                // Verificar preferencias de notificación
+                const preferences = manager.UserConfig?.notificationPreferences as any;
+                const emailEnabled = preferences?.emailAlerts !== false;
+
+                // Crear notificación in-app
+                await prisma.notification.create({
+                    data: {
+                        userId: manager.id,
+                        type: 'ALERT',
+                        channel: 'IN_APP',
+                        title: `⚠️ Archivos faltantes - ${vehicle.name}`,
+                        message: `Faltan ${alert.missingFiles.length} archivo(s) del ${new Date(alert.date).toLocaleDateString('es-ES')}: ${alert.missingFiles.join(', ')}`,
+                        priority: alert.severity,
+                        relatedEntity: 'MissingFileAlert',
+                        relatedEntityId: alert.id,
+                        status: 'PENDING'
+                    }
+                });
+
+                notifiedUserIds.push(manager.id);
+
+                // TODO: Enviar email si está habilitado
+                // if (emailEnabled) {
+                //     await EmailService.sendMissingFilesAlert(manager.email, manager.name, vehicle, alert);
+                // }
+            }
+
+            // Actualizar alerta con usuarios notificados
+            await prisma.missingFileAlert.update({
+                where: { id: alert.id },
+                data: {
+                    notifiedAt: new Date(),
+                    notifiedUsers: notifiedUserIds,
+                    status: 'NOTIFIED'
+                }
+            });
+
+            logger.info('📧 Managers notificados', {
+                alertId: alert.id,
+                vehicleId: vehicle.id,
+                managersNotified: managers.length
+            });
+        } catch (error) {
+            logger.error('❌ Error notificando managers', error);
+        }
     }
 
-    // Crear alerta de geocerca
-    static createGeofenceAlert(data: Partial<GeofenceAlert>): GeofenceAlert {
-        return {
-            id: `geofence-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-            geofenceId: data.geofenceId || 'unknown',
-            geofenceName: data.geofenceName || 'Geocerca desconocida',
-            vehicleId: data.vehicleId || 'unknown',
-            vehicleName: data.vehicleName || 'Vehículo desconocido',
-            type: data.type || 'ENTER',
-            timestamp: data.timestamp || new Date(),
-            organizationId: data.organizationId || 'unknown',
-            coordinates: data.coordinates || { latitude: 0, longitude: 0 },
-            ...data,
-        };
+    /**
+     * Obtener alertas de una organización
+     */
+    static async getAlerts(organizationId: string, filters?: {
+        status?: string;
+        severity?: string;
+        vehicleId?: string;
+        startDate?: Date;
+        endDate?: Date;
+    }): Promise<any[]> {
+        try {
+            const where: any = {
+                organizationId
+            };
+
+            if (filters?.status) {
+                where.status = filters.status;
+            }
+
+            if (filters?.severity) {
+                where.severity = filters.severity;
+            }
+
+            if (filters?.vehicleId) {
+                where.vehicleId = filters.vehicleId;
+            }
+
+            if (filters?.startDate || filters?.endDate) {
+                where.date = {};
+                if (filters.startDate) {
+                    where.date.gte = filters.startDate;
+                }
+                if (filters.endDate) {
+                    where.date.lte = filters.endDate;
+                }
+            }
+
+            const alerts = await prisma.missingFileAlert.findMany({
+                where,
+                include: {
+                    Vehicle: {
+                        select: {
+                            id: true,
+                            name: true,
+                            identifier: true,
+                            licensePlate: true
+                        }
+                    },
+                    Organization: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    },
+                    ResolvedByUser: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: {
+                    date: 'desc'
+                }
+            });
+
+            return alerts;
+        } catch (error) {
+            logger.error('❌ Error obteniendo alertas', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Resolver una alerta
+     */
+    static async resolveAlert(
+        alertId: string,
+        userId: string,
+        notes?: string
+    ): Promise<any> {
+        try {
+            const alert = await prisma.missingFileAlert.update({
+                where: { id: alertId },
+                data: {
+                    status: 'RESOLVED',
+                    resolvedAt: new Date(),
+                    resolvedBy: userId,
+                    resolutionNotes: notes
+                },
+                include: {
+                    Vehicle: true,
+                    Organization: true,
+                    ResolvedByUser: true
+                }
+            });
+
+            logger.info('✅ Alerta resuelta', {
+                alertId,
+                userId,
+                vehicleId: alert.vehicleId
+            });
+
+            return alert;
+        } catch (error) {
+            logger.error('❌ Error resolviendo alerta', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Ignorar una alerta
+     */
+    static async ignoreAlert(alertId: string, userId: string): Promise<any> {
+        try {
+            const alert = await prisma.missingFileAlert.update({
+                where: { id: alertId },
+                data: {
+                    status: 'IGNORED',
+                    resolvedBy: userId,
+                    resolvedAt: new Date()
+                }
+            });
+
+            logger.info('ℹ️ Alerta ignorada', { alertId, userId });
+
+            return alert;
+        } catch (error) {
+            logger.error('❌ Error ignorando alerta', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener estadísticas de alertas
+     */
+    static async getAlertStats(organizationId: string): Promise<any> {
+        try {
+            const [
+                totalAlerts,
+                pendingAlerts,
+                criticalAlerts,
+                resolvedLast7Days
+            ] = await Promise.all([
+                prisma.missingFileAlert.count({
+                    where: { organizationId }
+                }),
+                prisma.missingFileAlert.count({
+                    where: {
+                        organizationId,
+                        status: { in: ['PENDING', 'NOTIFIED'] }
+                    }
+                }),
+                prisma.missingFileAlert.count({
+                    where: {
+                        organizationId,
+                        severity: 'CRITICAL',
+                        status: { in: ['PENDING', 'NOTIFIED'] }
+                    }
+                }),
+                prisma.missingFileAlert.count({
+                    where: {
+                        organizationId,
+                        status: 'RESOLVED',
+                        resolvedAt: {
+                            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                        }
+                    }
+                })
+            ]);
+
+            // Alertas por vehículo
+            const alertsByVehicle = await prisma.missingFileAlert.groupBy({
+                by: ['vehicleId'],
+                where: {
+                    organizationId,
+                    status: { in: ['PENDING', 'NOTIFIED'] }
+                },
+                _count: true
+            });
+
+            return {
+                totalAlerts,
+                pendingAlerts,
+                criticalAlerts,
+                resolvedLast7Days,
+                alertsByVehicle: alertsByVehicle.map(item => ({
+                    vehicleId: item.vehicleId,
+                    count: item._count
+                }))
+            };
+        } catch (error) {
+            logger.error('❌ Error obteniendo estadísticas de alertas', error);
+            throw error;
+        }
     }
 }

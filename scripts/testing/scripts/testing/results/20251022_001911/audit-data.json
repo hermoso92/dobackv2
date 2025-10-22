@@ -1,0 +1,75 @@
+﻿{
+    "Performance":  {
+                        "avg_other_endpoints_ms":  1626.14,
+                        "frontend_initial_load_ms":  "N/A",
+                        "avg_summary_time_ms":  23.25
+                    },
+    "Timestamp":  "2025-10-21T22:19:11Z",
+    "EventsTest":  {
+
+                   },
+    "Services":  {
+                     "Frontend":  {
+                                      "Port":  5174,
+                                      "Status":  "running",
+                                      "Error":  null,
+                                      "Available":  true
+                                  },
+                     "Backend":  {
+                                     "Port":  9998,
+                                     "Status":  "running",
+                                     "Error":  null,
+                                     "Available":  true
+                                 }
+                 },
+    "Endpoints":  [
+                      {
+                          "StatusCode":  404,
+                          "Error":  "Error en el servidor remoto: (404) No se encontró.",
+                          "Pass":  false,
+                          "Method":  "GET",
+                          "DurationMs":  23.25,
+                          "Url":  "/api/summary"
+                      },
+                      {
+                          "StatusCode":  200,
+                          "Error":  null,
+                          "Pass":  false,
+                          "Method":  "GET",
+                          "DurationMs":  3096.31,
+                          "Url":  "/api/devices/status"
+                      },
+                      {
+                          "StatusCode":  500,
+                          "Error":  "Error en el servidor remoto: (500) Error interno del servidor.",
+                          "Pass":  false,
+                          "Method":  "GET",
+                          "DurationMs":  123.65,
+                          "Url":  "/api/sessions"
+                      },
+                      {
+                          "StatusCode":  200,
+                          "Error":  null,
+                          "Pass":  true,
+                          "Method":  "GET",
+                          "DurationMs":  3261.36,
+                          "Url":  "/api/events"
+                      }
+                  ],
+    "Summary":  {
+                    "Warnings":  0,
+                    "TotalTests":  5,
+                    "Failed":  3,
+                    "Passed":  2
+                },
+    "UIChecks":  {
+                     "tabs_load_successfully":  "MANUAL_CHECK_REQUIRED",
+                     "pdf_exports_work":  "MANUAL_CHECK_REQUIRED",
+                     "no_scroll_main_container":  "MANUAL_CHECK_REQUIRED",
+                     "note":  "Ejecutar checklist manual o script Playwright para validacion completa",
+                     "filters_responsive":  "MANUAL_CHECK_REQUIRED"
+                 },
+    "UploadTest":  {
+
+                   }
+}

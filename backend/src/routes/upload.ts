@@ -889,7 +889,7 @@ router.get('/recent-sessions', async (req, res) => {
       take: 20,
       orderBy: { createdAt: 'desc' },
       include: {
-        vehicle: {
+        Vehicle: {
           select: {
             name: true,
             identifier: true
@@ -925,30 +925,18 @@ router.get('/recent-sessions', async (req, res) => {
 /**
  * POST /api/upload/process-all-cmadrid
  * Procesar automáticamente todos los archivos de CMadrid
- * ✅ ACTUALIZADO: Usa UnifiedFileProcessor para correlación correcta
+ * ✅ ACTUALIZADO: Procesa en segundo plano y devuelve ID de reporte
+ * ✅ Usa UnifiedFileProcessor para correlación correcta
  * ✅ Ahora correlaciona ESTABILIDAD + GPS + ROTATIVO del mismo día
  */
 router.post('/process-all-cmadrid', authenticate, async (req, res) => {
   try {
-    // ✅ Incrementar timeout para procesamiento largo
-    req.setTimeout(600000); // 10 minutos
-    res.setTimeout(600000);
-
     logger.info('🚀 Iniciando procesamiento automático UNIFICADO de CMadrid...');
 
     // ✅ NUEVO: Leer configuración del request (si viene del frontend)
     const uploadConfig = req.body.config;
     if (uploadConfig) {
       logger.info('⚙️ Usando configuración personalizada del frontend', uploadConfig);
-      // TODO: Aplicar configuración a UnifiedFileProcessorV2
-    }
-
-    // ✅ Asegurar que Prisma esté conectado (crítico para procesamiento masivo)
-    try {
-      await prisma.$connect();
-      logger.info('✅ Prisma conectado correctamente');
-    } catch (err) {
-      logger.warn('⚠️ Prisma ya estaba conectado');
     }
 
     // UUIDs fijos del usuario/organización SYSTEM (creados en seed)
@@ -957,285 +945,377 @@ router.post('/process-all-cmadrid', authenticate, async (req, res) => {
 
     const userId = (req as any).user?.id || SYSTEM_USER_ID;
     const organizationId = (req as any).user?.organizationId || SYSTEM_ORG_ID;
-    // cambio aquí
+
     if (!(req as any).user?.organizationId) {
       logger.warn('⚠️ organizationId no presente en usuario autenticado, usando SYSTEM_ORG_ID por fallback', { SYSTEM_ORG_ID });
     }
 
-    // ✅ RUTA CORRECTA: backend/data/datosDoback/CMadrid (carpeta oficial)
-    const cmadridPath = path.join(__dirname, '../../data/datosDoback/CMadrid');
+    // ✅ NUEVO: Crear reporte inicial con estado PROCESSING
+    const { ProcessingReportService } = await import('../services/ProcessingReportService');
 
-    if (!fs.existsSync(cmadridPath)) {
-      return res.status(404).json({
-        success: false,
-        error: 'Directorio CMadrid no encontrado'
-      });
-    }
-
-    const vehicleResults: Map<string, any> = new Map();
-    let totalArchivosLeidos = 0;
-    let totalSesionesCreadas = 0;
-
-    // Leer directorios de vehículos
-    const vehicleDirs = fs.readdirSync(cmadridPath).filter(item =>
-      fs.statSync(path.join(cmadridPath, item)).isDirectory() && item.toLowerCase().startsWith('doback')
-    );
-
-    logger.info(`📁 Encontrados ${vehicleDirs.length} vehículos en CMadrid`);
-
-    for (const vehicleDir of vehicleDirs) {
-      try {
-        const vehiclePath = path.join(cmadridPath, vehicleDir);
-        const vehicleId = vehicleDir.toUpperCase();
-
-        logger.info(`🚗 Procesando vehículo: ${vehicleId}`);
-
-        // Agrupar archivos por fecha para este vehículo
-        const archivosPorFecha: Map<string, any> = new Map();
-
-        // Leer archivos de cada tipo (case-insensitive)
-        const typeVariants = {
-          estabilidad: ['estabilidad', 'ESTABILIDAD', 'Estabilidad'],
-          gps: ['gps', 'GPS', 'Gps'],
-          rotativo: ['rotativo', 'ROTATIVO', 'Rotativo']
-        };
-
-        for (const [type, variants] of Object.entries(typeVariants)) {
-          let typePath: string | null = null;
-
-          // Buscar cuál variante existe
-          for (const variant of variants) {
-            const testPath = path.join(vehiclePath, variant);
-            if (fs.existsSync(testPath)) {
-              typePath = testPath;
-              break;
-            }
-          }
-
-          if (typePath) {
-            const files = fs.readdirSync(typePath).filter(f => f.endsWith('.txt'));
-
-            for (const file of files) {
-              // Extraer fecha del nombre del archivo
-              const matchFecha = file.match(/_(\d{8})\.txt$/);
-              if (!matchFecha) continue;
-
-              const fechaStr = matchFecha[1]; // YYYYMMDD
-
-              // ✅ CORRECCIÓN: Mantener formato YYYYMMDD (sin guiones)
-              // UnifiedFileProcessorV2 espera este formato
-              const fecha = fechaStr;
-
-              if (!archivosPorFecha.has(fecha)) {
-                archivosPorFecha.set(fecha, {
-                  fecha,
-                  archivos: {}
-                });
-              }
-
-              const grupo = archivosPorFecha.get(fecha);
-              const filePath = path.join(typePath, file);
-
-              grupo.archivos[type] = {
-                nombre: file,
-                buffer: fs.readFileSync(filePath)
-              };
-
-              totalArchivosLeidos++;
-            }
-          }
-        }
-
-        logger.info(`📦 Encontrados ${archivosPorFecha.size} días con datos para ${vehicleId}`);
-
-        // Inicializar stats del vehículo
-        vehicleResults.set(vehicleId, {
-          vehicle: vehicleId,
-          savedSessions: 0,
-          skippedSessions: 0,
-          filesProcessed: 0,
-          sessionDetails: [], // ✅ Detalles por sesión (ÚNICO dato enviado)
-          errors: []
-        });
-
-        const vehicleStats = vehicleResults.get(vehicleId);
-
-        // Procesar cada día usando UnifiedFileProcessor
-        for (const [fecha, grupo] of archivosPorFecha.entries()) {
-          logger.info(`📅 Procesando fecha: ${fecha}`);
-
-          // ✅ DEBUG: Ver qué archivos están en el grupo
-          logger.info(`   🔍 DEBUG Grupo: EST=${!!grupo.archivos.estabilidad}, GPS=${!!grupo.archivos.gps}, ROT=${!!grupo.archivos.rotativo}`);
-          if (grupo.archivos.estabilidad) logger.info(`   → ESTABILIDAD: ${grupo.archivos.estabilidad.nombre}`);
-          if (grupo.archivos.gps) logger.info(`   → GPS: ${grupo.archivos.gps.nombre}`);
-          if (grupo.archivos.rotativo) logger.info(`   → ROTATIVO: ${grupo.archivos.rotativo.nombre}`);
-
-          try {
-            // Preparar archivos para UnifiedFileProcessor
-            const archivosArray: Array<{ nombre: string; buffer: Buffer }> = [];
-
-            if (grupo.archivos.estabilidad) {
-              archivosArray.push({
-                nombre: grupo.archivos.estabilidad.nombre,
-                buffer: grupo.archivos.estabilidad.buffer
-              });
-            }
-
-            if (grupo.archivos.gps) {
-              archivosArray.push({
-                nombre: grupo.archivos.gps.nombre,
-                buffer: grupo.archivos.gps.buffer
-              });
-            }
-
-            if (grupo.archivos.rotativo) {
-              archivosArray.push({
-                nombre: grupo.archivos.rotativo.nombre,
-                buffer: grupo.archivos.rotativo.buffer
-              });
-            }
-
-            // ✅ Procesar con UnifiedFileProcessorV2 (correlación correcta con reglas estructuradas)
-            const resultado = await unifiedFileProcessorV2.procesarArchivos(
-              archivosArray,
-              organizationId,
-              userId,
-              uploadConfig // ✅ NUEVO: Pasar configuración personalizada
-            );
-
-            // Contar sesiones
-            totalSesionesCreadas += resultado.sesionesCreadas;
-            vehicleStats.savedSessions += resultado.sesionesCreadas;
-            vehicleStats.filesProcessed += archivosArray.length;
-            vehicleStats.sessionDetails = vehicleStats.sessionDetails || [];
-
-            // ✅ Agregar detalles de sesiones con nombres de archivos (SIMPLIFICADO)
-            if (resultado.sessionDetails && resultado.sessionDetails.length > 0) {
-              vehicleStats.sessionDetails.push(...resultado.sessionDetails);
-            }
-
-            // ✅ NO agregamos archivos individuales (demasiado pesado para JSON)
-            // Solo mantenemos sessionDetails que es lo que el frontend necesita
-
-            logger.info(`✅ ${fecha}: ${resultado.sesionesCreadas} sesiones creadas (correlacionadas)`);
-
-          } catch (error: any) {
-            logger.error(`❌ Error procesando fecha ${fecha}:`, error);
-            vehicleStats.errors.push(`Error en fecha ${fecha}: ${error.message}`);
-          }
-        }
-      } catch (vehicleError: any) {
-        logger.error(`❌ Error procesando vehículo ${vehicleDir}:`, vehicleError);
-        if (!vehicleResults.has(vehicleDir)) {
-          vehicleResults.set(vehicleDir, {
-            vehicleId: vehicleDir.toUpperCase(),
-            filesProcessed: 0,
-            sessionsCreated: 0,
-            errors: [`Error general del vehículo: ${vehicleError.message}`],
-            sessionDetails: []
-          });
-        }
+    const reportId = await prisma.processingReport.create({
+      data: {
+        userId,
+        organizationId,
+        reportType: 'AUTOMATIC_CMADRID',
+        status: 'PROCESSING',
+        totalFiles: 0,
+        totalSessions: 0,
+        totalOmitted: 0,
+        startTime: new Date(),
+        reportData: { files: [], summary: { totalFiles: 0, totalSessionsCreated: 0, totalSessionsOmitted: 0, totalMeasurements: 0, totalEvents: 0, totalSegments: 0, totalGeofenceEvents: 0, totalRouteDistance: 0, totalSpeedViolations: 0, totalGpsPoints: 0, totalStabilityMeasurements: 0 } }
       }
-    }
+    }).then(r => r.id);
 
-    const resultsArray = Array.from(vehicleResults.values());
+    logger.info(`📝 Reporte creado con ID: ${reportId}`);
 
-    // ✅ NUEVO: Recopilar todos los sessionIds para post-procesamiento
-    const allSessionIds: string[] = [];
-    for (const vehicleResult of resultsArray) {
-      if (vehicleResult.sessionDetails) {
-        for (const sessionDetail of vehicleResult.sessionDetails) {
-          if (sessionDetail.sessionId) {
-            allSessionIds.push(sessionDetail.sessionId);
-          }
-        }
-      }
-    }
-
-    // ✅ NUEVO: Ejecutar post-procesamiento automático (generar eventos y segmentos)
-    if (allSessionIds.length > 0) {
-      logger.info(`🔄 Iniciando post-procesamiento para ${allSessionIds.length} sesiones...`);
-
-      try {
-        const { UploadPostProcessor } = await import('../services/upload/UploadPostProcessor');
-        const postProcessResult = await UploadPostProcessor.process(allSessionIds);
-
-        logger.info('✅ Post-procesamiento completado', {
-          eventsGenerated: postProcessResult.eventsGenerated,
-          segmentsGenerated: postProcessResult.segmentsGenerated,
-          duration: postProcessResult.duration
-        });
-
-        // ✅ Agregar eventos a sessionDetails de cada vehículo
-        if (postProcessResult.sessionDetails) {
-          const eventsBySession = new Map(
-            postProcessResult.sessionDetails.map(s => [s.sessionId, s])
-          );
-
-          logger.info(`📋 Post-procesamiento completó con detalles de eventos`, {
-            totalSessions: postProcessResult.sessionDetails.length,
-            totalEvents: postProcessResult.eventsGenerated,
-            firstSessionExample: postProcessResult.sessionDetails[0]
-          });
-
-          for (const vehicleResult of resultsArray) {
-            if (vehicleResult.sessionDetails) {
-              vehicleResult.sessionDetails = vehicleResult.sessionDetails.map((session: any) => {
-                const eventData = eventsBySession.get(session.sessionId);
-                return {
-                  ...session,
-                  eventsGenerated: eventData?.eventsGenerated || 0,
-                  segmentsGenerated: eventData?.segmentsGenerated || 0,
-                  events: eventData?.events || []
-                };
-              });
-            }
-          }
-
-          logger.info(`📊 Eventos agregados a sessionDetails`, {
-            vehiclesWithData: resultsArray.filter(v => v.sessionDetails?.some((s: any) => s.eventsGenerated > 0)).length
-          });
-        }
-      } catch (error: any) {
-        logger.error('❌ Error en post-procesamiento:', error);
-        // Continuar sin fallar
-      }
-    }
-
-    // Invalidar cache de KPIs
-    if (totalSesionesCreadas > 0) {
-      kpiCacheService.invalidate(organizationId);
-      logger.info('✅ Cache de KPIs invalidado');
-    }
-
-    logger.info(`✅ Procesamiento completado: ${totalArchivosLeidos} archivos, ${totalSesionesCreadas} sesiones creadas`);
-
-    // ✅ Preparar respuesta final con eventos (ya agregados por el post-procesamiento)
-    const responseData = {
+    // ✅ Devolver respuesta inmediata con el ID del reporte
+    res.json({
       success: true,
       data: {
-        message: 'Procesamiento automático completado con correlación unificada y eventos detallados',
-        totalFiles: totalArchivosLeidos,
-        totalSaved: totalSesionesCreadas,
-        totalSkipped: 0,
-        vehiclesProcessed: vehicleDirs.length,
-        results: resultsArray, // ✅ Ya incluye eventos y segmentos del post-procesamiento
-        processingMethod: 'UnifiedFileProcessor V2 + PostProcessor (eventos automáticos)'
+        reportId,
+        message: 'Procesamiento iniciado en segundo plano',
+        status: 'PROCESSING'
       }
-    };
+    });
 
-    // Log para debugging
-    const responseSize = JSON.stringify(responseData).length;
-    const totalSessionDetails = resultsArray.reduce((sum, v) => sum + (v.sessionDetails?.length || 0), 0);
-    logger.info(`📤 Enviando respuesta: ${Math.round(responseSize / 1024)} KB, ${totalSessionDetails} detalles de sesiones`);
+    // ✅ PROCESAR EN SEGUNDO PLANO (sin bloquear la respuesta)
+    (async () => {
+      const startTime = Date.now();
 
-    res.json(responseData);
+      try {
+        // ✅ Asegurar que Prisma esté conectado
+        try {
+          await prisma.$connect();
+          logger.info('✅ Prisma conectado correctamente');
+        } catch (err) {
+          logger.warn('⚠️ Prisma ya estaba conectado');
+        }
+
+        // ✅ RUTA CORRECTA: backend/data/datosDoback/CMadrid (carpeta oficial)
+        const cmadridPath = path.join(__dirname, '../../data/datosDoback/CMadrid');
+
+        if (!fs.existsSync(cmadridPath)) {
+          throw new Error('Directorio CMadrid no encontrado');
+        }
+
+        const vehicleResults: Map<string, any> = new Map();
+        let totalArchivosLeidos = 0;
+        let totalSesionesCreadas = 0;
+
+        // Leer directorios de vehículos
+        const vehicleDirs = fs.readdirSync(cmadridPath).filter(item =>
+          fs.statSync(path.join(cmadridPath, item)).isDirectory() && item.toLowerCase().startsWith('doback')
+        );
+
+        logger.info(`📁 Encontrados ${vehicleDirs.length} vehículos en CMadrid`);
+
+        for (const vehicleDir of vehicleDirs) {
+          try {
+            const vehiclePath = path.join(cmadridPath, vehicleDir);
+            const vehicleId = vehicleDir.toUpperCase();
+
+            logger.info(`🚗 Procesando vehículo: ${vehicleId}`);
+
+            // Agrupar archivos por fecha para este vehículo
+            const archivosPorFecha: Map<string, any> = new Map();
+
+            // Leer archivos de cada tipo (case-insensitive)
+            const typeVariants = {
+              estabilidad: ['estabilidad', 'ESTABILIDAD', 'Estabilidad'],
+              gps: ['gps', 'GPS', 'Gps'],
+              rotativo: ['rotativo', 'ROTATIVO', 'Rotativo']
+            };
+
+            for (const [type, variants] of Object.entries(typeVariants)) {
+              let typePath: string | null = null;
+
+              // Buscar cuál variante existe
+              for (const variant of variants) {
+                const testPath = path.join(vehiclePath, variant);
+                if (fs.existsSync(testPath)) {
+                  typePath = testPath;
+                  break;
+                }
+              }
+
+              if (typePath) {
+                const files = fs.readdirSync(typePath).filter(f => f.endsWith('.txt'));
+
+                for (const file of files) {
+                  // Extraer fecha del nombre del archivo
+                  const matchFecha = file.match(/_(\d{8})\.txt$/);
+                  if (!matchFecha) continue;
+
+                  const fechaStr = matchFecha[1]; // YYYYMMDD
+
+                  // ✅ CORRECCIÓN: Mantener formato YYYYMMDD (sin guiones)
+                  // UnifiedFileProcessorV2 espera este formato
+                  const fecha = fechaStr;
+
+                  if (!archivosPorFecha.has(fecha)) {
+                    archivosPorFecha.set(fecha, {
+                      fecha,
+                      archivos: {}
+                    });
+                  }
+
+                  const grupo = archivosPorFecha.get(fecha);
+                  const filePath = path.join(typePath, file);
+
+                  grupo.archivos[type] = {
+                    nombre: file,
+                    buffer: fs.readFileSync(filePath)
+                  };
+
+                  totalArchivosLeidos++;
+                }
+              }
+            }
+
+            logger.info(`📦 Encontrados ${archivosPorFecha.size} días con datos para ${vehicleId}`);
+
+            // Inicializar stats del vehículo
+            vehicleResults.set(vehicleId, {
+              vehicle: vehicleId,
+              savedSessions: 0,
+              skippedSessions: 0,
+              filesProcessed: 0,
+              sessionDetails: [], // ✅ Detalles por sesión (ÚNICO dato enviado)
+              errors: []
+            });
+
+            const vehicleStats = vehicleResults.get(vehicleId);
+
+            // Procesar cada día usando UnifiedFileProcessor
+            for (const [fecha, grupo] of archivosPorFecha.entries()) {
+              logger.info(`📅 Procesando fecha: ${fecha}`);
+
+              // ✅ DEBUG: Ver qué archivos están en el grupo
+              logger.info(`   🔍 DEBUG Grupo: EST=${!!grupo.archivos.estabilidad}, GPS=${!!grupo.archivos.gps}, ROT=${!!grupo.archivos.rotativo}`);
+              if (grupo.archivos.estabilidad) logger.info(`   → ESTABILIDAD: ${grupo.archivos.estabilidad.nombre}`);
+              if (grupo.archivos.gps) logger.info(`   → GPS: ${grupo.archivos.gps.nombre}`);
+              if (grupo.archivos.rotativo) logger.info(`   → ROTATIVO: ${grupo.archivos.rotativo.nombre}`);
+
+              try {
+                // Preparar archivos para UnifiedFileProcessor
+                const archivosArray: Array<{ nombre: string; buffer: Buffer }> = [];
+
+                if (grupo.archivos.estabilidad) {
+                  archivosArray.push({
+                    nombre: grupo.archivos.estabilidad.nombre,
+                    buffer: grupo.archivos.estabilidad.buffer
+                  });
+                }
+
+                if (grupo.archivos.gps) {
+                  archivosArray.push({
+                    nombre: grupo.archivos.gps.nombre,
+                    buffer: grupo.archivos.gps.buffer
+                  });
+                }
+
+                if (grupo.archivos.rotativo) {
+                  archivosArray.push({
+                    nombre: grupo.archivos.rotativo.nombre,
+                    buffer: grupo.archivos.rotativo.buffer
+                  });
+                }
+
+                // ✅ Procesar con UnifiedFileProcessorV2 (correlación correcta con reglas estructuradas)
+                const resultado = await unifiedFileProcessorV2.procesarArchivos(
+                  archivosArray,
+                  organizationId,
+                  userId,
+                  uploadConfig // ✅ NUEVO: Pasar configuración personalizada
+                );
+
+                // Contar sesiones
+                totalSesionesCreadas += resultado.sesionesCreadas;
+                vehicleStats.savedSessions += resultado.sesionesCreadas;
+                vehicleStats.filesProcessed += archivosArray.length;
+                vehicleStats.sessionDetails = vehicleStats.sessionDetails || [];
+
+                // ✅ Agregar detalles de sesiones con nombres de archivos (SIMPLIFICADO)
+                if (resultado.sessionDetails && resultado.sessionDetails.length > 0) {
+                  vehicleStats.sessionDetails.push(...resultado.sessionDetails);
+                }
+
+                // ✅ NO agregamos archivos individuales (demasiado pesado para JSON)
+                // Solo mantenemos sessionDetails que es lo que el frontend necesita
+
+                logger.info(`✅ ${fecha}: ${resultado.sesionesCreadas} sesiones creadas (correlacionadas)`);
+
+              } catch (error: any) {
+                logger.error(`❌ Error procesando fecha ${fecha}:`, error);
+                vehicleStats.errors.push(`Error en fecha ${fecha}: ${error.message}`);
+              }
+            }
+          } catch (vehicleError: any) {
+            logger.error(`❌ Error procesando vehículo ${vehicleDir}:`, vehicleError);
+            if (!vehicleResults.has(vehicleDir)) {
+              vehicleResults.set(vehicleDir, {
+                vehicleId: vehicleDir.toUpperCase(),
+                filesProcessed: 0,
+                sessionsCreated: 0,
+                errors: [`Error general del vehículo: ${vehicleError.message}`],
+                sessionDetails: []
+              });
+            }
+          }
+        }
+
+        const resultsArray = Array.from(vehicleResults.values());
+
+        // ✅ NUEVO: Recopilar todos los sessionIds para post-procesamiento
+        const allSessionIds: string[] = [];
+        for (const vehicleResult of resultsArray) {
+          if (vehicleResult.sessionDetails) {
+            for (const sessionDetail of vehicleResult.sessionDetails) {
+              if (sessionDetail.sessionId) {
+                allSessionIds.push(sessionDetail.sessionId);
+              }
+            }
+          }
+        }
+
+        // ✅ NUEVO: Ejecutar post-procesamiento automático (generar eventos y segmentos)
+        if (allSessionIds.length > 0) {
+          logger.info(`🔄 Iniciando post-procesamiento para ${allSessionIds.length} sesiones...`);
+
+          try {
+            const { UploadPostProcessor } = await import('../services/upload/UploadPostProcessor');
+            const postProcessResult = await UploadPostProcessor.process(allSessionIds);
+
+            logger.info('✅ Post-procesamiento completado', {
+              eventsGenerated: postProcessResult.eventsGenerated,
+              segmentsGenerated: postProcessResult.segmentsGenerated,
+              duration: postProcessResult.duration
+            });
+
+            // ✅ Agregar eventos a sessionDetails de cada vehículo
+            if (postProcessResult.sessionDetails) {
+              const eventsBySession = new Map(
+                postProcessResult.sessionDetails.map(s => [s.sessionId, s])
+              );
+
+              logger.info(`📋 Post-procesamiento completó con detalles de eventos`, {
+                totalSessions: postProcessResult.sessionDetails.length,
+                totalEvents: postProcessResult.eventsGenerated,
+                firstSessionExample: postProcessResult.sessionDetails[0]
+              });
+
+              for (const vehicleResult of resultsArray) {
+                if (vehicleResult.sessionDetails) {
+                  vehicleResult.sessionDetails = vehicleResult.sessionDetails.map((session: any) => {
+                    const eventData = eventsBySession.get(session.sessionId);
+                    return {
+                      ...session,
+                      eventsGenerated: eventData?.eventsGenerated || 0,
+                      segmentsGenerated: eventData?.segmentsGenerated || 0,
+                      events: eventData?.events || []
+                    };
+                  });
+                }
+              }
+
+              logger.info(`📊 Eventos agregados a sessionDetails`, {
+                vehiclesWithData: resultsArray.filter(v => v.sessionDetails?.some((s: any) => s.eventsGenerated > 0)).length
+              });
+            }
+          } catch (error: any) {
+            logger.error('❌ Error en post-procesamiento:', error);
+            // Continuar sin fallar
+          }
+        }
+
+        // Invalidar cache de KPIs
+        if (totalSesionesCreadas > 0) {
+          kpiCacheService.invalidate(organizationId);
+          logger.info('✅ Cache de KPIs invalidado');
+        }
+
+        const duration = Math.floor((Date.now() - startTime) / 1000);
+        logger.info(`✅ Procesamiento completado: ${totalArchivosLeidos} archivos, ${totalSesionesCreadas} sesiones creadas en ${duration}s`);
+
+        // ✅ Preparar datos del reporte final
+        const reportData = {
+          files: resultsArray.map((v: any) => ({
+            fileName: v.vehicle,
+            vehicleName: v.vehicle,
+            vehicleId: v.vehicle,
+            date: new Date().toISOString().split('T')[0],
+            sessionsCreated: v.savedSessions || 0,
+            sessionsOmitted: v.skippedSessions || 0,
+            sessionDetails: (v.sessionDetails || []).map((s: any) => ({
+              sessionNumber: s.sessionNumber || 0,
+              sessionId: s.sessionId,
+              startTime: s.startTime || '',
+              endTime: s.endTime || '',
+              measurements: s.measurements || 0,
+              status: s.status || 'saved',
+              reason: s.reason || '',
+              eventsGenerated: s.eventsGenerated || 0,
+              segmentsGenerated: s.segmentsGenerated || 0,
+              events: s.events || []
+            }))
+          })),
+          summary: {
+            totalFiles: totalArchivosLeidos,
+            totalSessionsCreated: totalSesionesCreadas,
+            totalSessionsOmitted: 0,
+            totalMeasurements: resultsArray.reduce((sum: number, v: any) => sum + (v.sessionDetails?.reduce((s: number, d: any) => s + (d.measurements || 0), 0) || 0), 0),
+            totalEvents: resultsArray.reduce((sum: number, v: any) => sum + (v.sessionDetails?.reduce((s: number, d: any) => s + (d.eventsGenerated || 0), 0) || 0), 0),
+            totalSegments: resultsArray.reduce((sum: number, v: any) => sum + (v.sessionDetails?.reduce((s: number, d: any) => s + (d.segmentsGenerated || 0), 0) || 0), 0),
+            totalGeofenceEvents: 0,
+            totalRouteDistance: 0,
+            totalSpeedViolations: 0,
+            totalGpsPoints: 0,
+            totalStabilityMeasurements: 0
+          }
+        };
+
+        // ✅ Actualizar reporte con datos completos
+        await prisma.processingReport.update({
+          where: { id: reportId },
+          data: {
+            status: 'COMPLETED',
+            totalFiles: totalArchivosLeidos,
+            totalSessions: totalSesionesCreadas,
+            totalOmitted: 0,
+            endTime: new Date(),
+            duration,
+            reportData: reportData as any
+          }
+        });
+
+        logger.info(`✅ Reporte ${reportId} actualizado con estado COMPLETED`);
+
+      } catch (error: any) {
+        logger.error('❌ Error en procesamiento en segundo plano:', error);
+
+        // Actualizar reporte con estado FAILED
+        try {
+          await prisma.processingReport.update({
+            where: { id: reportId },
+            data: {
+              status: 'FAILED',
+              errorMessage: error.message,
+              endTime: new Date(),
+              duration: Math.floor((Date.now() - startTime) / 1000)
+            }
+          });
+        } catch (updateError) {
+          logger.error('❌ Error actualizando reporte con estado FAILED:', updateError);
+        }
+      }
+    })(); // ✅ Ejecutar función async en segundo plano
 
   } catch (error) {
-    logger.error('❌ Error en procesamiento automático:', error);
+    logger.error('❌ Error iniciando procesamiento automático:', error);
     res.status(500).json({
       success: false,
-      error: 'Error en procesamiento automático',
+      error: 'Error iniciando procesamiento automático',
       details: (error as Error).message
     });
   }

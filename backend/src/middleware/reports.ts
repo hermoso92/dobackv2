@@ -1,6 +1,6 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { AppError } from './error';
 
 interface ReportConfig {
@@ -62,15 +62,15 @@ const generateStabilityReport = async (config: ReportConfig) => {
             const matches = event.description.match(/LTR: ([\d.]+), SSF: ([\d.]+), DRS: ([\d.]+)/);
             return matches
                 ? {
-                      timestamp: event.createdAt,
-                      vehicleId: event.vehicleId,
-                      vehicleName: event.vehicle.name,
-                      metrics: {
-                          ltr: parseFloat(matches[1]),
-                          ssf: parseFloat(matches[2]),
-                          drs: parseFloat(matches[3])
-                      }
-                  }
+                    timestamp: event.createdAt,
+                    vehicleId: event.vehicleId,
+                    vehicleName: event.vehicle.name,
+                    metrics: {
+                        ltr: parseFloat(matches[1]),
+                        ssf: parseFloat(matches[2]),
+                        drs: parseFloat(matches[3])
+                    }
+                }
                 : null;
         })
         .filter((data): data is NonNullable<typeof data> => data !== null);

@@ -1,0 +1,193 @@
+{
+  "title": "Doback Soft V2 - Sistema de Monitoreo de Estabilidad",
+  "url": "http://localhost:5174/dashboard",
+  "bodyClasses": "",
+  "mainElements": [
+    {
+      "tag": "DIV",
+      "class": "app-layout",
+      "id": "",
+      "childrenCount": 2
+    }
+  ],
+  "buttons": [
+    {
+      "text": "A",
+      "class": "MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-r59t5-MuiButtonBase-root-MuiIconButton-root",
+      "type": "button"
+    },
+    {
+      "text": "",
+      "class": "MuiButtonBase-root MuiIconButton-root MuiIconButton-edgeEnd MuiIconButton-sizeMedium css-1yq5fb3-MuiButtonBase-root-MuiIconButton-root",
+      "type": "button"
+    },
+    {
+      "text": "",
+      "class": "MuiButtonBase-root MuiIconButton-root MuiIconButton-edgeEnd MuiIconButton-sizeMedium css-1yq5fb3-MuiButtonBase-root-MuiIconButton-root",
+      "type": "button"
+    },
+    {
+      "text": "Estados & Tiempos",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors bg-blue-100 text-blue-700 border border-blue-200",
+      "type": "submit"
+    },
+    {
+      "text": "Puntos Negros",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Velocidad",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Claves Operacionales",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Sesiones & Recorridos",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Sistema de Alertas",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Tracking de Procesamiento",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "Reportes",
+      "class": "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+      "type": "submit"
+    },
+    {
+      "text": "⚙️ Diagnóstico\n▼",
+      "class": "flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors",
+      "type": "submit"
+    },
+    {
+      "text": "HOY",
+      "class": "px-2 py-1 text-xs font-bold rounded border border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors",
+      "type": "submit"
+    },
+    {
+      "text": "ESTA SEMANA",
+      "class": "px-2 py-1 text-xs font-bold rounded border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors",
+      "type": "submit"
+    },
+    {
+      "text": "ESTE MES",
+      "class": "px-2 py-1 text-xs font-bold rounded border border-sky-300 bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors",
+      "type": "submit"
+    },
+    {
+      "text": "TODO",
+      "class": "px-2 py-1 text-xs font-bold rounded border border-green-300 bg-green-100 text-green-700 hover:bg-green-200 transition-colors",
+      "type": "submit"
+    },
+    {
+      "text": "EXPORTAR REPORTE DETALLADO",
+      "class": "justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 flex items-center gap-1 text-xs px-2 py-1 ml-2",
+      "type": "submit"
+    }
+  ],
+  "links": [
+    {
+      "text": "PANEL DE CONTROL",
+      "href": "/dashboard",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary Mui-selected css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "ESTABILIDAD",
+      "href": "/stability",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "TELEMETRÍA",
+      "href": "/telemetry",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "INTELIGENCIA ARTIFICIAL",
+      "href": "/ai",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "GEOFENCES",
+      "href": "/geofences",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "SUBIR ARCHIVOS",
+      "href": "/upload",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "OPERACIONES",
+      "href": "/operations",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "REPORTES",
+      "href": "/reports",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "GESTIÓN",
+      "href": "/administration",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "ADMINISTRACIÓN",
+      "href": "/admin",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "BASE DE CONOCIMIENTO",
+      "href": "/knowledge-base",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    },
+    {
+      "text": "MI CUENTA",
+      "href": "/profile",
+      "class": "MuiButtonBase-root MuiTab-root MuiTab-labelIcon MuiTab-textColorPrimary css-gz3oez-MuiButtonBase-root-MuiTab-root"
+    }
+  ],
+  "inputs": [
+    {
+      "type": "text",
+      "placeholder": "",
+      "name": ""
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "name": ""
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "name": ""
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "name": ""
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "name": ""
+    }
+  ],
+  "h1Elements": [],
+  "h2Elements": [],
+  "navElements": [],
+  "allText": "PANEL DE CONTROL\nESTABILIDAD\nTELEMETRÍA\nINTELIGENCIA ARTIFICIAL\nGEOFENCES\nSUBIR ARCHIVOS\nOPERACIONES\nREPORTES\nGESTIÓN\nADMINISTRACIÓN\nBASE DE CONOCIMIENTO\nMI CUENTA\nA\n\nParque\n\n​\n\nVehículos\n\n​\nInicio\n09/\n29/\n2025\nInicio\nFin\n10/\n08/\n2025\nFin\nG+2\n​\nEstados & Tiempos\nPuntos Negros\nVelocidad\nClaves Operacionales\nSesiones & Recorridos\nSistema de Alertas\nTracking de Procesamiento\nReportes\n⚙️ Diagnóstico\n▼\nHOY\nESTA SEMANA\nESTE MES\nTODO\nEXPORTAR REPORTE DETALLADO\nMÉTRICAS GENERALES\n\n61:09:48\n\nHoras de Conducción\n\nTiempo total de conducción\n\n538.4 km\n\nKilómetros Recorridos\n\nDistancia total recorrida\n\n9 km/h\n\nVelocidad Promedio\n\nVelocidad media de la flota\n\n61.3%\n\n% Rotativo Activo\n\nTiempo con rotativo encendido\n\n0.0%\n\nÍndice de Estabilidad\n\nN/A\n\nCLAVES OPERACIONALES\n\n00:00:00\n\nClave 0 (Taller)\n\nMantenimiento\n\n00:00:00\n\nClave 1 (Parque)\n\nEn base, disponible\n\n37:15:25\n\nClave 2 (Emergencia)\n\nCon rotativo activo\n\n23:54:23\n\nClave 3 (Siniestro)\n\nEn siniestro (parado >1min)\n\n00:00:00\n\nClave 4 (Retirada)"
+}

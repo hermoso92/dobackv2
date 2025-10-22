@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+
 import { createLogger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 import { crearMapaRotativo, encontrarEstadoMasCercano } from './parsers/RobustRotativoParser';
 
 const logger = createLogger('DataCorrelationService');
-const prisma = new PrismaClient();
+
 
 export interface GPSConRotativo {
     id: string;

@@ -1,32 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import { createLogger } from '../utils/logger';
+/**
+ * 🔄 RE-EXPORT DE PRISMA
+ * 
+ * Este archivo re-exporta Prisma desde lib/prisma.ts
+ * para mantener compatibilidad con imports existentes.
+ */
 
-const logger = createLogger('PrismaClient');
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const isNewInstance = !globalForPrisma.prisma;
+// Re-exportar Prisma
+export { disconnectPrisma, prisma } from '../lib/prisma';
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error']
-});
-
-if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = prisma;
-}
-
-if (isNewInstance) {
-    logger.info('Prisma Client singleton inicializado');
-    prisma.$connect().catch((error: any) => {
-        logger.error('Error al conectar Prisma', { error: error.message });
-    });
-}
-
-export async function disconnectPrisma() {
-    try {
-        await prisma.$disconnect();
-        logger.info('Prisma desconectado exitosamente');
-    } catch (error: any) {
-        logger.error('Error al desconectar Prisma', { error: error.message });
-    }
-}
-
-export default prisma;
+// Re-exportar como default para compatibilidad
+export { default } from '../lib/prisma';

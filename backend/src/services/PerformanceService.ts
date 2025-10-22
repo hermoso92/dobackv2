@@ -1,11 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 import { CacheService } from './CacheService';
 
 // Instancia de cache para performance
 const cacheService = new CacheService();
 
-const prisma = new PrismaClient();
+
 
 export class PerformanceService {
     /**

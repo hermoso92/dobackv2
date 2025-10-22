@@ -7,6 +7,7 @@
 
 // import { prisma } from '../config/prisma'; // Comentado para usar importación dinámica
 import { createLogger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 import { calcularTiemposPorClave } from './keyCalculator';
 import { kpiCacheService } from './KPICacheService';
 import { speedAnalyzer } from './speedAnalyzer';
@@ -63,7 +64,7 @@ export async function calcularTiempoRotativo(sessionIds: string[]): Promise<{
     muestras_off: number;
     porcentaje_on: number;
 }> {
-    const { prisma } = await import('../config/prisma');
+
     const rotativoData = await prisma.rotativoMeasurement.findMany({
         where: { sessionId: { in: sessionIds } }
     });
@@ -104,7 +105,7 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
     puntos_gps_invalidos: number;
     porcentaje_cobertura: number;
 }> {
-    const { prisma } = await import('../config/prisma');
+
     const gpsData = await prisma.gpsMeasurement.findMany({
         where: { sessionId: { in: sessionIds } },
         orderBy: { timestamp: 'asc' }
@@ -185,7 +186,7 @@ export async function calcularIndiceEstabilidad(sessionIds: string[]): Promise<{
     estrellas: string;
     total_muestras: number;
 }> {
-    const { prisma } = await import('../config/prisma');
+
     const result = await prisma.stabilityMeasurement.aggregate({
         where: { sessionId: { in: sessionIds } },
         _avg: { si: true },
@@ -234,7 +235,7 @@ export async function calcularVelocidades(sessionIds: string[]): Promise<{
     velocidad_promedio: number;
     total_muestras: number;
 }> {
-    const { prisma } = await import('../config/prisma');
+
     const gpsData = await prisma.gpsMeasurement.findMany({
         where: {
             sessionId: { in: sessionIds },
@@ -272,7 +273,7 @@ export async function calcularHorasConduccion(sessionIds: string[]): Promise<{
     horas_formateado: string;
     sesiones_con_movimiento: number;
 }> {
-    const { prisma } = await import('../config/prisma');
+
     const sessions = await prisma.session.findMany({
         where: { id: { in: sessionIds } },
         include: {
@@ -333,7 +334,7 @@ export async function calcularDisponibilidad(sessionIds: string[]): Promise<{
     }
 
     // Una sesión es válida si tiene datos de los 3 tipos
-    const { prisma } = await import('../config/prisma');
+
     const sesionesValidas = await prisma.session.count({
         where: {
             id: { in: sessionIds },
@@ -371,7 +372,7 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
         }
 
         // Obtener claves operacionales de las sesiones
-        const { prisma } = await import('../config/prisma');
+
         const claves = await prisma.operationalKey.findMany({
             where: {
                 sessionId: { in: sessionIds }
@@ -485,7 +486,7 @@ export async function calcularKPIsCompletos(filters: {
         });
 
         // Importar prisma dinámicamente
-        const { prisma } = await import('../config/prisma');
+
         logger.info('🔍 Prisma importado dinámicamente:', {
             prismaType: typeof prisma,
             prismaExists: !!prisma

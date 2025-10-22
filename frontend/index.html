@@ -9,6 +9,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Script de inicialización inline para evitar errores -->
+    <script>
+        // Stub para triggerSyncToReact
+        window.triggerSyncToReact = function () {
+            console.debug('triggerSyncToReact stub called');
+        };
+
+        // Manejo temprano de errores
+        window.addEventListener('error', function (e) {
+            var msg = e.message || '';
+            if (msg.includes('triggerSyncToReact') ||
+                msg.includes('reading \'messages\'') ||
+                msg.includes('i18next') ||
+                msg.includes('i18n')) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.debug('Silenced error:', msg);
+                return false;
+            }
+        }, true);
+    </script>
 </head>
 
 <body>

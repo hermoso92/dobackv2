@@ -1,310 +1,193 @@
-# Script MEJORADO para iniciar DobackSoft
-# Este script inicia el sistema completo con todas las funcionalidades
-# VERSIÓN MEJORADA - Resuelve problemas de puertos y reinicio
+# ============================================
+# DOBACKSOFT - SCRIPT DE INICIO SIMPLIFICADO
+# ============================================
 
-Write-Host "=========================================" -ForegroundColor Green
-Write-Host "  DOBACK SOFT - SISTEMA COMPLETO V2.0" -ForegroundColor Green
-Write-Host "=========================================" -ForegroundColor Green
+Write-Host "=========================================" -ForegroundColor Cyan
+Write-Host "  INICIANDO DOBACKSOFT" -ForegroundColor Cyan
+Write-Host "=========================================" -ForegroundColor Cyan
 
-# Obtener el directorio del script
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $scriptPath
+# 1. DETENER PROCESOS ANTERIORES
+Write-Host "`n[1/5] Deteniendo procesos anteriores..." -ForegroundColor Yellow
 
-Write-Host "Directorio de trabajo: $scriptPath" -ForegroundColor Yellow
+# Detener todos los procesos node
+Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
 
-# Función para liberar puertos de forma más robusta
-function Stop-PortProcesses {
-    param([int[]]$Ports)
-    
-    foreach ($port in $Ports) {
-        Write-Host "Liberando puerto $port..." -ForegroundColor Yellow
-        
-        # Método 1: Usar netstat + taskkill
-        $connections = netstat -ano | findstr ":$port"
-        if ($connections) {
-            $processIds = $connections | ForEach-Object { 
-                $parts = $_ -split '\s+'
-                if ($parts.Length -gt 4) { $parts[-1] }
-            } | Where-Object { $_ -ne "0" -and $_ -match '^\d+$' } | Select-Object -Unique
-            
-            foreach ($processId in $processIds) {
-                try {
-                    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
-                    if ($process) {
-                        Write-Host "Deteniendo proceso $($process.ProcessName) (PID: $processId) en puerto $port" -ForegroundColor Cyan
-                        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
-                    }
-                }
-                catch {
-                    Write-Host "No se pudo detener proceso $processId" -ForegroundColor Yellow
-                }
-            }
-        }
-        
-        # Método 2: Usar Get-NetTCPConnection (más moderno)
-        try {
-            $tcpConnections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
-            foreach ($conn in $tcpConnections) {
-                if ($conn.OwningProcess -ne 0) {
-                    try {
-                        $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
-                        if ($process) {
-                            Write-Host "Deteniendo proceso $($process.ProcessName) (PID: $($conn.OwningProcess)) en puerto $port" -ForegroundColor Cyan
-                            Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
-                        }
-                    }
-                    catch {
-                        Write-Host "No se pudo detener proceso $($conn.OwningProcess)" -ForegroundColor Yellow
-                    }
-                }
-            }
-        }
-        catch {
-            # Ignorar errores si no hay conexiones
-        }
-        
-        Write-Host "Puerto $port liberado" -ForegroundColor Green
-    }
-}
-
-# Detener procesos existentes de forma más completa
-Write-Host "`nDeteniendo procesos existentes..." -ForegroundColor Yellow
-
-# Detener procesos Node.js específicos
-Get-Process node -ErrorAction SilentlyContinue | Where-Object { 
-    $_.MainWindowTitle -like "*backend*" -or 
-    $_.MainWindowTitle -like "*frontend*" -or 
-    $_.CommandLine -like "*backend-final.js*" -or
-    $_.CommandLine -like "*vite*"
-} | Stop-Process -Force -ErrorAction SilentlyContinue
-
-# Detener procesos Vite
-Get-Process vite -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-
-# Liberar puertos de forma robusta
-Write-Host "Liberando puertos 9998 y 5174..." -ForegroundColor Yellow
-Stop-PortProcesses -Ports @(9998, 5174)
-
-# Esperar un poco más para asegurar liberación completa
-Write-Host "Esperando liberación completa de puertos..." -ForegroundColor Yellow
-Start-Sleep -Seconds 5
-
-# Verificar que los puertos estén realmente libres
+# Liberar puertos específicos
 $ports = @(9998, 5174)
 foreach ($port in $ports) {
-    $stillInUse = $false
-    try {
-        $connections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
-        if ($connections) {
-            $stillInUse = $true
-            Write-Host "⚠️  Puerto $port aún en uso, intentando liberar nuevamente..." -ForegroundColor Yellow
-            Stop-PortProcesses -Ports @($port)
-            Start-Sleep -Seconds 2
-        }
-    }
-    catch {
-        # Puerto libre
-    }
-    
-    if (-not $stillInUse) {
-        Write-Host "✅ Puerto $port liberado correctamente" -ForegroundColor Green
+    $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    if ($conn) {
+        Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
     }
 }
 
-# Verificar archivos necesarios
-Write-Host "`nVerificando archivos necesarios..." -ForegroundColor Yellow
+Write-Host "✅ Procesos detenidos y puertos liberados" -ForegroundColor Green
+Start-Sleep -Seconds 2
+
+# 2. VERIFICAR ARCHIVOS
+Write-Host "`n[2/5] Verificando archivos..." -ForegroundColor Yellow
+
 if (-not (Test-Path "backend\src\index.ts")) {
-    Write-Host "ERROR: No se encontró backend\src\index.ts" -ForegroundColor Red
+    Write-Host "❌ ERROR: No existe backend\src\index.ts" -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path "frontend\package.json")) {
-    Write-Host "ERROR: No se encontró frontend\package.json" -ForegroundColor Red
+    Write-Host "❌ ERROR: No existe frontend\package.json" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ Archivos verificados correctamente" -ForegroundColor Green
+Write-Host "✅ Archivos verificados" -ForegroundColor Green
 
-# Función para verificar si un servicio está funcionando
-function Test-ServiceRunning {
-    param([string]$Url, [int]$TimeoutSeconds = 30)
-    
-    $endTime = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $endTime) {
-        try {
-            $response = Invoke-WebRequest -Uri $Url -Method GET -TimeoutSec 5 -ErrorAction SilentlyContinue
-            if ($response.StatusCode -eq 200) {
-                return $true
-            }
-        }
-        catch {
-            # Continuar intentando
-        }
-        Start-Sleep -Seconds 2
-    }
-    return $false
+# 3. CREAR CARPETA DE LOGS
+Write-Host "`n[3/5] Preparando logs..." -ForegroundColor Yellow
+
+if (-not (Test-Path "logs")) {
+    New-Item -ItemType Directory -Path "logs" | Out-Null
 }
 
-# Iniciar Backend con configuración mejorada
-Write-Host "`nIniciando Backend en puerto 9998..." -ForegroundColor Green
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$backendLog = "logs\backend_$timestamp.log"
+$frontendLog = "logs\frontend_$timestamp.log"
 
-# Configurar variables de entorno para el backend
-$backendCommand = @"
-Set-Location '$scriptPath\backend'
-`$env:NODE_ENV = 'development'
-`$env:PORT = '9998'
-`$env:DATABASE_URL = 'postgresql://postgres:cosigein@localhost:5432/dobacksoft'
-`$env:JWT_SECRET = 'DobackSoft-jwt-secret-key-cosigein'
-`$env:JWT_EXPIRES_IN = '24h'
-`$env:CORS_ORIGIN = 'http://localhost:5174'
-Write-Host 'Backend iniciando en puerto 9998 (TypeScript con ts-node-dev)...' -ForegroundColor Cyan
-npx ts-node-dev --respawn --transpile-only src/index.ts
+Write-Host "✅ Logs preparados" -ForegroundColor Green
+
+# 4. INICIAR BACKEND
+Write-Host "`n[4/5] Iniciando BACKEND en puerto 9998..." -ForegroundColor Yellow
+
+$backendScript = @"
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host "  BACKEND - Puerto 9998" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host ""
+Set-Location "$PWD\backend"
+`$env:NODE_ENV = "development"
+`$env:PORT = "9998"
+`$env:DATABASE_URL = "postgresql://postgres:cosigein@localhost:5432/dobacksoft"
+`$env:JWT_SECRET = "DobackSoft-jwt-secret-key-cosigein"
+`$env:JWT_EXPIRES_IN = "24h"
+`$env:CORS_ORIGIN = "http://localhost:5174"
+Write-Host "Iniciando con ts-node-dev..." -ForegroundColor Yellow
+npx ts-node-dev --respawn --transpile-only src/index.ts 2>&1 | Tee-Object -FilePath "$PWD\$backendLog"
 "@
 
-$backendProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCommand -PassThru
+# Guardar script temporal
+$backendScript | Out-File -FilePath "temp_backend.ps1" -Encoding UTF8
 
-# Esperar a que el backend se inicie con verificación mejorada
-Write-Host "Esperando que el backend se inicie..." -ForegroundColor Yellow
-Start-Sleep -Seconds 5
+# Iniciar en nueva ventana
+Start-Process powershell -ArgumentList @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "$PWD\temp_backend.ps1"
+)
 
-# Verificar que el backend esté funcionando con múltiples métodos
-$backendRunning = $false
-$maxAttempts = 15
+Write-Host "⏳ Esperando 10 segundos para que backend se inicie..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
 
-for ($i = 0; $i -lt $maxAttempts; $i++) {
-    # Método 1: Verificar puerto
-    $portCheck = $false
+# Verificar backend
+$backendOk = $false
+for ($i = 1; $i -le 10; $i++) {
     try {
-        $connections = Get-NetTCPConnection -LocalPort 9998 -ErrorAction SilentlyContinue
-        if ($connections) {
-            $portCheck = $true
+        $response = Invoke-WebRequest -Uri "http://localhost:9998/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+        if ($response.StatusCode -eq 200) {
+            Write-Host "✅ Backend funcionando correctamente" -ForegroundColor Green
+            $backendOk = $true
+            break
         }
     }
     catch {
-        # Puerto no disponible
+        Write-Host "⏳ Intento $i/10 - Backend aún iniciando..." -ForegroundColor Gray
+        Start-Sleep -Seconds 3
     }
-    
-    # Método 2: Verificar HTTP response
-    $httpCheck = Test-ServiceRunning -Url "http://localhost:9998/health" -TimeoutSeconds 3
-    
-    if ($portCheck -and $httpCheck) {
-        $backendRunning = $true
-        Write-Host "✅ Backend funcionando correctamente en puerto 9998" -ForegroundColor Green
-        break
-    }
-    elseif ($portCheck) {
-        Write-Host "⚠️  Backend en puerto 9998 pero sin respuesta HTTP (intento $($i+1)/$maxAttempts)" -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "⏳ Esperando backend... (intento $($i+1)/$maxAttempts)" -ForegroundColor Yellow
-    }
-    
-    Start-Sleep -Seconds 2
 }
 
-if (-not $backendRunning) {
-    Write-Host "❌ ERROR: Backend no se inició correctamente después de $maxAttempts intentos" -ForegroundColor Red
-    Write-Host "Verifica la consola del backend para errores" -ForegroundColor Yellow
+if (-not $backendOk) {
+    Write-Host "❌ ERROR: Backend no responde" -ForegroundColor Red
+    Write-Host "Revisa el log: $backendLog" -ForegroundColor Yellow
+    Write-Host "O revisa la ventana de PowerShell del backend" -ForegroundColor Yellow
     exit 1
 }
 
-# Iniciar Frontend con configuración mejorada
-Write-Host "`nIniciando Frontend en puerto 5174..." -ForegroundColor Green
+# 5. INICIAR FRONTEND
+Write-Host "`n[5/5] Iniciando FRONTEND en puerto 5174..." -ForegroundColor Yellow
 
-# Configurar variables de entorno para el frontend
-$frontendCommand = @"
-Set-Location '$scriptPath\frontend'
-`$env:NODE_ENV = 'development'
-`$env:VITE_API_URL = 'http://localhost:9998'
-`$env:VITE_WS_URL = 'ws://localhost:9998/ws'
-`$env:VITE_PORT = '5174'
-Write-Host 'Frontend iniciando en puerto 5174...' -ForegroundColor Cyan
-npm run dev -- --port 5174 --host 0.0.0.0
+$frontendScript = @"
+Write-Host "================================================" -ForegroundColor Magenta
+Write-Host "  FRONTEND - Puerto 5174" -ForegroundColor Magenta
+Write-Host "================================================" -ForegroundColor Magenta
+Write-Host ""
+Set-Location "$PWD\frontend"
+`$env:NODE_ENV = "development"
+`$env:VITE_API_URL = "http://localhost:9998"
+`$env:VITE_PORT = "5174"
+Write-Host "Iniciando Vite..." -ForegroundColor Yellow
+npm run dev -- --port 5174 --host 2>&1 | Tee-Object -FilePath "$PWD\$frontendLog"
 "@
 
-$frontendProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCommand -PassThru
+# Guardar script temporal
+$frontendScript | Out-File -FilePath "temp_frontend.ps1" -Encoding UTF8
 
-# Esperar a que el frontend se inicie con verificación mejorada
-Write-Host "Esperando que el frontend se inicie..." -ForegroundColor Yellow
-Start-Sleep -Seconds 8
+# Iniciar en nueva ventana
+Start-Process powershell -ArgumentList @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "$PWD\temp_frontend.ps1"
+)
 
-# Verificar que el frontend esté funcionando con múltiples métodos
-$frontendRunning = $false
-$maxAttempts = 15
+Write-Host "⏳ Esperando 10 segundos para que frontend se inicie..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
 
-for ($i = 0; $i -lt $maxAttempts; $i++) {
-    # Método 1: Verificar puerto
-    $portCheck = $false
+# Verificar frontend
+$frontendOk = $false
+for ($i = 1; $i -le 10; $i++) {
     try {
-        $connections = Get-NetTCPConnection -LocalPort 5174 -ErrorAction SilentlyContinue
-        if ($connections) {
-            $portCheck = $true
-        }
-    }
-    catch {
-        # Puerto no disponible
-    }
-    
-    # Método 2: Verificar HTTP response
-    $httpCheck = Test-ServiceRunning -Url "http://localhost:5174" -TimeoutSeconds 3
-    
-    if ($portCheck -and $httpCheck) {
-        $frontendRunning = $true
-        Write-Host "✅ Frontend funcionando correctamente en puerto 5174" -ForegroundColor Green
+        $response = Invoke-WebRequest -Uri "http://localhost:5174" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+        Write-Host "✅ Frontend funcionando correctamente" -ForegroundColor Green
+        $frontendOk = $true
         break
     }
-    elseif ($portCheck) {
-        Write-Host "⚠️  Frontend en puerto 5174 pero sin respuesta HTTP (intento $($i+1)/$maxAttempts)" -ForegroundColor Yellow
+    catch {
+        Write-Host "⏳ Intento $i/10 - Frontend aún iniciando..." -ForegroundColor Gray
+        Start-Sleep -Seconds 3
     }
-    else {
-        Write-Host "⏳ Esperando frontend... (intento $($i+1)/$maxAttempts)" -ForegroundColor Yellow
-    }
-    
-    Start-Sleep -Seconds 2
 }
 
-if (-not $frontendRunning) {
-    Write-Host "❌ ERROR: Frontend no se inició correctamente después de $maxAttempts intentos" -ForegroundColor Red
-    Write-Host "Verifica la consola del frontend para errores" -ForegroundColor Yellow
-    Write-Host "El backend sigue funcionando en http://localhost:9998" -ForegroundColor Cyan
-    exit 1
+if (-not $frontendOk) {
+    Write-Host "⚠️  ADVERTENCIA: Frontend no responde aún" -ForegroundColor Yellow
+    Write-Host "Revisa el log: $frontendLog" -ForegroundColor Yellow
+    Write-Host "O revisa la ventana de PowerShell del frontend" -ForegroundColor Yellow
+    Write-Host "El sistema puede tardar un poco más en estar listo" -ForegroundColor Yellow
 }
 
-# Abrir navegador automáticamente
-Write-Host "`n🌐 Abriendo navegador..." -ForegroundColor Green
-Start-Process "http://localhost:5174"
-
-# Mostrar información final mejorada
+# 6. ABRIR NAVEGADOR
 Write-Host "`n=========================================" -ForegroundColor Green
-Write-Host "  🎉 DOBACK SOFT - SISTEMA LISTO" -ForegroundColor Green
+Write-Host "  ✅ SISTEMA INICIADO" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
 
-Write-Host "`n📊 SERVICIOS ACTIVOS:" -ForegroundColor Cyan
-Write-Host "Backend:  http://localhost:9998" -ForegroundColor Green
-Write-Host "Frontend: http://localhost:5174" -ForegroundColor Green
-Write-Host "API Docs: http://localhost:9998/api-docs" -ForegroundColor Blue
+Write-Host "`n📊 SERVICIOS:" -ForegroundColor Cyan
+Write-Host "Backend:  http://localhost:9998 ✅" -ForegroundColor Green
+if ($frontendOk) {
+    Write-Host "Frontend: http://localhost:5174 ✅" -ForegroundColor Green
+}
+else {
+    Write-Host "Frontend: http://localhost:5174 ⏳ (aún iniciando)" -ForegroundColor Yellow
+}
 
-Write-Host "`n🔐 CREDENCIALES DE ACCESO:" -ForegroundColor Yellow
-Write-Host "TEST:     test@bomberosmadrid.es / admin123" -ForegroundColor White
-Write-Host "ANTONIO:  antoniohermoso92@gmail.com / admin123" -ForegroundColor White
+Write-Host "`n🔐 CREDENCIALES:" -ForegroundColor Yellow
+Write-Host "MANAGER: test@bomberosmadrid.es / admin123" -ForegroundColor White
+Write-Host "ADMIN:   antoniohermoso92@gmail.com / admin123" -ForegroundColor White
 
-Write-Host "`n✨ FUNCIONALIDADES INCLUIDAS:" -ForegroundColor Green
-Write-Host "• Dashboard KPI Ejecutivo (objetivo principal)" -ForegroundColor White
-Write-Host "• Sesiones completas (ESTABILIDAD + GPS + CAN + ROTATIVO)" -ForegroundColor White
-Write-Host "• Subida múltiple de archivos (Estabilidad, GPS, Rotativo, CAN)" -ForegroundColor White
-Write-Host "• Análisis automático de archivos CMadrid" -ForegroundColor White
-Write-Host "• Comparador de sesiones avanzado" -ForegroundColor White
-Write-Host "• Reportes PDF profesionales" -ForegroundColor White
-Write-Host "• Inteligencia Artificial explicable" -ForegroundColor White
-Write-Host "• Sistema de roles ADMIN/MANAGER" -ForegroundColor White
-Write-Host "• Scroll habilitado en todas las páginas" -ForegroundColor White
-Write-Host "• Modo TV Wall automático" -ForegroundColor White
+Write-Host "`n📝 LOGS:" -ForegroundColor Cyan
+Write-Host "Backend:  $backendLog" -ForegroundColor Gray
+Write-Host "Frontend: $frontendLog" -ForegroundColor Gray
 
-Write-Host "`n🛠️ COMANDOS ÚTILES:" -ForegroundColor Cyan
-Write-Host "• Para reiniciar: Ejecuta este script nuevamente" -ForegroundColor White
-Write-Host "• Para detener: Cierra las ventanas de PowerShell" -ForegroundColor White
-Write-Host "• Para logs: Revisa las consolas de backend/frontend" -ForegroundColor White
+Write-Host "`n🌐 Abriendo navegador..." -ForegroundColor Green
+Start-Sleep -Seconds 2
+Start-Process "http://localhost:5174"
 
-Write-Host "`n🎯 ¡Sistema iniciado correctamente! Todo listo para usar." -ForegroundColor Green
-Write-Host "`nPresiona cualquier tecla para salir..." -ForegroundColor Gray
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "`n✨ Sistema iniciado correctamente" -ForegroundColor Green
+Write-Host "Las ventanas de backend y frontend están abiertas." -ForegroundColor White
+Write-Host "NO las cierres o los servicios se detendrán." -ForegroundColor Yellow
+Write-Host "`nPresiona ENTER para salir de este script..." -ForegroundColor Gray
+Read-Host

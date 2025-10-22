@@ -12,8 +12,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
 import { getOrganizationId } from '../../config/organization';
 import { useAuth } from '../../hooks/useAuth';
+import { usePDFExport } from '../../hooks/usePDFExport';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
 import { apiService } from '../../services/api';
+import { geocodingService } from '../../services/geocodingService';
 import { logger } from '../../utils/logger';
 import RouteMapComponent from '../maps/RouteMapComponent';
 import { VehicleSessionSelector } from '../selectors/VehicleSessionSelector';
@@ -33,9 +35,202 @@ interface Session {
     maxSpeed: number;
 }
 
-export const SessionsAndRoutesView: React.FC = () => {
+// Exportar función de exportación para uso desde el dashboard
+export const useRouteExportFunction = () => {
+    const { exportRouteReport, captureElementEnhanced } = usePDFExport();
+
+    return useCallback(async (selectedSession: any, routeData: any) => {
+        if (!selectedSession || !routeData) {
+            logger.warn('No hay sesión o ruta seleccionada para exportar');
+            return;
+        }
+
+        try {
+            logger.info('Iniciando exportación de recorrido', { sessionId: selectedSession.id });
+
+            // Capturar mapa usando html2canvas directamente sin modificar el DOM
+            const mapElement = document.querySelector('.leaflet-container');
+            let mapImage: string | null = null;
+
+            if (mapElement) {
+                try {
+                    // Importar html2canvas dinámicamente
+                    const html2canvas = (await import('html2canvas')).default;
+
+                    // Esperar a que el mapa esté completamente renderizado
+                    // Verificar que el mapa tenga contenido antes de capturar
+                    let attempts = 0;
+                    const maxAttempts = 10;
+
+                    while (attempts < maxAttempts) {
+                        // Verificar que el mapa tenga tiles cargados
+                        const mapTiles = mapElement.querySelectorAll('.leaflet-tile');
+                        const routeLine = mapElement.querySelector('.leaflet-interactive');
+
+                        if (mapTiles.length > 0 && routeLine) {
+                            logger.info('Mapa completamente renderizado', {
+                                tiles: mapTiles.length,
+                                hasRoute: !!routeLine,
+                                attempt: attempts + 1
+                            });
+                            break;
+                        }
+
+                        logger.info(`Esperando renderizado del mapa... intento ${attempts + 1}/${maxAttempts}`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        attempts++;
+                    }
+
+                    // Esperar un poco más para asegurar que todo esté estable
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Capturar el mapa directamente con html2canvas con configuración optimizada
+                    const canvas = await html2canvas(mapElement as HTMLElement, {
+                        scale: 2, // Reducir escala para mejor rendimiento
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        width: mapElement.clientWidth,
+                        height: mapElement.clientHeight,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: mapElement.clientWidth,
+                        windowHeight: mapElement.clientHeight,
+                        ignoreElements: (element) => {
+                            // Ignorar elementos que pueden causar problemas
+                            return element.classList.contains('leaflet-control') ||
+                                element.classList.contains('leaflet-popup');
+                        }
+                    });
+
+                    mapImage = canvas.toDataURL('image/png');
+                    logger.info('Mapa capturado exitosamente');
+                } catch (error) {
+                    logger.warn('Error capturando mapa', { error });
+                }
+            }
+
+            // Preparar eventos con geocodificación usando el servicio backend (TODOS los eventos)
+            logger.info('Preparando eventos para exportación con geocodificación...', { totalEvents: routeData.events.length });
+
+            // Procesar eventos en lotes para evitar sobrecarga
+            const batchSize = 10;
+            const eventsWithLocations = [];
+
+            for (let i = 0; i < routeData.events.length; i += batchSize) {
+                const batch = routeData.events.slice(i, i + batchSize);
+                logger.info(`Procesando lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(routeData.events.length / batchSize)}`, {
+                    batchStart: i,
+                    batchEnd: i + batch.length
+                });
+
+                const batchResults = await Promise.all(
+                    batch.map(async (event: any) => {
+                        try {
+                            // Usar el servicio de geocodificación que funciona a través del backend
+                            const location = await geocodingService.reverseGeocode(event.lat, event.lng);
+
+                            // Mapear severidad (soporta múltiples formatos del backend)
+                            const severityLower = (event.severity || '').toLowerCase();
+                            let mappedSeverity = 'leve';
+                            if (severityLower === 'grave' || severityLower === 'high' || severityLower === 'critical') {
+                                mappedSeverity = 'grave';
+                            } else if (severityLower === 'moderada' || severityLower === 'medium') {
+                                mappedSeverity = 'moderada';
+                            } else if (severityLower === 'leve' || severityLower === 'low') {
+                                mappedSeverity = 'leve';
+                            }
+
+                            return {
+                                id: event.id,
+                                lat: event.lat,
+                                lng: event.lng,
+                                location: location,
+                                type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                                severity: mappedSeverity,
+                                timestamp: new Date(event.timestamp)
+                            };
+                        } catch (error) {
+                            logger.warn('Error geocodificando evento', { error, event });
+
+                            // Mapear severidad (soporta múltiples formatos del backend)
+                            const severityLower = (event.severity || '').toLowerCase();
+                            let mappedSeverity = 'leve';
+                            if (severityLower === 'grave' || severityLower === 'high' || severityLower === 'critical') {
+                                mappedSeverity = 'grave';
+                            } else if (severityLower === 'moderada' || severityLower === 'medium') {
+                                mappedSeverity = 'moderada';
+                            } else if (severityLower === 'leve' || severityLower === 'low') {
+                                mappedSeverity = 'leve';
+                            }
+
+                            return {
+                                id: event.id,
+                                lat: event.lat,
+                                lng: event.lng,
+                                location: `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`,
+                                type: event.type?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Evento',
+                                severity: mappedSeverity,
+                                timestamp: new Date(event.timestamp)
+                            };
+                        }
+                    })
+                );
+
+                eventsWithLocations.push(...batchResults);
+
+                // Pequeña pausa entre lotes para no sobrecargar el servicio
+                if (i + batchSize < routeData.events.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            logger.info('Geocodificación completada', { processedEvents: eventsWithLocations.length });
+
+            // Preparar datos para el PDF con nombres reales y formato correcto
+            const exportData = {
+                sessionId: selectedSession.id,
+                vehicleName: selectedSession.vehicleName || `Vehículo ${selectedSession.vehicleId}`,
+                startTime: selectedSession.startTime,
+                endTime: selectedSession.endTime,
+                duration: selectedSession.duration,
+                distance: selectedSession.distance,
+                avgSpeed: selectedSession.avgSpeed,
+                maxSpeed: selectedSession.maxSpeed,
+                route: routeData.route.map((point: any) => ({
+                    lat: point.lat,
+                    lng: point.lng,
+                    speed: point.speed,
+                    timestamp: new Date(point.timestamp)
+                })),
+                events: eventsWithLocations,
+                stats: {
+                    validRoutePoints: routeData.stats.validRoutePoints,
+                    validEvents: routeData.stats.validEvents,
+                    totalGpsPoints: routeData.stats.totalGpsPoints,
+                    totalEvents: routeData.stats.totalEvents
+                },
+                mapImage: mapImage || undefined
+            };
+
+            await exportRouteReport(exportData);
+
+            logger.info('Recorrido exportado exitosamente');
+        } catch (error) {
+            logger.error('Error exportando recorrido', { error });
+        }
+    }, [captureElementEnhanced, exportRouteReport]);
+};
+
+interface SessionsAndRoutesViewProps {
+    onSessionDataChange?: (session: any, routeData: any) => void;
+}
+
+export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ onSessionDataChange }) => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
+
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
     const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
@@ -162,8 +357,10 @@ export const SessionsAndRoutesView: React.FC = () => {
             }
 
             setLoadingRoute(true);
+            logger.info('Cargando datos de ruta', { selectedSessionId });
             try {
                 const data = await apiService.get<any>(`/api/session-route/${selectedSessionId}`);
+                logger.info('Respuesta del endpoint session-route', { data });
                 if (data.success && data.data) {
                     const routeDataResponse = data.data as {
                         route?: any[];
@@ -188,7 +385,13 @@ export const SessionsAndRoutesView: React.FC = () => {
                     };
 
                     setRouteData(formattedData);
+                    logger.info('Datos de ruta cargados exitosamente', {
+                        routePoints: formattedData.route.length,
+                        events: formattedData.events.length,
+                        stats: formattedData.stats
+                    });
                 } else {
+                    logger.warn('Respuesta del endpoint sin datos válidos', { data });
                     setRouteData(null);
                 }
             } catch (error) {
@@ -201,6 +404,14 @@ export const SessionsAndRoutesView: React.FC = () => {
 
         loadRouteData();
     }, [selectedSessionId]);
+
+    // Notificar cambios en los datos de la sesión al componente padre
+    useEffect(() => {
+        if (selectedSession && routeData && onSessionDataChange) {
+            onSessionDataChange(selectedSession, routeData);
+        }
+    }, [selectedSession, routeData, onSessionDataChange]);
+
 
     if (sessionsLoading) {
         return (
@@ -234,9 +445,12 @@ export const SessionsAndRoutesView: React.FC = () => {
                         <CardContent sx={{ height: '100%', p: 0 }}>
                             {(selectedSession || (selectedSessionId && sessions.length > 0)) ? (
                                 <Box sx={{ height: '100%', position: 'relative' }}>
-                                    <Typography variant="h6" sx={{ p: 1, pb: 0.5, fontSize: '1rem' }}>
-                                        Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
-                                    </Typography>
+                                    {/* Header con título */}
+                                    <Box sx={{ p: 1, pb: 0.5 }}>
+                                        <Typography variant="h6" sx={{ fontSize: '1rem' }}>
+                                            Ruta de {selectedSession?.vehicleName || 'Sesión seleccionada'}
+                                        </Typography>
+                                    </Box>
 
                                     {/* Mapa real con datos GPS */}
                                     <Box sx={{ height: 'calc(100vh - 150px)', position: 'relative' }}>
@@ -249,12 +463,13 @@ export const SessionsAndRoutesView: React.FC = () => {
                                             }}>
                                                 <LinearProgress sx={{ width: '50%' }} />
                                                 <Typography variant="body2" sx={{ ml: 2 }}>
-                                                    Cargando ruta...
+                                                    Cargando ruta... Session: {selectedSessionId}
                                                 </Typography>
                                             </Box>
                                         ) : routeData ? (
                                             <>
                                                 <RouteMapComponent
+                                                    key={`route-map-${selectedSessionId}`}
                                                     center={routeData.route.length > 0 && routeData.route[0] ?
                                                         [routeData.route[0].lat, routeData.route[0].lng] :
                                                         [40.4168, -3.7038]

@@ -1,0 +1,14 @@
+MICRO: Verificar generación de reportes (individual, sin datos)
+MICRO: Verificar geocercas (crear, editar, eliminar)
+MICRO: Verificar mapas OSM cargan correctamente
+MICRO: Verificar TomTom API responde (geocoding)
+MICRO: Verificar cada KPI individual (cálculo correcto)
+MEDIO: Subir archivos vía Upload → verificar procesamiento
+MEDIO: Validar que sesiones generan eventos correctamente
+MEDIO: Verificar KPIs actualizan con datos reales
+MEDIO: Validar puntos GPS en mapa con eventos
+MEDIO: Verificar filtros afectan datos mostrados
+MACRO: Flujo completo Upload → Dashboard → Comparador → PDF
+MACRO: Validar todas las pestañas con datos reales
+MACRO: Verificar exportación PDF contiene datos reales
+MACRO: Validar regla No-Scroll con scroll real en listas

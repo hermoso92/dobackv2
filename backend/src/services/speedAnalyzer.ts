@@ -5,6 +5,7 @@
 
 import { createLogger } from '../utils/logger';
 import { tomtomSpeedLimitsService } from './TomTomSpeedLimitsService';
+import { prisma } from '../lib/prisma';
 
 const logger = createLogger('SpeedAnalyzer');
 
@@ -102,7 +103,7 @@ export async function detectarExcesosSesion(
     from?: Date | string,
     to?: Date | string
 ): Promise<ExcesoVelocidad[]> {
-    const { prisma } = await import('../config/prisma');
+
     const dateFrom = from ? new Date(from) : undefined;
     const dateTo = to ? new Date(to) : undefined;
     const session = await prisma.session.findUnique({
@@ -194,11 +195,11 @@ export async function detectarExcesosSesion(
             const exceso = speed - limiteReal;
             const porcentajeExceso = (exceso / limiteReal) * 100;
 
-            // Determinar severidad
+            // Determinar severidad según normativa DGT
             let severidad: 'GRAVE' | 'MODERADA' | 'LEVE';
-            if (exceso > 30) severidad = 'GRAVE';
-            else if (exceso > 15) severidad = 'MODERADA';
-            else severidad = 'LEVE';
+            if (exceso > 20) severidad = 'GRAVE';        // >20 km/h
+            else if (exceso > 10) severidad = 'MODERADA'; // 10-20 km/h
+            else severidad = 'LEVE';                      // 1-10 km/h
 
             // Justificado si es emergencia y exceso ≤20 km/h
             const justificado = rotativoOn && exceso <= TOLERANCIA_EMERGENCIA;
@@ -261,7 +262,7 @@ export async function analizarVelocidades(sessionIds: string[], from?: Date | st
     const excesosJustificados = todosExcesos.filter(e => e.justificado).length;
 
     // Calcular velocidades de todas las sesiones
-    const { prisma } = await import('../config/prisma');
+
     const gpsWhere: any = {
         sessionId: { in: sessionIds },
         speed: { gt: 0 }

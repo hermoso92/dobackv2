@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { geofenceAlertService } from './GeofenceAlertService';
 
-const prisma = new PrismaClient();
+
 
 export interface GeofenceData {
     id?: string;

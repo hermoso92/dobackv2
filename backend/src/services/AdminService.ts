@@ -1,7 +1,8 @@
-import { Organization, PrismaClient, User, UserRole } from '@prisma/client';
+import { Organization, User, UserRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export class AdminService {
     async createUser(data: {

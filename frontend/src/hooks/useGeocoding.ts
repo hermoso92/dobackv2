@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 const addressCache = new Map<string, string>();
 const pendingRequests = new Set<string>();
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 segundo entre peticiones
+const MIN_REQUEST_INTERVAL = 800; // 800ms entre peticiones (balance entre velocidad y límites)
 
 interface UseGeocodingOptions {
     enabled?: boolean;

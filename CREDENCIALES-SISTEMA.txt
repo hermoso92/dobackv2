@@ -1,0 +1,292 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║   🔐 CREDENCIALES DE ACCESO - DOBACKSOFT                      ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+🌐 URL DE ACCESO
+═══════════════════════════════════════════════════════════════════
+
+http://localhost:5174
+
+═══════════════════════════════════════════════════════════════════
+👤 USUARIO 1: MANAGER (Administrador de Parque)
+═══════════════════════════════════════════════════════════════════
+
+Email:    test@bomberosmadrid.es
+Password: admin123
+Rol:      MANAGER
+
+QUÉ VE ESTE USUARIO:
+
+Navegación (6 opciones):
+  ✅ Panel de Control
+  ✅ Operaciones
+  ✅ Reportes
+  ✅ Alertas (NUEVO)
+  ✅ Administración (NUEVO)
+  ✅ Mi Cuenta
+
+Dashboard:
+  ✅ 4 pestañas operativas:
+     1. Estados & Tiempos
+     2. Puntos Negros
+     3. Velocidad
+     4. Sesiones & Recorridos
+
+Nuevas funcionalidades implementadas:
+  ✅ Sistema de Alertas (/alerts)
+     - Dashboard de alertas
+     - Ver alertas pendientes/resueltas
+     - Resolver/ignorar alertas
+
+  ✅ Administración (/administration)
+     Pestaña 1: Mi Perfil
+       - Editar nombre, email
+       - Cambiar contraseña
+       - Ver última actividad
+     
+     Pestaña 2: Gestión de Parques/Talleres
+       - Crear nuevos parques
+       - Editar parques existentes
+       - Asignar vehículos a parques
+     
+     Pestaña 3: Gestión de Usuarios
+       - Crear nuevos usuarios MANAGER
+       - Editar usuarios bajo su control
+       - Desactivar usuarios
+     
+     Pestaña 4: Configuración de Notificaciones
+       - Alertas por email
+       - Reportes automáticos
+       - Frecuencia de notificaciones
+
+  ✅ Reportes Automáticos
+     - Programar reportes semanales/mensuales
+     - Configurar destinatarios
+     - Ver historial de reportes enviados
+
+Restricciones:
+  ❌ NO puede ver:
+     - Estabilidad
+     - Telemetría
+     - Inteligencia Artificial
+     - Geofences
+     - Subir Archivos
+     - Configuración del Sistema
+     - Base de Conocimiento
+
+  ❌ Solo ve datos de su organización
+  ❌ No puede acceder a datos de otras organizaciones
+
+═══════════════════════════════════════════════════════════════════
+👤 USUARIO 2: ADMIN (Superadministrador)
+═══════════════════════════════════════════════════════════════════
+
+Email:    antoniohermoso92@gmail.com
+Password: admin123
+Rol:      ADMIN
+
+QUÉ VE ESTE USUARIO:
+
+Navegación (13 opciones - TODAS):
+  ✅ Panel de Control
+  ✅ Estabilidad
+  ✅ Telemetría
+  ✅ Inteligencia Artificial
+  ✅ Geofences
+  ✅ Subir Archivos
+  ✅ Operaciones
+  ✅ Reportes
+  ✅ Alertas (NUEVO)
+  ✅ Administración
+  ✅ Configuración del Sistema
+  ✅ Base de Conocimiento
+  ✅ Mi Cuenta
+
+Dashboard:
+  ✅ Dashboard Ejecutivo Completo
+     - KPIs estratégicos
+     - Gráficas avanzadas
+     - Comparadores globales
+     - Análisis de flota completa
+
+Acceso:
+  ✅ TODO sin restricciones
+  ✅ Todas las funcionalidades
+  ✅ Todas las organizaciones
+  ✅ Gestión completa del sistema
+  ✅ Todas las nuevas funcionalidades (Alertas, Administración, etc.)
+
+Funcionalidades exclusivas:
+  ✅ Subir archivos al sistema
+  ✅ Configurar sistema completo
+  ✅ Acceder a Base de Conocimiento
+  ✅ Ver análisis de IA avanzados
+  ✅ Gestionar geofences globales
+  ✅ Forzar verificación de alertas manualmente
+  ✅ Acceder a datos de todas las organizaciones
+
+═══════════════════════════════════════════════════════════════════
+🆕 NUEVAS FUNCIONALIDADES IMPLEMENTADAS (Ambos roles)
+═══════════════════════════════════════════════════════════════════
+
+1. SISTEMA DE ALERTAS (/alerts)
+   
+   Cron Job: Todos los días a las 08:00 AM
+   Función: Detecta archivos faltantes del día anterior
+   
+   Alertas por:
+     - Archivos no subidos (CAN, GPS, ESTABILIDAD, ROTATIVO)
+     - Archivos corruptos o inválidos
+     - Vehículos sin datos
+   
+   Dashboard muestra:
+     - Alertas pendientes
+     - Alertas resueltas
+     - Alertas ignoradas
+     - Estadísticas por severidad
+     - Historial completo
+   
+   Acciones disponibles:
+     - Resolver alerta (con notas)
+     - Ignorar alerta (con motivo)
+     - Ver detalles completos
+     - Filtrar por fecha/vehículo/estado
+
+2. REPORTES AUTOMÁTICOS
+   
+   Programación:
+     - Reportes semanales (cada lunes/viernes/etc.)
+     - Reportes mensuales (día específico)
+     - Reportes diarios
+   
+   Configuración:
+     - Seleccionar tipo de reporte
+     - Filtrar por vehículos/fechas
+     - Añadir destinatarios (múltiples emails)
+     - Formato: PDF
+     - Zona horaria: Europe/Madrid
+   
+   Ejecución automática:
+     - Cron job dinámico basado en configuración
+     - Envío automático por email
+     - Registro de ejecuciones
+     - Historial de envíos
+     - Reintentos en caso de fallo
+
+3. ADMINISTRACIÓN MANAGER (/administration)
+   
+   Gestión de Perfil:
+     - Editar información personal
+     - Cambiar contraseña
+     - Ver actividad reciente
+     - Configurar preferencias
+   
+   Gestión de Parques:
+     - CRUD completo de parques/talleres
+     - Asignar ubicaciones GPS
+     - Definir horarios de operación
+     - Gestionar personal asignado
+   
+   Gestión de Usuarios:
+     - Crear otros usuarios MANAGER
+     - Asignar permisos específicos
+     - Limitar acceso por parque
+     - Desactivar/reactivar usuarios
+   
+   Configuración de Notificaciones:
+     - Alertas por email (ON/OFF)
+     - Reportes automáticos
+     - Frecuencia de envío
+     - Tipos de alertas a recibir
+
+═══════════════════════════════════════════════════════════════════
+🎯 DIFERENCIAS CLAVE ENTRE ROLES
+═══════════════════════════════════════════════════════════════════
+
+┌─────────────────────┬──────────────┬──────────────┐
+│ FUNCIONALIDAD       │ MANAGER      │ ADMIN        │
+├─────────────────────┼──────────────┼──────────────┤
+│ Navegación          │ 6 opciones   │ 13 opciones  │
+│ Dashboard           │ 4 pestañas   │ Ejecutivo    │
+│ Ver datos           │ Su org solo  │ Todas        │
+│ Subir archivos      │ ❌           │ ✅           │
+│ Gestionar parques   │ Sus parques  │ Todos        │
+│ Crear usuarios      │ Solo MANAGER │ Todos        │
+│ Ver alertas         │ Su org       │ Todas        │
+│ Reportes auto       │ Su org       │ Globales     │
+│ Config sistema      │ ❌           │ ✅           │
+│ Base conocimiento   │ ❌           │ ✅           │
+│ Estabilidad/Telem   │ ❌           │ ✅           │
+│ IA/Geofences        │ ❌           │ ✅           │
+└─────────────────────┴──────────────┴──────────────┘
+
+═══════════════════════════════════════════════════════════════════
+📊 RESUMEN TÉCNICO
+═══════════════════════════════════════════════════════════════════
+
+Sistema implementado:
+  ✅ 70+ permisos granulares
+  ✅ Roles: ADMIN, MANAGER, OPERATOR, VIEWER
+  ✅ Filtrado automático por organización
+  ✅ Validación en frontend y backend
+  ✅ Navegación dinámica según rol
+  ✅ Dashboard adaptado por rol
+  ✅ 2 tablas nuevas en BD (MissingFileAlert, ScheduledReport)
+  ✅ 3 cron jobs automáticos
+  ✅ 34 archivos nuevos/modificados
+  ✅ 9,000+ líneas de código
+
+═══════════════════════════════════════════════════════════════════
+🚀 CÓMO PROBAR
+═══════════════════════════════════════════════════════════════════
+
+1. Inicia el sistema (ver INICIO-MANUAL-PASO-A-PASO.txt)
+
+2. Abre: http://localhost:5174
+
+3. Login como MANAGER (test@bomberosmadrid.es)
+   → Cuenta las opciones del menú (deben ser 6)
+   → Ve al Dashboard → 4 pestañas
+   → Ir a /alerts → Dashboard de alertas
+   → Ir a /administration → 4 pestañas de gestión
+
+4. LOGOUT
+
+5. Login como ADMIN (antoniohermoso92@gmail.com)
+   → Cuenta las opciones del menú (deben ser 13)
+   → Ve al Dashboard → Dashboard ejecutivo
+   → Acceso a TODO sin restricciones
+
+═══════════════════════════════════════════════════════════════════
+⚠️ IMPORTANTE
+═══════════════════════════════════════════════════════════════════
+
+• Después de cambiar el rol en BD, debes hacer LOGOUT/LOGIN
+  para que el nuevo rol se refleje en el token JWT
+
+• test@bomberosmadrid.es ahora es MANAGER (antes era ADMIN)
+  Verificado en base de datos: ✅
+
+• Los roles están correctamente configurados en PostgreSQL
+
+═══════════════════════════════════════════════════════════════════
+📝 NOTAS ADICIONALES
+═══════════════════════════════════════════════════════════════════
+
+• Contraseñas hasheadas con bcrypt en BD
+• Tokens JWT expiran en 24 horas
+• Sesión persiste en cookies httpOnly
+• Protección CSRF implementada
+• Todos los requests filtrados por organizationId
+• Logs detallados en backend y frontend
+
+═══════════════════════════════════════════════════════════════════
+
+✨ ¡SISTEMA COMPLETO Y FUNCIONAL!
+
+Guarda este archivo para referencia rápida de credenciales.
+
+

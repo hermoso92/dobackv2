@@ -1,9 +1,11 @@
+import { prisma } from '../lib/prisma';
+
 // Script de seed adaptado: solo inserta datos en modelos válidos de Prisma
 // Secciones que usan modelos/campos inexistentes han sido deshabilitadas
 
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+
+
 
 async function main() {
     // Ejemplo: crear organizaciones y usuarios válidos

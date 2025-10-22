@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export class MantenimientoController {
     async crearMantenimiento(req: Request, res: Response) {

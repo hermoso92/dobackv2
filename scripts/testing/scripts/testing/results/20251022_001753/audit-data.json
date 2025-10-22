@@ -1,0 +1,32 @@
+﻿{
+    "Performance":  {
+
+                    },
+    "Timestamp":  "2025-10-21T22:17:53Z",
+    "EventsTest":  {
+
+                   },
+    "Services":  {
+                     "Backend":  {
+                                     "Port":  9998,
+                                     "Status":  "down",
+                                     "Error":  "No es posible conectar con el servidor remoto",
+                                     "Available":  false
+                                 }
+                 },
+    "Endpoints":  [
+
+                  ],
+    "Summary":  {
+                    "Warnings":  0,
+                    "TotalTests":  0,
+                    "Failed":  0,
+                    "Passed":  0
+                },
+    "UIChecks":  {
+
+                 },
+    "UploadTest":  {
+
+                   }
+}

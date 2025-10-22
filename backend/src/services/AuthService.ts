@@ -1,8 +1,9 @@
-﻿import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { config } from '../config/env';
+import { prisma } from '../lib/prisma'; // ? SINGLETON DE PRISMA
 import {
     AuthResponse,
     LoginCredentials,
@@ -18,7 +19,6 @@ import { NotificationService } from './NotificationService';
 import { UserService } from './UserService';
 
 export class AuthService {
-    private prisma: PrismaClient;
     private readonly JWT_SECRET: string;
     private readonly JWT_EXPIRES_IN: string;
     private readonly JWT_REFRESH_EXPIRES_IN: string;
@@ -28,7 +28,7 @@ export class AuthService {
     private auditService: AuditService;
 
     constructor(notificationService: NotificationService) {
-        this.prisma = new PrismaClient();
+        // ? Asignar prisma en el constructor para evitar ReferenceError por orden de carga
         this.notificationService = notificationService;
         this.auditService = new AuditService();
         this.JWT_SECRET = config.jwt.secret;
@@ -40,17 +40,17 @@ export class AuthService {
 
     public async login(credentials: LoginCredentials): Promise<AuthResponse> {
         try {
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { email: credentials.email }
             });
 
             if (!user) {
-                throw new ApiError(401, 'Credenciales inválidas');
+                throw new ApiError(401, 'Credenciales inv�lidas');
             }
 
             const isValidPassword = await bcrypt.compare(credentials.password, user.password);
             if (!isValidPassword) {
-                throw new ApiError(401, 'Credenciales inválidas');
+                throw new ApiError(401, 'Credenciales inv�lidas');
             }
 
             const tokens = this.generateTokens(user);
@@ -82,7 +82,7 @@ export class AuthService {
     public async refreshToken(refreshToken: string): Promise<AuthResponse> {
         try {
             const decoded = jwt.verify(refreshToken, this.JWT_SECRET) as TokenPayload;
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: decoded.id }
             });
 
@@ -103,7 +103,7 @@ export class AuthService {
             };
         } catch (error) {
             logger.error('Error al refrescar token', { error });
-            throw new ApiError(401, 'Token de refresco inválido o expirado');
+            throw new ApiError(401, 'Token de refresco inv�lido o expirado');
         }
     }
 
@@ -129,7 +129,7 @@ export class AuthService {
     public async verifyToken(token: string): Promise<boolean> {
         try {
             const decoded = jwt.verify(token, this.JWT_SECRET) as TokenPayload;
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: decoded.id }
             });
 
@@ -161,8 +161,8 @@ export class AuthService {
             logger.debug('Token verificado', { decoded });
 
             if (!decoded || typeof decoded !== 'object') {
-                logger.error('Token decodificado no es un objeto válido', { decoded });
-                throw new ApiError(401, 'Token inválido: formato incorrecto');
+                logger.error('Token decodificado no es un objeto v�lido', { decoded });
+                throw new ApiError(401, 'Token inv�lido: formato incorrecto');
             }
 
             const payload = decoded as TokenPayload;
@@ -170,33 +170,33 @@ export class AuthService {
             // Validaciones adicionales del payload
             if (!payload.id) {
                 logger.error('Token no contiene ID de usuario', { payload });
-                throw new ApiError(401, 'Token inválido: no contiene ID de usuario');
+                throw new ApiError(401, 'Token inv�lido: no contiene ID de usuario');
             }
 
             if (!payload.email) {
                 logger.error('Token no contiene email', { payload });
-                throw new ApiError(401, 'Token inválido: no contiene email');
+                throw new ApiError(401, 'Token inv�lido: no contiene email');
             }
 
             if (!payload.role) {
                 logger.error('Token no contiene rol', { payload });
-                throw new ApiError(401, 'Token inválido: no contiene rol');
+                throw new ApiError(401, 'Token inv�lido: no contiene rol');
             }
 
-            // Verificar si el usuario aún existe
-            const user = await this.prisma.user.findUnique({
+            // Verificar si el usuario a�n existe
+            const user = await prisma.user.findUnique({
                 where: { id: payload.id }
             });
 
             if (!user) {
                 logger.error('Usuario no encontrado', { userId: payload.id });
-                throw new ApiError(401, 'Token inválido: usuario no encontrado');
+                throw new ApiError(401, 'Token inv�lido: usuario no encontrado');
             }
 
-            // Verificar si el usuario está activo
+            // Verificar si el usuario est� activo
             if (user.status !== 'ACTIVE') {
                 logger.error('Usuario inactivo', { userId: payload.id });
-                throw new ApiError(401, 'Token inválido: usuario inactivo');
+                throw new ApiError(401, 'Token inv�lido: usuario inactivo');
             }
 
             logger.debug('Token validado exitosamente', { userId: payload.id });
@@ -208,7 +208,7 @@ export class AuthService {
             }
             if (error instanceof jwt.JsonWebTokenError) {
                 logger.error('Error de JWT', { error });
-                throw new ApiError(401, 'Token inválido: error de formato');
+                throw new ApiError(401, 'Token inv�lido: error de formato');
             }
             logger.error('Error validando token', {
                 error,
@@ -216,7 +216,7 @@ export class AuthService {
                 errorMessage: error instanceof Error ? error.message : 'Unknown error',
                 errorStack: error instanceof Error ? error.stack : undefined
             });
-            throw new ApiError(401, 'Token inválido');
+            throw new ApiError(401, 'Token inv�lido');
         }
     }
 
@@ -224,7 +224,7 @@ export class AuthService {
         try {
             logger.debug('Verificando permisos', { userId, requiredPermissions });
 
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId }
             });
 
@@ -286,7 +286,7 @@ export class AuthService {
 
     async getUserFromToken(token: string): Promise<Omit<User, 'password'>> {
         try {
-            logger.debug('Iniciando verificación de token', {
+            logger.debug('Iniciando verificaci�n de token', {
                 tokenPreview: token.substring(0, 20) + '...'
             });
 
@@ -295,17 +295,17 @@ export class AuthService {
 
             if (!decoded) {
                 logger.error('Token decodificado es null o undefined');
-                throw new ApiError(401, 'Token inválido o malformado');
+                throw new ApiError(401, 'Token inv�lido o malformado');
             }
 
             if (!decoded.id) {
                 logger.error('Token no contiene ID de usuario', { decoded });
-                throw new ApiError(401, 'Token inválido: no contiene ID de usuario');
+                throw new ApiError(401, 'Token inv�lido: no contiene ID de usuario');
             }
 
             logger.debug('Buscando usuario en base de datos', { userId: decoded.id });
 
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: {
                     id: decoded.id
                 },
@@ -350,7 +350,7 @@ export class AuthService {
         newPassword: string
     ): Promise<void> {
         try {
-            const user = await this.prisma.user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId }
             });
 
@@ -360,17 +360,17 @@ export class AuthService {
 
             const isValidPassword = await bcrypt.compare(currentPassword, user.password);
             if (!isValidPassword) {
-                throw new ApiError(401, 'Contraseña actual incorrecta');
+                throw new ApiError(401, 'Contrase�a actual incorrecta');
             }
 
             const hashedPassword = await bcrypt.hash(newPassword, this.BCRYPT_ROUNDS);
 
-            await this.prisma.user.update({
+            await prisma.user.update({
                 where: { id: userId },
                 data: { password: hashedPassword }
             });
 
-            // Notificar al usuario del cambio de contraseña
+            // Notificar al usuario del cambio de contrase�a
             await this.notificationService.sendPasswordChangeNotification(user.email);
         } catch (error) {
             logger.error('Error changing password', { error, userId });
@@ -380,17 +380,17 @@ export class AuthService {
 
     async resetPassword(token: string): Promise<void> {
         try {
-            const verification = await this.prisma.$queryRaw<{ userId: string }[]>`
+            const verification = await prisma.$queryRaw<{ userId: string }[]>`
                 SELECT user_id as "userId" FROM email_verification_tokens
                 WHERE token = ${token} AND expires_at > NOW()
                 LIMIT 1
             `;
 
             if (!verification?.length) {
-                throw new ApiError(400, 'Token de verificación inválido o expirado');
+                throw new ApiError(400, 'Token de verificaci�n inv�lido o expirado');
             }
 
-            await this.prisma.$executeRaw`
+            await prisma.$executeRaw`
                 DELETE FROM email_verification_tokens WHERE token = ${token}
             `;
         } catch (error) {
@@ -401,17 +401,17 @@ export class AuthService {
 
     async verifyEmail(token: string): Promise<void> {
         try {
-            const verification = await this.prisma.$queryRaw<{ userId: string }[]>`
+            const verification = await prisma.$queryRaw<{ userId: string }[]>`
                 SELECT user_id as "userId" FROM email_verification_tokens
                 WHERE token = ${token} AND expires_at > NOW()
                 LIMIT 1
             `;
 
             if (!verification?.length) {
-                throw new ApiError(400, 'Token de verificación inválido o expirado');
+                throw new ApiError(400, 'Token de verificaci�n inv�lido o expirado');
             }
 
-            await this.prisma.$executeRaw`
+            await prisma.$executeRaw`
                 DELETE FROM email_verification_tokens WHERE token = ${token}
             `;
         } catch (error) {
@@ -428,17 +428,17 @@ export class AuthService {
         organizationId: string;
     }): Promise<AuthResponse> {
         try {
-            const existingUser = await this.prisma.user.findUnique({
+            const existingUser = await prisma.user.findUnique({
                 where: { email: data.email }
             });
 
             if (existingUser) {
-                throw new ApiError(400, 'El email ya está registrado');
+                throw new ApiError(400, 'El email ya est� registrado');
             }
 
             const hashedPassword = await bcrypt.hash(data.password, this.BCRYPT_ROUNDS);
 
-            const user = await this.prisma.user.create({
+            const user = await prisma.user.create({
                 data: {
                     email: data.email,
                     name: data.name,
@@ -502,7 +502,7 @@ export class AuthService {
     async forgotPassword(email: string): Promise<void> {
         try {
             // Verificar si el usuario existe
-            const result = await this.prisma.$queryRaw<{ id: string }[]>`
+            const result = await prisma.$queryRaw<{ id: string }[]>`
                 SELECT id FROM users WHERE email = ${email}
             `;
             const users = Array.isArray(result) ? result : [];
@@ -524,8 +524,8 @@ export class AuthService {
 
     async getCurrentUser(userId: string): Promise<UserData> {
         try {
-            const result = await this.prisma.$queryRaw<User[]>`
-                SELECT * FROM users WHERE id = ${userId}
+            const result = await prisma.$queryRaw<User[]>`
+                SELECT * FROM users WHERE id = ${userId}::uuid
             `;
             const users = Array.isArray(result) ? result : [];
             if (users.length === 0) {
@@ -557,8 +557,8 @@ export class AuthService {
 
             values.push(userId);
 
-            await this.prisma.$executeRaw`
-                UPDATE users SET ${updates.join(', ')} WHERE id = ${values[values.length - 1]}
+            await prisma.$executeRaw`
+                UPDATE users SET ${updates.join(', ')} WHERE id = ${values[values.length - 1]}::uuid
             `;
 
             return await this.getCurrentUser(userId);
@@ -574,9 +574,9 @@ export class AuthService {
         newPassword: string
     ): Promise<void> {
         try {
-            // Verificar contraseña actual
-            const result = await this.prisma.$queryRaw<{ password: string }[]>`
-                SELECT password FROM users WHERE id = ${userId}
+            // Verificar contrase�a actual
+            const result = await prisma.$queryRaw<{ password: string }[]>`
+                SELECT password FROM users WHERE id = ${userId}::uuid
             `;
             const users = Array.isArray(result) ? result : [];
             if (users.length === 0) {
@@ -586,10 +586,10 @@ export class AuthService {
             if (!isValid) {
                 throw ApiError.badRequest('Current password is incorrect');
             }
-            // Actualizar contraseña
+            // Actualizar contrase�a
             const hashedPassword = await bcrypt.hash(newPassword, this.BCRYPT_ROUNDS);
-            await this.prisma.$executeRaw`
-                UPDATE users SET password = ${hashedPassword} WHERE id = ${userId}
+            await prisma.$executeRaw`
+                UPDATE users SET password = ${hashedPassword} WHERE id = ${userId}::uuid
             `;
         } catch (error) {
             logger.error('Error updating password', { error, userId });
@@ -599,7 +599,7 @@ export class AuthService {
 
     async getUserSessions(userId: string): Promise<any[]> {
         try {
-            const result = await this.prisma.$queryRaw<any[]>`
+            const result = await prisma.$queryRaw<any[]>`
                 SELECT 
                     id,
                     device_info,
@@ -619,8 +619,8 @@ export class AuthService {
 
     async revokeSession(userId: string, sessionId: string): Promise<void> {
         try {
-            await this.prisma.$executeRaw`
-                DELETE FROM user_sessions WHERE id = ${sessionId} AND user_id = ${userId}
+            await prisma.$executeRaw`
+                DELETE FROM user_sessions WHERE id = ${sessionId}::uuid AND user_id = ${userId}::uuid
             `;
         } catch (error) {
             logger.error('Error revoking session', { error, userId, sessionId });
@@ -630,7 +630,7 @@ export class AuthService {
 
     async revokeAllSessions(userId: string): Promise<void> {
         try {
-            await this.prisma.$executeRaw`
+            await prisma.$executeRaw`
                 DELETE FROM user_sessions WHERE user_id = ${userId}
             `;
         } catch (error) {
@@ -669,14 +669,14 @@ export class AuthService {
     }
 
     private async saveRefreshToken(userId: string, token: string): Promise<void> {
-        await this.prisma.$executeRaw`
+        await prisma.$executeRaw`
             INSERT INTO refresh_tokens (user_id, token, expires_at)
             VALUES (${userId}, ${token}, DATE_ADD(NOW(), INTERVAL 7 DAY))
         `;
     }
 
     private async saveVerificationToken(userId: string, token: string): Promise<void> {
-        await this.prisma.$executeRaw`
+        await prisma.$executeRaw`
             INSERT INTO email_verification_tokens (user_id, token, expires_at)
             VALUES (${userId}, ${token}, NOW() + INTERVAL '24 hours')
         `;
@@ -684,15 +684,15 @@ export class AuthService {
 
     private async saveResetToken(userId: string, token: string): Promise<void> {
         // Implementa el guardado del token de reset en la tabla adecuada
-        // Ejemplo: await this.prisma.passwordResetToken.create({ data: { userId, token, expiresAt } });
+        // Ejemplo: await prisma.passwordResetToken.create({ data: { userId, token, expiresAt } });
     }
 
     private async sendVerificationEmail(email: string, token: string): Promise<void> {
         try {
             await this.notificationService.sendVerificationEmail(email, token);
         } catch (error) {
-            logger.error('Error enviando email de verificación', { error, email });
-            throw new ApiError(500, 'Error enviando email de verificación');
+            logger.error('Error enviando email de verificaci�n', { error, email });
+            throw new ApiError(500, 'Error enviando email de verificaci�n');
         }
     }
 
@@ -700,8 +700,8 @@ export class AuthService {
         try {
             await this.notificationService.sendPasswordResetEmail(email, token);
         } catch (error) {
-            logger.error('Error enviando email de reset de contraseña', { error, email });
-            throw new ApiError(500, 'Error enviando email de reset de contraseña');
+            logger.error('Error enviando email de reset de contrase�a', { error, email });
+            throw new ApiError(500, 'Error enviando email de reset de contrase�a');
         }
     }
 

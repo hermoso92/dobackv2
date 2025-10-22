@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -53,7 +54,6 @@ router.get('/status', async (req, res) => {
         });
 
         // Obtener todos los vehículos de la organización
-        const { prisma } = await import('../config/prisma');
         const vehicles = await prisma.vehicle.findMany({
             where: { organizationId },
             select: {
@@ -208,7 +208,6 @@ router.get('/status/:vehicleId', async (req, res) => {
         logger.info('Obteniendo estado de vehículo específico', { vehicleId, organizationId });
 
         // Verificar que el vehículo pertenece a la organización
-        const { prisma } = await import('../config/prisma');
         const vehicle = await prisma.vehicle.findFirst({
             where: {
                 id: vehicleId,

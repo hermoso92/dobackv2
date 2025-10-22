@@ -1,14 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { speedLimitCorrectionService } from './SpeedLimitCorrectionService';
 
 export class OverspeedProcessorService {
-    private prisma: PrismaClient;
     private toleranceKmh: number;
     private searchRadiusM: number;
 
     constructor(prisma: PrismaClient, toleranceKmh = 3, searchRadiusM = 50) {
-        this.prisma = prisma;
         this.toleranceKmh = toleranceKmh;
         this.searchRadiusM = searchRadiusM;
     }
@@ -23,7 +22,7 @@ export class OverspeedProcessorService {
             logger.info(`[OverspeedProcessor] Procesando sesión: ${sessionId}`);
 
             // 1. Obtener puntos GPS de la sesión
-            const gpsPointsRaw = await this.prisma.gpsMeasurement.findMany({
+            const gpsPointsRaw = await prisma.gpsMeasurement.findMany({
                 where: {
                     sessionId: sessionId
                 },
@@ -148,7 +147,7 @@ export class OverspeedProcessorService {
             const radii = [this.searchRadiusM, 100, 150, 200];
 
             for (const radius of radii) {
-                const result = await this.prisma.$queryRaw<Array<{ speed_limit: number }>>`
+                const result = await prisma.$queryRaw<Array<{ speed_limit: number }>>`
                     SELECT regexp_replace(maxspeed::text, '[^0-9]', '', 'g')::int AS speed_limit
                     FROM road_speed_limits
                     WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography, ${radius})
@@ -184,7 +183,7 @@ export class OverspeedProcessorService {
         limit: number
     ): Promise<void> {
         try {
-            await this.prisma.stability_events.create({
+            await prisma.stability_events.create({
                 data: {
                     session_id: sessionId,
                     timestamp: timestamp,
@@ -221,7 +220,7 @@ export class OverspeedProcessorService {
      */
     async processVehicleSessions(vehicleId: string): Promise<number> {
         try {
-            const sessions = await this.prisma.session.findMany({
+            const sessions = await prisma.session.findMany({
                 where: {
                     vehicleId: vehicleId
                 },
@@ -252,7 +251,7 @@ export class OverspeedProcessorService {
      */
     async clearSessionOverspeedEvents(sessionId: string): Promise<void> {
         try {
-            await this.prisma.stability_events.deleteMany({
+            await prisma.stability_events.deleteMany({
                 where: {
                     session_id: sessionId,
                     type: 'limite_superado_velocidad'

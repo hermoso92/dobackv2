@@ -1,6 +1,6 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 
 interface StatsConfig {
     period: number; // días
@@ -106,10 +106,10 @@ const calculateStats = async (config: StatsConfig): Promise<StatsResult> => {
             const matches = event.description?.match(/LTR: ([\d.]+), SSF: ([\d.]+), DRS: ([\d.]+)/);
             return matches
                 ? {
-                      ltr: parseFloat(matches[1]),
-                      ssf: parseFloat(matches[2]),
-                      drs: parseFloat(matches[3])
-                  }
+                    ltr: parseFloat(matches[1]),
+                    ssf: parseFloat(matches[2]),
+                    drs: parseFloat(matches[3])
+                }
                 : null;
         })
         .filter((m): m is NonNullable<typeof m> => m !== null);

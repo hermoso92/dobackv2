@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 
@@ -138,8 +139,6 @@ router.get('/critical-points', async (req, res) => {
         const mode = (req.query.mode as string) || 'cluster'; // 'cluster' | 'single'
 
         logger.info('Obteniendo puntos críticos con eventDetector', { organizationId, severityFilter, minFrequency, clusterRadius, from, to, vehicleIds });
-
-        const { prisma } = await import('../config/prisma');
 
         // LEER EVENTOS DESDE BD filtrando por timestamp, organización y vehículos
         let eventosDB;
@@ -384,8 +383,6 @@ router.get('/ranking', async (req, res) => {
         const endDate = req.query.endDate as string;
 
         logger.info('Obteniendo ranking de hotspots con eventDetector', { organizationId, limit });
-
-        const { prisma } = await import('../config/prisma');
 
         // Construir filtros para sesiones
         const sessionsWhere: any = { organizationId };

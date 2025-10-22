@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+
 import { EventEmitter } from 'events';
 import fs from 'fs';
+import { prisma } from '../lib/prisma'; // ✅ SINGLETON DE PRISMA
 import { logger } from '../utils/logger';
 import {
     parseCANFile,
@@ -40,7 +41,6 @@ export interface ProcessingResult {
 }
 
 export class AutoSessionProcessor extends EventEmitter {
-    private prisma: PrismaClient;
     private fileWatcher: FileWatcherService;
     private kpiService: AdvancedKPICalculationService;
     private isProcessing: boolean = false;
@@ -48,7 +48,7 @@ export class AutoSessionProcessor extends EventEmitter {
 
     constructor() {
         super();
-        this.prisma = new PrismaClient();
+        // ✅ Asignar prisma en el constructor para evitar ReferenceError por orden de carga
         this.fileWatcher = new FileWatcherService();
         this.kpiService = new AdvancedKPICalculationService();
         this.setupEventHandlers();
@@ -84,7 +84,7 @@ export class AutoSessionProcessor extends EventEmitter {
         this.fileWatcher.stopWatching();
         this.isProcessing = false;
 
-        await this.prisma.$disconnect();
+        await prisma.$disconnect();
         logger.info('✅ Procesamiento automático detenido');
     }
 
@@ -251,7 +251,7 @@ export class AutoSessionProcessor extends EventEmitter {
      * Obtiene un vehículo por ID y organización
      */
     private async getVehicle(vehicleId: string, organizationId: string) {
-        return await this.prisma.vehicle.findFirst({
+        return await prisma.vehicle.findFirst({
             where: {
                 name: vehicleId,
                 organizationId: organizationId
@@ -366,7 +366,7 @@ export class AutoSessionProcessor extends EventEmitter {
         const endTime = new Date(maxTimestamp);
 
         // Obtener el último número de sesión
-        const lastSession = await this.prisma.session.findFirst({
+        const lastSession = await prisma.session.findFirst({
             where: { vehicleId },
             orderBy: { sessionNumber: 'desc' }
         });
@@ -374,7 +374,7 @@ export class AutoSessionProcessor extends EventEmitter {
         const sessionNumber = lastSession ? lastSession.sessionNumber + 1 : 1;
 
         // Crear sesión
-        const session = await this.prisma.session.create({
+        const session = await prisma.session.create({
             data: {
                 vehicleId,
                 userId: 'system', // Usuario del sistema
@@ -417,7 +417,7 @@ export class AutoSessionProcessor extends EventEmitter {
                     updatedAt: new Date()
                 }));
 
-                await this.prisma.gpsMeasurement.createMany({
+                await prisma.gpsMeasurement.createMany({
                     data: batch,
                     skipDuplicates: true
                 });
@@ -453,7 +453,7 @@ export class AutoSessionProcessor extends EventEmitter {
                     }));
 
                 if (batch.length > 0) {
-                    await this.prisma.stabilityMeasurement.createMany({
+                    await prisma.stabilityMeasurement.createMany({
                         data: batch,
                         skipDuplicates: true
                     });
@@ -478,7 +478,7 @@ export class AutoSessionProcessor extends EventEmitter {
                     updatedAt: new Date()
                 }));
 
-                await this.prisma.canMeasurement.createMany({
+                await prisma.canMeasurement.createMany({
                     data: batch,
                     skipDuplicates: true
                 });
@@ -500,7 +500,7 @@ export class AutoSessionProcessor extends EventEmitter {
                     updatedAt: new Date()
                 }));
 
-                await this.prisma.rotativoMeasurement.createMany({
+                await prisma.rotativoMeasurement.createMany({
                     data: batch,
                     skipDuplicates: true
                 });

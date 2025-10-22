@@ -11,15 +11,19 @@ import {
 import adminRoutes from './admin';
 import aiRoutes from './ai';
 // import alertEscalationRoutes from './alertEscalation';
+import alertsRoutes from './alerts';
 import authRoutes from './auth';
 import dashboardRoutes from './dashboard';
 import devicesRoutes from './devices';
+import scheduledReportsRoutes from './scheduledReports';
+import systemStatusRoutes from './systemStatus';
 // import emergencyDashboardRoutes from './emergencyDashboard';
 // import emergencyReportsRoutes from './emergencyReports';
 import eventRoutes from './event.routes';
 import geofenceAlertsRoutes from './geofence-alerts';
 import geofencesRoutes from './geofences';
 // import geofencesAPIRoutes from './geofencesAPI';
+import geocodingRoutes from './geocoding';
 import gestorDeEventosRouter from './gestorDeEventos';
 import hotspotsRoutes from './hotspots';
 // import intelligentAlertsRoutes from './intelligentAlerts';
@@ -46,12 +50,13 @@ import stabilityFiltersRoutes from './stabilityFilters';
 // import responseTimeRoutes from './responseTime';
 // import riskZoneAnalysisRoutes from './riskZoneAnalysis';
 import { getGeofenceServices } from '../config/geofenceServices';
-import alertsRoutes from './alerts';
 import csvExportRoutes from './csvExport';
 import diagnosticsRoutes from './diagnostics';
 import fireStationsRoutes from './fireStations';
 import generateEventsRoutes from './generateEvents';
 import pdfExportRoutes from './pdfExport';
+import processingReportsRoutes from './processing-reports';
+import processingStatsRoutes from './processing-stats';
 import processingTrackingRoutes from './processingTracking';
 import sessionsUploadRoutes from './sessionsUpload';
 import stabilityRoutes from './stability';
@@ -126,9 +131,6 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
         const startDate = req.query.startDate as string;
         const endDate = req.query.endDate as string;
-
-        const prismaModule = await import('../config/prisma');
-        const prisma = prismaModule.prisma || prismaModule.default;
 
         logger.info('Obteniendo ranking de sesiones', {
             organizationId: orgId,
@@ -575,8 +577,15 @@ router.use('/radar', radarRoutes);
 // Rutas de parques
 router.use('/parks', parksRoutes);
 router.use('/zones', zonesRoutes);
+
+// ✅ Endpoint temporal para reprocesamiento
+import reprocessRoutes from './reprocess';
+router.use('/reprocess', reprocessRoutes);
 router.use('/geofences', geofencesRoutes);
 router.use('/geofence-alerts', geofenceAlertsRoutes);
+
+// Rutas de geocodificación
+router.use('/geocoding', geocodingRoutes);
 
 // Rutas de KPIs de parque
 router.use('/park-kpi', parkKPIRoutes);
@@ -741,9 +750,16 @@ router.use('/alerts', alertsRoutes);
 
 // Rutas de reportes
 router.use('/reports', reportsRoutes);
+router.use('/scheduled-reports', scheduledReportsRoutes);  // ✅ NUEVO: Reportes programados
 
 // Rutas de tracking de procesamiento (con caché)
 router.use('/processing', processingCacheMiddleware, processingTrackingRoutes);
+
+// Rutas de reportes de procesamiento
+router.use('/processing-reports', processingReportsRoutes);
+
+// ✅ NUEVO: Rutas de estadísticas y métricas de procesamiento
+router.use('/processing-stats', processingStatsRoutes);
 
 // Rutas de geocercas y reglas (con caché)
 try {
@@ -776,15 +792,13 @@ logger.info('  ✅ Ranking de Sesiones: /api/sessions/ranking');
  */
 router.post('/clean-all-sessions', authenticate, async (req, res) => {
     try {
-        const prismaModule = await import('../config/prisma');
-        const prisma = prismaModule.prisma || prismaModule.default;
 
         logger.warn('⚠️ Iniciando limpieza de base de datos - OPERACIÓN DESTRUCTIVA');
         logger.warn('⚠️ Esta acción eliminará TODAS las sesiones de TODAS las organizaciones');
 
         // ✅ Obtener conteo REAL (sin filtros) antes de eliminar
         const sessionCount = await prisma.session.count({});
-        const stabilityEventCount = await prisma.stabilityEvent.count({});
+        const stabilityEventCount = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) as count FROM stability_events`.then(r => Number(r[0]?.count || 0));
         const gpsCount = await prisma.gpsMeasurement.count({});
         const rotativoCount = await prisma.rotativoMeasurement.count({});
         const stabilityMeasurementCount = await prisma.stabilityMeasurement.count({});
@@ -794,7 +808,7 @@ router.post('/clean-all-sessions', authenticate, async (req, res) => {
         // ✅ Eliminar en orden correcto (por dependencias foreign keys)
         logger.info('🗑️ Eliminando datos relacionados...');
 
-        await prisma.stabilityEvent.deleteMany({});
+        await prisma.$executeRaw`DELETE FROM stability_events`;
         logger.info('  ✓ StabilityEvent eliminados');
 
         await prisma.gpsMeasurement.deleteMany({});
@@ -862,5 +876,8 @@ router.post('/clean-all-sessions', authenticate, async (req, res) => {
         });
     }
 });
+
+// System status routes
+router.use('/system', systemStatusRoutes);
 
 export default router;

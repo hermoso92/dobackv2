@@ -2,7 +2,7 @@ import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { AppError } from './error';
 

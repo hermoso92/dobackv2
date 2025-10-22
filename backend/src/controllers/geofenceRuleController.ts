@@ -4,11 +4,9 @@ import { GeofenceAction, GeofenceCondition, GeofenceRule, GeofenceRuleEngine } f
 import { logger } from '../utils/logger';
 
 export class GeofenceRuleController {
-    private prisma: PrismaClient;
     private ruleEngine: GeofenceRuleEngine;
 
     constructor(prisma: PrismaClient, ruleEngine: GeofenceRuleEngine) {
-        this.prisma = prisma;
         this.ruleEngine = ruleEngine;
     }
 
@@ -54,7 +52,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rule = await this.prisma.geofenceRule.create({
+            // const rule = await prisma.geofenceRule.create({
             //   data: {
             //     name,
             //     description,
@@ -113,7 +111,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rules = await this.prisma.geofenceRule.findMany({
+            // const rules = await prisma.geofenceRule.findMany({
             //   where: { organizationId },
             //   orderBy: { priority: 'desc' }
             // });
@@ -149,7 +147,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rule = await this.prisma.geofenceRule.findFirst({
+            // const rule = await prisma.geofenceRule.findFirst({
             //   where: { 
             //     id: ruleId,
             //     organizationId 
@@ -194,7 +192,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rule = await this.prisma.geofenceRule.update({
+            // const rule = await prisma.geofenceRule.update({
             //   where: { 
             //     id: ruleId,
             //     organizationId 
@@ -242,7 +240,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // await this.prisma.geofenceRule.delete({
+            // await prisma.geofenceRule.delete({
             //   where: { 
             //     id: ruleId,
             //     organizationId 
@@ -284,7 +282,7 @@ export class GeofenceRuleController {
             }
 
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rule = await this.prisma.geofenceRule.update({
+            // const rule = await prisma.geofenceRule.update({
             //   where: { 
             //     id: ruleId,
             //     organizationId 

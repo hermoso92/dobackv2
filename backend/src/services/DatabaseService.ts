@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
 interface HealthCheckResult {
@@ -27,7 +28,7 @@ export class DatabaseService {
 
     async connect(): Promise<void> {
         try {
-            await this.prisma.$connect();
+            await prisma.$connect();
             logger.info('Database connected successfully');
         } catch (error) {
             logger.error('Database connection failed', { error });
@@ -37,7 +38,7 @@ export class DatabaseService {
 
     async disconnect(): Promise<void> {
         try {
-            await this.prisma.$disconnect();
+            await prisma.$disconnect();
             logger.info('Database disconnected successfully');
         } catch (error) {
             logger.error('Database disconnection failed', { error });
@@ -47,7 +48,7 @@ export class DatabaseService {
 
     async transaction<T>(callback: (prisma: PrismaClient) => Promise<T>): Promise<T> {
         try {
-            const result = await this.prisma.$transaction(callback);
+            const result = await prisma.$transaction(callback);
             return result;
         } catch (error) {
             logger.error('Transaction failed', { error });
@@ -58,7 +59,7 @@ export class DatabaseService {
     async healthCheck(): Promise<HealthCheckResult> {
         const startTime = Date.now();
         try {
-            await this.prisma.$queryRaw`SELECT NOW()`;
+            await prisma.$queryRaw`SELECT NOW()`;
             const latency = Date.now() - startTime;
 
             return {
@@ -79,7 +80,7 @@ export class DatabaseService {
     async backup(): Promise<BackupResult> {
         try {
             // Obtener lista de tablas
-            const tables = await this.prisma.$queryRaw`
+            const tables = await prisma.$queryRaw`
                 SELECT table_name 
                 FROM information_schema.tables 
                 WHERE table_schema = 'public'
@@ -89,7 +90,7 @@ export class DatabaseService {
             const data: Record<string, any> = {};
             for (const table of tables as any[]) {
                 const tableName = table.table_name;
-                const records = await this.prisma.$queryRaw`
+                const records = await prisma.$queryRaw`
                     SELECT * FROM "${tableName}"
                 `;
                 data[tableName] = records;
@@ -155,7 +156,7 @@ export class DatabaseService {
     async migrate(): Promise<void> {
         try {
             // Ejecutar migraciones pendientes
-            await this.prisma.$executeRaw`SELECT prisma_migrate()`;
+            await prisma.$executeRaw`SELECT prisma_migrate()`;
             logger.info('Database migrations completed successfully');
         } catch (error) {
             logger.error('Database migration failed', { error });
@@ -166,7 +167,7 @@ export class DatabaseService {
     async seed(): Promise<void> {
         try {
             // Ejecutar seeds
-            await this.prisma.$executeRaw`SELECT prisma_seed()`;
+            await prisma.$executeRaw`SELECT prisma_seed()`;
             logger.info('Database seeding completed successfully');
         } catch (error) {
             logger.error('Database seeding failed', { error });
@@ -177,8 +178,8 @@ export class DatabaseService {
     async reset(): Promise<void> {
         try {
             // Resetear la base de datos
-            await this.prisma.$executeRaw`DROP SCHEMA public CASCADE`;
-            await this.prisma.$executeRaw`CREATE SCHEMA public`;
+            await prisma.$executeRaw`DROP SCHEMA public CASCADE`;
+            await prisma.$executeRaw`CREATE SCHEMA public`;
             logger.info('Database reset completed successfully');
         } catch (error) {
             logger.error('Database reset failed', { error });
@@ -189,7 +190,7 @@ export class DatabaseService {
     async vacuum(): Promise<void> {
         try {
             // Optimizar la base de datos
-            await this.prisma.$executeRaw`VACUUM ANALYZE`;
+            await prisma.$executeRaw`VACUUM ANALYZE`;
             logger.info('Database vacuum completed successfully');
         } catch (error) {
             logger.error('Database vacuum failed', { error });
@@ -200,7 +201,7 @@ export class DatabaseService {
     async getStats(): Promise<any> {
         try {
             // Obtener estadísticas de la base de datos
-            const stats = await this.prisma.$queryRaw`
+            const stats = await prisma.$queryRaw`
                 SELECT 
                     schemaname,
                     tablename,

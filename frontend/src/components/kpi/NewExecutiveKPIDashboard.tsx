@@ -16,6 +16,7 @@ import { useGlobalFilters } from '../../hooks/useGlobalFilters';
 import { useKPIs } from '../../hooks/useKPIs';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
+import { EnhancedKPIData, EnhancedTabExportData } from '../../services/enhancedPDFExportService';
 import { TabExportData } from '../../services/pdfExportService';
 import { logger } from '../../utils/logger';
 import { AlertSystemManager } from '../alerts/AlertSystemManager';
@@ -25,7 +26,7 @@ import OperationalKeysTab from '../operations/OperationalKeysTab';
 import DeviceMonitoringPanel from '../panel/DeviceMonitoringPanel';
 import { ProcessingTrackingDashboard } from '../processing/ProcessingTrackingDashboard';
 import { DashboardReportsTab } from '../reports/DashboardReportsTab';
-import { SessionsAndRoutesView } from '../sessions/SessionsAndRoutesView';
+import { SessionsAndRoutesView, useRouteExportFunction } from '../sessions/SessionsAndRoutesView';
 import SpeedAnalysisTab from '../speed/SpeedAnalysisTab';
 import BlackSpotsTab from '../stability/BlackSpotsTab';
 import { Button } from '../ui/Button';
@@ -76,6 +77,13 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     // Estados para mapas (mantenidos para exportación PDF)
     const [heatmapData, setHeatmapData] = useState<any>({ points: [], routes: [], geofences: [] });
     const [speedViolations, setSpeedViolations] = useState<any[]>([]);
+    const [blackSpotsData, setBlackSpotsData] = useState<any>({ clusters: [], ranking: [] });
+
+    // Estado para datos de sesión seleccionada
+    const [selectedSessionData, setSelectedSessionData] = useState<{
+        session: any;
+        routeData: any;
+    } | null>(null);
 
     // Estados para KPIs de Parques
     const [parksKPIs, setParksKPIs] = useState<any>({
@@ -90,10 +98,13 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     // const [mapError, setMapError] = useState<string | null>(null);
 
     // Hook de exportación de PDF
-    const { exportTabToPDF, isExporting, captureElement } = usePDFExport();
+    const { exportTabToPDF, isExporting, captureElement, exportEnhancedTabToPDF, captureElementEnhanced } = usePDFExport();
+
+    // Hook de exportación de recorridos
+    const exportRouteFunction = useRouteExportFunction();
 
     // Hook de filtros globales
-    const { filters, updateTrigger } = useGlobalFilters();
+    const { filters, updateTrigger, updateFilters } = useGlobalFilters();
 
     // Hook de KPIs reales
     const {
@@ -364,9 +375,9 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         tabIndex: 1,
                         appliedFilters,
                         kpis: [
-                            { title: 'Eventos Graves', value: heatmapData.points.filter((p: any) => p.severity === 'critical').length, subtitle: '0-20% estabilidad' },
-                            { title: 'Eventos Moderados', value: heatmapData.points.filter((p: any) => p.severity === 'severe').length, subtitle: '20-35% estabilidad' },
-                            { title: 'Eventos Leves', value: heatmapData.points.filter((p: any) => p.severity === 'light').length, subtitle: '35-50% estabilidad' },
+                            { title: 'Eventos Graves', value: heatmapData.points.filter((p: any) => p.severity === 'grave').length, subtitle: '0-20% estabilidad' },
+                            { title: 'Eventos Moderados', value: heatmapData.points.filter((p: any) => p.severity === 'moderada').length, subtitle: '20-35% estabilidad' },
+                            { title: 'Eventos Leves', value: heatmapData.points.filter((p: any) => p.severity === 'leve').length, subtitle: '35-50% estabilidad' },
                             { title: 'Total de Puntos', value: heatmapData.points.length, subtitle: 'Total de eventos registrados' }
                         ],
                         mapData: {
@@ -485,6 +496,351 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
         }
     }, [activeTab, heatmapData, speedViolations, exportTabToPDF, captureElement, filters]);
 
+    // Función MEJORADA para exportar la pestaña actual a PDF con diseño profesional
+    const handleExportEnhancedPDF = useCallback(async () => {
+        try {
+            logger.info('Iniciando exportación de PDF mejorado', { activeTab, filters });
+
+            let exportData: EnhancedTabExportData | null = null;
+
+            switch (activeTab) {
+                case 0: // Estados & Tiempos - CON EXPLICACIONES DETALLADAS
+                    const avgSpeed = activity?.km_total && activity?.driving_hours && activity.driving_hours > 0.1
+                        ? Math.round(activity.km_total / activity.driving_hours)
+                        : 0;
+
+                    const kpisEstados: EnhancedKPIData[] = [
+                        {
+                            title: 'Horas de Conduccion',
+                            value: activity?.driving_hours_formatted || '00:00:00',
+                            category: 'info',
+                            description: 'Tiempo total que los vehiculos han estado en movimiento durante el periodo seleccionado. Incluye tiempo en emergencias y servicios regulares.'
+                        },
+                        {
+                            title: 'Kilometros Recorridos',
+                            value: activity?.km_total || 0,
+                            unit: 'km',
+                            category: 'success',
+                            description: 'Distancia total recorrida por la flota. Calculada a partir de coordenadas GPS con filtrado de anomalias. Incluye todos los trayectos registrados.'
+                        },
+                        {
+                            title: 'Tiempo en Parque (Clave 1)',
+                            value: getStateDuration(1),
+                            category: 'info',
+                            description: 'Tiempo que los vehiculos permanecieron dentro del parque de bomberos. Indica disponibilidad para respuesta inmediata.'
+                        },
+                        {
+                            title: 'Porcentaje Rotativo Activo',
+                            value: activity?.rotativo_on_percentage || 0,
+                            unit: '%',
+                            category: activity && activity.rotativo_on_percentage > 30 ? 'warning' : 'success',
+                            description: 'Porcentaje de tiempo que el rotativo estuvo encendido. Indica la proporcion de tiempo en emergencias reales vs servicios regulares.'
+                        },
+                        {
+                            title: 'Tiempo Fuera Parque (Clave 3)',
+                            value: getStateDuration(3),
+                            category: 'info',
+                            description: 'Tiempo en servicio externo fuera del parque. Incluye emergencias, servicios y otros desplazamientos oficiales.'
+                        },
+                        {
+                            title: 'Tiempo en Taller (Clave 4)',
+                            value: getStateDuration(4),
+                            category: 'warning',
+                            description: 'Tiempo total en mantenimiento preventivo o correctivo. Vehiculos no disponibles para servicio.'
+                        },
+                        {
+                            title: 'Emergencias Rotativo (Clave 2)',
+                            value: getStateDuration(2),
+                            category: 'danger',
+                            description: 'Emergencias con rotativo encendido. Situaciones prioritarias que requieren respuesta inmediata con senalizacion activa.'
+                        },
+                        {
+                            title: 'Servicios sin Rotativo (Clave 5)',
+                            value: getStateDuration(5),
+                            category: 'info',
+                            description: 'Servicios programados sin rotativo. Incluye inspecciones, traslados programados y actividades no urgentes.'
+                        },
+                        {
+                            title: 'Total Incidencias de Estabilidad',
+                            value: stability?.total_incidents || 0,
+                            category: (stability?.total_incidents || 0) > 50 ? 'danger' : 'success',
+                            description: 'Total de eventos de inestabilidad detectados. Incluye aceleraciones bruscas, frenazos y giros cerrados que afectan la estabilidad.'
+                        },
+                        {
+                            title: 'Incidencias Graves (0-20%)',
+                            value: stability?.critical || 0,
+                            category: 'danger',
+                            description: 'Eventos con indice de estabilidad 0-20%. Requieren atencion inmediata: revisar condiciones del vehiculo y formacion del conductor.'
+                        },
+                        {
+                            title: 'Incidencias Moderadas (20-35%)',
+                            value: stability?.moderate || 0,
+                            category: 'warning',
+                            description: 'Eventos con indice 20-35%. Situaciones de riesgo medio que deben monitorearse para evitar escalada a gravedad.'
+                        },
+                        {
+                            title: 'Incidencias Leves (35-50%)',
+                            value: stability?.light || 0,
+                            category: 'success',
+                            description: 'Eventos con indice 35-50%. Situaciones menores que forman parte de la conduccion normal en emergencias.'
+                        },
+                        {
+                            title: 'Velocidad Promedio de Flota',
+                            value: avgSpeed,
+                            unit: 'km/h',
+                            category: avgSpeed > 80 ? 'warning' : 'success',
+                            description: 'Velocidad media de la flota calculada sobre el tiempo en movimiento. Valor esperado: 40-70 km/h segun tipo de servicio.'
+                        }
+                    ];
+
+                    exportData = {
+                        tabName: 'Estados & Tiempos',
+                        tabIndex: 0,
+                        subtitle: 'Análisis Operativo de la Flota',
+                        description: 'Este reporte presenta un análisis detallado de los estados operacionales y métricas de tiempo de la flota de vehículos de emergencia, incluyendo tiempos de conducción, kilómetros recorridos y distribución por claves operacionales.',
+                        kpis: kpisEstados,
+                        sections: [
+                            {
+                                title: 'Interpretacion de Claves Operacionales',
+                                type: 'list',
+                                content: [
+                                    'Clave 1 - En Parque: Vehiculo en base, disponible para respuesta inmediata',
+                                    'Clave 2 - Emergencia con Rotativo: Respuesta prioritaria con senalizacion activa',
+                                    'Clave 3 - Fuera de Parque: En servicio externo, emergencias o traslados',
+                                    'Clave 4 - En Taller: Mantenimiento preventivo o correctivo, no disponible',
+                                    'Clave 5 - Sin Rotativo: Servicios programados sin caracter urgente'
+                                ]
+                            },
+                            {
+                                title: 'Analisis de Disponibilidad',
+                                type: 'text',
+                                content: `La flota ha registrado ${activity?.driving_hours_formatted || '00:00'} horas de conduccion con ${activity?.km_total || 0} km recorridos. El ${activity?.rotativo_on_percentage || 0}% del tiempo operativo fue en emergencias con rotativo activo. Se detectaron ${stability?.total_incidents || 0} eventos de inestabilidad, de los cuales ${stability?.critical || 0} fueron clasificados como graves y requieren seguimiento.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                case 2: // Velocidad - MEJORADO CON TABLA DE EVENTOS
+                    const graveViolations = speedViolations.filter((v: any) => v.violationType === 'grave');
+                    const moderadoViolations = speedViolations.filter((v: any) => v.violationType === 'moderado');
+                    const leveViolations = speedViolations.filter((v: any) => v.violationType === 'leve');
+                    const avgExcess = speedViolations.length > 0
+                        ? speedViolations.reduce((sum: number, v: any) => sum + (v.speed - v.speedLimit), 0) / speedViolations.length
+                        : 0;
+
+                    const kpisVelocidad: EnhancedKPIData[] = [
+                        {
+                            title: 'Total Excesos Detectados',
+                            value: speedViolations.length,
+                            category: speedViolations.length > 20 ? 'danger' : 'success',
+                            description: 'Total de excesos de velocidad detectados durante el periodo. Incluye todas las clasificaciones segun normativa DGT para vehiculos de emergencia.'
+                        },
+                        {
+                            title: 'Excesos Graves (>20 km/h)',
+                            value: graveViolations.length,
+                            category: 'danger',
+                            description: 'Excesos superiores a 20 km/h sobre el limite permitido. Requieren revision inmediata y pueden indicar necesidad de formacion adicional.'
+                        },
+                        {
+                            title: 'Excesos Moderados (10-20 km/h)',
+                            value: moderadoViolations.length,
+                            category: 'warning',
+                            description: 'Excesos entre 10-20 km/h. Situaciones de riesgo medio que deben monitorearse para evitar recurrencia.'
+                        },
+                        {
+                            title: 'Excesos Leves (1-10 km/h)',
+                            value: leveViolations.length,
+                            category: 'success',
+                            description: 'Excesos de 1-10 km/h. Variaciones menores que pueden considerarse normales en contexto de emergencias.'
+                        },
+                        {
+                            title: 'Exceso Promedio',
+                            value: avgExcess.toFixed(2),
+                            unit: 'km/h',
+                            category: avgExcess > 15 ? 'warning' : 'success',
+                            description: 'Promedio de exceso de velocidad en todas las violaciones. Indica el nivel general de cumplimiento de limites.'
+                        },
+                        {
+                            title: 'Excesos con Rotativo Encendido',
+                            value: speedViolations.filter((v: any) => v.rotativoOn).length,
+                            category: 'info',
+                            description: 'Excesos ocurridos durante emergencias con rotativo encendido. Limites mas permisivos segun normativa de vehiculos prioritarios.'
+                        }
+                    ];
+
+                    // Preparar datos de violaciones para la tabla (ampliado a 30 para más detalle)
+                    const violationsData = speedViolations.slice(0, 30).map((v: any) => ({
+                        timestamp: new Date(v.timestamp).toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }),
+                        vehicleName: v.vehicleName || 'N/A',
+                        location: v.location || `${v.lat?.toFixed(4)}, ${v.lng?.toFixed(4)}`,
+                        speed: v.speed,
+                        speedLimit: v.speedLimit,
+                        excess: parseFloat((v.speed - v.speedLimit).toFixed(2)),
+                        violationType: v.violationType,
+                        rotativoOn: v.rotativoOn,
+                        roadType: v.roadType,
+                        coordinates: { lat: v.lat, lng: v.lng }
+                    }));
+
+                    exportData = {
+                        tabName: 'Análisis de Velocidad',
+                        tabIndex: 2,
+                        subtitle: 'Control de Excesos de Velocidad según Normativa DGT',
+                        description: 'Análisis detallado de excesos de velocidad detectados en la flota, clasificados según normativa DGT para vehículos de emergencia. Incluye límites diferenciados por tipo de vía y estado del rotativo.',
+                        kpis: kpisVelocidad,
+                        speedViolations: violationsData,
+                        sections: [
+                            {
+                                title: 'Limites de Velocidad Aplicados',
+                                type: 'list',
+                                content: [
+                                    'VIA URBANA: 50 km/h (normal) | 80 km/h (emergencia con rotativo)',
+                                    'VIA INTERURBANA: 90 km/h (normal) | 120 km/h (emergencia con rotativo)',
+                                    'AUTOPISTA: 120 km/h (normal) | 140 km/h (emergencia con rotativo)',
+                                    'DENTRO DEL PARQUE: 20 km/h (limite fijo para todos los vehiculos)'
+                                ]
+                            },
+                            {
+                                title: 'Clasificacion de Severidad',
+                                type: 'list',
+                                content: [
+                                    'GRAVE: Exceso superior a 20 km/h - Requiere accion inmediata',
+                                    'MODERADO: Exceso entre 10-20 km/h - Requiere monitoreo',
+                                    'LEVE: Exceso entre 1-10 km/h - Variacion aceptable'
+                                ]
+                            },
+                            {
+                                title: 'Analisis de Resultados',
+                                type: 'text',
+                                content: `Se detectaron ${speedViolations.length} excesos de velocidad en el periodo analizado. ${graveViolations.length} fueron clasificados como graves (>20 km/h), ${moderadoViolations.length} como moderados y ${leveViolations.length} como leves. El exceso promedio fue de ${avgExcess.toFixed(2)} km/h. ${speedViolations.filter((v: any) => v.rotativoOn).length} excesos ocurrieron con rotativo encendido durante emergencias.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                case 1: // Puntos Negros - MEJORADO CON RANKING DETALLADO
+                    const ranking = blackSpotsData.ranking || [];
+                    const totalBlackSpotsEvents = ranking.reduce((sum: number, spot: any) => sum + (spot.totalEvents || 0), 0);
+                    const graveSpots = ranking.filter((spot: any) => spot.grave > 0).length;
+
+                    const kpisPuntosNegros: EnhancedKPIData[] = [
+                        {
+                            title: 'Zonas Criticas Identificadas',
+                            value: ranking.length,
+                            category: ranking.length > 10 ? 'warning' : 'success',
+                            description: 'Numero total de zonas identificadas como puntos negros. Areas con alta concentracion de eventos de inestabilidad que requieren atencion especial.'
+                        },
+                        {
+                            title: 'Total de Eventos Registrados',
+                            value: totalBlackSpotsEvents,
+                            category: totalBlackSpotsEvents > 100 ? 'danger' : 'success',
+                            description: 'Suma total de eventos de inestabilidad registrados en todas las zonas criticas. Indica el nivel general de riesgo en la red viaria.'
+                        },
+                        {
+                            title: 'Zonas con Eventos Graves',
+                            value: graveSpots,
+                            category: 'danger',
+                            description: 'Zonas que registraron al menos un evento de alta severidad. Requieren medidas correctivas urgentes o restricciones operativas.'
+                        },
+                        {
+                            title: 'Promedio Eventos por Zona',
+                            value: ranking.length > 0 ? (totalBlackSpotsEvents / ranking.length).toFixed(1) : 0,
+                            category: 'info',
+                            description: 'Promedio de eventos por zona critica. Indica la concentracion de incidencias en cada punto identificado.'
+                        }
+                    ];
+
+                    // Preparar datos del ranking para el PDF
+                    const blackSpotsDetails = ranking.slice(0, 10).map((spot: any) => ({
+                        rank: spot.rank,
+                        location: spot.location || `${spot.lat?.toFixed(4)}, ${spot.lng?.toFixed(4)}`,
+                        totalEvents: spot.totalEvents,
+                        grave: spot.grave || 0,
+                        moderada: spot.moderada || 0,
+                        leve: spot.leve || 0,
+                        frequency: spot.totalEvents,
+                        dominantSeverity: spot.dominantSeverity || 'leve',
+                        coordinates: { lat: spot.lat, lng: spot.lng }
+                    }));
+
+                    exportData = {
+                        tabName: 'Puntos Negros - Zonas Críticas',
+                        tabIndex: 1,
+                        subtitle: 'Análisis de Concentración de Incidencias',
+                        description: 'Identificación y análisis de zonas con alta concentración de eventos de inestabilidad. Estos puntos negros representan áreas de riesgo que requieren atención especial para prevención de accidentes.',
+                        kpis: kpisPuntosNegros,
+                        blackSpots: blackSpotsDetails,
+                        sections: [
+                            {
+                                title: 'Metodologia de Deteccion',
+                                type: 'text',
+                                content: 'Los puntos negros se identifican agrupando eventos de inestabilidad por proximidad geografica (clustering). Se consideran zonas criticas aquellas con frecuencia minima de 2 eventos y se clasifican segun la severidad dominante de los incidentes registrados.'
+                            },
+                            {
+                                title: 'Criterios de Clasificacion',
+                                type: 'list',
+                                content: [
+                                    'SEVERIDAD GRAVE: Indice de estabilidad 0-20% - Riesgo alto',
+                                    'SEVERIDAD MODERADA: Indice 20-35% - Riesgo medio',
+                                    'SEVERIDAD LEVE: Indice 35-50% - Riesgo bajo'
+                                ]
+                            },
+                            {
+                                title: 'Analisis de Patrones Detectados',
+                                type: 'text',
+                                content: `Se identificaron ${ranking.length} zonas criticas con ${totalBlackSpotsEvents} eventos totales. ${graveSpots} zonas presentan eventos de alta severidad. La zona con mayor frecuencia registro ${ranking[0]?.totalEvents || 0} eventos, indicando un patron recurrente que requiere investigacion y posibles medidas correctivas.`
+                            }
+                        ],
+                        filters: {
+                            vehicle: filters.vehicles && filters.vehicles.length > 0
+                                ? `${filters.vehicles.length} vehículo(s)`
+                                : 'Todos los vehículos',
+                            dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+                                start: new Date(filters.dateRange.start).toLocaleDateString('es-ES'),
+                                end: new Date(filters.dateRange.end).toLocaleDateString('es-ES')
+                            } : undefined
+                        }
+                    };
+                    break;
+
+                default:
+                    return; // Usar método antiguo para otras pestañas
+            }
+
+            if (exportData) {
+                await exportEnhancedTabToPDF(exportData);
+                logger.info('PDF mejorado exportado exitosamente', { tabName: exportData.tabName });
+            }
+
+        } catch (error) {
+            logger.error('Error exportando PDF mejorado', { error });
+            alert('Error al exportar PDF mejorado. Por favor, inténtelo de nuevo.');
+        }
+    }, [activeTab, activity, stability, getStateDuration, exportEnhancedTabToPDF, captureElementEnhanced, filters, speedViolations, blackSpotsData]);
+
     // Renderizar contenido de Estados & Tiempos
     const renderEstadosTiempos = () => {
         // Calcular velocidad promedio
@@ -494,137 +850,156 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
             : 0;
 
         return (
-            <div className="h-full w-full bg-white p-6" id="estados-tiempos-content">
-                {/* Grid de KPIs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="estados-tiempos-kpis">
-                    {/* Primera fila - Métricas principales */}
-                    <KPICard
-                        title="Horas de Conducción"
-                        value={activity?.driving_hours_formatted || '00:00:00'}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Tiempo total de conducción en el período"
-                    />
-                    <KPICard
-                        title="Kilómetros Recorridos"
-                        value={`${activity?.km_total || 0} km`}
-                        icon={<TruckIcon className="h-5 w-5" />}
-                        colorClass="text-green-600"
-                        subtitle="Distancia total recorrida"
-                    />
-                    <KPICard
-                        title="Tiempo en Parque"
-                        value={getStateDuration(1)}
-                        icon={<MapIcon className="h-5 w-5" />}
-                        colorClass="text-slate-600"
-                        subtitle="Tiempo total en parque (Clave 1)"
-                    />
-                    <KPICard
-                        title="% Rotativo"
-                        value={`${activity?.rotativo_on_percentage || 0}%`}
-                        icon={<PowerIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Porcentaje de tiempo con rotativo"
-                    />
+            <div className="h-full w-full bg-white p-2 overflow-hidden" id="estados-tiempos-content">
+                <div className="grid grid-cols-3 gap-3 h-full" id="estados-tiempos-kpis">
+                    {/* COLUMNA 1: MÉTRICAS GENERALES */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-blue-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ChartBarIcon className="h-4 w-4" />
+                            Métricas Generales
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Horas de Conducción"
+                                value={activity?.driving_hours_formatted || '00:00:00'}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Tiempo total de conducción"
+                            />
+                            <KPICard
+                                title="Kilómetros Recorridos"
+                                value={`${activity?.km_total || 0} km`}
+                                icon={<TruckIcon className="h-5 w-5" />}
+                                colorClass="text-green-600"
+                                subtitle="Distancia total recorrida"
+                            />
+                            <KPICard
+                                title="Velocidad Promedio"
+                                value={`${avgSpeed} km/h`}
+                                icon={<ChartBarIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Velocidad media de la flota"
+                            />
+                            <KPICard
+                                title="% Rotativo Activo"
+                                value={`${activity?.rotativo_on_percentage || 0}%`}
+                                icon={<PowerIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Tiempo con rotativo encendido"
+                            />
+                            <KPICard
+                                title="Índice de Estabilidad"
+                                value={`${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`}
+                                icon={<ChartBarIcon className="h-5 w-5" />}
+                                colorClass={
+                                    (quality?.indice_promedio || 0) >= 0.90 ? "text-green-600" :
+                                        (quality?.indice_promedio || 0) >= 0.88 ? "text-yellow-600" :
+                                            "text-red-600"
+                                }
+                                subtitle={`${quality?.calificacion || 'N/A'} ${quality?.estrellas || ''}`}
+                            />
+                        </div>
+                    </div>
 
-                    {/* AÑADIDO: Índice de Estabilidad */}
-                    <KPICard
-                        title="Índice de Estabilidad (SI)"
-                        value={`${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`}
-                        icon={<ChartBarIcon className="h-5 w-5" />}
-                        colorClass={
-                            (quality?.indice_promedio || 0) >= 0.90 ? "text-green-600" :
-                                (quality?.indice_promedio || 0) >= 0.88 ? "text-yellow-600" :
-                                    "text-red-600"
-                        }
-                        subtitle={`${quality?.calificacion || 'N/A'} ${quality?.estrellas || ''}`}
-                    />
+                    {/* COLUMNA 2: CLAVES OPERACIONALES */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-orange-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <KeyIcon className="h-4 w-4" />
+                            Claves Operacionales
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Clave 0 (Taller)"
+                                value={getStateDuration(0)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Mantenimiento"
+                            />
+                            <KPICard
+                                title="Clave 1 (Parque)"
+                                value={getStateDuration(1)}
+                                icon={<MapIcon className="h-5 w-5" />}
+                                colorClass="text-slate-600"
+                                subtitle="En base, disponible"
+                            />
+                            <KPICard
+                                title="Clave 2 (Emergencia)"
+                                value={getStateDuration(2)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Con rotativo activo"
+                            />
+                            <KPICard
+                                title="Clave 3 (Siniestro)"
+                                value={getStateDuration(3)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="En siniestro (parado >1min)"
+                            />
+                            <KPICard
+                                title="Clave 4 (Retirada)"
+                                value={getStateDuration(4)}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Fin de actuación"
+                            />
+                            <KPICard
+                                title="Clave 5 (Sin Rotativo)"
+                                value={getStateDuration(5)}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Servicios programados"
+                            />
+                            <KPICard
+                                title="Tiempo Fuera Parque"
+                                value={states?.time_outside_formatted || '00:00:00'}
+                                icon={<TruckIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Total en servicio externo"
+                            />
+                        </div>
+                    </div>
 
-                    {/* Segunda fila - Estados operativos */}
-                    <KPICard
-                        title="Tiempo Fuera Parque"
-                        value={states?.time_outside_formatted || '00:00:00'}
-                        icon={<TruckIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Tiempo en servicio externo (2+3+4+5)"
-                    />
-                    <KPICard
-                        title="Tiempo en Taller"
-                        value={getStateDuration(0)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Tiempo en mantenimiento (Clave 0)"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 2"
-                        value={getStateDuration(2)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Emergencias con rotativo"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 5"
-                        value={getStateDuration(5)}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Regreso al parque sin rotativo"
-                    />
-
-                    {/* Tercera fila - Incidencias */}
-                    <KPICard
-                        title="Total Incidencias"
-                        value={stability?.total_incidents || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Total de incidencias registradas"
-                    />
-                    <KPICard
-                        title="Incidencias Graves"
-                        value={stability?.critical || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Incidencias de alta severidad"
-                    />
-                    <KPICard
-                        title="Incidencias Moderadas"
-                        value={stability?.moderate || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Incidencias de severidad media"
-                    />
-                    <KPICard
-                        title="Incidencias Leves"
-                        value={stability?.light || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-green-600"
-                        subtitle="Incidencias de baja severidad"
-                    />
-
-                    {/* Cuarta fila - Velocidad y estados */}
-                    <KPICard
-                        title="Tiempo Clave 3"
-                        value={getStateDuration(3)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="En siniestro (parado >1min)"
-                    />
-                    <KPICard
-                        title="Velocidad Promedio"
-                        value={`${avgSpeed} km/h`}
-                        icon={<ChartBarIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Velocidad promedio del período"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 4"
-                        value={getStateDuration(4)}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Fin de actuación / retirada"
-                    />
+                    {/* COLUMNA 3: INCIDENCIAS */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-red-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ExclamationTriangleIcon className="h-4 w-4" />
+                            Incidencias de Estabilidad
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Total Incidencias"
+                                value={stability?.total_incidents || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-slate-600"
+                                subtitle="Total eventos registrados"
+                            />
+                            <KPICard
+                                title="Graves (0-20%)"
+                                value={stability?.critical || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Alta severidad"
+                            />
+                            <KPICard
+                                title="Moderadas (20-35%)"
+                                value={stability?.moderate || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Severidad media"
+                            />
+                            <KPICard
+                                title="Leves (35-50%)"
+                                value={stability?.light || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-green-600"
+                                subtitle="Baja severidad"
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                {/* AÑADIDO: Tabla de eventos por tipo */}
+                {/* AÑADIDO: Tabla de eventos por tipo - Ordenada por tipo alfabéticamente */}
                 {stability?.por_tipo && Object.keys(stability.por_tipo).length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold text-slate-800 mb-4">Detalle de Eventos por Tipo</h3>
@@ -645,7 +1020,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-slate-200">
                                     {Object.entries(stability.por_tipo)
-                                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                                        .sort(([tipoA], [tipoB]) => tipoA.localeCompare(tipoB))
                                         .map(([tipo, cantidad]) => (
                                             <tr key={tipo}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -731,16 +1106,16 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
             <div className="filters-container" style={{
                 backgroundColor: 'transparent',
                 boxShadow: 'none',
-                padding: '24px 40px 0 40px',
+                padding: '12px 20px 0 20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '32px'
+                gap: '16px'
             }}>
                 <GlobalFiltersBar />
             </div>
 
-            {/* Pestañas del dashboard */}
+            {/* Pestañas del dashboard con filtros unificados */}
             <div className="tabs-container">
                 <div className="flex items-center justify-between bg-white border-b border-slate-200 px-3 py-1 h-full">
                     <div className="flex items-center space-x-4">
@@ -763,21 +1138,94 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         {/* Panel de Diagnóstico (solo ADMIN) */}
                         <DiagnosticPanel />
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1 text-xs px-2 py-1"
-                        onClick={handleExportPDF}
-                        disabled={isExporting}
-                    >
-                        <ChartBarIcon className="h-3 w-3" />
-                        {isExporting ? 'GENERANDO...' : 'EXPORTAR PDF'}
-                    </Button>
+
+                    {/* Filtros de fecha unificados en la misma fila */}
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                updateFilters({
+                                    dateRange: {
+                                        start: today.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                        >
+                            HOY
+                        </button>
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                                updateFilters({
+                                    dateRange: {
+                                        start: weekAgo.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                        >
+                            ESTA SEMANA
+                        </button>
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                                updateFilters({
+                                    dateRange: {
+                                        start: monthAgo.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-sky-300 bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors"
+                        >
+                            ESTE MES
+                        </button>
+                        <button
+                            onClick={() => {
+                                updateFilters({
+                                    dateRange: {
+                                        start: '',
+                                        end: ''
+                                    },
+                                    vehicles: [],
+                                    severity: []
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-green-300 bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                        >
+                            TODO
+                        </button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs px-2 py-1 ml-2"
+                            onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF :
+                                activeTab === 4 ? () => {
+                                    if (selectedSessionData?.session && selectedSessionData?.routeData) {
+                                        exportRouteFunction(selectedSessionData.session, selectedSessionData.routeData);
+                                    } else {
+                                        logger.warn('No hay sesión seleccionada para exportar');
+                                    }
+                                } : handleExportPDF}
+                            disabled={isExporting}
+                        >
+                            <ChartBarIcon className="h-3 w-3" />
+                            {isExporting ? 'GENERANDO...' :
+                                (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' :
+                                    activeTab === 4 ? 'EXPORTAR RECORRIDO' : 'EXPORTAR PDF'}
+                        </Button>
+                    </div>
                 </div>
             </div>
 
             {/* Contenido del dashboard */}
-            <div className="dashboard-content h-[calc(100vh-200px)]">
+            <div className="dashboard-content h-[calc(100vh-140px)]">
                 {activeTab === 0 && renderEstadosTiempos()}
                 {activeTab === 1 && (
                     <div className="h-full w-full bg-white overflow-auto">
@@ -786,6 +1234,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             vehicleIds={filters.vehicles && filters.vehicles.length > 0 ? filters.vehicles : undefined}
                             startDate={filters.dateRange?.start}
                             endDate={filters.dateRange?.end}
+                            onDataLoaded={(data) => setBlackSpotsData(data)}
                         />
                     </div>
                 )}
@@ -811,7 +1260,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 )}
                 {activeTab === 4 && (
                     <div className="h-full w-full bg-white overflow-auto">
-                        <SessionsAndRoutesView />
+                        <SessionsAndRoutesView
+                            onSessionDataChange={(session, routeData) => {
+                                setSelectedSessionData({ session, routeData });
+                            }}
+                        />
                     </div>
                 )}
                 {activeTab === 5 && (

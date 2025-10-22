@@ -1,8 +1,9 @@
 import { PrismaClient, User } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import bcrypt from 'bcrypt';
 import { ApiError } from '../utils/ApiError';
 
-const prisma = new PrismaClient();
+
 
 interface GetUsersOptions {
     page?: number;

@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma'; // ✅ SINGLETON DE PRISMA
 import { logger } from '../utils/logger';
 
 export class DashboardService {
-    private prisma: PrismaClient;
-
     constructor() {
-        this.prisma = new PrismaClient();
+        // ✅ Asignar prisma en el constructor para evitar ReferenceError por orden de carga
     }
 
     async getDashboardStats(organizationId: string) {
@@ -17,7 +15,7 @@ export class DashboardService {
             }
 
             // Verify organization exists
-            const organization = await this.prisma.organization.findUnique({
+            const organization = await prisma.organization.findUnique({
                 where: { id: organizationId }
             });
 
@@ -26,23 +24,23 @@ export class DashboardService {
             }
 
             // Obtener total de vehículos y su distribución por estado
-            const vehicleStats = await this.prisma.vehicle.groupBy({
+            const vehicleStats = await prisma.vehicle.groupBy({
                 by: ['status'],
                 where: { organizationId },
                 _count: true
             });
 
             // Obtener total de eventos por tipo
-            const eventStats = await this.prisma.event.groupBy({
+            const eventStats = await prisma.event.groupBy({
                 by: ['type'],
                 where: { organizationId },
                 _count: true
             });
 
             // Obtener métricas de sesiones
-            const sessionStats = await this.prisma.session.aggregate({
+            const sessionStats = await prisma.session.aggregate({
                 where: {
-                    vehicle: { organizationId }
+                    Vehicle: { organizationId }
                 },
                 _count: true,
                 _avg: {
@@ -52,7 +50,7 @@ export class DashboardService {
             });
 
             // Obtener eventos recientes
-            const recentEvents = await this.prisma.event.findMany({
+            const recentEvents = await prisma.event.findMany({
                 where: {
                     organizationId,
                     timestamp: {
@@ -60,7 +58,7 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    vehicles: {
+                    eventVehicle: {
                         include: {
                             vehicle: true
                         }
@@ -76,7 +74,7 @@ export class DashboardService {
                 activeVehicles: vehicleStats.find((v) => v.status === 'ACTIVE')?._count || 0,
                 totalAlerts: eventStats.reduce((acc, curr) => acc + curr._count, 0),
                 activeAlerts: eventStats.find((e) => e.type === 'SYSTEM')?._count || 0,
-                recentEvents: recentEvents.map((event) => ({
+                recentEvents: recentEvents.map((event: any) => ({
                     id: event.id,
                     type: event.type,
                     description:
@@ -84,7 +82,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.vehicles[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.eventVehicle?.[0]?.vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -120,7 +118,7 @@ export class DashboardService {
             }
 
             // Obtener tendencias de eventos
-            const eventTrends = await this.prisma.event.groupBy({
+            const eventTrends = await prisma.event.groupBy({
                 by: ['timestamp'],
                 where: {
                     organizationId,
@@ -135,10 +133,10 @@ export class DashboardService {
             });
 
             // Obtener tendencias de sesiones
-            const sessionTrends = await this.prisma.session.groupBy({
+            const sessionTrends = await prisma.session.groupBy({
                 by: ['startTime'],
                 where: {
-                    vehicle: { organizationId },
+                    Vehicle: { organizationId },
                     startTime: {
                         gte: startDate
                     }
@@ -154,7 +152,7 @@ export class DashboardService {
             });
 
             // Obtener eventos recientes
-            const recentEvents = await this.prisma.event.findMany({
+            const recentEvents = await prisma.event.findMany({
                 where: {
                     organizationId,
                     timestamp: {
@@ -162,7 +160,7 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    vehicles: {
+                    eventVehicle: {
                         include: {
                             vehicle: true
                         }
@@ -192,7 +190,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.vehicles[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -205,10 +203,10 @@ export class DashboardService {
     async getVehiclePerformance(organizationId: string, vehicleId: string) {
         try {
             // Obtener métricas de rendimiento del vehículo
-            const performance = await this.prisma.session.aggregate({
+            const performance = await prisma.session.aggregate({
                 where: {
                     vehicleId,
-                    vehicle: { organizationId }
+                    Vehicle: { organizationId }
                 },
                 _count: true,
                 _avg: {
@@ -218,9 +216,9 @@ export class DashboardService {
             });
 
             // Obtener eventos recientes del vehículo
-            const recentEvents = await this.prisma.event.findMany({
+            const recentEvents = await prisma.event.findMany({
                 where: {
-                    vehicles: {
+                    eventVehicle: {
                         some: {
                             vehicleId,
                             vehicle: {
@@ -233,7 +231,7 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    vehicles: {
+                    eventVehicle: {
                         include: {
                             vehicle: true
                         }
@@ -258,7 +256,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.vehicles[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -270,10 +268,10 @@ export class DashboardService {
 
     async getRecentActivity(organizationId: string, limit = 10) {
         try {
-            const events = await this.prisma.event.findMany({
+            const events = await prisma.event.findMany({
                 where: { organizationId },
                 include: {
-                    vehicles: {
+                    eventVehicle: {
                         include: {
                             vehicle: true
                         }
@@ -293,7 +291,7 @@ export class DashboardService {
                         ? (event.displayData as { message?: string }).message || ''
                         : '',
                 severity: event.type,
-                vehicleName: event.vehicles[0]?.vehicle?.name || 'N/A',
+                vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
                 timestamp: event.timestamp.toISOString()
             }));
         } catch (error) {
@@ -304,7 +302,7 @@ export class DashboardService {
 
     async getVehicleStatus(organizationId: string) {
         try {
-            const vehicles = await this.prisma.vehicle.findMany({ where: { organizationId } });
+            const vehicles = await prisma.vehicle.findMany({ where: { organizationId } });
             return vehicles.map((vehicle) => ({
                 id: vehicle.id,
                 name: vehicle.name,
@@ -322,8 +320,8 @@ export class DashboardService {
         try {
             logger.info('Obteniendo métricas para organización:', organizationId);
             const [totalVehicles, totalSessions] = await Promise.all([
-                this.prisma.vehicle.count({ where: { organizationId } }),
-                this.prisma.session.count({ where: { vehicle: { organizationId } } })
+                prisma.vehicle.count({ where: { organizationId } }),
+                prisma.session.count({ where: { Vehicle: { organizationId } } })
             ]);
             return {
                 totalVehicles,
@@ -337,16 +335,16 @@ export class DashboardService {
 
     async getRecentSessions(organizationId: string, limit = 5) {
         try {
-            const sessions = await this.prisma.session.findMany({
+            const sessions = await prisma.session.findMany({
                 where: {
-                    vehicle: { organizationId }
+                    Vehicle: { organizationId }
                 },
                 orderBy: {
                     startTime: 'desc'
                 },
                 take: limit,
                 include: {
-                    vehicle: {
+                    Vehicle: {
                         select: {
                             name: true
                         }
@@ -358,7 +356,7 @@ export class DashboardService {
                 id: session.id,
                 startTime: session.startTime,
                 endTime: session.endTime,
-                vehicleName: session.vehicle.name,
+                vehicleName: session.Vehicle.name,
                 status: session.endTime ? 'COMPLETED' : 'IN_PROGRESS'
             }));
         } catch (error) {
@@ -369,7 +367,7 @@ export class DashboardService {
 
     async getAlarmsByType(organizationId: string) {
         try {
-            const events = await this.prisma.event.groupBy({
+            const events = await prisma.event.groupBy({
                 by: ['type'],
                 where: { organizationId },
                 _count: {
@@ -389,7 +387,7 @@ export class DashboardService {
 
     async getVehicleStats(organizationId: string) {
         try {
-            const vehicles = await this.prisma.vehicle.findMany({
+            const vehicles = await prisma.vehicle.findMany({
                 where: { organizationId },
                 select: {
                     id: true,
@@ -401,7 +399,7 @@ export class DashboardService {
                     status: true,
                     _count: {
                         select: {
-                            sessions: true
+                            Session: true
                         }
                     }
                 }
@@ -415,7 +413,7 @@ export class DashboardService {
                 licensePlate: vehicle.licensePlate,
                 type: vehicle.type,
                 status: vehicle.status,
-                sessionCount: vehicle._count.sessions
+                sessionCount: vehicle._count.Session
             }));
         } catch (error) {
             logger.error('Error al obtener estadísticas de vehículos:', error);

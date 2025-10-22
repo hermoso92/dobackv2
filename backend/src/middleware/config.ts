@@ -1,6 +1,6 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { AppError } from './error';
 
 interface ConfigItem {

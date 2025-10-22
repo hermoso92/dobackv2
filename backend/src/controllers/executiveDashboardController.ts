@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export const getExecutiveDashboardHandler = async (req: Request, res: Response) => {
     try {

@@ -1,7 +1,7 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { Request } from 'express';
 import WebSocket from 'ws';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { AppError } from './error';
 

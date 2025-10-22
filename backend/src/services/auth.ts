@@ -1,228 +1,214 @@
-import { PrismaClient } from '@prisma/client';
-import jwt, { SignOptions } from 'jsonwebtoken';
-import { config } from '../config/env';
-import { AppError } from '../middleware/error';
-import {
-    GetCurrentUserResponse,
-    LogoutResponse,
-    RefreshTokenResponse,
-    TokenPayload,
-    UserWithoutPassword,
-    VerifyTokenResponse
-} from '../types/auth';
-import { comparePasswords } from '../utils/crypto';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+interface LoginResponse {
+    success: boolean;
+    access_token?: string;
+    refresh_token?: string;
+    user?: {
+        id: string;
+        email: string;
+        name: string;
+        role: string;
+        organizationId: string;
+        status: string;
+    };
+    message?: string;
+}
+
+interface VerifyTokenResponse {
+    success: boolean;
+    data?: {
+        user: {
+            id: string;
+            email: string;
+            name: string;
+            role: string;
+            organizationId: string;
+        };
+        token: string;
+    };
+    message?: string;
+}
+
+interface RefreshTokenResponse {
+    success: boolean;
+    data?: {
+        access_token: string;
+        refresh_token: string;
+    };
+    message?: string;
+}
 
 export class AuthService {
-    private prisma: PrismaClient;
+    private jwtSecret: string;
+    private jwtExpiresIn: string;
 
     constructor() {
-        this.prisma = new PrismaClient();
+        this.jwtSecret = process.env.JWT_SECRET || 'DobackSoft-jwt-secret-key-cosigein';
+        this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
     }
 
-    public async login(email: string, password: string) {
+    async login(email: string, password: string): Promise<LoginResponse> {
         try {
-            const user = await this.prisma.user.findUnique({
-                where: { email },
-                select: {
-                    id: true,
-                    email: true,
-                    password: true,
-                    name: true,
-                    role: true,
-                    organizationId: true,
-                    status: true,
-                    createdAt: true,
-                    updatedAt: true
-                }
-            });
-
-            if (!user) {
-                throw new AppError('Credenciales inválidas', 401);
-            }
-
-            if (user.status !== 'ACTIVE') {
-                throw new AppError('Usuario inactivo', 401);
-            }
-
-            const isValidPassword = await comparePasswords(password, user.password);
-            if (!isValidPassword) {
-                throw new AppError('Credenciales inválidas', 401);
-            }
-
-            const { password: _, ...userWithoutPassword } = user;
-
-            const accessToken = this.generateToken({
-                id: String(user.id),
-                email: user.email,
-                role: user.role,
-                organizationId: user.organizationId ? String(user.organizationId) : ''
-            });
-
-            const refreshToken = this.generateToken(
-                {
-                    id: String(user.id),
-                    email: user.email,
-                    role: user.role,
-                    organizationId: user.organizationId ? String(user.organizationId) : ''
-                },
-                true
-            );
-
-            return {
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                user: userWithoutPassword
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    private generateToken(payload: TokenPayload, isRefreshToken = false): string {
-        const options: SignOptions = {
-            expiresIn: isRefreshToken
-                ? (config.jwt.refreshExpiresIn as any)
-                : (config.jwt.expiresIn as any)
-        };
-        return jwt.sign(payload, config.jwt.secret, options);
-    }
-
-    async getCurrentUser(userId: string): Promise<GetCurrentUserResponse> {
-        try {
+            // Buscar usuario por email
             const user = await prisma.user.findUnique({
-                where: { id: String(userId) },
-                select: {
-                    id: true,
-                    email: true,
-                    name: true,
-                    role: true,
-                    organizationId: true,
-                    status: true,
-                    createdAt: true,
-                    updatedAt: true
+                where: { email },
+                include: {
+                    organization: true
                 }
             });
 
             if (!user) {
-                throw new AppError('Usuario no encontrado', 404);
+                return {
+                    success: false,
+                    message: 'Usuario no encontrado'
+                };
             }
 
-            const userWithoutPassword: UserWithoutPassword = {
-                id: String(user.id),
+            // Verificar contraseña
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return {
+                    success: false,
+                    message: 'Contraseña incorrecta'
+                };
+            }
+
+            // Verificar que el usuario esté activo
+            if (user.status !== 'ACTIVE') {
+                return {
+                    success: false,
+                    message: 'Usuario inactivo'
+                };
+            }
+
+            // Generar tokens
+            const tokenPayload = {
+                id: user.id,
                 email: user.email,
-                name: user.name,
                 role: user.role,
-                organizationId: user.organizationId ? String(user.organizationId) : '',
-                status: user.status,
-                createdAt: user.createdAt,
-                updatedAt: user.updatedAt
+                organizationId: user.organizationId
             };
+
+            const access_token = jwt.sign(tokenPayload, this.jwtSecret, {
+                expiresIn: this.jwtExpiresIn
+            });
+
+            const refresh_token = jwt.sign(tokenPayload, this.jwtSecret, {
+                expiresIn: '7d'
+            });
+
+            logger.info(`Usuario ${email} inició sesión correctamente`);
 
             return {
                 success: true,
-                data: userWithoutPassword
+                access_token,
+                refresh_token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    role: user.role,
+                    organizationId: user.organizationId,
+                    status: user.status
+                }
             };
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            logger.error('Error en login:', error);
+            return {
+                success: false,
+                message: 'Error al iniciar sesión'
+            };
         }
     }
 
     async verifyToken(token: string): Promise<VerifyTokenResponse> {
         try {
-            const decoded = jwt.verify(token, config.jwt.secret) as TokenPayload;
+            const decoded = jwt.verify(token, this.jwtSecret) as any;
+
             const user = await prisma.user.findUnique({
-                where: { id: String(decoded.id) },
-                select: {
-                    id: true,
-                    email: true,
-                    role: true,
-                    organizationId: true
-                }
+                where: { id: decoded.id }
             });
 
-            if (!user) {
-                throw new AppError('Token inválido', 401);
+            if (!user || user.status !== 'ACTIVE') {
+                return {
+                    success: false,
+                    message: 'Token inválido o usuario inactivo'
+                };
             }
 
             return {
                 success: true,
-                valid: true,
                 data: {
-                    id: String(user.id),
-                    email: user.email,
-                    role: user.role,
-                    organizationId: user.organizationId ? String(user.organizationId) : ''
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role,
+                        organizationId: user.organizationId
+                    },
+                    token
                 }
             };
-        } catch (error) {
-            logger.error('Error al verificar token', { error });
-            throw error;
+        } catch (error: any) {
+            logger.error('Error verificando token:', error);
+            return {
+                success: false,
+                message: 'Token inválido'
+            };
         }
     }
 
-    async logout(): Promise<LogoutResponse> {
-        return {
-            success: true,
-            message: 'Logout exitoso'
-        };
-    }
-
-    async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+    async refreshToken(refresh_token: string): Promise<RefreshTokenResponse> {
         try {
-            const decoded = jwt.verify(refreshToken, config.jwt.secret) as TokenPayload;
+            const decoded = jwt.verify(refresh_token, this.jwtSecret) as any;
+
             const user = await prisma.user.findUnique({
-                where: { id: String(decoded.id) },
-                select: {
-                    id: true,
-                    email: true,
-                    role: true,
-                    organizationId: true,
-                    name: true,
-                    status: true,
-                    createdAt: true,
-                    updatedAt: true
-                }
+                where: { id: decoded.id }
             });
 
-            if (!user) {
-                throw new AppError('Usuario no encontrado', 404);
+            if (!user || user.status !== 'ACTIVE') {
+                return {
+                    success: false,
+                    message: 'Usuario no encontrado o inactivo'
+                };
             }
 
-            // Generar nuevo access token
-            const newAccessToken = this.generateToken({
-                id: String(user.id),
+            // Generar nuevos tokens
+            const tokenPayload = {
+                id: user.id,
                 email: user.email,
                 role: user.role,
-                organizationId: user.organizationId ? String(user.organizationId) : ''
+                organizationId: user.organizationId
+            };
+
+            const new_access_token = jwt.sign(tokenPayload, this.jwtSecret, {
+                expiresIn: this.jwtExpiresIn
             });
 
-            // Generar nuevo refresh token
-            const newRefreshToken = this.generateToken(
-                {
-                    id: String(user.id),
-                    email: user.email,
-                    role: user.role,
-                    organizationId: user.organizationId ? String(user.organizationId) : ''
-                },
-                true
-            );
-
-            const { password: _, ...userWithoutPassword } = user as any;
+            const new_refresh_token = jwt.sign(tokenPayload, this.jwtSecret, {
+                expiresIn: '7d'
+            });
 
             return {
                 success: true,
-                data: { 
-                    access_token: newAccessToken,
-                    refresh_token: newRefreshToken,
-                    user: userWithoutPassword
+                data: {
+                    access_token: new_access_token,
+                    refresh_token: new_refresh_token
                 }
             };
-        } catch (error) {
-            logger.error('Error al refrescar token', { error });
-            throw error;
+        } catch (error: any) {
+            logger.error('Error refrescando token:', error);
+            return {
+                success: false,
+                message: 'Error al refrescar token'
+            };
         }
     }
 }
+
+export const authService = new AuthService();
+

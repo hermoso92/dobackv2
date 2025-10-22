@@ -18,7 +18,6 @@ router.post('/', authenticate, attachOrg, async (req, res) => {
 
         logger.info('🚀 Iniciando generación masiva de eventos', { organizationId: orgId, force });
 
-        const { prisma } = await import('../config/prisma');
         const { generateStabilityEventsForSession } = await import('../services/eventDetector');
 
         // Obtener TODAS las sesiones de la organización
@@ -148,8 +147,6 @@ router.post('/session/:id', authenticate, attachOrg, async (req, res) => {
         const { force = false } = req.body; // Forzar regeneración aunque ya existan eventos
 
         logger.info('🚀 Regenerando eventos para sesión', { sessionId: id, force });
-
-        const { prisma } = await import('../config/prisma');
 
         // Verificar que la sesión pertenece a la organización
         const session = await prisma.session.findFirst({

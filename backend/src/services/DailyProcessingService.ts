@@ -1,11 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+
 import fs from 'fs/promises';
+import { prisma } from '../lib/prisma';
 import cron from 'node-cron';
 import path from 'path';
 import { logger } from '../utils/logger';
 import { IndependentDataProcessor } from './IndependentDataProcessor';
 
-const prisma = new PrismaClient();
+
 
 interface ProcessingResult {
     vehicleId: string;

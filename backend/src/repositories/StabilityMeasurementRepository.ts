@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
+import { prisma } from '../lib/prisma';
 import { StabilityMeasurements } from '../types/stability';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export class StabilityMeasurementRepository {
     async createMeasurements(measurements: StabilityMeasurements[]): Promise<void> {

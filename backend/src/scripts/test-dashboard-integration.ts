@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+
 import { processAndSaveStabilityEvents } from '../services/StabilityEventService';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Script para probar la integración completa del dashboard

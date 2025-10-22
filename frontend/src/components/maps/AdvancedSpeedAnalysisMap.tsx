@@ -534,7 +534,7 @@ export const AdvancedSpeedAnalysisMap: React.FC<AdvancedSpeedAnalysisMapProps> =
                                             <strong>Límite:</strong> {violation.speedLimit} km/h
                                         </Typography>
                                         <Typography variant="body2" className="mb-1">
-                                            <strong>Exceso:</strong> {violation.speed - violation.speedLimit} km/h
+                                            <strong>Exceso:</strong> {(violation.speed - violation.speedLimit).toFixed(2)} km/h
                                         </Typography>
                                         <Typography variant="body2" className="mb-1">
                                             <strong>Tipo:</strong> {violation.violationType}
@@ -554,7 +554,7 @@ export const AdvancedSpeedAnalysisMap: React.FC<AdvancedSpeedAnalysisMapProps> =
                                     </Box>
                                 </Popup>
                                 <LeafletTooltip>
-                                    {violation.vehicleName} - {violation.speed} km/h - Exceso: {violation.speed - violation.speedLimit} km/h
+                                    {violation.vehicleName} - {violation.speed} km/h - Exceso: {(violation.speed - violation.speedLimit).toFixed(2)} km/h
                                 </LeafletTooltip>
                             </CircleMarker>
                         ))}

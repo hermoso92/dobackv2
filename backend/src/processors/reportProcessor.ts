@@ -2,7 +2,7 @@ import { PrismaClient, ReportStatus } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { buildReportPdf } from '../utils/report/reportBuilder';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Procesa todos los Report con estado PENDING.

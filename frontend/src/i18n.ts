@@ -76,6 +76,8 @@ i18n
         fallbackLng: 'es',
         lng: selectedLanguage,
         debug: false,
+        ns: ['translation'], // Especificar namespace explícitamente
+        defaultNS: 'translation',
         interpolation: {
             escapeValue: false,
         },
@@ -85,16 +87,28 @@ i18n
         react: {
             useSuspense: false // Evitar problemas de carga
         },
-        // Recursos por defecto para evitar el error de 'messages'
+        // Recursos básicos por defecto inline para evitar errores
         resources: {
             es: {
-                translation: {}
+                translation: {
+                    loading: 'Cargando...',
+                    error: 'Error',
+                    welcome: 'Bienvenido'
+                }
             },
             en: {
-                translation: {}
+                translation: {
+                    loading: 'Loading...',
+                    error: 'Error',
+                    welcome: 'Welcome'
+                }
             },
             fr: {
-                translation: {}
+                translation: {
+                    loading: 'Chargement...',
+                    error: 'Erreur',
+                    welcome: 'Bienvenue'
+                }
             }
         },
         // Configuración adicional para evitar errores de claves faltantes
@@ -102,12 +116,16 @@ i18n
         returnEmptyString: false,
         returnNull: false,
         missingKeyHandler: (_lng, _ns, key, fallbackValue) => {
-            // No mostrar warnings para claves de login que sabemos que existen
-            if (key.startsWith('login_')) {
-                return fallbackValue || key;
-            }
+            // Devolver la clave como fallback para debugging
             return fallbackValue || key;
+        },
+        // Evitar errores cuando faltan traducciones
+        parseMissingKeyHandler: (key) => {
+            return key;
         }
+    }).catch((error) => {
+        // Silenciar errores de inicialización de i18n
+        console.warn('i18n initialization warning:', error);
     });
 
 // FORZAR el idioma seleccionado

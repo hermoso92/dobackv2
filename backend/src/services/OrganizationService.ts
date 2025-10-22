@@ -1,6 +1,7 @@
 import { Organization, PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 export class OrganizationService {
     async createOrganization(data: {

@@ -21,7 +21,7 @@ const LocationDisplay: React.FC<LocationDisplayProps> = ({
     if (loading) {
         return (
             <span className="text-slate-500 italic">
-                Cargando dirección...
+                {fallbackText || 'Cargando dirección...'}
             </span>
         );
     }

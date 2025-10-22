@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
 import haversine from 'haversine-distance';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export interface StabilityDataPoint {
     timestamp: string;

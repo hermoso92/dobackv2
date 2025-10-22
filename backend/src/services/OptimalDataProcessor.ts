@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
+import { prisma } from '../lib/prisma'; // ✅ SINGLETON DE PRISMA
 import { logger } from '../utils/logger';
 import {
     CANData,
@@ -61,7 +62,6 @@ export interface ProcessingStats {
 }
 
 export class OptimalDataProcessor extends EventEmitter {
-    private prisma: PrismaClient;
     private kpiService: AdvancedKPICalculationService;
     private isProcessing: boolean = false;
     private stats: ProcessingStats;
@@ -71,7 +71,7 @@ export class OptimalDataProcessor extends EventEmitter {
 
     constructor() {
         super();
-        this.prisma = new PrismaClient();
+        // ✅ Asignar prisma en el constructor para evitar ReferenceError por orden de carga
         this.kpiService = new AdvancedKPICalculationService();
         this.stats = {
             sessionsProcessed: 0,
@@ -582,7 +582,7 @@ export class OptimalDataProcessor extends EventEmitter {
      * Obtiene vehículo de la base de datos
      */
     private async getVehicle(vehicleId: string, organizationId: string) {
-        return await this.prisma.vehicle.findFirst({
+        return await prisma.vehicle.findFirst({
             where: {
                 name: vehicleId,
                 organizationId: organizationId
@@ -594,14 +594,14 @@ export class OptimalDataProcessor extends EventEmitter {
      * Crea sesión en la base de datos
      */
     private async createSession(vehicleId: string, session: CompleteSession) {
-        const lastSession = await this.prisma.session.findFirst({
+        const lastSession = await prisma.session.findFirst({
             where: { vehicleId },
             orderBy: { sessionNumber: 'desc' }
         });
 
         const sessionNumber = lastSession ? lastSession.sessionNumber + 1 : 1;
 
-        return await this.prisma.session.create({
+        return await prisma.session.create({
             data: {
                 vehicleId,
                 userId: 'system',
@@ -619,7 +619,7 @@ export class OptimalDataProcessor extends EventEmitter {
      * Inserta datos de sesión de forma atómica
      */
     private async insertSessionDataAtomically(sessionId: string, data: any): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx) => {
             // Insertar GPS
             if (data.gpsData.length > 0) {
                 await tx.gpsMeasurement.createMany({
@@ -721,6 +721,6 @@ export class OptimalDataProcessor extends EventEmitter {
      */
     public async stop(): Promise<void> {
         this.isProcessing = false;
-        await this.prisma.$disconnect();
+        await prisma.$disconnect();
     }
 }

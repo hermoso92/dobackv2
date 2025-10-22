@@ -1,794 +1,478 @@
+/**
+ * AlertSystemManager - Gestor de Alertas para MANAGER
+ * 
+ * Funcionalidades:
+ * - Dashboard de alertas pendientes
+ * - Lista de vehículos con archivos faltantes
+ * - Resolución/Ignorar alertas
+ * - Estadísticas
+ * - Historial
+ */
+
 import {
-    BellIcon,
-    CheckCircleIcon,
-    Cog6ToothIcon,
-    ExclamationTriangleIcon,
-    PencilIcon,
-    PlusIcon,
-    TrashIcon,
-    XCircleIcon
-} from '@heroicons/react/24/outline';
+    CheckCircle as CheckIcon,
+    Close as CloseIcon,
+    Error as ErrorIcon,
+    Info as InfoIcon,
+    Warning as WarningIcon
+} from '@mui/icons-material';
 import {
     Alert,
+    Badge,
     Box,
     Button,
     Card,
     CardContent,
     Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
-    FormControl,
-    FormControlLabel,
     Grid,
-    IconButton,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Switch,
+    List,
+    ListItem,
+    ListItemText,
+    Tab,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
+    Tabs,
     TextField,
     Typography
 } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
 
-interface AlertRule {
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`alert-tabpanel-${index}`}
+            {...other}
+        >
+            {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+        </div>
+    );
+}
+
+interface MissingFileAlert {
     id: string;
-    name: string;
-    description: string;
-    type: 'speed' | 'stability' | 'geofence' | 'emergency';
-    condition: string;
-    threshold: number;
-    enabled: boolean;
-    notifications: {
-        email: boolean;
-        sms: boolean;
-        push: boolean;
+    vehicleId: string;
+    date: string;
+    missingFiles: string[];
+    uploadedFiles: string[];
+    status: string;
+    severity: string;
+    Vehicle: {
+        name: string;
+        identifier: string;
+        licensePlate: string;
     };
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    resolvedAt?: string;
+    ResolvedByUser?: {
+        name: string;
+    };
+    resolutionNotes?: string;
 }
 
-interface Alert {
-    id: string;
-    rule_id: string;
-    rule_name: string;
-    vehicle_id: string;
-    vehicle_name: string;
-    severity: 'low' | 'medium' | 'high' | 'critical';
-    message: string;
-    timestamp: string;
-    acknowledged: boolean;
-    acknowledged_by?: string;
-    acknowledged_at?: string;
-}
+const AlertSystemManager: React.FC = () => {
+    const [loading, setLoading] = useState(true);
+    const [alerts, setAlerts] = useState<MissingFileAlert[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState(0);
+    const [selectedAlert, setSelectedAlert] = useState<MissingFileAlert | null>(null);
+    const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const filterStatus = 'pending';
 
-export const AlertSystemManager: React.FC = () => {
-    const { user } = useAuth();
-    const [alertRules, setAlertRules] = useState<AlertRule[]>([]);
-    const [alerts, setAlerts] = useState<Alert[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    useEffect(() => {
+        fetchData();
+    }, [filterStatus]);
 
-    // Estados para el diálogo de configuración
-    const [configDialogOpen, setConfigDialogOpen] = useState(false);
-    const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
-    const [newRule, setNewRule] = useState<Partial<AlertRule>>({
-        name: '',
-        description: '',
-        type: 'speed',
-        condition: 'greater_than',
-        threshold: 50,
-        enabled: true,
-        notifications: {
-            email: true,
-            sms: false,
-            push: true
-        }
-    });
-
-    // Cargar reglas de alerta
-    const loadAlertRules = useCallback(async () => {
-        if (!user?.organizationId) return;
-
-        setLoading(true);
+    const fetchData = async () => {
         try {
-            const response = await fetch(`/api/alerts/rules?organizationId=${user.organizationId}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    setAlertRules(data.data || []);
-                }
+            setLoading(true);
+
+            const statusFilter = filterStatus === 'pending' ? ['PENDING', 'NOTIFIED'] : filterStatus;
+
+            const [alertsResponse, statsResponse] = await Promise.all([
+                apiService.get('/api/alerts', {
+                    params: { status: statusFilter }
+                }),
+                apiService.get('/api/alerts/stats')
+            ]);
+
+            if (alertsResponse.success) {
+                setAlerts(alertsResponse.data as MissingFileAlert[]);
+            }
+
+            if (statsResponse.success) {
+                setStats(statsResponse.data as any);
             }
         } catch (error) {
-            console.warn('Error cargando reglas de alerta, usando datos mock:', error);
-
-            // Datos mock para Bomberos Madrid
-            const mockRules: AlertRule[] = [
-                {
-                    id: 'rule-1',
-                    name: 'Exceso de Velocidad en Emergencia',
-                    description: 'Alerta cuando un vehículo supera 60 km/h con rotativo encendido',
-                    type: 'speed',
-                    condition: 'greater_than',
-                    threshold: 60,
-                    enabled: true,
-                    notifications: { email: true, sms: true, push: true },
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                },
-                {
-                    id: 'rule-2',
-                    name: 'Estabilidad Crítica',
-                    description: 'Alerta cuando la estabilidad del vehículo es menor al 30%',
-                    type: 'stability',
-                    condition: 'less_than',
-                    threshold: 30,
-                    enabled: true,
-                    notifications: { email: true, sms: false, push: true },
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                },
-                {
-                    id: 'rule-3',
-                    name: 'Salida de Geocerca',
-                    description: 'Alerta cuando un vehículo sale de su zona asignada',
-                    type: 'geofence',
-                    condition: 'exit',
-                    threshold: 0,
-                    enabled: true,
-                    notifications: { email: false, sms: true, push: true },
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                }
-            ];
-            setAlertRules(mockRules);
+            logger.error('Error cargando alertas', error);
         } finally {
             setLoading(false);
         }
-    }, [user?.organizationId]);
+    };
 
-    // Cargar alertas activas
-    const loadAlerts = useCallback(async () => {
-        if (!user?.organizationId) return;
-
-        try {
-            const response = await fetch(`/api/alerts/active?organizationId=${user.organizationId}&limit=50`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    setAlerts(data.data || []);
-                }
-            }
-        } catch (error) {
-            console.warn('Error cargando alertas, usando datos mock:', error);
-
-            // Datos mock para alertas
-            const mockAlerts: Alert[] = [
-                {
-                    id: 'alert-1',
-                    rule_id: 'rule-1',
-                    rule_name: 'Exceso de Velocidad en Emergencia',
-                    vehicle_id: 'DOBACK001',
-                    vehicle_name: 'Bomba Escalera 1',
-                    severity: 'high',
-                    message: 'Vehículo DOBACK001 superó 65 km/h con rotativo encendido en M-30',
-                    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-                    acknowledged: false
-                },
-                {
-                    id: 'alert-2',
-                    rule_id: 'rule-2',
-                    rule_name: 'Estabilidad Crítica',
-                    vehicle_id: 'DOBACK002',
-                    vehicle_name: 'Bomba Escalera 2',
-                    severity: 'critical',
-                    message: 'Estabilidad crítica detectada en DOBACK002 (25%)',
-                    timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-                    acknowledged: false
-                },
-                {
-                    id: 'alert-3',
-                    rule_id: 'rule-3',
-                    rule_name: 'Salida de Geocerca',
-                    vehicle_id: 'DOBACK003',
-                    vehicle_name: 'Ambulancia 1',
-                    severity: 'medium',
-                    message: 'DOBACK003 salió de su zona asignada',
-                    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-                    acknowledged: true,
-                    acknowledged_by: 'Operador 1',
-                    acknowledged_at: new Date(Date.now() - 2 * 60 * 1000).toISOString()
-                }
-            ];
-            setAlerts(mockAlerts);
-        }
-    }, [user?.organizationId]);
-
-    useEffect(() => {
-        loadAlertRules();
-        loadAlerts();
-    }, [loadAlertRules, loadAlerts]);
-
-    // Crear nueva regla
-    const createRule = useCallback(async () => {
-        if (!user?.organizationId) return;
+    const handleResolve = async () => {
+        if (!selectedAlert) return;
 
         try {
-            const response = await fetch('/api/alerts/rules', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    ...newRule,
-                    organizationId: user.organizationId
-                })
+            const response = await apiService.post(`/api/alerts/${selectedAlert.id}/resolve`, {
+                notes: resolutionNotes
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    loadAlertRules();
-                    setConfigDialogOpen(false);
-                    setNewRule({
-                        name: '',
-                        description: '',
-                        type: 'speed',
-                        condition: 'greater_than',
-                        threshold: 50,
-                        enabled: true,
-                        notifications: {
-                            email: true,
-                            sms: false,
-                            push: true
-                        }
-                    });
-                    logger.info('Nueva regla de alerta creada', { ruleName: newRule.name, userId: user?.id });
-                }
+            if (response.success) {
+                setResolveDialogOpen(false);
+                setSelectedAlert(null);
+                setResolutionNotes('');
+                fetchData();
             }
         } catch (error) {
-            console.error('Error creando regla:', error);
-            setError('Error al crear la regla de alerta');
+            logger.error('Error resolviendo alerta', error);
         }
-    }, [newRule, user?.organizationId, user?.id, loadAlertRules]);
+    };
 
-    // Actualizar regla
-    const updateRule = useCallback(async (ruleId: string, updates: Partial<AlertRule>) => {
-        if (!user?.organizationId) return;
-
+    const handleIgnore = async (alertId: string) => {
         try {
-            const response = await fetch(`/api/alerts/rules/${ruleId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updates)
-            });
+            const response = await apiService.post(`/api/alerts/${alertId}/ignore`);
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    loadAlertRules();
-                    logger.info('Regla de alerta actualizada', { ruleId, userId: user?.id });
-                }
+            if (response.success) {
+                fetchData();
             }
         } catch (error) {
-            console.error('Error actualizando regla:', error);
-            setError('Error al actualizar la regla de alerta');
-        }
-    }, [user?.organizationId, user?.id, loadAlertRules]);
-
-    // Eliminar regla
-    const deleteRule = useCallback(async (ruleId: string) => {
-        if (!user?.organizationId) return;
-
-        try {
-            const response = await fetch(`/api/alerts/rules/${ruleId}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    loadAlertRules();
-                    logger.info('Regla de alerta eliminada', { ruleId, userId: user?.id });
-                }
-            }
-        } catch (error) {
-            console.error('Error eliminando regla:', error);
-            setError('Error al eliminar la regla de alerta');
-        }
-    }, [user?.organizationId, user?.id, loadAlertRules]);
-
-    // Reconocer alerta
-    const acknowledgeAlert = useCallback(async (alertId: string) => {
-        if (!user?.organizationId) return;
-
-        try {
-            const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    acknowledged_by: user?.name || 'Usuario'
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    loadAlerts();
-                    logger.info('Alerta reconocida', { alertId, userId: user?.id });
-                }
-            }
-        } catch (error) {
-            console.error('Error reconociendo alerta:', error);
-            setError('Error al reconocer la alerta');
-        }
-    }, [user?.organizationId, user?.id, user?.name, loadAlerts]);
-
-    const getSeverityColor = (severity: string) => {
-        switch (severity) {
-            case 'critical': return 'error';
-            case 'high': return 'warning';
-            case 'medium': return 'info';
-            case 'low': return 'success';
-            default: return 'default';
+            logger.error('Error ignorando alerta', error);
         }
     };
 
     const getSeverityIcon = (severity: string) => {
         switch (severity) {
-            case 'critical': return <XCircleIcon className="h-5 w-5" />;
-            case 'high': return <ExclamationTriangleIcon className="h-5 w-5" />;
-            case 'medium': return <BellIcon className="h-5 w-5" />;
-            case 'low': return <CheckCircleIcon className="h-5 w-5" />;
-            default: return <BellIcon className="h-5 w-5" />;
+            case 'CRITICAL':
+                return <ErrorIcon color="error" />;
+            case 'ERROR':
+                return <ErrorIcon color="warning" />;
+            case 'WARNING':
+                return <WarningIcon color="warning" />;
+            default:
+                return <InfoIcon color="info" />;
         }
     };
 
-    return (
-        <Box sx={{ p: 3 }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h5" gutterBottom>
-                    Sistema de Alertas
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<PlusIcon className="h-5 w-5" />}
-                    onClick={() => {
-                        setEditingRule(null);
-                        setConfigDialogOpen(true);
-                    }}
-                >
-                    Nueva Regla
-                </Button>
+    const getSeverityColor = (severity: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+        switch (severity) {
+            case 'CRITICAL':
+                return 'error';
+            case 'ERROR':
+                return 'warning';
+            case 'WARNING':
+                return 'warning';
+            default:
+                return 'info';
+        }
+    };
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+                <CircularProgress />
             </Box>
+        );
+    }
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-                    {error}
-                </Alert>
-            )}
+    const pendingAlerts = alerts.filter(a => ['PENDING', 'NOTIFIED'].includes(a.status));
+    const criticalAlerts = pendingAlerts.filter(a => a.severity === 'CRITICAL');
 
-            <Grid container spacing={3}>
-                {/* Estadísticas */}
-                <Grid item xs={12}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="text.secondary" gutterBottom>
-                                                Alertas Activas
-                                            </Typography>
-                                            <Typography variant="h4">
-                                                {alerts.filter(a => !a.acknowledged).length}
-                                            </Typography>
-                                        </Box>
-                                        <BellIcon className="h-8 w-8 text-red-500" />
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="text.secondary" gutterBottom>
-                                                Reglas Configuradas
-                                            </Typography>
-                                            <Typography variant="h4">
-                                                {alertRules.length}
-                                            </Typography>
-                                        </Box>
-                                        <Cog6ToothIcon className="h-8 w-8 text-blue-500" />
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="text.secondary" gutterBottom>
-                                                Alertas Críticas
-                                            </Typography>
-                                            <Typography variant="h4">
-                                                {alerts.filter(a => a.severity === 'critical' && !a.acknowledged).length}
-                                            </Typography>
-                                        </Box>
-                                        <ExclamationTriangleIcon className="h-8 w-8 text-orange-500" />
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="text.secondary" gutterBottom>
-                                                Reconocidas Hoy
-                                            </Typography>
-                                            <Typography variant="h4">
-                                                {alerts.filter(a => a.acknowledged &&
-                                                    new Date(a.acknowledged_at || '').toDateString() === new Date().toDateString()
-                                                ).length}
-                                            </Typography>
-                                        </Box>
-                                        <CheckCircleIcon className="h-8 w-8 text-green-500" />
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </Grid>
-                </Grid>
-
-                {/* Alertas Activas */}
-                <Grid item xs={12} md={8}>
+    return (
+        <Box>
+            {/* Estadísticas */}
+            <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={3}>
                     <Card>
                         <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Alertas Activas ({alerts.filter(a => !a.acknowledged).length})
+                            <Typography variant="h6" color="textSecondary" gutterBottom>
+                                Total Alertas
                             </Typography>
-                            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-                                <Table stickyHeader size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Severidad</TableCell>
-                                            <TableCell>Vehículo</TableCell>
-                                            <TableCell>Regla</TableCell>
-                                            <TableCell>Mensaje</TableCell>
-                                            <TableCell>Timestamp</TableCell>
-                                            <TableCell>Acciones</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {alerts.filter(a => !a.acknowledged).map((alert) => (
-                                            <TableRow key={alert.id} hover>
-                                                <TableCell>
-                                                    <Chip
-                                                        icon={getSeverityIcon(alert.severity)}
-                                                        label={alert.severity.toUpperCase()}
-                                                        size="small"
-                                                        color={getSeverityColor(alert.severity) as any}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" fontWeight="medium">
-                                                        {alert.vehicle_name}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {alert.vehicle_id}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2">
-                                                        {alert.rule_name}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2">
-                                                        {alert.message}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="caption">
-                                                        {new Date(alert.timestamp).toLocaleString('es-ES')}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Button
-                                                        size="small"
-                                                        variant="outlined"
-                                                        onClick={() => acknowledgeAlert(alert.id)}
-                                                    >
-                                                        Reconocer
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <Typography variant="h3" color="primary">
+                                {stats?.totalAlerts || 0}
+                            </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
-
-                {/* Reglas de Alerta */}
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={3}>
                     <Card>
                         <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Reglas de Alerta ({alertRules.length})
+                            <Typography variant="h6" color="textSecondary" gutterBottom>
+                                Pendientes
                             </Typography>
-                            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                                {alertRules.map((rule) => (
-                                    <Box key={rule.id} sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
-                                            <Typography variant="subtitle2" fontWeight="medium">
-                                                {rule.name}
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => {
-                                                        setEditingRule(rule);
-                                                        setConfigDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <PencilIcon className="h-4 w-4" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => deleteRule(rule.id)}
-                                                    color="error"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </IconButton>
-                                            </Box>
-                                        </Box>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                            {rule.description}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <Chip
-                                                label={rule.type.toUpperCase()}
-                                                size="small"
-                                                color="primary"
-                                                variant="outlined"
-                                            />
-                                            <FormControlLabel
-                                                control={
-                                                    <Switch
-                                                        checked={rule.enabled}
-                                                        onChange={(e) => updateRule(rule.id, { enabled: e.target.checked })}
-                                                        size="small"
-                                                    />
-                                                }
-                                                label="Activa"
-                                                labelPlacement="start"
-                                            />
-                                        </Box>
-                                    </Box>
-                                ))}
-                            </Box>
+                            <Badge badgeContent={pendingAlerts.length} color="warning">
+                                <Typography variant="h3" color="warning.main">
+                                    {stats?.pendingAlerts || 0}
+                                </Typography>
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6" color="textSecondary" gutterBottom>
+                                Críticas
+                            </Typography>
+                            <Badge badgeContent={criticalAlerts.length} color="error">
+                                <Typography variant="h3" color="error.main">
+                                    {stats?.criticalAlerts || 0}
+                                </Typography>
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6" color="textSecondary" gutterBottom>
+                                Resueltas (7 días)
+                            </Typography>
+                            <Typography variant="h3" color="success.main">
+                                {stats?.resolvedLast7Days || 0}
+                            </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
             </Grid>
 
-            {/* Diálogo de Configuración */}
-            <Dialog open={configDialogOpen} onClose={() => setConfigDialogOpen(false)} maxWidth="md" fullWidth>
-                <DialogTitle>
-                    {editingRule ? 'Editar Regla de Alerta' : 'Nueva Regla de Alerta'}
-                </DialogTitle>
+            {/* Pestañas */}
+            <Card>
+                <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+                    <Tab label={`Pendientes (${pendingAlerts.length})`} />
+                    <Tab label="Todas" />
+                    <Tab label="Resueltas" />
+                </Tabs>
+
+                {/* Panel Pendientes */}
+                <TabPanel value={activeTab} index={0}>
+                    {pendingAlerts.length === 0 ? (
+                        <Alert severity="success">
+                            ✅ No hay alertas pendientes
+                        </Alert>
+                    ) : (
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Severidad</TableCell>
+                                        <TableCell>Vehículo</TableCell>
+                                        <TableCell>Fecha</TableCell>
+                                        <TableCell>Archivos Faltantes</TableCell>
+                                        <TableCell>Estado</TableCell>
+                                        <TableCell>Acciones</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {pendingAlerts.map((alert) => (
+                                        <TableRow key={alert.id}>
+                                            <TableCell>
+                                                <Chip
+                                                    icon={getSeverityIcon(alert.severity)}
+                                                    label={alert.severity}
+                                                    color={getSeverityColor(alert.severity)}
+                                                    size="small"
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight="bold">
+                                                    {alert.Vehicle.name}
+                                                </Typography>
+                                                <Typography variant="caption" color="textSecondary">
+                                                    {alert.Vehicle.licensePlate}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                {new Date(alert.date).toLocaleDateString('es-ES')}
+                                            </TableCell>
+                                            <TableCell>
+                                                <List dense>
+                                                    {alert.missingFiles.map((file, idx) => (
+                                                        <ListItem key={idx}>
+                                                            <ListItemText primary={file} />
+                                                        </ListItem>
+                                                    ))}
+                                                </List>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={alert.status}
+                                                    color={alert.status === 'NOTIFIED' ? 'warning' : 'default'}
+                                                    size="small"
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box display="flex" gap={1}>
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        color="success"
+                                                        startIcon={<CheckIcon />}
+                                                        onClick={() => {
+                                                            setSelectedAlert(alert);
+                                                            setResolveDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        Resolver
+                                                    </Button>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        startIcon={<CloseIcon />}
+                                                        onClick={() => handleIgnore(alert.id)}
+                                                    >
+                                                        Ignorar
+                                                    </Button>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
+                </TabPanel>
+
+                {/* Panel Todas */}
+                <TabPanel value={activeTab} index={1}>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Severidad</TableCell>
+                                    <TableCell>Vehículo</TableCell>
+                                    <TableCell>Fecha</TableCell>
+                                    <TableCell>Archivos Faltantes</TableCell>
+                                    <TableCell>Estado</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {alerts.map((alert) => (
+                                    <TableRow key={alert.id}>
+                                        <TableCell>
+                                            <Chip
+                                                icon={getSeverityIcon(alert.severity)}
+                                                label={alert.severity}
+                                                color={getSeverityColor(alert.severity)}
+                                                size="small"
+                                            />
+                                        </TableCell>
+                                        <TableCell>{alert.Vehicle.name}</TableCell>
+                                        <TableCell>
+                                            {new Date(alert.date).toLocaleDateString('es-ES')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {alert.missingFiles.join(', ')}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip label={alert.status} size="small" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </TabPanel>
+
+                {/* Panel Resueltas */}
+                <TabPanel value={activeTab} index={2}>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Vehículo</TableCell>
+                                    <TableCell>Fecha Alerta</TableCell>
+                                    <TableCell>Archivos Faltantes</TableCell>
+                                    <TableCell>Resuelta Por</TableCell>
+                                    <TableCell>Fecha Resolución</TableCell>
+                                    <TableCell>Notas</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {alerts.filter(a => a.status === 'RESOLVED').map((alert) => (
+                                    <TableRow key={alert.id}>
+                                        <TableCell>{alert.Vehicle.name}</TableCell>
+                                        <TableCell>
+                                            {new Date(alert.date).toLocaleDateString('es-ES')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {alert.missingFiles.join(', ')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {alert.ResolvedByUser?.name || '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {alert.resolvedAt
+                                                ? new Date(alert.resolvedAt).toLocaleDateString('es-ES')
+                                                : '-'}
+                                        </TableCell>
+                                        <TableCell>{alert.resolutionNotes || '-'}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </TabPanel>
+            </Card>
+
+            {/* Dialog Resolver */}
+            <Dialog open={resolveDialogOpen} onClose={() => setResolveDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Resolver Alerta</DialogTitle>
                 <DialogContent>
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Nombre de la Regla"
-                                value={editingRule?.name || newRule.name}
-                                onChange={(e) => {
-                                    if (editingRule) {
-                                        setEditingRule({ ...editingRule, name: e.target.value });
-                                    } else {
-                                        setNewRule({ ...newRule, name: e.target.value });
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth>
-                                <InputLabel>Tipo de Alerta</InputLabel>
-                                <Select
-                                    value={editingRule?.type || newRule.type}
-                                    onChange={(e) => {
-                                        if (editingRule) {
-                                            setEditingRule({ ...editingRule, type: e.target.value as any });
-                                        } else {
-                                            setNewRule({ ...newRule, type: e.target.value as any });
-                                        }
-                                    }}
-                                    label="Tipo de Alerta"
-                                >
-                                    <MenuItem value="speed">Velocidad</MenuItem>
-                                    <MenuItem value="stability">Estabilidad</MenuItem>
-                                    <MenuItem value="geofence">Geocerca</MenuItem>
-                                    <MenuItem value="emergency">Emergencia</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Descripción"
-                                multiline
-                                rows={3}
-                                value={editingRule?.description || newRule.description}
-                                onChange={(e) => {
-                                    if (editingRule) {
-                                        setEditingRule({ ...editingRule, description: e.target.value });
-                                    } else {
-                                        setNewRule({ ...newRule, description: e.target.value });
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth>
-                                <InputLabel>Condición</InputLabel>
-                                <Select
-                                    value={editingRule?.condition || newRule.condition}
-                                    onChange={(e) => {
-                                        if (editingRule) {
-                                            setEditingRule({ ...editingRule, condition: e.target.value });
-                                        } else {
-                                            setNewRule({ ...newRule, condition: e.target.value });
-                                        }
-                                    }}
-                                    label="Condición"
-                                >
-                                    <MenuItem value="greater_than">Mayor que</MenuItem>
-                                    <MenuItem value="less_than">Menor que</MenuItem>
-                                    <MenuItem value="equals">Igual a</MenuItem>
-                                    <MenuItem value="exit">Salir de zona</MenuItem>
-                                    <MenuItem value="enter">Entrar a zona</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Umbral"
-                                type="number"
-                                value={editingRule?.threshold || newRule.threshold}
-                                onChange={(e) => {
-                                    if (editingRule) {
-                                        setEditingRule({ ...editingRule, threshold: Number(e.target.value) });
-                                    } else {
-                                        setNewRule({ ...newRule, threshold: Number(e.target.value) });
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Divider sx={{ my: 2 }} />
-                            <Typography variant="subtitle2" gutterBottom>
-                                Notificaciones
+                    {selectedAlert && (
+                        <Box>
+                            <Typography variant="body2" gutterBottom>
+                                <strong>Vehículo:</strong> {selectedAlert.Vehicle.name}
                             </Typography>
-                            <Grid container spacing={2}>
-                                <Grid item xs={4}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={editingRule?.notifications.email || newRule.notifications?.email}
-                                                onChange={(e) => {
-                                                    if (editingRule) {
-                                                        setEditingRule({
-                                                            ...editingRule,
-                                                            notifications: { ...editingRule.notifications, email: e.target.checked }
-                                                        });
-                                                    } else {
-                                                        setNewRule({
-                                                            ...newRule,
-                                                            notifications: { ...newRule.notifications!, email: e.target.checked }
-                                                        });
-                                                    }
-                                                }}
-                                            />
-                                        }
-                                        label="Email"
-                                    />
-                                </Grid>
-                                <Grid item xs={4}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={editingRule?.notifications.sms || newRule.notifications?.sms}
-                                                onChange={(e) => {
-                                                    if (editingRule) {
-                                                        setEditingRule({
-                                                            ...editingRule,
-                                                            notifications: { ...editingRule.notifications, sms: e.target.checked }
-                                                        });
-                                                    } else {
-                                                        setNewRule({
-                                                            ...newRule,
-                                                            notifications: { ...newRule.notifications!, sms: e.target.checked }
-                                                        });
-                                                    }
-                                                }}
-                                            />
-                                        }
-                                        label="SMS"
-                                    />
-                                </Grid>
-                                <Grid item xs={4}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={editingRule?.notifications.push || newRule.notifications?.push}
-                                                onChange={(e) => {
-                                                    if (editingRule) {
-                                                        setEditingRule({
-                                                            ...editingRule,
-                                                            notifications: { ...editingRule.notifications, push: e.target.checked }
-                                                        });
-                                                    } else {
-                                                        setNewRule({
-                                                            ...newRule,
-                                                            notifications: { ...newRule.notifications!, push: e.target.checked }
-                                                        });
-                                                    }
-                                                }}
-                                            />
-                                        }
-                                        label="Push"
-                                    />
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </Grid>
+                            <Typography variant="body2" gutterBottom>
+                                <strong>Fecha:</strong> {new Date(selectedAlert.date).toLocaleDateString('es-ES')}
+                            </Typography>
+                            <Typography variant="body2" gutterBottom>
+                                <strong>Archivos faltantes:</strong> {selectedAlert.missingFiles.join(', ')}
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                label="Notas de resolución (opcional)"
+                                value={resolutionNotes}
+                                onChange={(e) => setResolutionNotes(e.target.value)}
+                                sx={{ mt: 2 }}
+                            />
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfigDialogOpen(false)}>
+                    <Button onClick={() => setResolveDialogOpen(false)}>
                         Cancelar
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            if (editingRule) {
-                                updateRule(editingRule.id, editingRule);
-                                setConfigDialogOpen(false);
-                                setEditingRule(null);
-                            } else {
-                                createRule();
-                            }
-                        }}
-                    >
-                        {editingRule ? 'Actualizar' : 'Crear'}
+                    <Button onClick={handleResolve} variant="contained" color="success">
+                        Resolver
                     </Button>
                 </DialogActions>
             </Dialog>
         </Box>
     );
 };
+
+export default AlertSystemManager;

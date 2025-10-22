@@ -14,7 +14,7 @@ interface CacheOptions {
     maxMemory?: number; // Máximo uso de memoria en bytes
 }
 
-interface CacheStats {
+export interface CacheStats {
     totalEntries: number;
     hits: number;
     misses: number;

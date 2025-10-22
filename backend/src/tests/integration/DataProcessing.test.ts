@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+
 import { DatabaseService } from '../../services/DatabaseService';
 import { EventService } from '../../services/EventService';
 import { NotificationService } from '../../services/NotificationService';

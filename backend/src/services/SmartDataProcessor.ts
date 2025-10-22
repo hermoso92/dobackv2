@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import fs from 'fs/promises';
+import { prisma } from '../lib/prisma';
 import path from 'path';
 import { logger } from '../utils/logger';
 import {
@@ -19,7 +20,7 @@ import { streamingFileProcessor } from './StreamingFileProcessor';
 import { timeoutManager } from './TimeoutManager';
 import { transactionManager } from './TransactionManager';
 
-const prisma = new PrismaClient();
+
 
 interface SmartProcessingConfig {
     organizationId: string;

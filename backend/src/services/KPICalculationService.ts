@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
+
+
 
 interface KPICalculationResult {
     hoursDriving: string;
@@ -48,16 +49,16 @@ export class KPICalculationService {
                     endTime: { lte: timeRange.end }
                 },
                 include: {
-                    vehicle: true,
-                    stabilityMeasurements: {
+                    Vehicle: true,
+                    StabilityMeasurement: {
                         select: {
                             timestamp: true,
-                            isLTRCritical: true,
-                            isDRSHigh: true,
-                            isLateralGForceHigh: true
+                            si: true,
+                            roll: true,
+                            pitch: true
                         }
                     },
-                    gpsMeasurements: {
+                    GpsMeasurement: {
                         select: {
                             timestamp: true,
                             speed: true,
@@ -68,7 +69,7 @@ export class KPICalculationService {
                     RotativoMeasurement: {
                         select: {
                             timestamp: true,
-                            estado: true
+                            state: true
                         }
                     }
                 }
@@ -81,17 +82,35 @@ export class KPICalculationService {
                 return total + Math.floor(duration / 1000);
             }, 0);
 
-            // Calcular distancia total (aproximada desde GPS)
+            // ✅ CORREGIDO: Calcular distancia real usando Haversine
             const totalKm = sessions.reduce((total, session) => {
-                // Estimación basada en mediciones GPS
-                return total + (session.gpsMeasurements?.length || 0) * 0.01; // ~10m por medición
+                if (!session.GpsMeasurement || session.GpsMeasurement.length < 2) {
+                    return total;
+                }
+                
+                let sessionDistance = 0;
+                for (let i = 1; i < session.GpsMeasurement.length; i++) {
+                    const prev = session.GpsMeasurement[i - 1];
+                    const curr = session.GpsMeasurement[i];
+                    
+                    // Calcular distancia entre puntos consecutivos con Haversine
+                    sessionDistance += KPICalculationService.haversineDistance(
+                        prev.latitude, prev.longitude,
+                        curr.latitude, curr.longitude
+                    );
+                }
+                return total + sessionDistance;
             }, 0);
 
-            // Calcular tiempo en parque (estimado basado en velocidad GPS)
-            const timeInPark = this.calculateTimeInPark(sessions);
+            // ✅ CORREGIDO: Calcular tiempo en parque usando segmentos Clave 1
+            const timeInPark = await KPICalculationService.calculateTimeInParkFromSegments(
+                sessions.map(s => s.id)
+            );
 
-            // Calcular tiempo en taller (sessions con estado específico)
-            const timeInWorkshop = this.calculateTimeInWorkshop(sessions);
+            // ✅ CORREGIDO: Calcular tiempo en taller usando segmentos Clave 0
+            const timeInWorkshop = await KPICalculationService.calculateTimeInWorkshopFromSegments(
+                sessions.map(s => s.id)
+            );
 
             // Calcular porcentaje de rotativo activo
             const rotativoPct = this.calculateRotativoPercentage(sessions);
@@ -381,5 +400,75 @@ export class KPICalculationService {
     private static parseDuration(duration: string): number {
         const [hours, minutes] = duration.split(':').map(Number);
         return (hours * 3600) + (minutes * 60);
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Calcula distancia entre dos puntos GPS usando fórmula Haversine
+     * @returns Distancia en kilómetros
+     */
+    private static haversineDistance(
+        lat1: number,
+        lon1: number,
+        lat2: number,
+        lon2: number
+    ): number {
+        const R = 6371; // Radio de la Tierra en kilómetros
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * 
+            Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distancia en km
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Calcula tiempo en parque usando segmentos Clave 1
+     * @param sessionIds IDs de sesiones a calcular
+     * @returns Tiempo formateado HH:MM
+     */
+    private static async calculateTimeInParkFromSegments(sessionIds: string[]): Promise<string> {
+        try {
+            const parkSegments = await prisma.$queryRaw<Array<{ total_seconds: bigint }>>`
+                SELECT COALESCE(SUM("durationSeconds"), 0)::bigint as total_seconds
+                FROM operational_state_segments
+                WHERE "sessionId"::text = ANY(${sessionIds}::text[])
+                AND clave = 1
+            `;
+
+            const totalSeconds = Number(parkSegments[0]?.total_seconds || 0);
+            return this.formatDuration(totalSeconds);
+
+        } catch (error) {
+            logger.error('Error calculando tiempo en parque desde segmentos', { error, sessionIds });
+            return '00:00';
+        }
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Calcula tiempo en taller usando segmentos Clave 0
+     * @param sessionIds IDs de sesiones a calcular
+     * @returns Tiempo formateado HH:MM
+     */
+    private static async calculateTimeInWorkshopFromSegments(sessionIds: string[]): Promise<string> {
+        try {
+            const workshopSegments = await prisma.$queryRaw<Array<{ total_seconds: bigint }>>`
+                SELECT COALESCE(SUM("durationSeconds"), 0)::bigint as total_seconds
+                FROM operational_state_segments
+                WHERE "sessionId"::text = ANY(${sessionIds}::text[])
+                AND clave = 0
+            `;
+
+            const totalSeconds = Number(workshopSegments[0]?.total_seconds || 0);
+            return this.formatDuration(totalSeconds);
+
+        } catch (error) {
+            logger.error('Error calculando tiempo en taller desde segmentos', { error, sessionIds });
+            return '00:00';
+        }
     }
 }

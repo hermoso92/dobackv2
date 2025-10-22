@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model   Organization {
+model Organization {
   id                    String                  @id @default(dbgenerated("gen_random_uuid()"))
   name                  String
   apiKey                String                  @unique
@@ -25,6 +25,7 @@ model   Organization {
   OrganizationConfig    OrganizationConfig?
   parks                 Park[]
   ProcessingEvent       ProcessingEvent[]
+  ProcessingReport      ProcessingReport[]
   Report                Report[]
   Session               Session[]
   User                  User[]
@@ -47,6 +48,7 @@ model User {
   LogAuditoria      LogAuditoria[]
   MaintenanceRecord MaintenanceRecord[]
   Notification      Notification[]
+  ProcessingReport  ProcessingReport[]
   Report            Report[]
   Session           Session[]
   SessionUploadLog  SessionUploadLog[]
@@ -127,38 +129,44 @@ model Vehicle {
 }
 
 model Session {
-  id                       String                     @id @default(dbgenerated("gen_random_uuid()"))
+  id                       String                    @id @default(dbgenerated("gen_random_uuid()"))
   vehicleId                String
   userId                   String
   endTime                  DateTime?
   startTime                DateTime
-  createdAt                DateTime                   @default(now())
+  createdAt                DateTime                  @default(now())
   sequence                 Int
   sessionNumber            Int
-  status                   SessionStatus              @default(ACTIVE)
+  status                   SessionStatus             @default(ACTIVE)
   updatedAt                DateTime
-  type                     SessionType                @default(ROUTINE)
+  type                     SessionType               @default(ROUTINE)
   weatherConditions        Json?
   organizationId           String
   parkId                   String?
   zoneId                   String?
   source                   String
+  parser_version           Int                       @default(1)
+  processing_version       String?                   @default("1.0")
+  matched_distance         Float?
+  matched_duration         Float?
+  matched_geometry         String?
+  matched_confidence       Float?
   ArchivoSubido            ArchivoSubido[]
-  CanMeasurement           CanMeasurement[]
   EjecucionEvento          EjecucionEvento[]
   GpsMeasurement           GpsMeasurement[]
   InformeGenerado          InformeGenerado[]
   RotativoMeasurement      RotativoMeasurement[]
-  Organization             Organization               @relation(fields: [organizationId], references: [id])
-  Park                     Park?                      @relation(fields: [parkId], references: [id])
-  User                     User                       @relation(fields: [userId], references: [id])
-  Vehicle                  Vehicle                    @relation(fields: [vehicleId], references: [id])
-  Zone                     Zone?                      @relation(fields: [zoneId], references: [id])
+  Organization             Organization              @relation(fields: [organizationId], references: [id])
+  Park                     Park?                     @relation(fields: [parkId], references: [id])
+  User                     User                      @relation(fields: [userId], references: [id])
+  Vehicle                  Vehicle                   @relation(fields: [vehicleId], references: [id])
+  Zone                     Zone?                     @relation(fields: [zoneId], references: [id])
   SessionUploadLog         SessionUploadLog[]
   StabilityMeasurement     StabilityMeasurement[]
   SugerenciaIA             SugerenciaIA[]
   stability_events         stability_events[]
   OperationalStateSegments OperationalStateSegment[]
+  ProcessingLogs           ProcessingLog[]
 }
 
 model Geofence {
@@ -294,26 +302,7 @@ model ArchivoSubido {
   Vehicle       Vehicle? @relation(fields: [vehiculoId], references: [id])
 }
 
-model CanMeasurement {
-  id               String   @id @default(dbgenerated("gen_random_uuid()"))
-  timestamp        DateTime
-  engineRpm        Float
-  vehicleSpeed     Float
-  fuelSystemStatus Float
-  sessionId        String
-  createdAt        DateTime @default(now())
-  temperature      Float?
-  updatedAt        DateTime
-  absActive        Boolean?
-  brakePressure    Float?
-  espActive        Boolean?
-  gearPosition     Int?
-  steeringAngle    Float?
-  throttlePosition Float?
-  Session          Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([sessionId, timestamp], map: "canmeasurement_sessionid_timestamp_unique")
-}
+// ❌ ELIMINADO: CanMeasurement (NO HAY DATOS CAN EN EL SISTEMA)
 
 model DailyProcessingReport {
   id                 String       @id @default(dbgenerated("gen_random_uuid()"))
@@ -328,6 +317,31 @@ model DailyProcessingReport {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime
   Organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ProcessingReport {
+  id             String       @id @default(dbgenerated("gen_random_uuid()"))
+  userId         String
+  organizationId String
+  reportType     String
+  status         String // PENDING, PROCESSING, COMPLETED, FAILED
+  totalFiles     Int          @default(0)
+  totalSessions  Int          @default(0)
+  totalOmitted   Int          @default(0)
+  startTime      DateTime
+  endTime        DateTime?
+  duration       Int? // en segundos
+  errorMessage   String?
+  reportData     Json? // datos detallados del reporte
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model EjecucionEvento {
@@ -436,23 +450,23 @@ model FileState {
 }
 
 model ProcessingEvent {
-  id                 String       @id @default(dbgenerated("gen_random_uuid()"))
-  fileName           String
-  filePath           String
-  fileType           ProcessingFileType
-  vehicleId          String
-  organizationId     String
-  status             ProcessingStatus
+  id                  String             @id @default(dbgenerated("gen_random_uuid()"))
+  fileName            String
+  filePath            String
+  fileType            ProcessingFileType
+  vehicleId           String
+  organizationId      String
+  status              ProcessingStatus
   dataPointsProcessed Int?
-  processingTime     Int?
-  errorMessage       String?
-  errorCode          String?
-  metadata           Json?
-  timestamp          DateTime     @default(now())
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  Organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  Vehicle            Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  processingTime      Int?
+  errorMessage        String?
+  errorCode           String?
+  metadata            Json?
+  timestamp           DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  Organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Vehicle             Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, timestamp])
   @@index([vehicleId, timestamp])
@@ -475,8 +489,8 @@ model GeofenceEvent {
   processed      Boolean             @default(false)
   createdAt      DateTime            @default(now())
   updatedAt      DateTime
-  Geofence       Geofence            @relation(fields: [geofenceId], references: [id])
-  Organization   Organization        @relation(fields: [organizationId], references: [id])
+  Geofence       Geofence            @relation(fields: [geofenceId], references: [id], onDelete: Cascade)
+  Organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([geofenceId])
   @@index([organizationId])
@@ -686,7 +700,10 @@ model RealtimePosition {
   speed     Float?
   hdop      Float?
   source    String
-  Vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  Vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, timestamp(sort: Desc)])
+  @@index([timestamp])
 }
 
 model RotativoMeasurement {
@@ -713,6 +730,37 @@ model SessionUploadLog {
   source    String
   Session   Session  @relation(fields: [sessionId], references: [id])
   User      User     @relation(fields: [userId], references: [id])
+}
+
+/// Logs de procesamiento para trazabilidad y monitoreo
+model ProcessingLog {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()"))
+  sessionId               String
+  parserVersion           Int       @default(2)
+  processingVersion       String    @default("1.0")
+  configVersion           String    @default("1.0")
+  status                  String
+  startedAt               DateTime  @default(now())
+  finishedAt              DateTime?
+  durationMs              Int?
+  measurementsProcessed   Int       @default(0)
+  eventsGenerated         Int       @default(0)
+  filesCount              Int       @default(0)
+  hasGpsGeometry          Boolean   @default(false)
+  hasStabilityEvents      Boolean   @default(false)
+  physicsValidationPassed Boolean   @default(false)
+  errorMessage            String?
+  warnings                Json?     @default("[]")
+  metadata                Json?     @default("{}")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  Session                 Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([parserVersion])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 model StabilityMeasurement {
@@ -816,34 +864,22 @@ model ZoneAudit {
   Zone       Zone     @relation(fields: [zoneId], references: [id])
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model debug_overspeed {
-  id           String?
-  timestamp    DateTime?
-  latitude     Float?
-  longitude    Float?
-  speed_kmh    Float?
-  limite_via   Decimal?  @db.Decimal
-  tiene_limite Boolean?
-  motivo       String?
-
-  @@ignore
-}
+// ❌ ELIMINADO: debug_overspeed (Tabla debug ignorada, sin utilidad)
 
 model stability_events {
-  id               String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  session_id       String
-  timestamp        DateTime @db.Timestamptz(6)
-  lat              Float?
-  lon              Float?
-  type             String
-  severity         String?  // Severidad del evento: LEVE, MODERADA, GRAVE, CRÍTICA
-  speed            Float?   // Velocidad en km/h del evento
-  rotativoState    Int?     // Estado del rotativo (0=apagado, 1=encendido, 2=clave2, 5=clave5)
-  details          Json?
-  keyType          Int?     // Tipo de clave operacional en el momento del evento (0, 2, 5)
-  interpolatedGPS  Boolean  @default(false) // Si las coordenadas GPS fueron interpoladas
-  Session          Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  session_id      String
+  timestamp       DateTime @db.Timestamptz(6)
+  lat             Float?
+  lon             Float?
+  type            String
+  severity        String? // Severidad del evento: LEVE, MODERADA, GRAVE, CRÍTICA
+  speed           Float? // Velocidad en km/h del evento
+  rotativoState   Int? // Estado del rotativo (0=apagado, 1=encendido, 2=clave2, 5=clave5)
+  details         Json?
+  keyType         Int? // Tipo de clave operacional en el momento del evento (0, 2, 5)
+  interpolatedGPS Boolean  @default(false) // Si las coordenadas GPS fueron interpoladas
+  Session         Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
 
   @@index([session_id], map: "idx_stability_events_session")
   @@index([session_id, timestamp(sort: Desc)], map: "idx_stability_events_session_time")
@@ -851,8 +887,6 @@ model stability_events {
   @@index([type], map: "idx_stability_events_type")
   @@index([speed], map: "idx_stability_events_speed")
   @@index([rotativoState], map: "idx_stability_events_rotativo")
-  @@index([session_id], map: "stability_events_session_idx")
-  @@index([timestamp], map: "stability_events_time_idx")
 }
 
 /// Tabla para persistir segmentos de claves operacionales (Mandamiento M2)
@@ -860,16 +894,16 @@ model stability_events {
 model OperationalStateSegment {
   id              String   @id @default(dbgenerated("gen_random_uuid()"))
   sessionId       String
-  clave           Int      // 0, 1, 2, 3, 4, 5
+  clave           Int // 0, 1, 2, 3, 4, 5
   startTime       DateTime @db.Timestamptz(6)
   endTime         DateTime @db.Timestamptz(6)
   durationSeconds Int
-  metadata        Json?    // Info adicional (geocerca, rotativo, velocidad promedio)
+  metadata        Json? // Info adicional (geocerca, rotativo, velocidad promedio)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
-  Session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
+
+  Session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@index([sessionId])
   @@index([sessionId, clave])
   @@index([sessionId, startTime])
@@ -881,14 +915,14 @@ model OperationalStateSegment {
 model GeofenceUsageLog {
   id             String   @id @default(dbgenerated("gen_random_uuid()"))
   timestamp      DateTime @default(now())
-  source         String   // 'radar.com' | 'local_db'
+  source         String // 'radar.com' | 'local_db'
   organizationId String
-  operation      String   // 'getParks' | 'isInGeofence' | 'getZones'
+  operation      String // 'getParks' | 'isInGeofence' | 'getZones'
   success        Boolean
   apiCalls       Int      @default(1)
   errorMessage   String?
   createdAt      DateTime @default(now())
-  
+
   @@index([timestamp])
   @@index([source, timestamp])
   @@index([organizationId])
@@ -906,12 +940,12 @@ model SpeedViolation {
   speed         Float
   speedLimit    Float
   excess        Float
-  violationType String   // 'correcto' | 'leve' | 'moderada' | 'grave'
-  roadType      String   // 'urban' | 'interurban' | 'highway'
+  violationType String // 'correcto' | 'leve' | 'moderada' | 'grave'
+  roadType      String // 'urban' | 'interurban' | 'highway'
   rotativoOn    Boolean
   inPark        Boolean
   createdAt     DateTime @default(now())
-  
+
   @@index([sessionId])
   @@index([sessionId, violationType])
   @@index([timestamp])
@@ -1101,7 +1135,6 @@ enum ReportSchedule {
 }
 
 enum ProcessingFileType {
-  CAN
   ESTABILIDAD
   GPS
   ROTATIVO

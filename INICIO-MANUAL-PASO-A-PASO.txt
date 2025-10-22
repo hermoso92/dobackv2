@@ -1,0 +1,161 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║   🔧 CÓMO INICIAR DOBACKSOFT MANUALMENTE                      ║
+║   (SI LOS SCRIPTS FALLAN)                                     ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+MÉTODO 1: SCRIPT SIMPLIFICADO
+═══════════════════════════════════════════════════════════════════
+
+1. Abre PowerShell en:
+   C:\Users\Cosigein SL\Desktop\DobackSoft
+
+2. Ejecuta:
+   .\iniciar-simple.ps1
+
+3. Espera 30 segundos
+
+4. Se abrirán 3 ventanas:
+   - Esta ventana (script)
+   - Ventana backend
+   - Ventana frontend
+
+═══════════════════════════════════════════════════════════════════
+MÉTODO 2: MANUAL (PASO A PASO)
+═══════════════════════════════════════════════════════════════════
+
+PASO 1: Limpiar procesos anteriores
+  Abre PowerShell y ejecuta:
+  
+  Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
+
+PASO 2: Iniciar Backend
+  Abre PowerShell en: C:\Users\Cosigein SL\Desktop\DobackSoft\backend
+  
+  Ejecuta estos comandos UNO POR UNO:
+  
+  $env:PORT="9998"
+  $env:DATABASE_URL="postgresql://postgres:cosigein@localhost:5432/dobacksoft"
+  $env:JWT_SECRET="DobackSoft-jwt-secret-key-cosigein"
+  $env:CORS_ORIGIN="http://localhost:5174"
+  npx ts-node-dev --respawn --transpile-only src/index.ts
+
+  Deberías ver:
+  "Server running on port 9998"
+  "✅ Base de datos conectada"
+
+PASO 3: Iniciar Frontend (en OTRA ventana PowerShell)
+  Abre PowerShell en: C:\Users\Cosigein SL\Desktop\DobackSoft\frontend
+  
+  Ejecuta:
+  
+  $env:VITE_API_URL="http://localhost:9998"
+  npm run dev -- --port 5174
+
+  Deberías ver:
+  "VITE v5.x.x  ready in XXX ms"
+  "➜  Local:   http://localhost:5174/"
+
+PASO 4: Abrir navegador
+  Ve a: http://localhost:5174
+
+═══════════════════════════════════════════════════════════════════
+❌ PROBLEMAS COMUNES Y SOLUCIONES
+═══════════════════════════════════════════════════════════════════
+
+PROBLEMA: "Cannot find module 'ts-node-dev'"
+SOLUCIÓN:
+  cd backend
+  npm install
+  npx prisma generate
+
+PROBLEMA: "Cannot connect to database"
+SOLUCIÓN:
+  1. Verifica PostgreSQL esté corriendo
+  2. Ejecuta:
+     psql -U postgres
+     # Debe conectar sin errores
+
+PROBLEMA: "Port 9998 already in use"
+SOLUCIÓN:
+  Get-NetTCPConnection -LocalPort 9998 | Select-Object OwningProcess
+  Stop-Process -Id <PID> -Force
+
+PROBLEMA: "npm ERR! missing script: dev"
+SOLUCIÓN:
+  cd frontend
+  npm install
+
+PROBLEMA: Frontend muestra "Cannot connect to backend"
+SOLUCIÓN:
+  1. Verifica backend esté corriendo:
+     http://localhost:9998/health
+  
+  2. Si no responde, reinicia backend (PASO 2)
+
+═══════════════════════════════════════════════════════════════════
+🔐 CREDENCIALES
+═══════════════════════════════════════════════════════════════════
+
+MANAGER (solo ve su parque):
+  📧 test@bomberosmadrid.es
+  🔑 admin123
+
+ADMIN (acceso total):
+  📧 antoniohermoso92@gmail.com
+  🔑 admin123
+
+═══════════════════════════════════════════════════════════════════
+✅ VERIFICAR QUE FUNCIONA
+═══════════════════════════════════════════════════════════════════
+
+Backend funcionando:
+  • Ventana PowerShell muestra: "Server running on port 9998"
+  • http://localhost:9998/health devuelve {"status":"ok"}
+
+Frontend funcionando:
+  • Ventana PowerShell muestra: "Local: http://localhost:5174"
+  • http://localhost:5174 carga la página de login
+
+Sistema completo:
+  • Puedes hacer login
+  • Dashboard se carga
+  • No hay errores en consola del navegador (F12)
+
+═══════════════════════════════════════════════════════════════════
+🔧 REINICIAR TODO
+═══════════════════════════════════════════════════════════════════
+
+1. Cierra TODAS las ventanas PowerShell
+
+2. O ejecuta:
+   Get-Process node,powershell | Stop-Process -Force
+
+3. Vuelve a iniciar desde PASO 1
+
+═══════════════════════════════════════════════════════════════════
+📞 SI NADA FUNCIONA
+═══════════════════════════════════════════════════════════════════
+
+Verifica:
+  1. PostgreSQL está corriendo
+  2. Node.js está instalado (node --version)
+  3. npm está instalado (npm --version)
+  4. Puertos 9998 y 5174 están libres
+
+Reinstala dependencias:
+  cd backend
+  npm install
+  npx prisma generate
+  
+  cd ../frontend
+  npm install
+
+═══════════════════════════════════════════════════════════════════
+
+Si sigues teniendo problemas, copia el mensaje de error exacto
+que aparece en las ventanas de PowerShell.
+
+

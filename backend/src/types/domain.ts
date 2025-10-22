@@ -64,7 +64,14 @@ export interface EventFilters {
     organizationId?: string;
 }
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'OPERATOR';
+// ✅ Roles del sistema - UNIFICADOS
+export enum UserRole {
+    ADMIN = 'ADMIN',      // Acceso total al sistema
+    MANAGER = 'MANAGER',  // Admin de parque/organización específica
+    OPERATOR = 'OPERATOR',// Usuario operativo (futuro)
+    VIEWER = 'VIEWER'     // Solo lectura (futuro)
+}
+
 export type MaintenanceStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 export interface Session {
@@ -83,7 +90,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    role: 'ADMIN' | 'USER' | 'OPERATOR' | 'VIEWER';
+    role: UserRole;  // ✅ Usar enum consistente
     status: string;
     organizationId: string;
     isEmailVerified: boolean;

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import {
     getDailyProcessingServiceStatus,
     getRecentProcessingReports,
@@ -172,7 +173,7 @@ export class DailyProcessingController {
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const { PrismaClient } = await import('@prisma/client');
-            const prisma = new PrismaClient();
+            
 
             const stats = await prisma.$transaction([
                 // Total de reportes de procesamiento

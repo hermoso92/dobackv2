@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { GeofenceEvent, RealTimeGeofenceService } from './RealTimeGeofenceService';
 import { WebSocketGeofenceService } from './WebSocketGeofenceService';
@@ -55,7 +56,6 @@ export interface VehicleRuleState {
 }
 
 export class GeofenceRuleEngine {
-    private prisma: PrismaClient;
     private geofenceService: RealTimeGeofenceService;
     private webSocketService: WebSocketGeofenceService;
     private rules: Map<string, GeofenceRule> = new Map();
@@ -71,7 +71,6 @@ export class GeofenceRuleEngine {
         geofenceService: RealTimeGeofenceService,
         webSocketService: WebSocketGeofenceService
     ) {
-        this.prisma = prisma;
         this.geofenceService = geofenceService;
         this.webSocketService = webSocketService;
 
@@ -99,7 +98,7 @@ export class GeofenceRuleEngine {
     private async loadRules(): Promise<void> {
         try {
             // TODO: Implementar cuando se cree la tabla de reglas
-            // const rules = await this.prisma.geofenceRule.findMany({
+            // const rules = await prisma.geofenceRule.findMany({
             //   where: { isActive: true },
             //   orderBy: { priority: 'desc' }
             // });

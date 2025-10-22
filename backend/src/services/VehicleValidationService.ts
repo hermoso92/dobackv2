@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma'; // ✅ SINGLETON DE PRISMA
 import { logger } from '../utils/logger';
 
 export class VehicleValidationService {
-    private prisma: PrismaClient;
-
     constructor() {
-        this.prisma = new PrismaClient();
+        // ✅ Asignar prisma en el constructor para evitar ReferenceError por orden de carga
     }
 
     public async validateVehicle(
@@ -16,7 +14,7 @@ export class VehicleValidationService {
             logger.info('Validando vehículo', { vehicleId, organizationId });
 
             // Buscar el vehículo en la base de datos
-            const vehicle = await this.prisma.vehicle.findFirst({
+            const vehicle = await prisma.vehicle.findFirst({
                 where: {
                     name: vehicleId,
                     organizationId: organizationId
@@ -55,7 +53,7 @@ export class VehicleValidationService {
             const vehicle = await this.validateVehicle(vehicleId, organizationId);
 
             // Check if vehicle has any active sessions
-            const activeSession = await this.prisma.session.findFirst({
+            const activeSession = await prisma.session.findFirst({
                 where: {
                     vehicleId: vehicle.id,
                     status: 'ACTIVE'

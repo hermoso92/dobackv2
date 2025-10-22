@@ -138,7 +138,7 @@ const VelocityMapWithDGTFilters: React.FC<VelocityMapWithDGTFiltersProps> = ({
             lng: violation.lng,
             type: 'alert' as const,
             title: `${violation.vehicleName} - ${violation.speed} km/h`,
-            description: `Vehículo: ${violation.vehicleName}\nVelocidad: ${violation.speed} km/h\nLímite: ${violation.speedLimit} km/h\nExceso: ${violation.speed - violation.speedLimit} km/h\nRotativo: ${violation.rotativoOn ? 'ON' : 'OFF'}\nZona: ${violation.inPark ? 'Dentro del parque' : 'Fuera del parque'}\nTipo de vía: ${violation.roadType}\nClasificación: ${violation.violationType}\nFecha: ${new Date(violation.timestamp).toLocaleString('es-ES')}`,
+            description: `Vehículo: ${violation.vehicleName}\nVelocidad: ${violation.speed} km/h\nLímite: ${violation.speedLimit} km/h\nExceso: ${(violation.speed - violation.speedLimit).toFixed(2)} km/h\nRotativo: ${violation.rotativoOn ? 'ON' : 'OFF'}\nZona: ${violation.inPark ? 'Dentro del parque' : 'Fuera del parque'}\nTipo de vía: ${violation.roadType}\nClasificación: ${violation.violationType}\nFecha: ${new Date(violation.timestamp).toLocaleString('es-ES')}`,
             timestamp: new Date(violation.timestamp),
             color: getViolationColor(violation.violationType)
         }));

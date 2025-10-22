@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
 import { seedInitialData } from './seeds/initial';
 
 async function main() {
-    const prisma = new PrismaClient();
+    
 
     try {
         // Limpiar la base de datos
