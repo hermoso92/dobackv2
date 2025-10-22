@@ -258,7 +258,7 @@ class ApiService {
     // Métodos específicos para reportes (puerto 9998)
     async getReports<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
         const reportsApi = axios.create({
-            baseURL: 'http://localhost:9998',
+            baseURL: API_CONFIG.BASE_URL, // usar configuración centralizada en lugar de hardcodear
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -280,7 +280,7 @@ class ApiService {
 
     async postReports<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
         const reportsApi = axios.create({
-            baseURL: 'http://localhost:9998',
+            baseURL: API_CONFIG.BASE_URL, // usar configuración centralizada en lugar de hardcodear
             headers: {
                 'Content-Type': 'application/json'
             },
