@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
+
+
 
 /**
  * Servicio para corregir límites de velocidad según normativa española

@@ -18,7 +18,7 @@ class GeocodingService {
      */
     async reverseGeocode(lat: number, lng: number): Promise<string> {
         const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-        
+
         // Verificar cache
         if (this.cache.has(key)) {
             const cached = this.cache.get(key)!;
@@ -61,7 +61,7 @@ class GeocodingService {
                     city: data.city,
                     success: true
                 };
-                
+
                 this.cache.set(key, result);
                 return this.formatAddress(result);
             } else {
@@ -69,13 +69,13 @@ class GeocodingService {
             }
         } catch (error) {
             logger.warn('Error en geocodificación', { lat, lng, error });
-            
+
             // Fallback: usar coordenadas
             const result: GeocodingResult = {
                 address: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                 success: false
             };
-            
+
             this.cache.set(key, result);
             return result.address;
         } finally {
@@ -94,7 +94,7 @@ class GeocodingService {
         const parts = [];
         if (result.road) parts.push(result.road);
         if (result.city) parts.push(result.city);
-        
+
         return parts.length > 0 ? parts.join(', ') : result.address;
     }
 
@@ -104,7 +104,7 @@ class GeocodingService {
     private async waitForPendingRequest(key: string): Promise<void> {
         let attempts = 0;
         const maxAttempts = 50; // 5 segundos máximo
-        
+
         while (this.pendingRequests.has(key) && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
@@ -124,7 +124,7 @@ class GeocodingService {
     getCacheStats(): { size: number; successRate: number } {
         const entries = Array.from(this.cache.values());
         const successful = entries.filter(e => e.success).length;
-        
+
         return {
             size: this.cache.size,
             successRate: entries.length > 0 ? successful / entries.length : 0
@@ -133,3 +133,5 @@ class GeocodingService {
 }
 
 export const geocodingService = new GeocodingService();
+
+

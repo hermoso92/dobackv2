@@ -1,7 +1,8 @@
 import { PrismaClient, UserRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+
 
 export class UsuarioService {
     async crearUsuario(

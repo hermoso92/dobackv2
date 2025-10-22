@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { speedAnalyzer } from '../services/speedAnalyzer';
 import { tomtomSpeedLimitsService } from '../services/TomTomSpeedLimitsService';
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 
@@ -138,7 +139,7 @@ router.get('/violations', async (req, res) => {
         // No filtrar por startTime de sesión; se filtrará por timestamp de medición (excesos) en rango
 
         // Obtener sesiones con puntos GPS en el rango para evitar analizar sesiones vacías
-        const { prisma } = await import('../config/prisma');
+
         const gpsSessionWhere: any = {
             timestamp: {},
             session: { organizationId }
@@ -411,7 +412,7 @@ router.get('/statistics', async (req, res) => {
         }
 
         // Obtener eventos de estabilidad con velocidad
-        const { prisma } = await import('../config/prisma');
+
         const events = await prisma.stability_events.findMany({
             where: whereConditions,
             include: {
@@ -530,7 +531,7 @@ router.get('/critical-zones', async (req, res) => {
         }
 
         // Obtener datos GPS con velocidad
-        const { prisma } = await import('../config/prisma');
+
         const gpsDataRaw = await prisma.gpsMeasurement.findMany({
             where: whereClause,
             orderBy: { timestamp: 'asc' },
@@ -760,8 +761,6 @@ router.get('/diagnostics', async (req, res) => {
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
         const limit = Number.isFinite(parseInt(req.query.limit as string)) ? Math.max(1, parseInt(req.query.limit as string)) : 50;
 
-        const { prisma } = await import('../config/prisma');
-
         // Tomar puntos GPS directamente filtrando por organización (vía relación Session) y rango
         const whereGPS: any = {
             session: {
@@ -823,8 +822,6 @@ router.get('/quick-sample', async (req, res) => {
         const to = (req.query.to as string) || (req.query.endDate as string);
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
         const limit = Number.isFinite(parseInt(req.query.limit as string)) ? Math.max(1, parseInt(req.query.limit as string)) : 50;
-
-        const { prisma } = await import('../config/prisma');
 
         const whereGPS: any = {
             session: {

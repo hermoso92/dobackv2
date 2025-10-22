@@ -94,7 +94,9 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, '')
       }
-    }
+    },
+    // SPA fallback: servir index.html para todas las rutas que no sean archivos
+    historyApiFallback: true
   },
   build: {
     outDir: 'dist',

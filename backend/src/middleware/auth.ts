@@ -1,14 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+
 import bcrypt from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { config } from '../config/env';
+import { prisma, withPrismaReconnect } from '../lib/prisma'; // ✅ SINGLETON DE PRISMA + WRAPPER
 import { TokenPayload, UserRole } from '../types/auth';
 import { ApiError } from '../utils/ApiError';
 import { logger } from '../utils/logger';
 import { AppError } from './error';
 
-const prisma = new PrismaClient();
+
 
 interface AuthConfig {
     secret: string;
@@ -89,12 +90,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const decoded = verifyToken(token) as TokenPayload;
 
         // Buscar el usuario en la base de datos para validar que existe y está activo
-        const user = await prisma.user.findUnique({
+        // ✅ WRAPPED con withPrismaReconnect para manejar desconexiones
+        const user = await withPrismaReconnect(() => prisma.user.findUnique({
             where: { id: decoded.id },
             include: {
                 organization: true
             }
-        });
+        }));
 
         if (!user) {
             logger.warn('Usuario no encontrado', { userId: decoded.id });
@@ -175,9 +177,10 @@ export const basicAuthMiddleware = async (req: Request, res: Response, next: Nex
             .toString()
             .split(':');
 
-        const user = await prisma.user.findUnique({
+        // ✅ WRAPPED con withPrismaReconnect para manejar desconexiones
+        const user = await withPrismaReconnect(() => prisma.user.findUnique({
             where: { email }
-        });
+        }));
 
         if (!user || !await bcrypt.compare(password, user.password)) {
             throw new AppError('Credenciales inválidas', 401);

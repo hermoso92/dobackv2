@@ -4,6 +4,7 @@
  * ACTUALIZADO: Usa kpiCalculator con datos reales
  */
 import { Request, Response, Router } from 'express';
+import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { calcularTiemposPorClave } from '../services/keyCalculator';
 import { kpiCacheService } from '../services/KPICacheService';
@@ -439,8 +440,9 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
                 // Calcular severidades basándose en SI
                 let critical = 0, moderate = 0, light = 0, noSi = 0;
                 stabilityEvents.forEach(evento => {
-                    const si = evento.details?.valores?.si;
-                    if (si !== undefined) {
+                    // ✅ CORRECCIÓN: SI está en details.si, no en details.valores.si
+                    const si = evento.details?.si || evento.details?.valores?.si;
+                    if (si !== undefined && si !== null) {
                         if (si < 0.20) critical++;
                         else if (si < 0.35) moderate++;
                         else if (si < 0.50) light++;
@@ -526,7 +528,7 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         logger.info('📦 Importando Prisma...');
         let prisma;
         try {
-            const prismaModule = await import('../config/prisma');
+
             prisma = prismaModule.prisma;
             logger.info('✅ Prisma importado exitosamente');
         } catch (e: any) {
@@ -940,8 +942,6 @@ router.get('/ingestion-summary', authenticate, async (req: Request, res: Respons
             sessionsWhere.vehicleId = { in: vehicleIds };
         }
 
-        const { prisma } = await import('../config/prisma');
-
         const sessions = await prisma.session.findMany({
             where: sessionsWhere,
             select: { id: true, vehicleId: true, startTime: true, endTime: true }
@@ -1049,7 +1049,7 @@ router.get('/states', authenticate, async (req: Request, res: Response) => {
         }
 
         // Obtener sesiones que coincidan con los filtros
-        const { prisma } = await import('../config/prisma');
+
         const sessions = await prisma.session.findMany({
             where: sessionsWhere,
             select: { id: true }

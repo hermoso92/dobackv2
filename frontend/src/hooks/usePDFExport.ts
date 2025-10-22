@@ -218,7 +218,7 @@ export const usePDFExport = () => {
         avgSpeed: number;
         maxSpeed: number;
         route: Array<{ lat: number; lng: number; speed: number; timestamp: Date }>;
-        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date }>;
+        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date; location?: string }>;
         stats: {
             validRoutePoints: number;
             validEvents: number;

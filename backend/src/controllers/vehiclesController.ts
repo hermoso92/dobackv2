@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
 
-const prisma = new PrismaClient();
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+
+
 
 export async function getVehicles(req: Request, res: Response) {
     console.log('\n\n🚨🚨🚨 VEHICLES CONTROLLER GET VEHICLES CALLED 🚨🚨🚨\n\n');

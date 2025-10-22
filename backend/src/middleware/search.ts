@@ -1,6 +1,6 @@
 import { EventSeverity, EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { AppError } from './error';
 
 interface SearchConfig {
@@ -114,8 +114,8 @@ const searchSessions = async (config: SearchConfig): Promise<SearchResult> => {
             ],
             vehicle: config.organizationId
                 ? {
-                      organizationId: config.organizationId
-                  }
+                    organizationId: config.organizationId
+                }
                 : undefined
         },
         skip: config.offset || 0,
@@ -163,8 +163,8 @@ const searchSessions = async (config: SearchConfig): Promise<SearchResult> => {
             ],
             vehicle: config.organizationId
                 ? {
-                      organizationId: config.organizationId
-                  }
+                    organizationId: config.organizationId
+                }
                 : undefined
         }
     });

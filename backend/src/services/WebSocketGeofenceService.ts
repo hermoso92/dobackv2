@@ -30,12 +30,10 @@ export class WebSocketGeofenceService {
     private wss: WebSocketServer;
     private clients: Map<string, WebSocketClient> = new Map();
     private geofenceService: RealTimeGeofenceService;
-    private prisma: PrismaClient;
     private heartbeatInterval: NodeJS.Timeout;
     private cleanupInterval: NodeJS.Timeout;
 
     constructor(server: Server, prisma: PrismaClient, geofenceService: RealTimeGeofenceService) {
-        this.prisma = prisma;
         this.geofenceService = geofenceService;
 
         // Crear servidor WebSocket

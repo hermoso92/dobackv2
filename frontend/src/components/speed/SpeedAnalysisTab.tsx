@@ -63,6 +63,10 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     const [mapZoom, setMapZoom] = useState(12);
     const mapRef = useRef<L.Map | null>(null);
 
+    // Estados para desglose de incidencias
+    const [expandedCategory, setExpandedCategory] = useState<'grave' | 'moderado' | 'leve' | null>(null);
+    const [showIncidentsModal, setShowIncidentsModal] = useState(false);
+
     // Hook para exportación PDF
     const { exportEnhancedTabToPDF, isExporting } = usePDFExport();
 
@@ -151,6 +155,32 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     const handleZoneClick = (zone: any) => {
         setMapCenter([zone.lat, zone.lng]);
         setMapZoom(15);
+    };
+
+    // Manejar click en categoría de incidencias
+    const handleCategoryClick = (category: 'grave' | 'moderado' | 'leve') => {
+        setExpandedCategory(category);
+        setShowIncidentsModal(true);
+    };
+
+    // Cerrar modal de incidencias
+    const handleCloseIncidentsModal = () => {
+        setShowIncidentsModal(false);
+        setExpandedCategory(null);
+    };
+
+    // Manejar click en incidencia específica
+    const handleIncidentClick = (incident: SpeedViolation) => {
+        if (incident.lat && incident.lng) {
+            setMapCenter([incident.lat, incident.lng]);
+            setMapZoom(16);
+            handleCloseIncidentsModal();
+        }
+    };
+
+    // Filtrar incidencias por categoría
+    const getIncidentsByCategory = (category: 'grave' | 'moderado' | 'leve') => {
+        return violations.filter(v => v.violationType === category);
     };
 
     // Exportar reporte detallado a PDF
@@ -395,31 +425,55 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                     <div className="text-2xl font-bold text-slate-800">{stats.total}</div>
                 </div>
 
-                <div className="bg-red-50 rounded-xl shadow-sm border border-red-200 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                        <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
-                        <div className="text-sm font-medium text-red-700">Graves</div>
+                <div
+                    className="bg-red-50 rounded-xl shadow-sm border border-red-200 p-4 cursor-pointer hover:bg-red-100 hover:shadow-md transition-all"
+                    onClick={() => stats.grave > 0 && handleCategoryClick('grave')}
+                >
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
+                            <div className="text-sm font-medium text-red-700">Graves</div>
+                        </div>
+                        {stats.grave > 0 && (
+                            <div className="text-xs text-red-600">👁️</div>
+                        )}
                     </div>
                     <div className="text-2xl font-bold text-red-600">{stats.grave}</div>
                     <div className="text-xs text-red-500 mt-1">Exceso &gt;20 km/h</div>
                 </div>
 
-                <div className="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                        <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600" />
-                        <div className="text-sm font-medium text-yellow-700">Leves</div>
-                    </div>
-                    <div className="text-2xl font-bold text-yellow-600">{stats.leve}</div>
-                    <div className="text-xs text-yellow-500 mt-1">Exceso 1-20 km/h</div>
-                </div>
-
-                <div className="bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                        <ExclamationTriangleIcon className="h-4 w-4 text-orange-600" />
-                        <div className="text-sm font-medium text-orange-700">Moderados</div>
+                <div
+                    className="bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-4 cursor-pointer hover:bg-orange-100 hover:shadow-md transition-all"
+                    onClick={() => stats.moderado > 0 && handleCategoryClick('moderado')}
+                >
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-4 w-4 text-orange-600" />
+                            <div className="text-sm font-medium text-orange-700">Moderados</div>
+                        </div>
+                        {stats.moderado > 0 && (
+                            <div className="text-xs text-orange-600">👁️</div>
+                        )}
                     </div>
                     <div className="text-2xl font-bold text-orange-600">{stats.moderado}</div>
-                    <div className="text-xs text-orange-500 mt-1">Exceso moderado</div>
+                    <div className="text-xs text-orange-500 mt-1">Exceso 10-20 km/h</div>
+                </div>
+
+                <div
+                    className="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-4 cursor-pointer hover:bg-yellow-100 hover:shadow-md transition-all"
+                    onClick={() => stats.leve > 0 && handleCategoryClick('leve')}
+                >
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600" />
+                            <div className="text-sm font-medium text-yellow-700">Leves</div>
+                        </div>
+                        {stats.leve > 0 && (
+                            <div className="text-xs text-yellow-600">👁️</div>
+                        )}
+                    </div>
+                    <div className="text-2xl font-bold text-yellow-600">{stats.leve}</div>
+                    <div className="text-xs text-yellow-500 mt-1">Exceso 1-10 km/h</div>
                 </div>
 
                 <div className="bg-slate-50 rounded-xl shadow-sm border border-slate-200 p-4">
@@ -591,6 +645,107 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Modal de desglose de incidencias */}
+            {showIncidentsModal && expandedCategory && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+                        <div className="p-6 border-b border-slate-200">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold text-slate-800">
+                                    Excesos {expandedCategory === 'grave' ? 'Graves' : expandedCategory === 'moderado' ? 'Moderados' : 'Leves'}
+                                </h3>
+                                <button
+                                    onClick={handleCloseIncidentsModal}
+                                    className="text-slate-400 hover:text-slate-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <p className="text-sm text-slate-600 mt-2">
+                                Haz clic en cualquier exceso para localizarlo en el mapa
+                            </p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="space-y-3">
+                                {getIncidentsByCategory(expandedCategory).map((incident, index) => (
+                                    <div
+                                        key={`incident-${index}`}
+                                        className="border border-slate-200 rounded-lg p-4 cursor-pointer hover:bg-slate-50 hover:shadow-md transition-all"
+                                        onClick={() => handleIncidentClick(incident)}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className={`text-2xl font-bold ${expandedCategory === 'grave' ? 'text-red-600' :
+                                                expandedCategory === 'moderado' ? 'text-orange-600' :
+                                                    'text-yellow-600'
+                                                }`}>
+                                                {index + 1}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-semibold text-slate-800 mb-1">
+                                                    <LocationDisplay
+                                                        lat={incident.lat}
+                                                        lng={incident.lng}
+                                                        fallbackText="Ubicación desconocida"
+                                                    />
+                                                </div>
+                                                <div className="text-sm text-slate-600 space-y-1">
+                                                    <div className="flex justify-between">
+                                                        <span>Vehículo:</span>
+                                                        <span className="font-bold">{incident.vehicleName || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Fecha/Hora:</span>
+                                                        <span className="text-xs font-mono">
+                                                            {new Date(incident.timestamp).toLocaleString('es-ES', {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Velocidad:</span>
+                                                        <span className="font-bold text-red-600">{incident.speed} km/h</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Límite:</span>
+                                                        <span className="font-bold">{incident.speedLimit} km/h</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Exceso:</span>
+                                                        <span className="font-bold text-orange-600">
+                                                            +{(incident.speed - incident.speedLimit).toFixed(1)} km/h
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Tipo de vía:</span>
+                                                        <span className="font-bold">{getRoadTypeText(incident.roadType)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Rotativo:</span>
+                                                        <span className="font-bold">
+                                                            {incident.rotativoOn ? '✅ ON' : '❌ OFF'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Coordenadas:</span>
+                                                        <span className="text-xs font-mono">
+                                                            {incident.lat?.toFixed(6)}, {incident.lng?.toFixed(6)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

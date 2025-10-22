@@ -13,6 +13,7 @@
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
 import { generateStabilityEventsForSession } from '../eventDetector';
+import { routeProcessorService } from '../geoprocessing/RouteProcessorService';
 import { kpiCacheService } from '../KPICacheService';
 import { generateOperationalSegments } from '../OperationalKeyCalculator';
 
@@ -27,6 +28,12 @@ export interface SessionEventsSummary {
         lat?: number;
         lon?: number;
     }>;
+    geofenceEvents?: number;
+    routeDistance?: number;
+    routeConfidence?: number;
+    speedViolations?: number;
+    gpsPoints?: number;
+    stabilityMeasurements?: number;
 }
 
 export interface PostProcessingResult {
@@ -110,10 +117,28 @@ export class UploadPostProcessor {
             sessionId,
             eventsGenerated: 0,
             segmentsGenerated: 0,
-            events: []
+            events: [],
+            geofenceEvents: 0,
+            routeDistance: 0,
+            routeConfidence: 0,
+            speedViolations: 0,
+            gpsPoints: 0,
+            stabilityMeasurements: 0
         };
 
-        // 1. Generar eventos de estabilidad
+        // 1. Obtener conteo de mediciones
+        try {
+            const [gpsCount, stabilityCount] = await Promise.all([
+                prisma.gpsMeasurement.count({ where: { sessionId } }),
+                prisma.stabilityMeasurement.count({ where: { sessionId } })
+            ]);
+            summary.gpsPoints = gpsCount;
+            summary.stabilityMeasurements = stabilityCount;
+        } catch (error: any) {
+            logger.warn(`⚠️ Error obteniendo conteo de mediciones: ${error.message}`);
+        }
+
+        // 2. Generar eventos de estabilidad
         try {
             const events = await generateStabilityEventsForSession(sessionId);
             results.eventsGenerated += events.length;
@@ -155,7 +180,7 @@ export class UploadPostProcessor {
             throw new Error(`Eventos: ${error.message}`);
         }
 
-        // 2. Generar segmentos operacionales
+        // 3. Generar segmentos operacionales
         try {
             const segments = await generateOperationalSegments(sessionId);
             results.segmentsGenerated += segments.length;
@@ -169,6 +194,22 @@ export class UploadPostProcessor {
             if (!error.message.includes('Sin datos de rotativo')) {
                 throw new Error(`Segmentos: ${error.message}`);
             }
+        }
+
+        // 4. ✅ NUEVO: Geoprocesamiento
+        try {
+            logger.debug(`🗺️ Ejecutando geoprocesamiento para sesión ${sessionId}`);
+            const geoResult = await routeProcessorService.processSession(sessionId);
+
+            summary.geofenceEvents = geoResult.geofenceEvents;
+            summary.routeDistance = geoResult.distance;
+            summary.routeConfidence = geoResult.confidence;
+            summary.speedViolations = geoResult.speedViolations;
+
+            logger.debug(`✅ Geoprocesamiento OK: ${geoResult.distance.toFixed(2)}m, ${geoResult.geofenceEvents} eventos, confianza: ${(geoResult.confidence * 100).toFixed(1)}%`);
+        } catch (geoError: any) {
+            logger.warn(`⚠️ Error en geoprocesamiento: ${geoError.message}`);
+            // No bloquear post-procesamiento
         }
 
         return summary;

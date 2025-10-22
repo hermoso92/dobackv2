@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export class StabilityController {
     // Obtener sesiones de estabilidad de un vehículo con datos reales

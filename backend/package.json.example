@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "migrate:roles": "ts-node scripts/migrations/migrate-user-roles.ts"
+  },
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3"
+  }
+}
+

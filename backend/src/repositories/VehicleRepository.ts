@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+
+import { prisma } from '../lib/prisma';
 import { Vehicle } from '../types/vehicle';
 
-const prisma = new PrismaClient();
+
 
 export class VehicleRepository {
     async findAll(): Promise<Vehicle[]> {

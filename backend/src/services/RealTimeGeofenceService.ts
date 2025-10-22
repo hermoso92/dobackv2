@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { PostGISGeometryService } from './PostGISGeometryService';
 
@@ -23,13 +24,11 @@ export interface VehicleGeofenceState {
 }
 
 export class RealTimeGeofenceService {
-  private prisma: PrismaClient;
   private geometryService: PostGISGeometryService;
   private vehicleStates: Map<string, VehicleGeofenceState> = new Map();
   private eventCallbacks: Array<(event: GeofenceEvent) => void> = [];
 
   constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
     this.geometryService = new PostGISGeometryService(prisma);
   }
 
@@ -296,7 +295,7 @@ export class RealTimeGeofenceService {
   private async saveGeofenceEvent(event: GeofenceEvent): Promise<void> {
     try {
       // Crear evento en la tabla Event
-      await this.prisma.event.create({
+      await prisma.event.create({
         data: {
           type: `GEOFENCE_${event.eventType}`,
           timestamp: event.timestamp,

@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
 
 async function main() {
-    const prisma = new PrismaClient();
+    
 
     try {
         // Verificar conexión

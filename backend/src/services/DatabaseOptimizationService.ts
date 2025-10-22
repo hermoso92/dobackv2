@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
 interface QueryOptimizationOptions {
@@ -17,12 +18,10 @@ interface QueryStats {
 }
 
 export class DatabaseOptimizationService {
-    private prisma: PrismaClient;
     private queryStats: QueryStats[] = [];
     private options: Required<QueryOptimizationOptions>;
 
     constructor(prisma: PrismaClient, options: QueryOptimizationOptions = {}) {
-        this.prisma = prisma;
         this.options = {
             enableIndexing: options.enableIndexing ?? true,
             enableQueryCaching: options.enableQueryCaching ?? true,
@@ -98,7 +97,7 @@ export class DatabaseOptimizationService {
 
             for (const indexQuery of indexes) {
                 try {
-                    await this.prisma.$executeRawUnsafe(indexQuery);
+                    await prisma.$executeRawUnsafe(indexQuery);
                     logger.debug('Índice creado exitosamente', { query: indexQuery.substring(0, 100) });
                 } catch (error) {
                     // Ignorar errores de índices que ya existen
@@ -195,7 +194,7 @@ export class DatabaseOptimizationService {
 
         try {
             const optimizedQuery = await this.optimizeQuery(query);
-            const result = await this.prisma.$queryRawUnsafe(optimizedQuery, ...params);
+            const result = await prisma.$queryRawUnsafe(optimizedQuery, ...params);
 
             const duration = Date.now() - startTime;
 
@@ -231,7 +230,7 @@ export class DatabaseOptimizationService {
     }> {
         try {
             // Obtener estadísticas de la tabla
-            const stats = await this.prisma.$queryRawUnsafe(`
+            const stats = await prisma.$queryRawUnsafe(`
                 SELECT 
                     schemaname,
                     tablename,
@@ -251,14 +250,14 @@ export class DatabaseOptimizationService {
             const tableStats = Array.isArray(stats) ? stats[0] : null;
 
             // Obtener tamaño de la tabla
-            const sizeResult = await this.prisma.$queryRawUnsafe(`
+            const sizeResult = await prisma.$queryRawUnsafe(`
                 SELECT pg_size_pretty(pg_total_relation_size($1)) as size
             `, tableName);
 
             const tableSize = Array.isArray(sizeResult) ? (sizeResult[0] as any).size : 'Unknown';
 
             // Obtener número de índices
-            const indexResult = await this.prisma.$queryRawUnsafe(`
+            const indexResult = await prisma.$queryRawUnsafe(`
                 SELECT COUNT(*) as index_count
                 FROM pg_indexes 
                 WHERE tablename = $1
@@ -318,7 +317,7 @@ export class DatabaseOptimizationService {
 
             for (const table of tables) {
                 try {
-                    await this.prisma.$executeRawUnsafe(`VACUUM ANALYZE ${table}`);
+                    await prisma.$executeRawUnsafe(`VACUUM ANALYZE ${table}`);
                     logger.debug(`Mantenimiento completado para tabla: ${table}`);
                 } catch (error) {
                     logger.warn(`Error en mantenimiento de tabla ${table}`, { error });

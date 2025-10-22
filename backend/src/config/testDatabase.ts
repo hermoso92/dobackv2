@@ -4,8 +4,6 @@ import { logger } from '../utils/logger';
 let testPrisma: PrismaClient;
 
 export class TestDatabaseManager {
-    private prisma: PrismaClient;
-
     constructor() {
         this.prisma = new PrismaClient({
             datasources: {
@@ -18,7 +16,7 @@ export class TestDatabaseManager {
 
     async connect(): Promise<void> {
         try {
-            await this.prisma.$connect();
+            await prisma.$connect();
             logger.info('Conexión a base de datos de pruebas establecida');
         } catch (error) {
             logger.error('Error conectando a base de datos de pruebas:', error);
@@ -28,7 +26,7 @@ export class TestDatabaseManager {
 
     async disconnect(): Promise<void> {
         try {
-            await this.prisma.$disconnect();
+            await prisma.$disconnect();
             logger.info('Conexión a base de datos de pruebas cerrada');
         } catch (error) {
             logger.error('Error cerrando conexión a base de datos de pruebas:', error);
@@ -39,7 +37,7 @@ export class TestDatabaseManager {
     async reset(): Promise<void> {
         try {
             // Obtener nombres de tablas
-            const tablenames = await this.prisma.$queryRaw<Array<{ tablename: string }>>`
+            const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
                 SELECT tablename FROM pg_tables WHERE schemaname='public'
             `;
 
@@ -51,7 +49,7 @@ export class TestDatabaseManager {
                 .join(', ');
 
             if (tables) {
-                await this.prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`);
+                await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`);
                 logger.info('Base de datos de pruebas limpiada');
             }
         } catch (error) {
@@ -63,7 +61,7 @@ export class TestDatabaseManager {
     async seed(): Promise<void> {
         try {
             // Crear datos de prueba básicos
-            const testOrganization = await this.prisma.organization.create({
+            const testOrganization = await prisma.organization.create({
                 data: {
                     name: 'Organización de Pruebas',
                     apiKey: 'test-api-key-' + Date.now()

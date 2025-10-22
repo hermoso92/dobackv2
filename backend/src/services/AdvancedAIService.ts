@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 import { AICacheService } from './AICacheService';
 
-const prisma = new PrismaClient();
+
 
 interface AIExplanation {
     id: string;

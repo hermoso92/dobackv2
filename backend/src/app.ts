@@ -1,14 +1,19 @@
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
+import { createServer } from 'http';
 import { config } from './config/env';
 import { initializeGeofenceServices } from './config/geofenceServices';
+import { prisma } from './lib/prisma';
 import { apiLimiter, attackDetector, authLimiter, requestSizeLimiter, securityHeaders, uploadLimiter } from './middleware/security';
 import { DatabaseOptimizationService } from './services/DatabaseOptimizationService';
 import { realTimeGPSService } from './services/realTimeGPSService';
+import { WebSocketService } from './services/WebSocketService';
 import { logger } from './utils/logger';
 
 const app = express();
+const server = createServer(app);
+const webSocketService = new WebSocketService(server);
 
 // Middleware de seguridad
 app.use(securityHeaders);
@@ -108,5 +113,8 @@ try {
     logger.error('❌ Error inicializando servicio de optimización de base de datos:', error);
 }
 
-// Exportar solo la app, no el servidor
+// ✅ La conexión de Prisma se maneja en server.ts para asegurar que se conecte antes de iniciar el servidor
+
+// Exportar app, server, prisma y webSocketService
+export { app, prisma, server, webSocketService };
 export default app;

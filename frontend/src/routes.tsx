@@ -30,9 +30,13 @@ const UnifiedAdmin = lazy(() => import('./pages/UnifiedAdmin'));
 const UnifiedOperations = lazy(() => import('./pages/UnifiedOperations'));
 const AdministrationPage = lazy(() => import('./pages/AdministrationPage'));
 const SystemDiagnostics = lazy(() => import('./pages/SystemDiagnostics'));
+const AlertsPage = lazy(() => import('./pages/AlertsPage'));
+const ManagerAdministration = lazy(() => import('./pages/ManagerAdministration'));
+const SystemStatusPage = lazy(() => import('./pages/SystemStatusPage'));
 
 // Regular imports for frequently used pages
 import { ObservabilityPage } from './components/observability/ObservabilityPage';
+import { SingleSessionUpload } from './components/upload/SingleSessionUpload';
 import Analytics from './pages/Analytics';
 import Events from './pages/Events';
 import KnowledgeBase from './pages/KnowledgeBase';
@@ -138,7 +142,14 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/administration" element={
                     <ProtectedRoute>
                         <Suspense fallback={<PageLoadingSpinner />}>
-                            <AdministrationPage />
+                            <ManagerAdministration />
+                        </Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/alerts" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={<PageLoadingSpinner />}>
+                            <AlertsPage />
                         </Suspense>
                     </ProtectedRoute>
                 } />
@@ -193,6 +204,11 @@ export const AppRoutes: React.FC = () => {
                         <UploadPage />
                     </ProtectedRoute>
                 } />
+                <Route path="/upload-single" element={
+                    <ProtectedRoute>
+                        <SingleSessionUpload />
+                    </ProtectedRoute>
+                } />
                 <Route path="/geofences" element={
                     <ProtectedRoute>
                         <Suspense fallback={<PageLoadingSpinner />}>
@@ -222,6 +238,13 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/knowledge-base" element={
                     <ProtectedRoute>
                         <KnowledgeBase />
+                    </ProtectedRoute>
+                } />
+                <Route path="/system-status" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={<PageLoadingSpinner />}>
+                            <SystemStatusPage />
+                        </Suspense>
                     </ProtectedRoute>
                 } />
                 <Route path="/events" element={

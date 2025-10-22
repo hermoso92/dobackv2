@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+
 import { calculateVehicleKPI } from '../services/calculateVehicleKPI';
 
-const prisma = new PrismaClient();
+
 
 (async () => {
     console.info('🔄 Iniciando cálculo histórico de KPIs de todos los vehículos y fechas...');

@@ -5,6 +5,7 @@
 import { Request, Response, Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { createLogger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 const logger = createLogger('KPIRoutesTemp');
@@ -23,7 +24,6 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         logger.info('📊 Calculando KPIs temporales', { organizationId });
 
         // Importar prisma dinámicamente
-        const { prisma } = await import('../config/prisma');
 
         // Obtener sesiones básicas
         const sessions = await prisma.session.findMany({

@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import fs from 'fs/promises';
+import { prisma } from '../lib/prisma';
 import path from 'path';
 import { logger } from '../utils/logger';
 import {
@@ -9,7 +10,7 @@ import {
     parseStabilityFile
 } from '../utils/sessionParsers';
 
-const prisma = new PrismaClient();
+
 
 interface FileProcessingResult {
     success: boolean;

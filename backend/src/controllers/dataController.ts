@@ -1,13 +1,14 @@
-import { PrismaClient, SessionStatus, SessionType } from '@prisma/client';
+import { SessionStatus, SessionType } from '@prisma/client';
 import { Request, Response } from 'express';
 import { existsSync, mkdir, writeFile } from 'fs';
 import { join } from 'path';
+import { prisma } from '../lib/prisma';
 import { DataProcessor } from '../services/dataProcessor';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('DataController');
 const dataProcessor = new DataProcessor(join(process.cwd(), 'data'));
-const prisma = new PrismaClient();
+
 
 interface AuthenticatedRequest extends Request {
     user: {

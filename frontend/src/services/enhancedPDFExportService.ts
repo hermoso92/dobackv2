@@ -1438,7 +1438,7 @@ class EnhancedPDFExportService {
         avgSpeed: number;
         maxSpeed: number;
         route: Array<{ lat: number; lng: number; speed: number; timestamp: Date }>;
-        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date }>;
+        events: Array<{ id: string; lat: number; lng: number; type: string; severity: string; timestamp: Date; location?: string }>;
         stats: {
             validRoutePoints: number;
             validEvents: number;
@@ -1537,19 +1537,19 @@ class EnhancedPDFExportService {
             yPosition += Math.ceil(statsItems.length / 2) * 18 + 10;
 
             // MAPA DEL RECORRIDO
+            checkPageBreak(110);
+
+            pdf.setFillColor(...this.colors.success);
+            pdf.rect(margin, yPosition, contentWidth, 7, 'F');
+            pdf.setFontSize(14);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text('MAPA DEL RECORRIDO', margin + 3, yPosition + 5);
+            yPosition += 10;
+
+            const mapWidth = contentWidth;
+            const mapHeight = 100;
+
             if (routeData.mapImage) {
-                checkPageBreak(110);
-
-                pdf.setFillColor(...this.colors.success);
-                pdf.rect(margin, yPosition, contentWidth, 7, 'F');
-                pdf.setFontSize(14);
-                pdf.setTextColor(255, 255, 255);
-                pdf.text('MAPA DEL RECORRIDO', margin + 3, yPosition + 5);
-                yPosition += 10;
-
-                const mapWidth = contentWidth;
-                const mapHeight = 100;
-
                 try {
                     pdf.addImage(routeData.mapImage, 'PNG', margin, yPosition, mapWidth, mapHeight, undefined, 'FAST');
                     yPosition += mapHeight + 5;
@@ -1560,7 +1560,41 @@ class EnhancedPDFExportService {
                     yPosition += 8;
                 } catch (error) {
                     logger.warn('Error añadiendo mapa al PDF', { error });
+                    // Mostrar mensaje de error
+                    pdf.setFillColor(...this.colors.light);
+                    pdf.roundedRect(margin, yPosition, mapWidth, mapHeight, 3, 3, 'F');
+                    pdf.setFontSize(12);
+                    pdf.setTextColor(...this.colors.textSecondary);
+                    pdf.text('El mapa no pudo cargarse', pageWidth / 2, yPosition + mapHeight / 2 - 10, { align: 'center' });
+                    pdf.setFontSize(9);
+                    pdf.text(`Ruta con ${routeData.route.length} puntos GPS`, pageWidth / 2, yPosition + mapHeight / 2, { align: 'center' });
+                    pdf.text('Verifique que la ruta contiene puntos válidos', pageWidth / 2, yPosition + mapHeight / 2 + 7, { align: 'center' });
+                    yPosition += mapHeight + 5;
                 }
+            } else {
+                // No hay imagen de mapa - mostrar placeholder
+                pdf.setFillColor(...this.colors.light);
+                pdf.roundedRect(margin, yPosition, mapWidth, mapHeight, 3, 3, 'F');
+
+                pdf.setFontSize(12);
+                pdf.setTextColor(...this.colors.textSecondary);
+                pdf.text('📍 Mapa no disponible', pageWidth / 2, yPosition + mapHeight / 2 - 10, { align: 'center' });
+
+                pdf.setFontSize(9);
+                pdf.text(`Ruta con ${routeData.route.length} puntos GPS`, pageWidth / 2, yPosition + mapHeight / 2, { align: 'center' });
+
+                if (routeData.route.length > 0) {
+                    const firstPoint = routeData.route[0];
+                    const lastPoint = routeData.route[routeData.route.length - 1];
+                    if (firstPoint && lastPoint) {
+                        pdf.text(`Inicio: ${firstPoint.lat.toFixed(4)}, ${firstPoint.lng.toFixed(4)}`, pageWidth / 2, yPosition + mapHeight / 2 + 7, { align: 'center' });
+                        pdf.text(`Fin: ${lastPoint.lat.toFixed(4)}, ${lastPoint.lng.toFixed(4)}`, pageWidth / 2, yPosition + mapHeight / 2 + 14, { align: 'center' });
+                    }
+                } else {
+                    pdf.text('No hay puntos GPS válidos para mostrar', pageWidth / 2, yPosition + mapHeight / 2 + 7, { align: 'center' });
+                }
+
+                yPosition += mapHeight + 8;
             }
 
             // ANÁLISIS DE EVENTOS
@@ -1630,7 +1664,7 @@ class EnhancedPDFExportService {
                 pdf.setFontSize(8);
                 pdf.setTextColor(255, 255, 255);
 
-                const colWidths = [30, 50, 40, 30];
+                const colWidths = [22, 40, 72, 26]; // Aumentado ancho de Ubicación de 40 a 72
                 const headers = ['Hora', 'Tipo', 'Ubicacion', 'Severidad'];
 
                 let xPos = margin + 2;
@@ -1659,18 +1693,18 @@ class EnhancedPDFExportService {
 
                     const time = new Date(event.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                     pdf.text(time, xPos, yPosition + 5);
-                    xPos += colWidths[0] || 30;
+                    xPos += colWidths[0] || 22;
 
                     pdf.setTextColor(...this.colors.text);
-                    const type = event.type.length > 20 ? event.type.substring(0, 18) + '...' : event.type;
+                    const type = event.type.length > 18 ? event.type.substring(0, 16) + '...' : event.type;
                     pdf.text(type, xPos, yPosition + 5);
-                    xPos += colWidths[1] || 50;
+                    xPos += colWidths[1] || 40;
 
                     // Usar ubicación geocodificada si está disponible, sino coordenadas
                     const location = event.location || `${event.lat.toFixed(4)}, ${event.lng.toFixed(4)}`;
-                    const locationText = location.length > 20 ? location.substring(0, 18) + '...' : location;
+                    const locationText = location.length > 45 ? location.substring(0, 43) + '...' : location;
                     pdf.text(locationText, xPos, yPosition + 5);
-                    xPos += colWidths[2] || 40;
+                    xPos += colWidths[2] || 72;
 
                     pdf.setTextColor(...textColor);
                     pdf.text(event.severity.toUpperCase(), xPos, yPosition + 5);

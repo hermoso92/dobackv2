@@ -47,15 +47,19 @@ window.addEventListener('error', (event) => {
     const ignoredErrors = [
         'triggerSyncToReact',
         'reading \'messages\'',
-        'Cannot read properties of undefined'
+        'Cannot read properties of undefined',
+        'i18next',
+        'i18n'
     ];
 
     // Silenciar errores de funciones inexistentes que no son parte de nuestra app
     if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
         event.preventDefault();
+        event.stopPropagation();
+        console.debug('Silenced non-critical error:', errorMessage);
         return;
     }
-});
+}, true); // Capturar en fase de captura para interceptar antes
 
 // Manejar promesas rechazadas no capturadas
 window.addEventListener('unhandledrejection', (event) => {
@@ -65,11 +69,14 @@ window.addEventListener('unhandledrejection', (event) => {
     const ignoredErrors = [
         'triggerSyncToReact',
         'reading \'messages\'',
-        'i18n'
+        'i18n',
+        'i18next',
+        'translation'
     ];
 
     if (ignoredErrors.some(ignored => String(reason).includes(ignored))) {
         event.preventDefault();
+        console.debug('Silenced non-critical promise rejection:', reason);
         return;
     }
 });

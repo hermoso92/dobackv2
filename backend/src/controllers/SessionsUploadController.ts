@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import fs from 'fs';
 import { processAndSaveStabilityEvents } from '../services/StabilityEventService';
 import { TokenPayload } from '../types/auth';
@@ -12,7 +13,7 @@ import {
     synchronizeTimestamps
 } from '../utils/sessionParsers';
 
-const prisma = new PrismaClient();
+
 
 // Helper function to get timestamp as number regardless of input type
 function getTimestamp(timestamp: string | Date): number {

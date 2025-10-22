@@ -3,11 +3,12 @@
  * Servicio completo para gestión de geofences con base de datos
  */
 
-import { PrismaClient } from '@prisma/client';
+
 import { EventEmitter } from 'events';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 interface GeofenceData {
     id?: string;

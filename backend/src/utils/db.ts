@@ -1,24 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+/**
+ * 🔄 RE-EXPORT DEL SINGLETON DE PRISMA
+ * 
+ * Este archivo re-exporta el singleton de Prisma desde lib/prisma.ts
+ * para mantener compatibilidad con imports existentes.
+ * 
+ * IMPORTANTE: NO crear nuevas instancias de PrismaClient aquí.
+ * Usar SIEMPRE el singleton de lib/prisma.ts
+ */
 
-export const prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error']
-});
+// Re-exportar el singleton de Prisma
+export { prisma } from '../lib/prisma';
 
-interface QueryEvent {
-    timestamp: Date;
-    query: string;
-    params: string;
-    duration: number;
-    target: string;
-}
-
-// Handle connection errors
-prisma.$on('query', (e: QueryEvent) => {
-    console.log('Query: ' + e.query);
-    console.log('Duration: ' + e.duration + 'ms');
-});
-
-// Handle disconnection
-process.on('beforeExit', async () => {
-    await prisma.$disconnect();
-});
+// Re-exportar como default para compatibilidad
+export { default } from '../lib/prisma';

@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 // Puedes importar servicios de notificación y comandos si existen
 
-const prisma = new PrismaClient();
+
 
 export class GestorDeEventoService {
     async crearCondicion(data: any) {

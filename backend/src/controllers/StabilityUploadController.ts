@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import { randomUUID } from 'crypto';
+import { prisma } from '../lib/prisma';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { StabilityMeasurementRepository } from '../repositories/StabilityMeasurementRepository';
@@ -9,7 +10,7 @@ import { VehicleValidationService } from '../services/VehicleValidationService';
 import { StabilityMeasurements } from '../types/stability';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 const uploadSchema = z.object({
     file: z.any().refine((file) => file && file.buffer, {

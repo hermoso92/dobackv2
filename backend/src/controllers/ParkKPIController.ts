@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { parkKpiService } from '../services/ParkKPIService';
 import { logger } from '../utils/logger';
 
@@ -110,7 +111,7 @@ export class ParkKPIController {
 
             // Obtener todos los parques de la organización
             const { PrismaClient } = require('@prisma/client');
-            const prisma = new PrismaClient();
+            
 
             const parks = await prisma.park.findMany({
                 where: { organizationId: organizationId as string },

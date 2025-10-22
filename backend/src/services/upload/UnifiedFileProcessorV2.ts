@@ -53,7 +53,7 @@ function detectedSessionToFileDetail(
         endTime: formatTime(detectedSession.endTime),
         durationSeconds,
         durationFormatted: formatDuration(durationSeconds),
-        measurements: detectedSession.measurements
+        measurements: detectedSession.measurementCount
     };
 }
 
@@ -522,9 +522,9 @@ export class UnifiedFileProcessorV2 {
             include: {
                 _count: {
                     select: {
-                        gpsMeasurements: true,
-                        stabilityMeasurements: true,
-                        RotativoMeasurement: true // ✅ Corregido: R mayúscula
+                        GpsMeasurement: true,
+                        StabilityMeasurement: true,
+                        RotativoMeasurement: true
                     }
                 }
             }
@@ -533,9 +533,9 @@ export class UnifiedFileProcessorV2 {
         if (existing) {
             logger.info(`   ⚠️ Sesión ${session.sessionNumber} ya existe, omitiendo...`);
             const existingMeasurementCount =
-                existing._count.gpsMeasurements +
-                existing._count.stabilityMeasurements +
-                existing._count.RotativoMeasurement; // ✅ Corregido: R mayúscula
+                existing._count.GpsMeasurement +
+                existing._count.StabilityMeasurement +
+                existing._count.RotativoMeasurement;
             return {
                 sessionId: existing.id,
                 created: false,
@@ -636,7 +636,8 @@ export class UnifiedFileProcessorV2 {
                     altitude: p.altitude,
                     hdop: p.hdop || 0,
                     speed: p.speed || 0,
-                    satellites: p.satellites || 0
+                    satellites: p.satellites || 0,
+                    updatedAt: new Date()
                 })),
                 skipDuplicates: true
             });
@@ -667,6 +668,7 @@ export class UnifiedFileProcessorV2 {
                     gy: m.gy,
                     gz: m.gz,
                     roll: m.roll,
+                    updatedAt: new Date(),
                     pitch: m.pitch,
                     yaw: m.yaw,
                     timeantwifi: m.timeantwifi,
@@ -729,6 +731,16 @@ export class UnifiedFileProcessorV2 {
             }
 
             const [, tipo, vehiculo, fecha] = match;
+
+            // ✅ FILTRO: Solo archivos desde 1 septiembre 2025
+            const year = parseInt(fecha.substring(0, 4));
+            const month = parseInt(fecha.substring(4, 6));
+
+            if (year < 2025 || (year === 2025 && month < 9)) {
+                logger.info(`   ⏭️  Archivo ignorado (anterior a sept 2025): ${archivo.nombre}`);
+                continue;
+            }
+
             const key = `${vehiculo}_${fecha}`;
 
             if (!grupos.has(key)) {
@@ -776,8 +788,9 @@ export class UnifiedFileProcessorV2 {
 
             // 2. ✅ SEGMENTOS DE CLAVES OPERACIONALES
             try {
-                const { calcularYGuardarSegmentos } = await import('../keyCalculator');
-                const numSegmentos = await calcularYGuardarSegmentos(sessionId);
+                // Importación dinámica para evitar dependencias circulares
+                const keyCalculatorModule = await import('../keyCalculatorBackup') as any;
+                const numSegmentos = await keyCalculatorModule.calcularYGuardarSegmentos(sessionId);
                 logger.info(`✅ ${numSegmentos} segmentos de claves generados para sesión ${sessionId}`);
             } catch (error: any) {
                 logger.warn(`⚠️ Error calculando segmentos de claves para sesión ${sessionId}:`, error?.message);

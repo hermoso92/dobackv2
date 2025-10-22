@@ -104,7 +104,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
     const exportRouteFunction = useRouteExportFunction();
 
     // Hook de filtros globales
-    const { filters, updateTrigger } = useGlobalFilters();
+    const { filters, updateTrigger, updateFilters } = useGlobalFilters();
 
     // Hook de KPIs reales
     const {
@@ -850,137 +850,156 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
             : 0;
 
         return (
-            <div className="h-full w-full bg-white p-6" id="estados-tiempos-content">
-                {/* Grid de KPIs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="estados-tiempos-kpis">
-                    {/* Primera fila - Métricas principales */}
-                    <KPICard
-                        title="Horas de Conducción"
-                        value={activity?.driving_hours_formatted || '00:00:00'}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Tiempo total de conducción en el período"
-                    />
-                    <KPICard
-                        title="Kilómetros Recorridos"
-                        value={`${activity?.km_total || 0} km`}
-                        icon={<TruckIcon className="h-5 w-5" />}
-                        colorClass="text-green-600"
-                        subtitle="Distancia total recorrida"
-                    />
-                    <KPICard
-                        title="Tiempo en Parque"
-                        value={getStateDuration(1)}
-                        icon={<MapIcon className="h-5 w-5" />}
-                        colorClass="text-slate-600"
-                        subtitle="Tiempo total en parque (Clave 1)"
-                    />
-                    <KPICard
-                        title="% Rotativo"
-                        value={`${activity?.rotativo_on_percentage || 0}%`}
-                        icon={<PowerIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Porcentaje de tiempo con rotativo"
-                    />
+            <div className="h-full w-full bg-white p-2 overflow-hidden" id="estados-tiempos-content">
+                <div className="grid grid-cols-3 gap-3 h-full" id="estados-tiempos-kpis">
+                    {/* COLUMNA 1: MÉTRICAS GENERALES */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-blue-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ChartBarIcon className="h-4 w-4" />
+                            Métricas Generales
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Horas de Conducción"
+                                value={activity?.driving_hours_formatted || '00:00:00'}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Tiempo total de conducción"
+                            />
+                            <KPICard
+                                title="Kilómetros Recorridos"
+                                value={`${activity?.km_total || 0} km`}
+                                icon={<TruckIcon className="h-5 w-5" />}
+                                colorClass="text-green-600"
+                                subtitle="Distancia total recorrida"
+                            />
+                            <KPICard
+                                title="Velocidad Promedio"
+                                value={`${avgSpeed} km/h`}
+                                icon={<ChartBarIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Velocidad media de la flota"
+                            />
+                            <KPICard
+                                title="% Rotativo Activo"
+                                value={`${activity?.rotativo_on_percentage || 0}%`}
+                                icon={<PowerIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Tiempo con rotativo encendido"
+                            />
+                            <KPICard
+                                title="Índice de Estabilidad"
+                                value={`${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`}
+                                icon={<ChartBarIcon className="h-5 w-5" />}
+                                colorClass={
+                                    (quality?.indice_promedio || 0) >= 0.90 ? "text-green-600" :
+                                        (quality?.indice_promedio || 0) >= 0.88 ? "text-yellow-600" :
+                                            "text-red-600"
+                                }
+                                subtitle={`${quality?.calificacion || 'N/A'} ${quality?.estrellas || ''}`}
+                            />
+                        </div>
+                    </div>
 
-                    {/* AÑADIDO: Índice de Estabilidad */}
-                    <KPICard
-                        title="Índice de Estabilidad (SI)"
-                        value={`${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`}
-                        icon={<ChartBarIcon className="h-5 w-5" />}
-                        colorClass={
-                            (quality?.indice_promedio || 0) >= 0.90 ? "text-green-600" :
-                                (quality?.indice_promedio || 0) >= 0.88 ? "text-yellow-600" :
-                                    "text-red-600"
-                        }
-                        subtitle={`${quality?.calificacion || 'N/A'} ${quality?.estrellas || ''}`}
-                    />
+                    {/* COLUMNA 2: CLAVES OPERACIONALES */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-orange-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <KeyIcon className="h-4 w-4" />
+                            Claves Operacionales
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Clave 0 (Taller)"
+                                value={getStateDuration(0)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Mantenimiento"
+                            />
+                            <KPICard
+                                title="Clave 1 (Parque)"
+                                value={getStateDuration(1)}
+                                icon={<MapIcon className="h-5 w-5" />}
+                                colorClass="text-slate-600"
+                                subtitle="En base, disponible"
+                            />
+                            <KPICard
+                                title="Clave 2 (Emergencia)"
+                                value={getStateDuration(2)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Con rotativo activo"
+                            />
+                            <KPICard
+                                title="Clave 3 (Siniestro)"
+                                value={getStateDuration(3)}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="En siniestro (parado >1min)"
+                            />
+                            <KPICard
+                                title="Clave 4 (Retirada)"
+                                value={getStateDuration(4)}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-blue-600"
+                                subtitle="Fin de actuación"
+                            />
+                            <KPICard
+                                title="Clave 5 (Sin Rotativo)"
+                                value={getStateDuration(5)}
+                                icon={<ClockIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Servicios programados"
+                            />
+                            <KPICard
+                                title="Tiempo Fuera Parque"
+                                value={states?.time_outside_formatted || '00:00:00'}
+                                icon={<TruckIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Total en servicio externo"
+                            />
+                        </div>
+                    </div>
 
-                    {/* Segunda fila - Estados operativos */}
-                    <KPICard
-                        title="Tiempo Fuera Parque"
-                        value={states?.time_outside_formatted || '00:00:00'}
-                        icon={<TruckIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Tiempo en servicio externo (2+3+4+5)"
-                    />
-                    <KPICard
-                        title="Tiempo en Taller"
-                        value={getStateDuration(0)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Tiempo en mantenimiento (Clave 0)"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 2"
-                        value={getStateDuration(2)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Emergencias con rotativo"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 5"
-                        value={getStateDuration(5)}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Regreso al parque sin rotativo"
-                    />
-
-                    {/* Tercera fila - Incidencias */}
-                    <KPICard
-                        title="Total Incidencias"
-                        value={stability?.total_incidents || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Total de incidencias registradas"
-                    />
-                    <KPICard
-                        title="Incidencias Graves"
-                        value={stability?.critical || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-red-600"
-                        subtitle="Incidencias de alta severidad"
-                    />
-                    <KPICard
-                        title="Incidencias Moderadas"
-                        value={stability?.moderate || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="Incidencias de severidad media"
-                    />
-                    <KPICard
-                        title="Incidencias Leves"
-                        value={stability?.light || 0}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-green-600"
-                        subtitle="Incidencias de baja severidad"
-                    />
-
-                    {/* Cuarta fila - Velocidad y estados */}
-                    <KPICard
-                        title="Tiempo Clave 3"
-                        value={getStateDuration(3)}
-                        icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-                        colorClass="text-orange-600"
-                        subtitle="En siniestro (parado >1min)"
-                    />
-                    <KPICard
-                        title="Velocidad Promedio"
-                        value={`${avgSpeed} km/h`}
-                        icon={<ChartBarIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Velocidad promedio del período"
-                    />
-                    <KPICard
-                        title="Tiempo Clave 4"
-                        value={getStateDuration(4)}
-                        icon={<ClockIcon className="h-5 w-5" />}
-                        colorClass="text-blue-600"
-                        subtitle="Fin de actuación / retirada"
-                    />
+                    {/* COLUMNA 3: INCIDENCIAS */}
+                    <div className="bg-slate-50/50 rounded-lg p-3 border-l-4 border-red-500 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ExclamationTriangleIcon className="h-4 w-4" />
+                            Incidencias de Estabilidad
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                            <KPICard
+                                title="Total Incidencias"
+                                value={stability?.total_incidents || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-slate-600"
+                                subtitle="Total eventos registrados"
+                            />
+                            <KPICard
+                                title="Graves (0-20%)"
+                                value={stability?.critical || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-red-600"
+                                subtitle="Alta severidad"
+                            />
+                            <KPICard
+                                title="Moderadas (20-35%)"
+                                value={stability?.moderate || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-orange-600"
+                                subtitle="Severidad media"
+                            />
+                            <KPICard
+                                title="Leves (35-50%)"
+                                value={stability?.light || 0}
+                                icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+                                colorClass="text-green-600"
+                                subtitle="Baja severidad"
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                {/* AÑADIDO: Tabla de eventos por tipo */}
+                {/* AÑADIDO: Tabla de eventos por tipo - Ordenada por tipo alfabéticamente */}
                 {stability?.por_tipo && Object.keys(stability.por_tipo).length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold text-slate-800 mb-4">Detalle de Eventos por Tipo</h3>
@@ -1001,7 +1020,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-slate-200">
                                     {Object.entries(stability.por_tipo)
-                                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                                        .sort(([tipoA], [tipoB]) => tipoA.localeCompare(tipoB))
                                         .map(([tipo, cantidad]) => (
                                             <tr key={tipo}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -1087,16 +1106,16 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
             <div className="filters-container" style={{
                 backgroundColor: 'transparent',
                 boxShadow: 'none',
-                padding: '24px 40px 0 40px',
+                padding: '12px 20px 0 20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '32px'
+                gap: '16px'
             }}>
                 <GlobalFiltersBar />
             </div>
 
-            {/* Pestañas del dashboard */}
+            {/* Pestañas del dashboard con filtros unificados */}
             <div className="tabs-container">
                 <div className="flex items-center justify-between bg-white border-b border-slate-200 px-3 py-1 h-full">
                     <div className="flex items-center space-x-4">
@@ -1119,11 +1138,74 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                         {/* Panel de Diagnóstico (solo ADMIN) */}
                         <DiagnosticPanel />
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1 text-xs px-2 py-1"
-                        onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF : 
+
+                    {/* Filtros de fecha unificados en la misma fila */}
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                updateFilters({
+                                    dateRange: {
+                                        start: today.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                        >
+                            HOY
+                        </button>
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                                updateFilters({
+                                    dateRange: {
+                                        start: weekAgo.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-blue-300 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                        >
+                            ESTA SEMANA
+                        </button>
+                        <button
+                            onClick={() => {
+                                const today = new Date();
+                                const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                                updateFilters({
+                                    dateRange: {
+                                        start: monthAgo.toISOString().split('T')[0] || '',
+                                        end: today.toISOString().split('T')[0] || ''
+                                    }
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-sky-300 bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors"
+                        >
+                            ESTE MES
+                        </button>
+                        <button
+                            onClick={() => {
+                                updateFilters({
+                                    dateRange: {
+                                        start: '',
+                                        end: ''
+                                    },
+                                    vehicles: [],
+                                    severity: []
+                                });
+                            }}
+                            className="px-2 py-1 text-xs font-bold rounded border border-green-300 bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                        >
+                            TODO
+                        </button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs px-2 py-1 ml-2"
+                            onClick={activeTab === 0 || activeTab === 2 || activeTab === 1 ? handleExportEnhancedPDF :
                                 activeTab === 4 ? () => {
                                     if (selectedSessionData?.session && selectedSessionData?.routeData) {
                                         exportRouteFunction(selectedSessionData.session, selectedSessionData.routeData);
@@ -1131,18 +1213,19 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                                         logger.warn('No hay sesión seleccionada para exportar');
                                     }
                                 } : handleExportPDF}
-                        disabled={isExporting}
-                    >
-                        <ChartBarIcon className="h-3 w-3" />
-                        {isExporting ? 'GENERANDO...' : 
-                         (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' : 
-                         activeTab === 4 ? 'EXPORTAR RECORRIDO' : 'EXPORTAR PDF'}
-                    </Button>
+                            disabled={isExporting}
+                        >
+                            <ChartBarIcon className="h-3 w-3" />
+                            {isExporting ? 'GENERANDO...' :
+                                (activeTab === 0 || activeTab === 2 || activeTab === 1) ? 'EXPORTAR REPORTE DETALLADO' :
+                                    activeTab === 4 ? 'EXPORTAR RECORRIDO' : 'EXPORTAR PDF'}
+                        </Button>
+                    </div>
                 </div>
             </div>
 
             {/* Contenido del dashboard */}
-            <div className="dashboard-content h-[calc(100vh-200px)]">
+            <div className="dashboard-content h-[calc(100vh-140px)]">
                 {activeTab === 0 && renderEstadosTiempos()}
                 {activeTab === 1 && (
                     <div className="h-full w-full bg-white overflow-auto">
@@ -1177,7 +1260,7 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 )}
                 {activeTab === 4 && (
                     <div className="h-full w-full bg-white overflow-auto">
-                        <SessionsAndRoutesView 
+                        <SessionsAndRoutesView
                             onSessionDataChange={(session, routeData) => {
                                 setSelectedSessionData({ session, routeData });
                             }}

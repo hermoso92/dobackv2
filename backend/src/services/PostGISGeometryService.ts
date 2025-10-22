@@ -1,11 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
 export class PostGISGeometryService {
-    private prisma: PrismaClient;
-
     constructor(prisma: PrismaClient) {
-        this.prisma = prisma;
     }
 
     /**
@@ -21,7 +19,7 @@ export class PostGISGeometryService {
 
             if (type === 'Circle' && center && radius) {
                 // Convertir círculo a polígono usando PostGIS
-                const result = await this.prisma.$queryRaw<Array<{ geom: string }>>`
+                const result = await prisma.$queryRaw<Array<{ geom: string }>>`
           SELECT ST_AsText(
             ST_Buffer(
               ST_Point(${center.lon}, ${center.lat})::GEOMETRY,
@@ -36,7 +34,7 @@ export class PostGISGeometryService {
 
             if (type === 'Polygon' && coordinates) {
                 // Convertir GeoJSON Polygon a PostGIS
-                const result = await this.prisma.$queryRaw<Array<{ geom: string }>>`
+                const result = await prisma.$queryRaw<Array<{ geom: string }>>`
           SELECT ST_AsText(ST_GeomFromGeoJSON(${JSON.stringify(geometry)})) as geom
         `;
 
@@ -60,7 +58,7 @@ export class PostGISGeometryService {
         organizationId: string
     ): Promise<boolean> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ is_inside: boolean }>>`
+            const result = await prisma.$queryRaw<Array<{ is_inside: boolean }>>`
         SELECT ST_Contains(
           z.geometry_postgis,
           ST_SetSRID(ST_Point(${pointLon}, ${pointLat}), 4326)
@@ -88,7 +86,7 @@ export class PostGISGeometryService {
         organizationId: string
     ): Promise<boolean> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ is_inside: boolean }>>`
+            const result = await prisma.$queryRaw<Array<{ is_inside: boolean }>>`
         SELECT ST_Contains(
           p.geometry_postgis,
           ST_SetSRID(ST_Point(${pointLon}, ${pointLat}), 4326)
@@ -115,7 +113,7 @@ export class PostGISGeometryService {
         organizationId: string
     ): Promise<Array<{ id: string; name: string; type: string }>> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ id: string; name: string; type: string }>>`
+            const result = await prisma.$queryRaw<Array<{ id: string; name: string; type: string }>>`
         SELECT 
           z.id,
           z.name,
@@ -145,7 +143,7 @@ export class PostGISGeometryService {
         organizationId: string
     ): Promise<Array<{ id: string; name: string; identifier: string }>> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ id: string; name: string; identifier: string }>>`
+            const result = await prisma.$queryRaw<Array<{ id: string; name: string; identifier: string }>>`
         SELECT 
           p.id,
           p.name,
@@ -176,7 +174,7 @@ export class PostGISGeometryService {
         lat2: number
     ): Promise<number> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ distance: number }>>`
+            const result = await prisma.$queryRaw<Array<{ distance: number }>>`
         SELECT ST_Distance(
           ST_Point(${lon1}, ${lat1})::GEOMETRY,
           ST_Point(${lon2}, ${lat2})::GEOMETRY
@@ -200,7 +198,7 @@ export class PostGISGeometryService {
         organizationId: string
     ): Promise<Array<{ id: string; name: string; type: string; distance: number }>> {
         try {
-            const result = await this.prisma.$queryRaw<Array<{ id: string; name: string; type: string; distance: number }>>`
+            const result = await prisma.$queryRaw<Array<{ id: string; name: string; type: string; distance: number }>>`
         SELECT 
           z.id,
           z.name,
@@ -236,7 +234,7 @@ export class PostGISGeometryService {
 
         try {
             // Migrar parques
-            const parks = await this.prisma.park.findMany({
+            const parks = await prisma.park.findMany({
                 where: { geometryPostgis: null },
                 select: { id: true, geometry: true }
             });
@@ -245,7 +243,7 @@ export class PostGISGeometryService {
                 try {
                     const postgisGeom = await this.convertJsonToPostGIS(park.geometry);
                     if (postgisGeom) {
-                        await this.prisma.park.update({
+                        await prisma.park.update({
                             where: { id: park.id },
                             data: { geometryPostgis: postgisGeom }
                         });
@@ -258,7 +256,7 @@ export class PostGISGeometryService {
             }
 
             // Migrar zonas
-            const zones = await this.prisma.zone.findMany({
+            const zones = await prisma.zone.findMany({
                 where: { geometryPostgis: null },
                 select: { id: true, geometry: true }
             });
@@ -267,7 +265,7 @@ export class PostGISGeometryService {
                 try {
                     const postgisGeom = await this.convertJsonToPostGIS(zone.geometry);
                     if (postgisGeom) {
-                        await this.prisma.zone.update({
+                        await prisma.zone.update({
                             where: { id: zone.id },
                             data: { geometryPostgis: postgisGeom }
                         });

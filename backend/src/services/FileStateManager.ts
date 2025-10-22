@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+
 import crypto from 'crypto';
+import { prisma } from '../lib/prisma';
 import fs from 'fs/promises';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 interface FileState {
     id?: string;

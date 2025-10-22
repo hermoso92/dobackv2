@@ -166,7 +166,9 @@ function detectarManiobraBrusca(measurement: any, gxAnterior?: number): EventoDe
 
     // Cambio brusco en giroscopio o aceleración alta
     const cambioGx = gxAnterior !== undefined ? Math.abs(gx - gxAnterior) : 0;
-    const aceleracionAlta = Math.abs(ay) > 300; // 300 mg = 3 m/s²
+    // ✅ CORRECCIÓN: Umbrales actualizados después de fix escala 100x
+    // Ahora ay viene en m/s², no en mg
+    const aceleracionAlta = Math.abs(ay) > 3.0; // 3.0 m/s² (antes 300 mg)
 
     if (cambioGx > 100 || aceleracionAlta) {
         const severidad = clasificarSeveridadPorSI(si);
@@ -194,7 +196,8 @@ function detectarCurvaEstable(measurement: any): EventoDetectado | null {
     const si = (measurement.si || 0) * 100; // Convertir a porcentaje
     const roll = measurement.roll || 0;
 
-    if (Math.abs(ay) > 200 && si > 60 && Math.abs(roll) < 8) { // 200 mg = 2 m/s²
+    // ✅ CORRECCIÓN: Umbrales actualizados después de fix escala 100x
+    if (Math.abs(ay) > 2.0 && si > 60 && Math.abs(roll) < 8) { // 2.0 m/s² (antes 200 mg)
         return {
             tipo: 'CURVA_ESTABLE',
             severidad: 'NORMAL',
@@ -256,8 +259,8 @@ function detectarDerivaLateral(measurement: any, velocity: number = 0): EventoDe
     // FILTRO GLOBAL: Solo detectar eventos cuando SI < 50%
     if (si >= 50 || velocity < 5) return null;
 
-    // Convertir ay de mg a m/s²
-    const ay_ms2 = ay / 1000 * 9.81;
+    // ✅ CORRECCIÓN: ay ya viene en m/s² después de fix escala 100x
+    const ay_ms2 = ay; // Ya no necesita conversión
 
     // Convertir velocidad de km/h a m/s
     const v_ms = velocity / 3.6;

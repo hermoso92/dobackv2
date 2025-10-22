@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+
 import { AuditActionType } from '../../types/enums';
 import { AuditService } from '../AuditService';
 

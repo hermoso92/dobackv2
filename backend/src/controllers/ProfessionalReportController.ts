@@ -1,11 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import fs from 'fs';
 import path from 'path';
 import { professionalReportService } from '../services/ProfessionalReportService';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 export class ProfessionalReportController {
     /**

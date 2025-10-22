@@ -1,8 +1,10 @@
+import { prisma } from '../lib/prisma';
+
 // Script de seedDatabase adaptado: solo borra/crea datos en modelos válidos de Prisma
 // Secciones que usan modelos/campos inexistentes han sido deshabilitadas
 
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+
+
 
 async function main() {
     // Ejemplo: borrar datos de modelos válidos

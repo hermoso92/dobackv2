@@ -1,0 +1,28 @@
+# Resultados de auditoría (no commitear)
+results/*/
+*.log
+
+# Configuración local (puede contener passwords)
+audit-config.json
+
+# Node modules si se instala localmente
+node_modules/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+
+results/*/
+*.log
+
+# Configuración local (puede contener passwords)
+audit-config.json
+
+# Node modules si se instala localmente
+node_modules/
+
+# Archivos temporales
+*.tmp
+*.temp
+

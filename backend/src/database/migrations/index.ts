@@ -2,11 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../../utils/logger';
 
 export class MigrationManager {
-    private prisma: PrismaClient;
     private migrations: Map<string, () => Promise<void>>;
 
     constructor(prisma: PrismaClient) {
-        this.prisma = prisma;
         this.migrations = new Map();
     }
 
@@ -17,7 +15,7 @@ export class MigrationManager {
     public async runMigrations() {
         try {
             // Crear tabla de migraciones si no existe
-            await this.prisma.$executeRaw`
+            await prisma.$executeRaw`
                 CREATE TABLE IF NOT EXISTS migrations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
@@ -26,7 +24,7 @@ export class MigrationManager {
             `;
 
             // Obtener migraciones ejecutadas
-            const executedMigrations = await this.prisma.$queryRaw<{ name: string }[]>`
+            const executedMigrations = await prisma.$queryRaw<{ name: string }[]>`
                 SELECT name FROM migrations
             `;
 
@@ -37,7 +35,7 @@ export class MigrationManager {
                 if (!executedNames.has(name)) {
                     logger.info(`Running migration: ${name}`);
                     await migration();
-                    await this.prisma.$executeRaw`
+                    await prisma.$executeRaw`
                         INSERT INTO migrations (name) VALUES (${name})
                     `;
                     logger.info(`Migration completed: ${name}`);

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 interface ProcessingLock {
     id: string;

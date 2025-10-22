@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 // ============================================================================
 // CONFIGURACIÓN
@@ -75,7 +76,6 @@ export async function calcularTiemposPorClave(
         const dateTo = to ? new Date(to) : undefined;
 
         // Importar prisma dinámicamente
-        const { prisma } = await import('../config/prisma');
 
         // ✅ MANDAMIENTO M2: Usar segmentos persistidos en lugar de calcular en tiempo real
         const segmentosWhere: any = { sessionId: { in: sessionIds } };

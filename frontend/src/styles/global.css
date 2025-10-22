@@ -74,28 +74,28 @@ body {
     left: 0;
     right: 0;
     width: 100vw;
-    height: 64px;
+    height: 40px;
     z-index: 100;
     flex-shrink: 0;
     overflow: visible;
     background-color: transparent !important;
     box-shadow: none !important;
-    padding: 24px 40px 0 40px !important;
+    padding: 8px 20px 0 20px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 32px !important;
+    gap: 16px !important;
 }
 
 /* Pestañas del dashboard */
 .tabs-container {
     position: fixed;
-    top: 124px;
-    /* Ajustado: 60px navigation + 64px filters */
+    top: 100px;
+    /* Ajustado: 60px navigation + 40px filters */
     left: 0;
     right: 0;
     width: 100vw;
-    height: 48px;
+    height: 40px;
     z-index: 101;
     flex-shrink: 0;
     overflow: visible;
@@ -116,15 +116,14 @@ body {
 /* Contenido del dashboard */
 .dashboard-content {
     position: relative;
-    margin-top: 172px;
-    /* Ajustado: 60px navigation + 64px filters + 48px tabs */
+    margin-top: 140px;
+    /* Ajustado: 60px navigation + 40px filters + 40px tabs */
     width: 100%;
-    min-height: calc(100vh - 172px);
-    /* Con espacio superior doble en filtros */
+    min-height: calc(100vh - 140px);
     overflow-x: hidden;
     overflow-y: auto;
     z-index: 1;
-    padding-bottom: 20px;
+    padding-bottom: 0;
 }
 
 /* MUI Components - Sin conflictos */

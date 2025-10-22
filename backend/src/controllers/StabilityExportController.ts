@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore falta tipos pdfkit
 import PDFDocument from 'pdfkit';
@@ -12,7 +13,7 @@ import { fetchStaticMap } from '../utils/report/staticMap';
 import fs from 'fs';
 import path from 'path';
 
-const prisma = new PrismaClient();
+
 
 export class StabilityExportController {
     /**

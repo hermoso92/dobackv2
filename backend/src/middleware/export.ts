@@ -2,7 +2,7 @@ import { EventType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { prisma } from '../config/database';
+import { prisma } from '../lib/prisma';
 import { AppError } from './error';
 
 interface ExportConfig {
@@ -87,8 +87,8 @@ const exportSessions = async (config: ExportConfig) => {
             ...(config.vehicleId && { vehicleId: config.vehicleId }),
             vehicle: config.organizationId
                 ? {
-                      organizationId: config.organizationId
-                  }
+                    organizationId: config.organizationId
+                }
                 : undefined
         },
         include: {
@@ -137,15 +137,15 @@ const exportStability = async (config: ExportConfig) => {
             const matches = event.description?.match(/LTR: ([\d.]+), SSF: ([\d.]+), DRS: ([\d.]+)/);
             return matches
                 ? {
-                      id: event.id,
-                      vehicleId: event.vehicleId,
-                      vehicleName: event.vehicle.name,
-                      timestamp: event.createdAt,
-                      ltr: parseFloat(matches[1]),
-                      ssf: parseFloat(matches[2]),
-                      drs: parseFloat(matches[3]),
-                      severity: event.severity
-                  }
+                    id: event.id,
+                    vehicleId: event.vehicleId,
+                    vehicleName: event.vehicle.name,
+                    timestamp: event.createdAt,
+                    ltr: parseFloat(matches[1]),
+                    ssf: parseFloat(matches[2]),
+                    drs: parseFloat(matches[3]),
+                    severity: event.severity
+                }
                 : null;
         })
         .filter((d): d is NonNullable<typeof d> => d !== null);

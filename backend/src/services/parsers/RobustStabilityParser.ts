@@ -161,14 +161,19 @@ export function parseEstabilidadRobust(buffer: Buffer, fechaSesion?: Date): Stab
                 continue;
             }
 
+            // ✅ CORRECCIÓN CRÍTICA: ESCALA 100X
+            // Los datos vienen en mg (miligramos = centésimas de m/s²)
+            // Convertir a m/s² dividiendo por 100
+            const SCALE_FACTOR = 100;
+
             // ✅ INTERPOLAR TIMESTAMP basándose en frecuencia ~10 Hz (100ms por muestra)
             const timestamp = new Date(ultimoMarcadorTemporal.getTime() + lineasDesdeMarcador * 100);
 
             mediciones.push({
                 timestamp,
-                ax: valores[0],
-                ay: valores[1],
-                az: valores[2],
+                ax: valores[0] / SCALE_FACTOR,  // mg → m/s²
+                ay: valores[1] / SCALE_FACTOR,  // mg → m/s²
+                az: valores[2] / SCALE_FACTOR,  // mg → m/s²
                 gx: valores[3],
                 gy: valores[4],
                 gz: valores[5],
@@ -182,10 +187,32 @@ export function parseEstabilidadRobust(buffer: Buffer, fechaSesion?: Date): Stab
                 usciclo4: valores[13],
                 usciclo5: valores[14],
                 si: valores[15],
-                accmag: valores[16],
+                accmag: valores[16] / SCALE_FACTOR,  // mg → m/s²
                 microsds: valores[17],
                 k3: valores[18]
             });
+
+            // ✅ VALIDACIÓN HEURÍSTICA: Detectar errores de escala
+            // Verificar cada 100 mediciones que az esté cerca de la gravedad
+            if (mediciones.length > 0 && mediciones.length % 100 === 0) {
+                const recent = mediciones.slice(-100);
+                const avgAz = recent.reduce((sum, m) => sum + m.az, 0) / recent.length;
+
+                if (Math.abs(avgAz - 9.81) > 3.0) {
+                    logger.warn('⚠️ POSIBLE ERROR DE ESCALA DETECTADO', {
+                        avgAz: avgAz.toFixed(3),
+                        esperado: 9.81,
+                        diferencia: (avgAz - 9.81).toFixed(3),
+                        mediciones: mediciones.length,
+                        mensaje: 'az debería estar cerca de 9.81 m/s² en condiciones normales'
+                    });
+                    problemas.push({
+                        tipo: 'VALIDACION_FISICA_FALLIDA',
+                        linea: i + 1,
+                        descripcion: `az promedio (${avgAz.toFixed(2)}) muy alejado de gravedad (9.81 m/s²)`
+                    });
+                }
+            }
 
             contadores.validas++;
             lineasDesdeMarcador++;

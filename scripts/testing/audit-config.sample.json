@@ -1,0 +1,82 @@
+{
+  "backend_url": "http://localhost:9998",
+  "frontend_url": "http://localhost:5174",
+  "auth": {
+    "endpoint": "/api/auth/login",
+    "admin": {
+      "email": "test@bomberosmadrid.es",
+      "password": "admin123"
+    },
+    "manager": {
+      "email": "antoniohermoso92@gmail.com",
+      "password": "admin123"
+    }
+  },
+  "dataset_path": "./backend/uploads/sessions/test_base",
+  "endpoints": {
+    "health": "/health",
+    "summary": "/api/summary",
+    "devices": "/api/devices/status",
+    "events": "/api/events",
+    "sessions": "/api/sessions",
+    "upload": "/api/upload-single",
+    "comparison": "/api/comparison"
+  },
+  "performance_thresholds": {
+    "summary_ms": 3000,
+    "other_ms": 1000
+  },
+  "test_filters": {
+    "date_from": "2025-09-29",
+    "date_to": "2025-10-08",
+    "vehicle_id": null,
+    "rotativo": null
+  },
+  "output": {
+    "base_dir": "./scripts/testing/results",
+    "include_screenshots": true,
+    "log_level": "INFO"
+  }
+}
+
+
+  "backend_url": "http://localhost:9998",
+  "frontend_url": "http://localhost:5174",
+  "auth": {
+    "endpoint": "/api/auth/login",
+    "admin": {
+      "email": "test@bomberosmadrid.es",
+      "password": "admin123"
+    },
+    "manager": {
+      "email": "antoniohermoso92@gmail.com",
+      "password": "admin123"
+    }
+  },
+  "dataset_path": "./backend/uploads/sessions/test_base",
+  "endpoints": {
+    "health": "/health",
+    "summary": "/api/summary",
+    "devices": "/api/devices/status",
+    "events": "/api/events",
+    "sessions": "/api/sessions",
+    "upload": "/api/upload-single",
+    "comparison": "/api/comparison"
+  },
+  "performance_thresholds": {
+    "summary_ms": 3000,
+    "other_ms": 1000
+  },
+  "test_filters": {
+    "date_from": "2025-09-29",
+    "date_to": "2025-10-08",
+    "vehicle_id": null,
+    "rotativo": null
+  },
+  "output": {
+    "base_dir": "./scripts/testing/results",
+    "include_screenshots": true,
+    "log_level": "INFO"
+  }
+}
+

@@ -1,12 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import path from 'path';
 import { FileStateManager } from '../services/FileStateManager';
 import { SmartDataProcessor } from '../services/SmartDataProcessor';
 import { TokenPayload } from '../types/auth';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 interface AuthenticatedRequest extends Request {
     user?: TokenPayload;

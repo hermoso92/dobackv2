@@ -2,6 +2,7 @@ import {
     ManageAccounts as AccountIcon,
     AdminPanelSettings as AdminIcon,
     Psychology as AIIcon,
+    Notifications as BellIcon,
     CloudUpload as CloudUploadIcon,
     Dashboard as DashboardIcon,
     LocationOn as GeofenceIcon,
@@ -35,17 +36,21 @@ import {
     Typography,
     useTheme
 } from '@mui/material';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { t } from "../i18n";
+import { UserRole } from '../types/auth';
+import { Permission } from '../types/permissions';
 
-// Definición de la estructura de ítems de navegación
+// ✅ Definición mejorada de ítems de navegación con permisos granulares
 interface NavItem {
     text: string;
     path: string;
     icon: ReactElement;
-    adminOnly?: boolean;
+    allowedRoles?: UserRole[];  // ⭐ Roles permitidos (si no se especifica, todos)
+    requiredPermission?: Permission;  // ⭐ Permiso específico requerido
 }
 
 interface NavigationProps {
@@ -58,7 +63,8 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, isAdmin, logout } = useAuth();
+    const { user, logout } = useAuth();
+    const { hasPermission } = usePermissions();
     const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
     const theme = useTheme();
 
@@ -77,75 +83,133 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
         navigate('/login');
     };
 
-    // Array con todos los ítems de navegación - Estructura V3 DobackSoft
-    const navItems: NavItem[] = [
+    // ✅ Array mejorado con permisos granulares - Estructura V3 DobackSoft
+    const navItems: NavItem[] = useMemo(() => [
         {
             text: 'Panel de Control',
             path: '/dashboard',
             icon: <DashboardIcon fontSize="small" />,
+            // ✅ TODOS pueden acceder al dashboard (pero verán contenido diferente)
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR, UserRole.VIEWER],
         },
         {
             text: 'Estabilidad',
             path: '/stability',
             icon: <StabilityIcon fontSize="small" />,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.STABILITY_VIEW,
         },
         {
             text: 'Telemetría',
             path: '/telemetry',
             icon: <TelemetryIcon fontSize="small" />,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.TELEMETRY_VIEW,
         },
         {
             text: 'Inteligencia Artificial',
             path: '/ai',
             icon: <AIIcon fontSize="small" />,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.AI_VIEW,
         },
         {
             text: 'Geofences',
             path: '/geofences',
             icon: <GeofenceIcon fontSize="small" />,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.GEOFENCES_VIEW,
         },
         {
             text: 'Subir Archivos',
             path: '/upload',
             icon: <CloudUploadIcon fontSize="small" />,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.SESSIONS_UPLOAD,
         },
         {
             text: 'Operaciones',
             path: '/operations',
             icon: <OperationsIcon fontSize="small" />,
+            // ✅ ADMIN y MANAGER
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            requiredPermission: Permission.OPERATIONS_VIEW,
         },
         {
             text: 'Reportes',
             path: '/reports',
             icon: <ReportIcon fontSize="small" />,
+            // ✅ ADMIN y MANAGER
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            requiredPermission: Permission.REPORTS_VIEW,
         },
         {
-            text: 'Gestión',
-            path: '/administration',
-            icon: <ManagementIcon fontSize="small" />,
-            adminOnly: true,
+            text: 'Alertas',
+            path: '/alerts',
+            icon: <BellIcon fontSize="small" />,
+            // ✅ ADMIN y MANAGER (NUEVO)
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            requiredPermission: Permission.ALERTS_VIEW,
         },
         {
             text: 'Administración',
+            path: '/administration',
+            icon: <ManagementIcon fontSize="small" />,
+            // ✅ ADMIN y MANAGER (contenido diferente por rol)
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+        },
+        {
+            text: 'Configuración Sistema',
             path: '/admin',
             icon: <AdminIcon fontSize="small" />,
-            adminOnly: true,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.SYSTEM_VIEW_CONFIG,
         },
         {
             text: 'Base de Conocimiento',
             path: '/knowledge-base',
             icon: <KnowledgeIcon fontSize="small" />,
-            adminOnly: true,
+            // ✅ SOLO ADMIN
+            allowedRoles: [UserRole.ADMIN],
+            requiredPermission: Permission.KNOWLEDGE_BASE_VIEW,
         },
         {
             text: 'Mi Cuenta',
             path: '/profile',
             icon: <AccountIcon fontSize="small" />,
+            // ✅ TODOS
+            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR, UserRole.VIEWER],
         }
-    ];
+    ], []);
 
-    // Filtrar ítems por permisos de administrador si es necesario
-    const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
+    // ✅ Filtrar ítems por permisos granulares
+    const filteredNavItems = useMemo(() => {
+        return navItems.filter(item => {
+            // Verificar roles permitidos
+            if (item.allowedRoles && user?.role) {
+                const hasRequiredRole = item.allowedRoles.includes(user.role as UserRole);
+                if (!hasRequiredRole) {
+                    return false;
+                }
+            }
+
+            // Verificar permiso específico si está definido
+            if (item.requiredPermission) {
+                const hasRequiredPermission = hasPermission(item.requiredPermission);
+                if (!hasRequiredPermission) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, [navItems, user?.role, hasPermission]);
 
     // Determina la tab activa basada en la ruta actual
     const getCurrentTabValue = () => {

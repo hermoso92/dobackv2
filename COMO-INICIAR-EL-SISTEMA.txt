@@ -1,0 +1,143 @@
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║   📖 CÓMO INICIAR EL SISTEMA DOBACKSOFT                       ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+🚀 MÉTODO ÚNICO Y OFICIAL
+═══════════════════════════════════════════════════════════════════
+
+1. Abre PowerShell en la carpeta del proyecto:
+   C:\Users\Cosigein SL\Desktop\DobackSoft
+
+2. Ejecuta:
+   .\iniciar.ps1
+
+3. ESPERA 30-60 segundos
+   El script:
+   - Detendrá procesos anteriores
+   - Liberará puertos 9998 y 5174
+   - Iniciará backend en nueva ventana
+   - Iniciará frontend en nueva ventana
+   - Verificará que ambos funcionen
+   - Abrirá el navegador
+
+4. Verás 3 ventanas PowerShell:
+   [1] Esta ventana (script principal)
+   [2] Backend (puerto 9998) - NO CERRAR
+   [3] Frontend (puerto 5174) - NO CERRAR
+
+═══════════════════════════════════════════════════════════════════
+✅ CUANDO TODO FUNCIONA
+═══════════════════════════════════════════════════════════════════
+
+Ventana BACKEND muestra:
+  "Server running on port 9998"
+  "✅ Base de datos conectada"
+
+Ventana FRONTEND muestra:
+  "VITE v5.x.x  ready in XXX ms"
+  "➜  Local:   http://localhost:5174/"
+
+Navegador se abre automáticamente en:
+  http://localhost:5174
+
+═══════════════════════════════════════════════════════════════════
+❌ SI ALGO FALLA
+═══════════════════════════════════════════════════════════════════
+
+El script te mostrará:
+  ❌ "ERROR: Backend no responde"
+  ❌ "ERROR: Frontend no responde"
+
+Y te dirá dónde ver los logs:
+  📝 logs\backend_YYYY-MM-DD_HH-mm-ss.log
+  📝 logs\frontend_YYYY-MM-DD_HH-mm-ss.log
+
+SOLUCIONES:
+
+Problema 1: "Backend no responde"
+  → Abre la ventana de PowerShell del backend
+  → Busca errores en rojo
+  → Probablemente:
+    • Base de datos no está corriendo
+    • Falta ejecutar: npx prisma generate
+    • Puerto 9998 ocupado
+
+Problema 2: "Frontend no responde"
+  → Abre la ventana de PowerShell del frontend
+  → Busca errores en rojo
+  → Probablemente:
+    • Falta ejecutar: npm install
+    → Puerto 5174 ocupado
+
+Problema 3: "No se puede conectar a la base de datos"
+  → Verifica PostgreSQL esté corriendo
+  → Ejecuta en otra terminal:
+    psql -U postgres -d dobacksoft
+  → Si no funciona, inicia PostgreSQL
+
+═══════════════════════════════════════════════════════════════════
+🔧 REINICIAR EL SISTEMA
+═══════════════════════════════════════════════════════════════════
+
+1. Cierra las 3 ventanas de PowerShell
+2. O ejecuta en PowerShell:
+   Get-Process node | Stop-Process -Force
+3. Ejecuta de nuevo:
+   .\iniciar.ps1
+
+═══════════════════════════════════════════════════════════════════
+📝 LOGS Y DEPURACIÓN
+═══════════════════════════════════════════════════════════════════
+
+Ver logs en tiempo real:
+  • Ventana backend: Ver mensajes directamente
+  • Ventana frontend: Ver mensajes directamente
+
+Ver logs guardados:
+  • Carpeta "logs\" tiene todos los registros
+  • Ordenados por fecha y hora
+
+Ver últimos logs:
+  Get-Content logs\backend_*.log | Select-Object -Last 50
+
+═══════════════════════════════════════════════════════════════════
+🔐 CREDENCIALES
+═══════════════════════════════════════════════════════════════════
+
+MANAGER (Admin de Parque):
+  📧 test@bomberosmadrid.es
+  🔑 admin123
+  
+  Verá: Solo 6 opciones, Dashboard con 4 pestañas
+
+ADMIN (Superadministrador):
+  📧 antoniohermoso92@gmail.com
+  🔑 admin123
+  
+  Verá: Todas las opciones, Dashboard ejecutivo
+
+═══════════════════════════════════════════════════════════════════
+⚠️ IMPORTANTE
+═══════════════════════════════════════════════════════════════════
+
+• NO cierres las ventanas de backend/frontend
+• Si cierras una, el servicio se detiene
+• Para reiniciar: Ejecuta .\iniciar.ps1 de nuevo
+• El script limpia todo automáticamente
+
+═══════════════════════════════════════════════════════════════════
+✨ ¡LISTO!
+═══════════════════════════════════════════════════════════════════
+
+Con este script simplificado, el sistema debería iniciar
+correctamente en menos de 1 minuto.
+
+Si sigues teniendo problemas, revisa:
+  1. Logs en las ventanas de PowerShell
+  2. Archivos en carpeta logs\
+  3. PostgreSQL esté corriendo
+
+

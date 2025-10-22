@@ -87,7 +87,6 @@ async function cargarGeocercas(organizationId: string): Promise<{
     talleres: Geocerca[];
 }> {
     // Importar prisma dinámicamente
-    const { prisma } = await import('../config/prisma');
 
     // Cargar parques
     const parks = await prisma.park.findMany({
@@ -97,19 +96,45 @@ async function cargarGeocercas(organizationId: string): Promise<{
     const parques: Geocerca[] = parks.map(p => {
         const geometry = typeof p.geometry === 'string' ? JSON.parse(p.geometry) : p.geometry;
 
+        // ✅ Tipo Circle
         if (geometry.type === 'circle' || geometry.type === 'Circle') {
+            const center = Array.isArray(geometry.center)
+                ? { lat: geometry.center[0], lon: geometry.center[1] }
+                : { lat: geometry.center.lat, lon: geometry.center.lng };
+
             return {
-                lat: geometry.center.lat,
-                lon: geometry.center.lng,
+                lat: center.lat,
+                lon: center.lon,
                 radio: geometry.radius || CONFIG.RADIO_GEOCERCA,
                 nombre: p.name
             };
         }
 
-        // Por defecto usar primer punto si es polígono
+        // ✅ Tipo Point (nuevo - para parques sin radio explícito)
+        if (geometry.type === 'Point' && Array.isArray(geometry.coordinates)) {
+            return {
+                lat: geometry.coordinates[1], // [lon, lat] en GeoJSON
+                lon: geometry.coordinates[0],
+                radio: CONFIG.RADIO_GEOCERCA, // Radio por defecto (200m)
+                nombre: p.name
+            };
+        }
+
+        // ✅ Tipo Polygon - usar centro del primer segmento
+        if (geometry.type === 'Polygon' && geometry.coordinates?.[0]?.length > 0) {
+            const coords = geometry.coordinates[0][0]; // Primer punto [lon, lat]
+            return {
+                lat: Array.isArray(coords) ? coords[1] : 0,
+                lon: Array.isArray(coords) ? coords[0] : 0,
+                radio: CONFIG.RADIO_GEOCERCA, // Radio aproximado para polígonos
+                nombre: p.name
+            };
+        }
+
+        // Fallback
         return {
-            lat: geometry.coordinates?.[0]?.[0] || 0,
-            lon: geometry.coordinates?.[0]?.[1] || 0,
+            lat: 0,
+            lon: 0,
             radio: CONFIG.RADIO_GEOCERCA,
             nombre: p.name
         };
@@ -127,10 +152,26 @@ async function cargarGeocercas(organizationId: string): Promise<{
     const talleres: Geocerca[] = zones.map(z => {
         const geometry = typeof z.geometry === 'string' ? JSON.parse(z.geometry) : z.geometry;
 
+        // ✅ CORRECCIÓN: Manejar diferentes formatos de geometría
+        if (geometry.type === 'Circle' && geometry.center) {
+            const center = Array.isArray(geometry.center)
+                ? { lat: geometry.center[0], lon: geometry.center[1] }
+                : { lat: geometry.center.lat, lon: geometry.center.lng };
+
+            return {
+                lat: center.lat,
+                lon: center.lon,
+                radio: geometry.radius || CONFIG.RADIO_GEOCERCA,
+                nombre: z.name
+            };
+        }
+
+        // Para polígonos, usar primer punto (lon, lat en GeoJSON)
+        const coords = geometry.coordinates?.[0]?.[0];
         return {
-            lat: geometry.center?.lat || geometry.coordinates?.[0]?.[0] || 0,
-            lon: geometry.center?.lng || geometry.coordinates?.[0]?.[1] || 0,
-            radio: geometry.radius || CONFIG.RADIO_GEOCERCA,
+            lat: Array.isArray(coords) ? coords[1] : 0,
+            lon: Array.isArray(coords) ? coords[0] : 0,
+            radio: CONFIG.RADIO_GEOCERCA,
             nombre: z.name
         };
     });
@@ -152,7 +193,6 @@ export async function calcularTiemposPorClave(
         const dateTo = to ? new Date(to) : undefined;
 
         // Importar prisma dinámicamente
-        const { prisma } = await import('../config/prisma');
 
         // ✅ MANDAMIENTO M2: Usar segmentos persistidos en lugar de calcular en tiempo real
         const segmentosWhere: any = { sessionId: { in: sessionIds } };
@@ -232,7 +272,6 @@ async function calcularTiemposEnTiempoReal(
     const dateTo = to ? new Date(to) : undefined;
 
     // Importar prisma dinámicamente
-    const { prisma } = await import('../config/prisma');
 
     // Obtener sesiones con GPS y rotativo
     const sessions = await prisma.session.findMany({
@@ -243,7 +282,7 @@ async function calcularTiemposEnTiempoReal(
                 orderBy: { timestamp: 'asc' },
                 ...(dateFrom && dateTo ? { where: { timestamp: { gte: dateFrom, lte: dateTo } } } : {})
             },
-            RotativoMeasurement: {
+            rotativoMeasurements: {
                 orderBy: { timestamp: 'asc' },
                 ...(dateFrom && dateTo ? { where: { timestamp: { gte: dateFrom, lte: dateTo } } } : {})
             }
@@ -270,7 +309,7 @@ async function calcularTiemposEnTiempoReal(
     // Procesar cada sesión
     for (const session of sessions) {
         const gps = session.gpsMeasurements;
-        const rotativo = session.RotativoMeasurement;
+        const rotativo = session.rotativoMeasurements;
 
         if (gps.length === 0) continue;
 
@@ -382,9 +421,9 @@ async function calcularTiemposEnTiempoReal(
                     puntoEnGeocerca(punto.latitude, punto.longitude, t)
                 );
 
-                    // ✅ MANDAMIENTO M8: Logging de uso local (solo una vez por sesión)
-                    // Logging movido fuera del bucle para evitar spam
-                }
+                // ✅ MANDAMIENTO M8: Logging de uso local (solo una vez por sesión)
+                // Logging movido fuera del bucle para evitar spam
+            }
 
             // Estado y transiciones por clave (1→2→3→5→1) con reglas
             // Variables auxiliares persistentes entre iteraciones
@@ -464,6 +503,7 @@ async function calcularTiemposEnTiempoReal(
             (calcularTiemposEnTiempoReal as any)._paradoSeg = paradoSeg;
             // @ts-ignore
             (calcularTiemposEnTiempoReal as any)._distPrev = distanciaActualParque;
+        }
     }
 
     const totalSegundos = tiempos.clave0 + tiempos.clave1 + tiempos.clave2 + tiempos.clave3 + tiempos.clave4 + tiempos.clave5;
@@ -536,7 +576,6 @@ function crearTiemposVacios(): TiemposPorClave {
  */
 export async function calcularYGuardarSegmentos(sessionId: string): Promise<number> {
     try {
-        const { prisma } = await import('../config/prisma');
 
         logger.info(`📦 Calculando segmentos para sesión ${sessionId}`);
 
@@ -545,7 +584,7 @@ export async function calcularYGuardarSegmentos(sessionId: string): Promise<numb
             where: { id: sessionId },
             include: {
                 gpsMeasurements: { orderBy: { timestamp: 'asc' } },
-                RotativoMeasurement: { orderBy: { timestamp: 'asc' } }
+                rotativoMeasurements: { orderBy: { timestamp: 'asc' } }
             }
         });
 
@@ -573,7 +612,7 @@ export async function calcularYGuardarSegmentos(sessionId: string): Promise<numb
 
         // Crear mapa de rotativo
         const rotativoMap = new Map<number, string>();
-        session.RotativoMeasurement.forEach(r => {
+        session.rotativoMeasurements.forEach(r => {
             rotativoMap.set(r.timestamp.getTime(), r.state);
         });
 

@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
 
-const prisma = new PrismaClient();
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+
+
 
 export async function getZones(req: Request, res: Response) {
     try {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+
 import { createTestData, setupTestDatabase, teardownTestDatabase } from '../testUtils';
 
 // Reemplazar con el tipo real del servicio

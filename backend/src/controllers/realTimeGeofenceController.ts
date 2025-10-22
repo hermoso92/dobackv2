@@ -5,12 +5,10 @@ import { PostGISGeometryService } from '../services/PostGISGeometryService';
 import { logger } from '../utils/logger';
 
 export class RealTimeGeofenceController {
-  private prisma: PrismaClient;
   private geofenceService: RealTimeGeofenceService;
   private geometryService: PostGISGeometryService;
 
   constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
     this.geofenceService = new RealTimeGeofenceService(prisma);
     this.geometryService = new PostGISGeometryService(prisma);
   }

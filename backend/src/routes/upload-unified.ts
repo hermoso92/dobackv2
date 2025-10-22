@@ -22,10 +22,14 @@ const upload = multer({
             return;
         }
 
-        // Validar nombre de archivo
-        const regex = /^(ESTABILIDAD|GPS|ROTATIVO|CAN)_DOBACK\d{3}_\d{8}\.txt$/i;
+        // ✅ CORREGIDO: Validar nombre de archivo con sufijo de sesión opcional
+        // Formatos válidos:
+        // - TIPO_DOBACK###_YYYYMMDD.txt (una sesión por día)
+        // - TIPO_DOBACK###_YYYYMMDD_###.txt (múltiples sesiones por día)
+        // - TIPO_DOBACK###_RealTime.txt (actualización en tiempo real)
+        const regex = /^(ESTABILIDAD|GPS|ROTATIVO|CAN)_DOBACK\d{3}_(\d{8}(_\d+)?|RealTime)\.txt$/i;
         if (!regex.test(file.originalname)) {
-            cb(new Error('Formato de archivo inválido. Debe ser: TIPO_DOBACK###_YYYYMMDD.txt'));
+            cb(new Error('Formato de archivo inválido. Debe ser: TIPO_DOBACK###_YYYYMMDD[_###].txt o TIPO_DOBACK###_RealTime.txt'));
             return;
         }
 

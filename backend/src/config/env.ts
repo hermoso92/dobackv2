@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { logger } from '../utils/logger';
 
 // Cargar variables de entorno desde config.env
+// El archivo config.env está en la raíz del proyecto (../../config.env desde src/config/)
 dotenv.config({ path: path.join(__dirname, '../../config.env') });
+
+// También intentar cargar desde .env si existe
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const envSchema = z.object({
     // Environment
