@@ -1,5 +1,6 @@
 ﻿import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.get('/geofences', async (req, res) => {
             data: []
         });
     } catch (error) {
-        console.error('Error obteniendo geocercas:', error);
+        logger.error('Error obteniendo geocercas:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
@@ -58,7 +59,7 @@ router.post('/geofences', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error creando geocerca:', error);
+        logger.error('Error creando geocerca:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'

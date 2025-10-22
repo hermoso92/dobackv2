@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { GEO_CONFIG, VEHICLE_CONFIG } from '../config/constants';
+import { logger } from '../utils/logger';
 
 interface GPSPoint {
     timestamp: string;
@@ -114,7 +115,7 @@ export const useMemoizedGPSData = (sessionData: any) => {
             point.latitude !== 0 && point.longitude !== 0
         );
 
-        console.log(`GPS Data: ${validPoints.length} puntos válidos encontrados`);
+        logger.info(`GPS Data: ${validPoints.length} puntos válidos encontrados`);
 
         // Por ahora, devolver todos los puntos válidos sin filtrado adicional
         return validPoints;

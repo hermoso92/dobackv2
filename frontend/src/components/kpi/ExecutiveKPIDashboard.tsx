@@ -1,4 +1,5 @@
 import {
+import { logger } from '../../utils/logger';
     BellAlertIcon,
     BoltIcon,
     CalendarDaysIcon,
@@ -153,7 +154,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                 setHeatmapData(processedData);
             }
         } catch (error) {
-            console.error('Error cargando datos del mapa de calor:', error);
+            logger.error('Error cargando datos del mapa de calor:', error);
             // Datos de prueba en caso de error
             setHeatmapData({
                 points: [
@@ -216,7 +217,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
         const loadDashboardData = async () => {
             try {
                 setLoading(true);
-                console.log('🔄 Cargando datos con filtros:', {
+                logger.info('🔄 Cargando datos con filtros:', {
                     period: selectedPeriod,
                     filter: selectedFilter,
                     vehicle_id: selectedVehicle,
@@ -235,7 +236,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                 });
 
                 if (response.success && response.data) {
-                    console.log('✅ Datos reales cargados:', response.data);
+                    logger.info('✅ Datos reales cargados:', response.data);
 
                     // También actualizar vehículos desde la respuesta
                     const apiData = response.data as any;
@@ -246,7 +247,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                             licensePlate: name.toUpperCase()
                         }));
                         setVehicles(vehiclesFromAPI);
-                        console.log('🚗 Vehículos actualizados:', vehiclesFromAPI);
+                        logger.info('🚗 Vehículos actualizados:', vehiclesFromAPI);
                     }
 
                     // Aplicar filtros a los datos si hay vehículo seleccionado
@@ -279,16 +280,16 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                             vehiclesInWorkshop: selectedVehicle ? 0 : filteredData.vehiclesInWorkshop
                         };
 
-                        console.log('🎯 Datos filtrados para vehículo:', selectedVehicle, filteredData);
+                        logger.info('🎯 Datos filtrados para vehículo:', selectedVehicle, filteredData);
                     }
 
                     setData(filteredData);
                 } else {
-                    console.error('❌ API response failed:', response);
+                    logger.error('❌ API response failed:', response);
                     throw new Error('Error en la respuesta de la API');
                 }
             } catch (error) {
-                console.error('❌ Error cargando datos del dashboard:', error);
+                logger.error('❌ Error cargando datos del dashboard:', error);
                 toast.error('Error cargando datos reales. Mostrando datos de ejemplo.');
 
                 // Datos de ejemplo cuando falla la API
@@ -443,7 +444,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                             <select
                                 value={selectedVehicle}
                                 onChange={(e) => {
-                                    console.log('🚗 Vehículo seleccionado:', e.target.value);
+                                    logger.info('🚗 Vehículo seleccionado:', e.target.value);
                                     setSelectedVehicle(e.target.value);
                                 }}
                                 className="text-sm px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -805,7 +806,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
 
                                             toast.success('PDF exportado correctamente');
                                         } catch (error) {
-                                            console.error('Error exportando PDF:', error);
+                                            logger.error('Error exportando PDF:', error);
                                             toast.error('Error al exportar PDF');
                                         }
                                     }}
@@ -827,7 +828,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
                                         data={heatmapData || { points: [], routes: [], geofences: [] }}
                                         loading={heatmapLoading}
                                         onPointClick={(point) => {
-                                            console.log('Punto seleccionado:', point);
+                                            logger.info('Punto seleccionado:', point);
                                             // TODO: Implementar detalles del punto
                                         }}
                                         onExportPDF={async () => {
@@ -853,7 +854,7 @@ export const ExecutiveKPIDashboard: React.FC = () => {
 
                                                 toast.success('PDF exportado correctamente');
                                             } catch (error) {
-                                                console.error('Error exportando PDF:', error);
+                                                logger.error('Error exportando PDF:', error);
                                                 toast.error('Error al exportar PDF');
                                             }
                                         }}

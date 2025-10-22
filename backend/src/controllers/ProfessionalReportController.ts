@@ -103,7 +103,7 @@ export class ProfessionalReportController {
 
             // Log de depuración robusto
             const fileExists = fs.existsSync(filePath);
-            console.log(
+            logger.info(
                 '[DESCARGA PDF] reportId:',
                 reportId,
                 '| filePath:',

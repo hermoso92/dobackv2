@@ -99,7 +99,7 @@ export const ProcessingTrackingDashboard: React.FC<ProcessingTrackingDashboardPr
                 }
             }
         } catch (error) {
-            console.warn('Error cargando archivos de procesamiento, usando datos mock:', error);
+            logger.warn('Error cargando archivos de procesamiento, usando datos mock:', error);
 
             // Datos mock para Bomberos Madrid
             const mockFiles: ProcessingFile[] = [
@@ -180,7 +180,7 @@ export const ProcessingTrackingDashboard: React.FC<ProcessingTrackingDashboardPr
                 }
             }
         } catch (error) {
-            console.warn('Error cargando estadísticas, usando datos mock:', error);
+            logger.warn('Error cargando estadísticas, usando datos mock:', error);
 
             // Calcular estadísticas de los archivos mock
             const mockStats: ProcessingStats = {
@@ -210,7 +210,7 @@ export const ProcessingTrackingDashboard: React.FC<ProcessingTrackingDashboardPr
                 }
             }
         } catch (error) {
-            console.warn('Error cargando eventos, usando datos mock:', error);
+            logger.warn('Error cargando eventos, usando datos mock:', error);
 
             // Datos mock para eventos
             const mockEvents: ProcessingEvent[] = [
@@ -295,7 +295,7 @@ export const ProcessingTrackingDashboard: React.FC<ProcessingTrackingDashboardPr
             }
             return false;
         } catch (error) {
-            console.error('Error reprocesando archivo:', error);
+            logger.error('Error reprocesando archivo:', error);
             setError('Error al reprocesar el archivo');
             return false;
         }
@@ -318,7 +318,7 @@ export const ProcessingTrackingDashboard: React.FC<ProcessingTrackingDashboardPr
                 }
             }
         } catch (error) {
-            console.error('Error eliminando archivo:', error);
+            logger.error('Error eliminando archivo:', error);
             setError('Error al eliminar el archivo');
         }
     }, [user?.organizationId, user?.id, loadProcessingFiles]);

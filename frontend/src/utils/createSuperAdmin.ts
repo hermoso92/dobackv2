@@ -1,7 +1,9 @@
+import { logger } from '../utils/logger';
+
 
 export const createSuperAdmin = async () => {
     try {
-        console.log('🚀 Creando usuario Super Admin...');
+        logger.info('🚀 Creando usuario Super Admin...');
 
         // Intentar con el endpoint correcto en /api/auth/create-superadmin
         let response;
@@ -23,7 +25,7 @@ export const createSuperAdmin = async () => {
             response = { data };
 
         } catch (authError) {
-            console.log('Error con endpoint auth:', authError.message);
+            logger.info('Error con endpoint auth:', authError.message);
 
             // Intentar con el endpoint directo como fallback
             try {
@@ -47,10 +49,10 @@ export const createSuperAdmin = async () => {
         }
 
         if (response.data.success) {
-            console.log('✅ Éxito:', response.data.message);
-            console.log('👤 Usuario:', response.data.user);
+            logger.info('✅ Éxito:', response.data.message);
+            logger.info('👤 Usuario:', response.data.user);
             if (response.data.credentials) {
-                console.log('🔑 Credenciales:', response.data.credentials);
+                logger.info('🔑 Credenciales:', response.data.credentials);
             }
 
             // Mostrar alerta con las credenciales
@@ -63,13 +65,13 @@ Ahora puedes usar estas credenciales para iniciar sesión.`);
 
             return response.data;
         } else {
-            console.error('❌ Error:', response.data.message);
+            logger.error('❌ Error:', response.data.message);
             alert(`❌ Error: ${response.data.message}`);
             return null;
         }
 
     } catch (error: any) {
-        console.error('❌ Error de conexión:', error);
+        logger.error('❌ Error de conexión:', error);
         alert(`❌ Error de conexión: ${error.message}
 
 💡 Asegúrate de que:

@@ -15,6 +15,8 @@ import {
     Typography
 } from '@mui/material';
 import React, { useState } from 'react';
+import { API_CONFIG } from '../config/constants';
+import { logger } from '../utils/logger';
 
 interface ConnectionDiagnosticProps {
     error?: any;
@@ -42,17 +44,25 @@ export const ConnectionDiagnostic: React.FC<ConnectionDiagnosticProps> = ({
     const checkBackendStatus = async () => {
         setIsChecking(true);
         try {
-            const response = await fetch('http://localhost:9998/health', {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}/health`, {
                 method: 'GET',
-                timeout: 5000
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
             if (response.ok) {
+                logger.info('Backend está funcionando correctamente');
                 alert('✅ Backend está funcionando correctamente');
             } else {
+                logger.error('Backend respondió con error', { status: response.status });
                 alert(`❌ Backend respondió con error: ${response.status}`);
             }
         } catch (error: any) {
+            logger.error('No se puede conectar al backend', { error: error.message });
             alert(`❌ No se puede conectar al backend: ${error.message}`);
         } finally {
             setIsChecking(false);

@@ -1,6 +1,8 @@
+import { logger } from '../utils/logger';
+
 export const createTestOrganization = async () => {
     try {
-        console.log('🏢 Creando organización de prueba...');
+        logger.info('🏢 Creando organización de prueba...');
 
         const response = await fetch('http://localhost:9998/api/auth/create-test-organization', {
             method: 'POST',
@@ -17,11 +19,11 @@ export const createTestOrganization = async () => {
         const data = await response.json();
 
         if (data.success) {
-            console.log('✅ Éxito:', data.message);
-            console.log('🏢 Organización:', data.organization);
-            console.log('👥 Usuarios:', data.users);
-            console.log('🚗 Vehículos:', data.vehicles);
-            console.log('🧪 Instrucciones de prueba:', data.testInstructions);
+            logger.info('✅ Éxito:', data.message);
+            logger.info('🏢 Organización:', data.organization);
+            logger.info('👥 Usuarios:', data.users);
+            logger.info('🚗 Vehículos:', data.vehicles);
+            logger.info('🧪 Instrucciones de prueba:', data.testInstructions);
 
             // Mostrar alerta con las credenciales
             alert(`✅ Organización de prueba creada exitosamente!
@@ -43,13 +45,13 @@ ${data.vehicles.map((vehicle: any) => `🚙 ${vehicle.name} - ${vehicle.licenseP
 
             return data;
         } else {
-            console.error('❌ Error:', data.message);
+            logger.error('❌ Error:', data.message);
             alert(`❌ Error: ${data.message}`);
             return null;
         }
 
     } catch (error: any) {
-        console.error('❌ Error de conexión:', error);
+        logger.error('❌ Error de conexión:', error);
         alert(`❌ Error de conexión: ${error.message}
 
 💡 Asegúrate de que:

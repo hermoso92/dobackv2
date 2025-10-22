@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     Analytics as AnalyticsIcon,
     Brightness4,
     Brightness7,
@@ -64,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                     setVehicles(data);
                 }
             } catch (err) {
-                console.error('Error fetching vehicles:', err);
+                logger.error('Error fetching vehicles:', err);
             }
         };
 

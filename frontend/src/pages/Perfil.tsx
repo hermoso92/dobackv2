@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     Edit as EditIcon,
     ExitToApp as LogoutIcon,
     Person as PersonIcon,
@@ -37,7 +38,7 @@ const Perfil = () => {
             await logout();
             navigate('/login');
         } catch (error) {
-            console.error('Error al cerrar sesión:', error);
+            logger.error('Error al cerrar sesión:', error);
         }
     };
 
@@ -56,11 +57,11 @@ const Perfil = () => {
 
     const handleSave = async () => {
         try {
-            console.log('Guardando cambios del perfil:', editData);
+            logger.info('Guardando cambios del perfil:', editData);
             setIsEditing(false);
             alert('Perfil actualizado correctamente');
         } catch (error) {
-            console.error('Error al actualizar perfil:', error);
+            logger.error('Error al actualizar perfil:', error);
             alert('Error al actualizar el perfil');
         }
     };

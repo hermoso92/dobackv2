@@ -366,7 +366,7 @@ export class AuthController {
                 }
             });
         } catch (error) {
-            console.error('Error al obtener perfil:', error);
+            logger.error('Error al obtener perfil:', error);
             return res.status(404).json({
                 success: false,
                 message: error instanceof Error ? error.message : 'Error al obtener el perfil'

@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     Download as DownloadIcon,
     Error as ErrorIcon,
     Info as InfoIcon,
@@ -118,7 +119,7 @@ const ProcessingDashboard: React.FC = () => {
             setLogs(logsResponse.data);
 
         } catch (err) {
-            console.error('Error loading dashboard data:', err);
+            logger.error('Error loading dashboard data:', err);
             setError('Error al cargar los datos del dashboard');
         } finally {
             setIsLoading(false);
@@ -136,7 +137,7 @@ const ProcessingDashboard: React.FC = () => {
             setTimeout(loadDashboardData, 2000);
 
         } catch (err) {
-            console.error('Error starting processing:', err);
+            logger.error('Error starting processing:', err);
             setError('Error al iniciar el procesamiento');
         } finally {
             setIsProcessing(false);
@@ -148,7 +149,7 @@ const ProcessingDashboard: React.FC = () => {
             setIsProcessing(false);
             await api.post('/api/processing/stop');
         } catch (err) {
-            console.error('Error stopping processing:', err);
+            logger.error('Error stopping processing:', err);
         }
     };
 
@@ -158,7 +159,7 @@ const ProcessingDashboard: React.FC = () => {
                 await api.post('/api/processing/reset');
                 loadDashboardData();
             } catch (err) {
-                console.error('Error resetting database:', err);
+                logger.error('Error resetting database:', err);
                 setError('Error al limpiar la base de datos');
             }
         }
@@ -178,7 +179,7 @@ const ProcessingDashboard: React.FC = () => {
             link.click();
             link.remove();
         } catch (err) {
-            console.error('Error downloading report:', err);
+            logger.error('Error downloading report:', err);
             setError('Error al descargar el reporte');
         }
     };

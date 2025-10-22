@@ -4,6 +4,7 @@
  */
 
 import { CacheService } from './CacheService';
+import { logger } from '../utils/logger';
 
 // Instancia de cache para estabilidad
 const cacheService = new CacheService({ ttl: 5 * 60 * 1000 });
@@ -95,7 +96,7 @@ class OptimizedStabilityService {
             return stabilityData;
 
         } catch (error) {
-            console.error('Error obteniendo datos de estabilidad:', error);
+            logger.error('Error obteniendo datos de estabilidad:', error);
             throw error;
         }
     }

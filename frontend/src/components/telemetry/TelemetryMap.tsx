@@ -3,6 +3,7 @@ import '@tomtom-international/web-sdk-maps/dist/maps.css';
 import { useCallback, useEffect, useRef } from 'react';
 import { RadarGeofence } from '../../api/radar';
 import { TelemetryPoint } from '../../api/telemetry';
+import { logger } from '../../utils/logger';
 
 const severityColor = (severity: number): string => {
     switch (severity) {
@@ -127,7 +128,7 @@ export const TelemetryMap: React.FC<TelemetryMapProps> = ({ points, geofences = 
                         geofenceLayerRef.current.push(circle);
                     }
                 } catch (error) {
-                    console.error('Error rendering geofence', geofence.id, error);
+                    logger.error('Error rendering geofence', geofence.id, error);
                 }
             });
         },

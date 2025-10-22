@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
 import { authService } from '../services/auth';
+import { logger } from '../utils/logger';
 export const TestLogin: React.FC = () => {
     useEffect(() => {
         const autoLogin = async () => {
             try {
-                console.log('Iniciando login automático...');
+                logger.info('Iniciando login automático...');
                 const result = await authService.login('admin@cosigein.com', 'admin123');
-                console.log('Login exitoso:', result);
-                console.log('Usuario autenticado:', result.user);
-                console.log('Token de acceso:', result.access_token);
+                logger.info('Login exitoso:', result);
+                logger.info('Usuario autenticado:', result.user);
+                logger.info('Token de acceso:', result.access_token);
             } catch (error) {
-                console.error('Error en el login:', error);
+                logger.error('Error en el login:', error);
             }
         };
 

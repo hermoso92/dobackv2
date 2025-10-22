@@ -77,7 +77,7 @@ class ProfessionalReportApi {
 
       throw new Error(response.error || 'Respuesta invalida del servidor');
     } catch (error) {
-      console.error('Error generando reporte:', error);
+      logger.error('Error generando reporte:', error);
       throw new Error('Error generando el reporte profesional');
     }
   }
@@ -113,7 +113,7 @@ class ProfessionalReportApi {
 
       throw new Error(response.error || 'Respuesta invalida del servidor');
     } catch (error) {
-      console.error('Error obteniendo preview:', error);
+      logger.error('Error obteniendo preview:', error);
       throw new Error('Error obteniendo vista previa del reporte');
     }
   }

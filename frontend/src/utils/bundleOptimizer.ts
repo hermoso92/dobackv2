@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * Utilidades para optimización de bundle y tree shaking
  * Optimización de rendimiento para el frontend
@@ -52,9 +54,9 @@ export const preloadCriticalComponents = async () => {
         await Promise.all(
             criticalComponents.map(component => component())
         );
-        console.log('✅ Critical components preloaded');
+        logger.info('✅ Critical components preloaded');
     } catch (error) {
-        console.warn('⚠️ Error preloading critical components:', error);
+        logger.warn('⚠️ Error preloading critical components:', error);
     }
 };
 
@@ -64,7 +66,7 @@ export const loadComponentOnDemand = async (componentName: keyof typeof LAZY_COM
         const component = await LAZY_COMPONENTS[componentName]();
         return component.default || component;
     } catch (error) {
-        console.error(`❌ Error loading component ${componentName}:`, error);
+        logger.error(`❌ Error loading component ${componentName}:`, error);
         throw error;
     }
 };

@@ -180,7 +180,7 @@ export const useApiNotifications = () => {
     const handleApiSuccess = useCallback((message: string, data?: any) => {
         success(message);
         if (data && process.env.NODE_ENV === 'development') {
-            console.log('API Success:', data);
+            logger.info('API Success:', data);
         }
     }, [success]);
 
@@ -198,21 +198,21 @@ export const useApiNotifications = () => {
         error(message);
 
         if (process.env.NODE_ENV === 'development') {
-            console.error('API Error:', error);
+            logger.error('API Error:', error);
         }
     }, [error]);
 
     const handleApiWarning = useCallback((message: string, data?: any) => {
         warning(message);
         if (data && process.env.NODE_ENV === 'development') {
-            console.warn('API Warning:', data);
+            logger.warn('API Warning:', data);
         }
     }, [warning]);
 
     const handleApiInfo = useCallback((message: string, data?: any) => {
         info(message);
         if (data && process.env.NODE_ENV === 'development') {
-            console.info('API Info:', data);
+            logger.info('API Info:', data);
         }
     }, [info]);
 

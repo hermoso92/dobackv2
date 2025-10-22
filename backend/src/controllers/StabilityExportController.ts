@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore falta tipos pdfkit
 import PDFDocument from 'pdfkit';
@@ -83,7 +84,7 @@ export class StabilityExportController {
                 // @ts-ignore util
                 chartPng = await createSpeedStabilityChart(gpsSeries, siSeries);
             } catch (e) {
-                console.warn('Fallo generando gráfica speed/SI', e);
+                logger.warn('Fallo generando gráfica speed/SI', e);
             }
 
             // Obtener mapa estático (puede fallar si no hay internet)
@@ -94,7 +95,7 @@ export class StabilityExportController {
                     // @ts-ignore fetch static map util
                     mapBuffer = await fetchStaticMap(events[0].lat, events[0].lon);
                 } catch (e) {
-                    console.warn('Fallo obteniendo mapa estático', e);
+                    logger.warn('Fallo obteniendo mapa estático', e);
                 }
             }
 
@@ -203,7 +204,7 @@ export class StabilityExportController {
 
             doc.end();
         } catch (error) {
-            console.error('Error generando PDF', error);
+            logger.error('Error generando PDF', error);
             res.status(500).json({ message: 'Error generando PDF' });
         }
     }

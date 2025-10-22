@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface CacheEntry<T> {
     data: T;
@@ -293,7 +294,7 @@ export function useCacheInvalidation() {
 
     const invalidateByPattern = useCallback((pattern: string) => {
         // Implementar invalidación por patrón si es necesario
-        console.log(`Invalidating cache for pattern: ${pattern}`);
+        logger.info(`Invalidating cache for pattern: ${pattern}`);
     }, []);
 
     const invalidateByEndpoint = useCallback((endpoint: string) => {

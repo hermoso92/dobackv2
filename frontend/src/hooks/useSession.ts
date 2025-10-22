@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface Session {
     id: string;
@@ -33,7 +34,7 @@ export const useSession = (sessionId: string) => {
                 setSession(response.data as Session);
             } catch (err) {
                 setError('Error cargando la sesión');
-                console.error('Error fetching session:', err);
+                logger.error('Error fetching session:', err);
             } finally {
                 setLoading(false);
             }

@@ -146,7 +146,7 @@ export const useGlobalFilters = () => {
 
     // Actualizar filtros
     const updateFilters = useCallback((newFilters: Partial<GlobalFilters>) => {
-        console.log('🔧 UPDATE FILTERS LLAMADO CON:', newFilters);
+        logger.info('🔧 UPDATE FILTERS LLAMADO CON:', newFilters);
 
         setState(prev => {
             // Crear SIEMPRE un nuevo objeto con propiedades completamente nuevas
@@ -157,12 +157,12 @@ export const useGlobalFilters = () => {
                 _timestamp: Date.now()
             };
 
-            console.log('🔧 ESTADO ANTERIOR:', JSON.stringify({
+            logger.info('🔧 ESTADO ANTERIOR:', JSON.stringify({
                 dateStart: prev.filters.dateRange?.start,
                 dateEnd: prev.filters.dateRange?.end,
                 vehicles: prev.filters.vehicles
             }));
-            console.log('🔧 ESTADO NUEVO:', JSON.stringify({
+            logger.info('🔧 ESTADO NUEVO:', JSON.stringify({
                 dateStart: updatedFilters.dateRange?.start,
                 dateEnd: updatedFilters.dateRange?.end,
                 vehicles: updatedFilters.vehicles,
@@ -182,14 +182,14 @@ export const useGlobalFilters = () => {
         // Incrementar versión para forzar actualización
         setFilterVersion(prev => {
             const newVersion = prev + 1;
-            console.log('📌 INCREMENTANDO FILTER VERSION:', prev, '->', newVersion);
+            logger.info('📌 INCREMENTANDO FILTER VERSION:', prev, '->', newVersion);
             return newVersion;
         });
 
         // ⭐ SOLUCIÓN DEFINITIVA: Incrementar trigger para forzar useEffect en otros hooks
         setUpdateTrigger(prev => {
             const newTrigger = prev + 1;
-            console.log('🚀 INCREMENTANDO UPDATE TRIGGER:', prev, '->', newTrigger);
+            logger.info('🚀 INCREMENTANDO UPDATE TRIGGER:', prev, '->', newTrigger);
             return newTrigger;
         });
     }, [saveFilters]);
@@ -366,7 +366,7 @@ export const useGlobalFilters = () => {
             __version: filterVersion,
             __updated: Date.now()
         };
-        console.log('🔄 MEMO FILTERS RECALCULADO con version:', filterVersion);
+        logger.info('🔄 MEMO FILTERS RECALCULADO con version:', filterVersion);
         return filtersObj;
     }, [state.filters, filterVersion]);
 

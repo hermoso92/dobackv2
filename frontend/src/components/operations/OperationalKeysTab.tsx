@@ -9,6 +9,7 @@
  */
 
 import {
+import { logger } from '../../utils/logger';
     Alert,
     Box,
     Card,
@@ -118,7 +119,7 @@ export const OperationalKeysTab: React.FC<Props> = ({
             setTimeline(timelineData.timeline || []);
 
         } catch (err: any) {
-            console.error('Error cargando claves operacionales:', err);
+            logger.error('Error cargando claves operacionales:', err);
             setError(err.message || 'Error cargando datos de claves operacionales');
         } finally {
             setLoading(false);

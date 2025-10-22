@@ -49,11 +49,11 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
         const loadVehicles = async () => {
             setLoading(true);
             try {
-                console.log('🔍 VehicleSessionSelector: cargando vehículos...');
+                logger.info('🔍 VehicleSessionSelector: cargando vehículos...');
                 const response = await fetch('/api/vehicles');
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('📊 VehicleSessionSelector: respuesta vehículos:', data);
+                    logger.info('📊 VehicleSessionSelector: respuesta vehículos:', data);
                     if (data.success && data.data) {
                         // Mapear vehículos de PostgreSQL al formato esperado
                         const mappedVehicles: Vehicle[] = data.data.map((v: any) => ({
@@ -63,18 +63,18 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
                             vehicle_type: v.type || 'BOMBA_ESCALERA',
                             is_active: v.active !== false
                         }));
-                        console.log('✅ VehicleSessionSelector: vehículos mapeados:', mappedVehicles);
+                        logger.info('✅ VehicleSessionSelector: vehículos mapeados:', mappedVehicles);
                         setVehicles(mappedVehicles);
                     } else {
-                        console.warn('⚠️ VehicleSessionSelector: no hay vehículos en la respuesta');
+                        logger.warn('⚠️ VehicleSessionSelector: no hay vehículos en la respuesta');
                         setVehicles([]);
                     }
                 } else {
-                    console.warn('❌ VehicleSessionSelector: error en respuesta:', response.status);
+                    logger.warn('❌ VehicleSessionSelector: error en respuesta:', response.status);
                     setVehicles([]);
                 }
             } catch (error) {
-                console.error('❌ VehicleSessionSelector: error cargando vehículos:', error);
+                logger.error('❌ VehicleSessionSelector: error cargando vehículos:', error);
                 setVehicles([]);
             } finally {
                 setLoading(false);
@@ -94,11 +94,11 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
 
             setLoading(true);
             try {
-                console.log('🔍 VehicleSessionSelector: cargando sesiones para vehículo:', selectedVehicleId);
+                logger.info('🔍 VehicleSessionSelector: cargando sesiones para vehículo:', selectedVehicleId);
                 const response = await fetch(`/api/sessions?vehicleId=${selectedVehicleId}&limit=20`);
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('📊 VehicleSessionSelector: respuesta sesiones:', data);
+                    logger.info('📊 VehicleSessionSelector: respuesta sesiones:', data);
                     if (data.success && data.data) {
                         // Mapear sesiones de PostgreSQL al formato esperado
                         // Solo incluir sesiones que tienen datos GPS válidos (gpsPoints > 0)
@@ -113,18 +113,18 @@ export const VehicleSessionSelector: React.FC<VehicleSessionSelectorProps> = ({
                                 duration: s.duration ? Math.floor(s.duration / 60) : 0, // convertir segundos a minutos
                                 status: s.status || 'completed'
                             }));
-                        console.log('✅ VehicleSessionSelector: sesiones mapeadas:', mappedSessions);
+                        logger.info('✅ VehicleSessionSelector: sesiones mapeadas:', mappedSessions);
                         setSessions(mappedSessions);
                     } else {
-                        console.warn('⚠️ VehicleSessionSelector: no hay sesiones en la respuesta');
+                        logger.warn('⚠️ VehicleSessionSelector: no hay sesiones en la respuesta');
                         setSessions([]);
                     }
                 } else {
-                    console.warn('❌ VehicleSessionSelector: error en respuesta sesiones:', response.status);
+                    logger.warn('❌ VehicleSessionSelector: error en respuesta sesiones:', response.status);
                     setSessions([]);
                 }
             } catch (error) {
-                console.error('❌ VehicleSessionSelector: error cargando sesiones:', error);
+                logger.error('❌ VehicleSessionSelector: error cargando sesiones:', error);
                 setSessions([]);
             } finally {
                 setLoading(false);

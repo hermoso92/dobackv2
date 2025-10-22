@@ -66,9 +66,9 @@ export const AdministrationPage: React.FC = () => {
 
     // Solo ADMIN puede acceder
     // Debug: ver el rol del usuario
-    console.log('👤 Usuario en AdministrationPage:', user);
-    console.log('🔐 Rol del usuario:', user?.role);
-    console.log('✅ isAdmin():', isAdmin ? isAdmin() : 'función no disponible');
+    logger.info('👤 Usuario en AdministrationPage:', user);
+    logger.info('🔐 Rol del usuario:', user?.role);
+    logger.info('✅ isAdmin():', isAdmin ? isAdmin() : 'función no disponible');
 
     // Verificar acceso usando isAdmin()
     const hasAdminAccess = isAdmin ? isAdmin() : false;

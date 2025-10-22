@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useRef } from 'react';
+import { logger } from '../../utils/logger';
 
 // Fix para iconos de Leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -53,7 +54,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
     // Generar rutas realistas que realmente callejean
     const generateRealisticRoute = (city: 'alcobendas' | 'las_rozas'): [number, number][] => {
-        console.log('🏙️ SimpleMap - Generando ruta realista para:', city);
+        logger.info('🏙️ SimpleMap - Generando ruta realista para:', city);
 
         // Rutas predefinidas realistas que siguen calles principales
         let predefinedRoutes: [number, number][][];
@@ -162,7 +163,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
         // Seleccionar una ruta aleatoria
         const selectedRoute = predefinedRoutes[Math.floor(Math.random() * predefinedRoutes.length)];
-        console.log('🛣️ SimpleMap - Ruta seleccionada con', selectedRoute?.length || 0, 'puntos');
+        logger.info('🛣️ SimpleMap - Ruta seleccionada con', selectedRoute?.length || 0, 'puntos');
 
         return selectedRoute || [];
     };
@@ -200,9 +201,9 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
         const map = mapInstanceRef.current;
 
-        console.log('🗺️ SimpleMapComponent - Recibiendo datos:');
-        console.log('📍 Puntos:', points);
-        console.log('🛣️ Rutas:', routes);
+        logger.info('🗺️ SimpleMapComponent - Recibiendo datos:');
+        logger.info('📍 Puntos:', points);
+        logger.info('🛣️ Rutas:', routes);
 
         // Limpiar marcadores existentes
         markersRef.current.forEach(marker => {
@@ -263,12 +264,12 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
         // Agregar rutas realistas por las calles
         routes.forEach(route => {
-            console.log('🛣️ Procesando ruta:', route);
+            logger.info('🛣️ Procesando ruta:', route);
             let routePointsToDraw: [number, number][] = [];
 
             // PRIORIDAD 1: Usar puntos GPS reales si están disponibles
             if (route.points && route.points.length > 1) {
-                console.log('✅ Usando puntos GPS reales de la ruta:', route.points.length, 'puntos');
+                logger.info('✅ Usando puntos GPS reales de la ruta:', route.points.length, 'puntos');
 
                 // Verificar si los puntos GPS reales son válidos
                 const validPoints = route.points.filter(point => {
@@ -279,23 +280,23 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
                 });
 
                 if (validPoints.length >= 2) {
-                    console.log('✅ Puntos GPS válidos encontrados:', validPoints.length);
+                    logger.info('✅ Puntos GPS válidos encontrados:', validPoints.length);
                     routePointsToDraw = validPoints;
                 } else {
-                    console.log('⚠️ Puntos GPS inválidos, generando ruta sintética');
+                    logger.info('⚠️ Puntos GPS inválidos, generando ruta sintética');
                     routePointsToDraw = generateRealisticRoute(route.city || 'las_rozas');
                 }
             }
             // PRIORIDAD 2: Fallback a ruta sintética solo si no hay puntos GPS reales
             else if (route.city) {
-                console.log('⚠️ No hay puntos GPS reales, generando ruta sintética para:', route.city);
+                logger.info('⚠️ No hay puntos GPS reales, generando ruta sintética para:', route.city);
                 // Usar la función generateRealisticRoute para crear rutas por calles
                 routePointsToDraw = generateRealisticRoute(route.city);
-                console.log('📍 Puntos de ruta sintéticos generados:', routePointsToDraw);
+                logger.info('📍 Puntos de ruta sintéticos generados:', routePointsToDraw);
             }
 
             if (routePointsToDraw.length > 1) {
-                console.log('🎨 Dibujando polyline con', routePointsToDraw.length, 'puntos');
+                logger.info('🎨 Dibujando polyline con', routePointsToDraw.length, 'puntos');
                 const polyline = L.polyline(routePointsToDraw, {
                     color: route.color || '#10B981',
                     weight: 5,
@@ -304,7 +305,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
                 });
 
                 polyline.addTo(map);
-                console.log('✅ Polyline añadida al mapa');
+                logger.info('✅ Polyline añadida al mapa');
 
                 // Agregar flecha de dirección al final de la ruta
                 if (routePointsToDraw.length > 1) {
@@ -346,7 +347,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
                 // Ajustar la vista para incluir toda la ruta
                 if (routePointsToDraw.length > 0) {
-                    console.log('📍 Ajustando vista para ruta con', routePointsToDraw.length, 'puntos');
+                    logger.info('📍 Ajustando vista para ruta con', routePointsToDraw.length, 'puntos');
 
                     // Crear bounds que incluyan toda la ruta
                     const bounds = L.latLngBounds(routePointsToDraw);
@@ -356,13 +357,13 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
                     // Verificar que los bounds sean válidos
                     if (bounds.isValid()) {
-                        console.log('📍 Bounds válidos:', bounds.getNorthEast(), bounds.getSouthWest());
+                        logger.info('📍 Bounds válidos:', bounds.getNorthEast(), bounds.getSouthWest());
                         map.fitBounds(expandedBounds, {
                             padding: [50, 50],
                             maxZoom: 16 // Limitar zoom máximo para evitar que se vea demasiado cerca
                         });
                     } else {
-                        console.log('⚠️ Bounds inválidos, usando centro por defecto');
+                        logger.info('⚠️ Bounds inválidos, usando centro por defecto');
                         map.setView(center, zoom);
                     }
                 }
@@ -371,7 +372,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
         // Si hay puntos de eventos, ajustar la vista para mostrarlos todos
         if (points.length > 0) {
-            console.log('📍 Ajustando vista para', points.length, 'puntos de eventos');
+            logger.info('📍 Ajustando vista para', points.length, 'puntos de eventos');
             const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng] as [number, number]));
 
             if (bounds.isValid()) {
@@ -385,7 +386,7 @@ const SimpleMapComponent: React.FC<SimpleMapProps> = ({
 
         // Si no hay rutas ni puntos, centrar en la ubicación por defecto
         if (routes.length === 0 && points.length === 0) {
-            console.log('📍 No hay datos, centrando en ubicación por defecto');
+            logger.info('📍 No hay datos, centrando en ubicación por defecto');
             map.setView(center, zoom);
         }
 

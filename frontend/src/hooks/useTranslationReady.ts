@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../utils/logger';
 
 /**
  * Hook personalizado para manejar el estado de carga de traducciones
@@ -69,7 +70,7 @@ export const useSafeTranslation = () => {
 
         // Si la traducción es igual a la clave, significa que no se encontró
         if (translation === key) {
-            console.warn(`⚠️ Traducción faltante: ${key}`);
+            logger.warn(`⚠️ Traducción faltante: ${key}`);
             return key; // Retornar la clave como fallback
         }
 

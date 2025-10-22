@@ -13,6 +13,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import path from 'path';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -98,7 +99,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error procesando archivo:', error);
+        logger.error('Error procesando archivo:', error);
 
         // Limpiar archivo temporal si existe
         if (req.file && fs.existsSync(req.file.path)) {
@@ -176,7 +177,7 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error procesando archivos múltiples:', error);
+        logger.error('Error procesando archivos múltiples:', error);
 
         // Limpiar archivos temporales
         if (req.files) {
@@ -240,7 +241,7 @@ router.get('/files', async (req, res) => {
             files: mockFiles
         });
     } catch (error) {
-        console.error('Error obteniendo archivos:', error);
+        logger.error('Error obteniendo archivos:', error);
         res.status(500).json({
             error: 'Error obteniendo archivos',
             details: (error as Error).message
@@ -337,7 +338,7 @@ router.get('/analyze-cmadrid', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error analizando CMadrid:', error);
+        logger.error('Error analizando CMadrid:', error);
         res.status(500).json({
             error: 'Error analizando archivos CMadrid',
             details: (error as Error).message

@@ -51,7 +51,7 @@ const getRealRoute = async (points: [number, number][]): Promise<[number, number
             return routePoints;
         }
     } catch (error) {
-        console.warn('Error obteniendo ruta real de TomTom:', error);
+        logger.warn('Error obteniendo ruta real de TomTom:', error);
     }
 
     // Fallback: devolver puntos originales si falla la API
@@ -580,10 +580,10 @@ export const GPSMap: React.FC<GPSMapProps> = ({
             getRealRoute(routePoints)
                 .then(realRoute => {
                     setRealRoutePoints(realRoute);
-                    console.log(`🗺️ Ruta real obtenida: ${realRoute.length} puntos`);
+                    logger.info(`🗺️ Ruta real obtenida: ${realRoute.length} puntos`);
                 })
                 .catch(error => {
-                    console.warn('Error obteniendo ruta real:', error);
+                    logger.warn('Error obteniendo ruta real:', error);
                     setRealRoutePoints(routePoints); // Fallback a puntos originales
                 })
                 .finally(() => {
@@ -696,7 +696,7 @@ export const GPSMap: React.FC<GPSMapProps> = ({
     };
 
     // Debug: Log de datos del mapa
-    console.log('🗺️ GPSMap renderizando:', {
+    logger.info('🗺️ GPSMap renderizando:', {
         center,
         zoom,
         routePoints: routePoints.length,

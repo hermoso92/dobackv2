@@ -1,5 +1,6 @@
 import { NotificationsActive as AlertIcon, Settings as SettingsIcon, PersonOutline as UserIcon } from '@mui/icons-material';
 import {
+import { logger } from '../utils/logger';
     Box,
     Button,
     Card,
@@ -89,7 +90,7 @@ const Settings = () => {
     // Manejador de envío del formulario
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        console.log('Configuración actualizada:', formValues);
+        logger.info('Configuración actualizada:', formValues);
         // Aquí iría la lógica para guardar la configuración
     };
 

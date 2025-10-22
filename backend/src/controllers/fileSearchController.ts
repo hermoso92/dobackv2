@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { logger } from '../utils/logger';
 
 // Función para buscar archivos relacionados
 export const searchRelatedFiles = async (req: Request, res: Response) => {
     try {
-        console.log('🔍 searchRelatedFiles llamado con body:', req.body);
+        logger.info('🔍 searchRelatedFiles llamado con body:', req.body);
 
         const { vehicle, date, sequence, basePath } = req.body;
 
         if (!vehicle || !date || !sequence || !basePath) {
-            console.log('❌ Faltan parámetros:', { vehicle, date, sequence, basePath });
+            logger.info('❌ Faltan parámetros:', { vehicle, date, sequence, basePath });
             return res.status(400).json({
                 success: false,
                 error: 'Faltan parámetros requeridos: vehicle, date, sequence, basePath'
@@ -20,7 +21,7 @@ export const searchRelatedFiles = async (req: Request, res: Response) => {
         const vehicleNumber = vehicle.replace('DOBACK', '');
         const dateStr = date.replace(/-/g, '');
 
-        console.log('🔍 Parámetros procesados:', {
+        logger.info('🔍 Parámetros procesados:', {
             vehicle,
             vehicleNumber,
             date,
@@ -41,26 +42,26 @@ export const searchRelatedFiles = async (req: Request, res: Response) => {
             'CMadrid',
             `doback${vehicleNumber}`
         );
-        console.log(`📁 Ruta base corregida: ${correctBasePath}`);
+        logger.info(`📁 Ruta base corregida: ${correctBasePath}`);
 
         for (const folder of folders) {
             const folderPath = path.join(correctBasePath, folder);
-            console.log(`📁 Buscando en carpeta: ${folderPath}`);
+            logger.info(`📁 Buscando en carpeta: ${folderPath}`);
 
             if (fs.existsSync(folderPath)) {
-                console.log(`✅ Carpeta existe: ${folderPath}`);
+                logger.info(`✅ Carpeta existe: ${folderPath}`);
                 const files = fs.readdirSync(folderPath);
-                console.log(`📄 Archivos en carpeta:`, files);
+                logger.info(`📄 Archivos en carpeta:`, files);
 
                 // Buscar archivos que coincidan con el patrón
                 // El patrón debe ser más flexible para incluir prefijos como CAN_, GPS_, etc.
                 const pattern = new RegExp(`.*${vehicle}_${dateStr}_${sequence}.*`);
-                console.log(`🔍 Patrón de búsqueda: ${pattern}`);
+                logger.info(`🔍 Patrón de búsqueda: ${pattern}`);
 
                 for (const file of files) {
-                    console.log(`🔍 Probando archivo: ${file} contra patrón: ${pattern}`);
+                    logger.info(`🔍 Probando archivo: ${file} contra patrón: ${pattern}`);
                     if (pattern.test(file)) {
-                        console.log(`✅ Archivo encontrado: ${file}`);
+                        logger.info(`✅ Archivo encontrado: ${file}`);
                         const filePath = path.join(folderPath, file);
                         const stats = fs.statSync(filePath);
 
@@ -75,16 +76,16 @@ export const searchRelatedFiles = async (req: Request, res: Response) => {
 
                         foundFiles.push(fileInfo);
                     } else {
-                        console.log(`❌ Archivo no coincide: ${file}`);
+                        logger.info(`❌ Archivo no coincide: ${file}`);
                     }
                 }
             } else {
-                console.log(`❌ Carpeta no existe: ${folderPath}`);
+                logger.info(`❌ Carpeta no existe: ${folderPath}`);
             }
         }
 
-        console.log(`🎯 Total de archivos encontrados: ${foundFiles.length}`);
-        console.log('📋 Archivos encontrados:', foundFiles);
+        logger.info(`🎯 Total de archivos encontrados: ${foundFiles.length}`);
+        logger.info('📋 Archivos encontrados:', foundFiles);
 
         res.json({
             success: true,
@@ -98,7 +99,7 @@ export const searchRelatedFiles = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error('❌ Error buscando archivos relacionados:', error);
+        logger.error('❌ Error buscando archivos relacionados:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor al buscar archivos'
@@ -134,7 +135,7 @@ export const downloadFile = async (req: Request, res: Response) => {
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         res.send(fileBuffer);
     } catch (error) {
-        console.error('❌ Error descargando archivo:', error);
+        logger.error('❌ Error descargando archivo:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor al descargar archivo'
@@ -210,7 +211,7 @@ export const readFileHeader = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error('Error leyendo cabecera de archivo:', error);
+        logger.error('Error leyendo cabecera de archivo:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor al leer archivo'
@@ -221,14 +222,14 @@ export const readFileHeader = async (req: Request, res: Response) => {
 // Endpoint de prueba simple
 export const testEndpoint = async (req: Request, res: Response) => {
     try {
-        console.log('🧪 Endpoint de prueba llamado');
+        logger.info('🧪 Endpoint de prueba llamado');
         res.json({
             success: true,
             message: 'Endpoint funcionando correctamente',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error('❌ Error en endpoint de prueba:', error);
+        logger.error('❌ Error en endpoint de prueba:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'

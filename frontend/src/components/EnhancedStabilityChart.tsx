@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ConfigurableStabilityChart from './ConfigurableStabilityChart';
 import ErrorBoundary from './ErrorBoundary';
+import { logger } from '../utils/logger';
 
 // Tipos de datos mejorados con validación estricta
 export interface StabilityDataPoint {
@@ -149,7 +150,7 @@ const EnhancedStabilityChart: React.FC<EnhancedStabilityChartProps> = ({
     // Procesamiento de datos optimizado con memoización
     const processedData = useMemo(() => {
         if (!Array.isArray(data) || data.length === 0) {
-            console.warn('Datos no válidos o vacíos:', data);
+            logger.warn('Datos no válidos o vacíos:', data);
             return null;
         }
 

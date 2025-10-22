@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const LOG_LEVELS = {
     DEBUG: 0,
@@ -31,22 +32,22 @@ const IGNORED_MESSAGES = [
 export const logger = {
     debug: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.DEBUG && !IGNORED_MESSAGES.includes(message)) {
-            console.debug(`[DEBUG] ${message}`, data || '');
+            logger.debug(`[DEBUG] ${message}`, data || '');
         }
     },
     info: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO && !IGNORED_MESSAGES.includes(message)) {
-            console.info(`[INFO] ${message}`, data || '');
+            logger.info(`[INFO] ${message}`, data || '');
         }
     },
     warn: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.WARN && !IGNORED_MESSAGES.includes(message)) {
-            console.warn(`[WARN] ${message}`, data || '');
+            logger.warn(`[WARN] ${message}`, data || '');
         }
     },
     error: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.ERROR && !IGNORED_MESSAGES.includes(message)) {
-            console.error(`[ERROR] ${message}`, data || '');
+            logger.error(`[ERROR] ${message}`, data || '');
         }
     }
 };

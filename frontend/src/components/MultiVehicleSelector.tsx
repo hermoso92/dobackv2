@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     DirectionsCar as CarIcon,
     Group as GroupIcon
 } from '@mui/icons-material';
@@ -61,16 +62,16 @@ const MultiVehicleSelector: React.FC<MultiVehicleSelectorProps> = ({
         setLoading(true);
         try {
             const response = await apiService.get('/api/vehicles');
-            console.log('MultiVehicleSelector - Respuesta del servidor:', response);
+            logger.info('MultiVehicleSelector - Respuesta del servidor:', response);
 
             if (response.success && Array.isArray(response.data)) {
                 setVehicles(response.data);
             } else {
-                console.error('MultiVehicleSelector - Formato de respuesta inválido:', response);
+                logger.error('MultiVehicleSelector - Formato de respuesta inválido:', response);
                 setVehicles([]);
             }
         } catch (error) {
-            console.error('Error al obtener vehículos:', error);
+            logger.error('Error al obtener vehículos:', error);
             setVehicles([]);
         } finally {
             setLoading(false);

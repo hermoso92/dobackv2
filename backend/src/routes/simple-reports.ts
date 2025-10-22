@@ -1,14 +1,15 @@
 import { Request, Response, Router } from 'express';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
 // Ruta de reporte del dashboard simple
 router.post('/dashboard', async (req: Request, res: Response) => {
     try {
-        console.log('📊 Generando reporte del dashboard...');
+        logger.info('📊 Generando reporte del dashboard...');
         const { filters, includeCharts = true, includeMaps = true } = req.body;
 
-        console.log('📋 Filtros recibidos:', filters);
+        logger.info('📋 Filtros recibidos:', filters);
 
         // Datos de ejemplo basados en los filtros
         const timePreset = filters?.timePreset || 'DAY';
@@ -338,7 +339,7 @@ router.post('/dashboard', async (req: Request, res: Response) => {
         const filePath = path.join(reportsDir, fileName);
         await fs.writeFile(filePath, html);
 
-        console.log('✅ Reporte HTML generado exitosamente:', filePath);
+        logger.info('✅ Reporte HTML generado exitosamente:', filePath);
 
         res.json({
             success: true,
@@ -352,7 +353,7 @@ router.post('/dashboard', async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('❌ Error generando reporte del dashboard:', error);
+        logger.error('❌ Error generando reporte del dashboard:', error);
         res.status(500).json({
             success: false,
             error: `Error interno del servidor: ${error.message}`
@@ -383,7 +384,7 @@ router.get('/download/:fileName', async (req: Request, res: Response) => {
         // Enviar el archivo
         res.download(filePath, fileName, (err) => {
             if (err) {
-                console.error('❌ Error descargando archivo:', err);
+                logger.error('❌ Error descargando archivo:', err);
                 res.status(500).json({
                     success: false,
                     error: 'Error descargando archivo'
@@ -392,7 +393,7 @@ router.get('/download/:fileName', async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('❌ Error en descarga de reporte:', error);
+        logger.error('❌ Error en descarga de reporte:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'

@@ -82,7 +82,7 @@ router.post('/test-auto-evaluation', authenticate, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error en evaluación automática:', error);
+        logger.error('Error en evaluación automática:', error);
         res.status(500).json({
             success: false,
             message: 'Error en evaluación automática: ' + (error as Error).message
@@ -133,7 +133,7 @@ router.post('/create-test-execution', authenticate, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error creando ejecución de prueba:', error);
+        logger.error('Error creando ejecución de prueba:', error);
         res.status(500).json({
             success: false,
             message: 'Error creando ejecución de prueba: ' + (error as Error).message

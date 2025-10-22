@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { EventSeverity, EventType } from '../types/enums';
 import {
+import { logger } from '../utils/logger';
     StabilityEvent,
     StabilityMeasurements,
     StabilityMetrics,
@@ -208,10 +209,10 @@ export class StabilityAnalysisService {
             if (/^\d{2}:\d{2}:\d{2}[AP]M$/.test(trimmedLine)) {
                 try {
                     lastTime = parseDateTime(trimmedLine);
-                    console.log('Nueva marca de tiempo:', lastTime);
+                    logger.info('Nueva marca de tiempo:', lastTime);
                     continue;
                 } catch (error) {
-                    console.warn('Error parsing time line:', error);
+                    logger.warn('Error parsing time line:', error);
                     continue;
                 }
             }
@@ -233,7 +234,7 @@ export class StabilityAnalysisService {
                 try {
                     startTime = parseDateTime(timestamp);
                     lastTime = startTime;
-                    console.log('Tiempo de inicio:', startTime);
+                    logger.info('Tiempo de inicio:', startTime);
                     // Generar sessionId usando la fecha del archivo
                     const dateStr = startTime.toISOString().split('T')[0].replace(/-/g, '');
                     currentSessionId = `${vehicleId}_${sessionNumber}_${dateStr}`;
@@ -252,9 +253,9 @@ export class StabilityAnalysisService {
 
             // Verificar que tenemos todos los campos necesarios
             if (parts.length < 19) {
-                console.log('Línea inválida:', trimmedLine);
-                console.log('Número de campos:', parts.length);
-                console.log('Campos:', parts);
+                logger.info('Línea inválida:', trimmedLine);
+                logger.info('Número de campos:', parts.length);
+                logger.info('Campos:', parts);
                 continue;
             }
 
@@ -305,8 +306,8 @@ export class StabilityAnalysisService {
             let hasInvalidValues = false;
             for (const value of numericValues) {
                 if (isNaN(parseFloat(value))) {
-                    console.log('Valor no numérico encontrado:', value);
-                    console.log('Línea completa:', trimmedLine);
+                    logger.info('Valor no numérico encontrado:', value);
+                    logger.info('Línea completa:', trimmedLine);
                     hasInvalidValues = true;
                     break;
                 }
@@ -318,7 +319,7 @@ export class StabilityAnalysisService {
             // Si no hay último tiempo conocido, usar el tiempo de inicio
             const measurementTime = lastTime || startTime;
             if (!measurementTime) {
-                console.warn('No hay tiempo disponible para la medición');
+                logger.warn('No hay tiempo disponible para la medición');
                 continue;
             }
 
@@ -352,12 +353,12 @@ export class StabilityAnalysisService {
 
             measurementCount++;
             if (measurementCount % 100 === 0) {
-                console.log(`Procesadas ${measurementCount} mediciones`);
+                logger.info(`Procesadas ${measurementCount} mediciones`);
             }
         }
 
-        console.log(`Total de mediciones procesadas: ${measurementCount}`);
-        console.log(
+        logger.info(`Total de mediciones procesadas: ${measurementCount}`);
+        logger.info(
             `Duración total: ${
                 measurements.length > 0
                     ? (measurements[measurements.length - 1].timestamp.getTime() -

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Geofence, GeofenceEvent, GeofenceFormData, GeofenceStats } from '../types/geofence';
 import { useAuth } from './useAuth';
+import { logger } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9998';
 
@@ -12,17 +13,17 @@ export const useGeofences = () => {
 
     const fetchGeofences = useCallback(async () => {
         if (!token) {
-            console.log('🚫 No hay token de autenticación');
+            logger.info('🚫 No hay token de autenticación');
             return;
         }
 
-        console.log('🔄 Iniciando fetch de geocercas...');
+        logger.info('🔄 Iniciando fetch de geocercas...');
         setLoading(true);
         setError(null);
 
         try {
-            console.log('📡 Haciendo request a:', `${API_BASE_URL}/api/geofences`);
-            console.log('🔑 Token:', token.substring(0, 20) + '...');
+            logger.info('📡 Haciendo request a:', `${API_BASE_URL}/api/geofences`);
+            logger.info('🔑 Token:', token.substring(0, 20) + '...');
 
             const response = await fetch(`${API_BASE_URL}/api/geofences`, {
                 headers: {
@@ -31,24 +32,24 @@ export const useGeofences = () => {
                 },
             });
 
-            console.log('📊 Response status:', response.status);
-            console.log('📊 Response ok:', response.ok);
+            logger.info('📊 Response status:', response.status);
+            logger.info('📊 Response ok:', response.ok);
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ Error response:', errorText);
+                logger.error('❌ Error response:', errorText);
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log('✅ Data recibida:', data);
-            console.log('📋 Geocercas encontradas:', data.data?.length || 0);
+            logger.info('✅ Data recibida:', data);
+            logger.info('📋 Geocercas encontradas:', data.data?.length || 0);
 
             setGeofences(data.data || []);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             setError(errorMessage);
-            console.error('❌ Error fetching geofences:', err);
+            logger.error('❌ Error fetching geofences:', err);
         } finally {
             setLoading(false);
         }
@@ -178,7 +179,7 @@ export const useGeofenceEvents = (vehicleId?: string, from?: Date, to?: Date) =>
             setEvents(data.data || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Error desconocido');
-            console.error('Error fetching geofence events:', err);
+            logger.error('Error fetching geofence events:', err);
         } finally {
             setLoading(false);
         }
@@ -237,7 +238,7 @@ export const useGeofenceStats = () => {
             setStats(statsData);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Error desconocido');
-            console.error('Error fetching geofence stats:', err);
+            logger.error('Error fetching geofence stats:', err);
         } finally {
             setLoading(false);
         }

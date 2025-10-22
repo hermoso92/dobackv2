@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateStabilityData, getTravelPhase } from './stabilitySimulation';
+import { logger } from '../utils/logger';
 // Función para exportar datos a CSV
 const exportToCSV = () => {
     const startTime = new Date();
@@ -54,8 +55,8 @@ const exportToCSV = () => {
     // Guardar archivo
     const filePath = path.join(__dirname, '../../data/stability_data.csv');
     fs.writeFileSync(filePath, csv, 'utf-8');
-    console.log(`Datos guardados en: ${filePath}`);
-    console.log(`Total de registros: ${data.length}`);
+    logger.info(`Datos guardados en: ${filePath}`);
+    logger.info(`Total de registros: ${data.length}`);
 };
 
 // Ejecutar exportación

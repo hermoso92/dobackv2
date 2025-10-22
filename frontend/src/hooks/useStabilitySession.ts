@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface StabilitySessionResponse {
     success: boolean;
@@ -66,7 +67,7 @@ export const useStabilitySession = (sessionId: string) => {
                 }
             };
 
-            console.log('Datos procesados:', {
+            logger.info('Datos procesados:', {
                 totalMeasurements: processedData.data.measurements.length,
                 firstTimestamp: new Date(processedData.data.measurements[0]?.timestamp).toLocaleString(),
                 lastTimestamp: new Date(processedData.data.measurements[processedData.data.measurements.length - 1]?.timestamp).toLocaleString()

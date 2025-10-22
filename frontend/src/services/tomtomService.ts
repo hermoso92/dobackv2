@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * 🗺️ SERVICIO TOMTOM INTEGRADO - BOMBEROS MADRID
  * Servicio completo para mapas, geocodificación, routing y geofences con TomTom
@@ -116,7 +118,7 @@ class TomTomService {
             const data = await response.json();
             return data.results || [];
         } catch (error) {
-            console.error('Error en geocodificación TomTom:', error);
+            logger.error('Error en geocodificación TomTom:', error);
             throw error;
         }
     }
@@ -137,7 +139,7 @@ class TomTomService {
             const data = await response.json();
             return data.addresses || [];
         } catch (error) {
-            console.error('Error en geocodificación inversa TomTom:', error);
+            logger.error('Error en geocodificación inversa TomTom:', error);
             throw error;
         }
     }
@@ -188,7 +190,7 @@ class TomTomService {
 
             return data.routes[0];
         } catch (error) {
-            console.error('Error calculando ruta TomTom:', error);
+            logger.error('Error calculando ruta TomTom:', error);
             throw error;
         }
     }
@@ -232,7 +234,7 @@ class TomTomService {
             const data = await response.json();
             return data.incidents || [];
         } catch (error) {
-            console.error('Error obteniendo tráfico TomTom:', error);
+            logger.error('Error obteniendo tráfico TomTom:', error);
             return [];
         }
     }
@@ -259,7 +261,7 @@ class TomTomService {
             const data = await response.json();
             return data.results || [];
         } catch (error) {
-            console.error('Error buscando POI TomTom:', error);
+            logger.error('Error buscando POI TomTom:', error);
             return [];
         }
     }
@@ -289,7 +291,7 @@ class TomTomService {
                 policeStations
             };
         } catch (error) {
-            console.error('Error buscando servicios de emergencia:', error);
+            logger.error('Error buscando servicios de emergencia:', error);
             return {
                 hospitals: [],
                 fireStations: [],
@@ -330,7 +332,7 @@ class TomTomService {
             const data = await response.json();
             return data.matrix || { origins: [] };
         } catch (error) {
-            console.error('Error calculando matriz de distancias TomTom:', error);
+            logger.error('Error calculando matriz de distancias TomTom:', error);
             throw error;
         }
     }
@@ -385,7 +387,7 @@ class TomTomService {
                 vehicleRoutes
             };
         } catch (error) {
-            console.error('Error encontrando punto de encuentro óptimo:', error);
+            logger.error('Error encontrando punto de encuentro óptimo:', error);
             throw error;
         }
     }

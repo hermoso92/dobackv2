@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.get('/sessions', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error obteniendo sesiones de telemetría:', error);
+        logger.error('Error obteniendo sesiones de telemetría:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
@@ -74,7 +75,7 @@ router.get('/sessions/:id', async (req, res) => {
             error: 'Sesión no encontrada'
         });
     } catch (error) {
-        console.error('Error obteniendo sesión de telemetría:', error);
+        logger.error('Error obteniendo sesión de telemetría:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
@@ -105,7 +106,7 @@ router.get('/sessions/:id/points', async (req, res) => {
             data: []
         });
     } catch (error) {
-        console.error('Error obteniendo puntos de telemetría:', error);
+        logger.error('Error obteniendo puntos de telemetría:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'

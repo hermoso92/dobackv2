@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -42,7 +43,7 @@ router.get('/stats', async (req, res) => {
 
         res.json(stats);
     } catch (error) {
-        console.error('Error getting processing stats:', error);
+        logger.error('Error getting processing stats:', error);
         res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
 });
@@ -85,7 +86,7 @@ router.get('/sessions', async (req, res) => {
 
         res.json(sessionSummaries);
     } catch (error) {
-        console.error('Error getting sessions:', error);
+        logger.error('Error getting sessions:', error);
         res.status(500).json({ error: 'Error al obtener sesiones' });
     }
 });
@@ -136,7 +137,7 @@ router.get('/logs', async (req, res) => {
 
         res.json(logs);
     } catch (error) {
-        console.error('Error getting logs:', error);
+        logger.error('Error getting logs:', error);
         res.status(500).json({ error: 'Error al obtener logs' });
     }
 });
@@ -164,7 +165,7 @@ router.post('/start', async (req, res) => {
             pid: child.pid
         });
     } catch (error) {
-        console.error('Error starting processing:', error);
+        logger.error('Error starting processing:', error);
         res.status(500).json({ error: 'Error al iniciar procesamiento' });
     }
 });
@@ -175,7 +176,7 @@ router.post('/stop', async (req, res) => {
         // TODO: Implementar sistema de control de procesos
         res.json({ message: 'Procesamiento detenido' });
     } catch (error) {
-        console.error('Error stopping processing:', error);
+        logger.error('Error stopping processing:', error);
         res.status(500).json({ error: 'Error al detener procesamiento' });
     }
 });
@@ -192,7 +193,7 @@ router.post('/reset', async (req, res) => {
 
         res.json({ message: 'Base de datos limpiada exitosamente' });
     } catch (error) {
-        console.error('Error resetting database:', error);
+        logger.error('Error resetting database:', error);
         res.status(500).json({ error: 'Error al limpiar base de datos' });
     }
 });
@@ -252,7 +253,7 @@ router.get('/report/:type', async (req, res) => {
             res.status(400).json({ error: 'Tipo de reporte no válido' });
         }
     } catch (error) {
-        console.error('Error generating report:', error);
+        logger.error('Error generating report:', error);
         res.status(500).json({ error: 'Error al generar reporte' });
     }
 });
@@ -304,7 +305,7 @@ router.get('/validate-sessions', async (req, res) => {
                 : `❌ Se encontraron ${violations.length} violaciones de la regla`
         });
     } catch (error) {
-        console.error('Error validating sessions:', error);
+        logger.error('Error validating sessions:', error);
         res.status(500).json({ error: 'Error al validar sesiones' });
     }
 });

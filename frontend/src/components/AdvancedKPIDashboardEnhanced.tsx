@@ -1,5 +1,6 @@
 
 import {
+import { logger } from '../utils/logger';
     Alert,
     Box,
     Card,
@@ -201,14 +202,14 @@ export const AdvancedKPIDashboardEnhanced: React.FC<AdvancedKPIDashboardEnhanced
                 queryParams += `&dateRange=all_time`;
             }
 
-            console.log(`Obteniendo KPIs con parámetros: ${queryParams}`);
+            logger.info(`Obteniendo KPIs con parámetros: ${queryParams}`);
 
             // Usar el endpoint correcto que existe en el backend
             const response = await apiService.get(
                 `/api/advanced-kpi/dashboard?${queryParams}`
             );
 
-            console.log('Respuesta del servidor KPIs:', response);
+            logger.info('Respuesta del servidor KPIs:', response);
 
             if (response.success && response.data) {
                 // El backend devuelve datos en formato dashboard, necesitamos adaptarlos
@@ -346,7 +347,7 @@ export const AdvancedKPIDashboardEnhanced: React.FC<AdvancedKPIDashboardEnhanced
                 throw new Error(response.error || 'Error al obtener datos de KPIs');
             }
         } catch (err) {
-            console.error('Error obteniendo KPIs:', err);
+            logger.error('Error obteniendo KPIs:', err);
             setError(err instanceof Error ? err.message : 'Error desconocido');
             // No usar datos mock, mostrar error real
         } finally {

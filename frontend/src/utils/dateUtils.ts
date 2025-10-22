@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * Utilidades para formateo de fechas con zona horaria
  */
@@ -27,7 +29,7 @@ export const formatDateTZ = (date: string | Date, timezone?: string): string => 
             hour12: false
         });
     } catch (error) {
-        console.error('Error formateando fecha:', error);
+        logger.error('Error formateando fecha:', error);
         return dateObj.toLocaleString('es-ES');
     }
 };
@@ -53,7 +55,7 @@ export const formatDateOnly = (date: string | Date, timezone?: string): string =
             day: '2-digit'
         });
     } catch (error) {
-        console.error('Error formateando fecha:', error);
+        logger.error('Error formateando fecha:', error);
         return dateObj.toLocaleDateString('es-ES');
     }
 };
@@ -80,7 +82,7 @@ export const formatTimeOnly = (date: string | Date, timezone?: string): string =
             hour12: false
         });
     } catch (error) {
-        console.error('Error formateando hora:', error);
+        logger.error('Error formateando hora:', error);
         return dateObj.toLocaleTimeString('es-ES');
     }
 };
