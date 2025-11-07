@@ -2,6 +2,7 @@ import { DashboardData, EventData, StabilityData, TelemetryData, VehicleData } f
 import { Vehicle } from '../types/vehicle';
 import { logger } from '../utils/logger';
 import { apiService } from './api';
+import { API_CONFIG } from '@/config/api';
 interface DashboardStats {
     vehicleCount: number;
     sessionCount: number;
@@ -21,7 +22,7 @@ export class DataService {
     private readonly baseURL: string;
 
     private constructor() {
-        this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:9998';
+        this.baseURL = import.meta.env.VITE_API_URL || `${API_CONFIG.BASE_URL}`;
     }
 
     public static getInstance(): DataService {

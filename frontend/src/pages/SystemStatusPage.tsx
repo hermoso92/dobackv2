@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import api from '../config/api';
+import { API_CONFIG } from '@/config/api';
 import { usePermissions } from '../hooks/usePermissions';
 
 interface SystemStatus {
@@ -124,10 +124,15 @@ const SystemStatusPage: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await api.get('/system/status');
-            setStatus(response.data);
+            const response = await fetch(`${API_CONFIG.BASE_URL}/system/status`, {
+                credentials: 'include',
+                headers: API_CONFIG.HEADERS
+            });
+            if (!response.ok) throw new Error('Error al obtener estado del sistema');
+            const data = await response.json();
+            setStatus(data);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Error al obtener estado del sistema');
+            setError(err.message || 'Error al obtener estado del sistema');
         } finally {
             setLoading(false);
         }

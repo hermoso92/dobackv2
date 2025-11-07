@@ -9,7 +9,8 @@ import {
     Download as DownloadIcon,
     Description as FileTextIcon,
     PlayArrow as PlayArrowIcon,
-    CloudUpload as UploadIcon
+    CloudUpload as UploadIcon,
+    Warning as ExclamationTriangleIcon
 } from '@mui/icons-material';
 import {
     Alert,
@@ -131,7 +132,54 @@ const FileUploadManager: React.FC = () => {
     // ✅ NUEVO: Estados para regeneración de eventos
     const [isRegeneratingEvents, setIsRegeneratingEvents] = useState(false);
 
+    // ✅ NUEVO: Estados para borrar todos los datos
+    const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+    // ✅ NUEVO: Estados para limpiar base de datos (botón secundario)
+    const [showCleanDBConfirmation, setShowCleanDBConfirmation] = useState(false);
+    const [isCleaningDB, setIsCleaningDB] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // ✅ NUEVO: Función para borrar todos los datos
+    const handleDeleteAllData = async () => {
+        try {
+            setIsDeletingAll(true);
+            logger.warn('🚨 Iniciando borrado total de datos');
+
+            const response = await apiService.post('/api/admin/delete-all-data', {
+                confirmacion: 'ELIMINAR_TODO'
+            });
+
+            if (response.success) {
+                logger.info('✅ Todos los datos han sido eliminados', response.data);
+                
+                // Limpiar estados locales
+                setUploadResult(null);
+                setRecentSessions([]);
+                setAutoProcessResults(null);
+                setSelectedFiles([]);
+                setUploadError(null);
+                setAutoProcessError(null);
+                
+                // Limpiar localStorage
+                localStorage.removeItem('lastProcessingReport');
+
+                alert('✅ Todos los datos han sido eliminados exitosamente');
+            } else {
+                throw new Error(response.error || 'Error desconocido');
+            }
+
+        } catch (error: any) {
+            logger.error('❌ Error al eliminar datos:', error);
+            const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+            alert(`❌ Error al eliminar datos: ${errorMessage}`);
+        } finally {
+            setIsDeletingAll(false);
+            setShowDeleteAllConfirmation(false);
+        }
+    };
 
     // ✅ MEJORA: Cargar reporte con cleanup para evitar memory leaks
     useEffect(() => {
@@ -323,14 +371,16 @@ const FileUploadManager: React.FC = () => {
     };
 
     const handleAutoProcess = async () => {
-        // ✅ MEJORA: Verificar rate limit antes de procesar
-        const lastProcessing = localStorage.getItem('lastProcessingTimestamp');
-        if (lastProcessing) {
-            const timeSince = Date.now() - parseInt(lastProcessing);
-            if (timeSince < FEATURE_FLAGS.processingRateLimitMs) {
-                const minutesLeft = Math.ceil((FEATURE_FLAGS.processingRateLimitMs - timeSince) / 60000);
-                setAutoProcessError(`⏱️ Rate limit: Espera ${minutesLeft} minutos antes de procesar nuevamente`);
-                return;
+        // ✅ MEJORA: Verificar rate limit antes de procesar (solo en producción)
+        if (process.env.NODE_ENV === 'production') {
+            const lastProcessing = localStorage.getItem('lastProcessingTimestamp');
+            if (lastProcessing) {
+                const timeSince = Date.now() - parseInt(lastProcessing);
+                if (timeSince < FEATURE_FLAGS.processingRateLimitMs) {
+                    const minutesLeft = Math.ceil((FEATURE_FLAGS.processingRateLimitMs - timeSince) / 60000);
+                    setAutoProcessError(`⏱️ Rate limit: Espera ${minutesLeft} minutos antes de procesar nuevamente`);
+                    return;
+                }
             }
         }
 
@@ -511,19 +561,35 @@ const FileUploadManager: React.FC = () => {
 
     const handleCleanDatabase = async () => {
         try {
-            logger.info('🧹 Limpiando base de datos...');
+            setIsCleaningDB(true);
+            logger.warn('🧹 Limpiando base de datos de la organización...');
+
             const response = await apiService.post('/api/clean-all-sessions', {});
 
             if (response.success) {
                 logger.info('✅ Base de datos limpiada correctamente', response.data);
+                
+                // Limpiar estados locales
+                setUploadResult(null);
+                setRecentSessions([]);
+                setAutoProcessResults(null);
+                setSelectedFiles([]);
+                setUploadError(null);
+                setAutoProcessError(null);
+                
+                alert('✅ Base de datos limpiada exitosamente');
                 fetchRecentSessions();
             } else {
-                setAutoProcessError('Error limpiando la base de datos');
+                throw new Error(response.error || 'Error limpiando la base de datos');
             }
         } catch (error: any) {
             const errorMessage = error?.response?.data?.error || error?.message || 'Error limpiando base de datos';
             setAutoProcessError(errorMessage);
             logger.error('Error limpiando base de datos:', error);
+            alert(`❌ Error al limpiar base de datos: ${errorMessage}`);
+        } finally {
+            setIsCleaningDB(false);
+            setShowCleanDBConfirmation(false);
         }
     };
 
@@ -622,12 +688,28 @@ const FileUploadManager: React.FC = () => {
 
     return (
         <Box sx={{ p: 3, maxWidth: '1400px', mx: 'auto', overflowY: 'auto', height: 'calc(100vh - 100px)' }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-                Gestión de Datos de Vehículos
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                Sube archivos individuales o procesa automáticamente todos los vehículos de CMadrid
-            </Typography>
+            {/* Header con título y botón Borrar Todo */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box>
+                    <Typography variant="h4" component="h1" gutterBottom>
+                        Gestión de Datos de Vehículos
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                        Sube archivos individuales o procesa automáticamente todos los vehículos de CMadrid
+                    </Typography>
+                </Box>
+                {/* Botón Borrar Todo - Solo ADMIN */}
+                <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => setShowDeleteAllConfirmation(true)}
+                    disabled={isDeletingAll}
+                    sx={{ whiteSpace: 'nowrap' }}
+                >
+                    {isDeletingAll ? 'Eliminando...' : 'Borrar Todos los Datos'}
+                </Button>
+            </Box>
 
             {/* ✅ NUEVO: Reglas de Correlación */}
             <Card sx={{ mb: 3, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.main' }}>
@@ -1254,11 +1336,11 @@ const FileUploadManager: React.FC = () => {
                             <Button
                                 variant="outlined"
                                 color="warning"
-                                onClick={handleCleanDatabase}
-                                disabled={isProcessingAuto || isRegeneratingEvents}
+                                onClick={() => setShowCleanDBConfirmation(true)}
+                                disabled={isProcessingAuto || isRegeneratingEvents || isCleaningDB}
                                 startIcon={<DeleteIcon />}
                             >
-                                Limpiar Base de Datos
+                                {isCleaningDB ? 'Limpiando...' : 'Limpiar Base de Datos'}
                             </Button>
                             <Button
                                 variant="outlined"
@@ -1472,6 +1554,136 @@ const FileUploadManager: React.FC = () => {
                 onClose={() => setShowReportModal(false)}
                 results={autoProcessResults}
             />
+
+            {/* Modal de Confirmación de Borrado Total */}
+            {showDeleteAllConfirmation && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgcolor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999
+                    }}
+                >
+                    <Card sx={{ maxWidth: 500, m: 2 }}>
+                        <CardContent>
+                            <Box sx={{ mb: 3, textAlign: 'center' }}>
+                                <ExclamationTriangleIcon className="h-16 w-16 text-red-600 mx-auto mb-2" />
+                                <Typography variant="h5" color="error" fontWeight="bold" gutterBottom>
+                                    ⚠️ ADVERTENCIA: Acción Irreversible
+                                </Typography>
+                            </Box>
+
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                Estás a punto de eliminar <strong>TODOS los datos</strong> de tu organización de la base de datos:
+                            </Typography>
+
+                            <Box component="ul" sx={{ mb: 3, pl: 2, '& li': { mb: 1 } }}>
+                                <li>Todas las sesiones</li>
+                                <li>Todas las mediciones (GPS, CAN, Rotativo, Estabilidad)</li>
+                                <li>Todos los eventos de estabilidad</li>
+                                <li>Todos los segmentos operacionales</li>
+                                <li>Toda la caché de KPIs</li>
+                            </Box>
+
+                            <Alert severity="error" sx={{ mb: 3 }}>
+                                <strong>Esta acción NO se puede deshacer.</strong> Todos los datos serán eliminados permanentemente.
+                            </Alert>
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    color="error"
+                                    onClick={handleDeleteAllData}
+                                    disabled={isDeletingAll}
+                                >
+                                    {isDeletingAll ? 'Eliminando...' : 'Sí, eliminar todo'}
+                                </Button>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    onClick={() => setShowDeleteAllConfirmation(false)}
+                                    disabled={isDeletingAll}
+                                >
+                                    Cancelar
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Box>
+            )}
+
+            {/* Modal de Confirmación para Limpiar Base de Datos */}
+            {showCleanDBConfirmation && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgcolor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999
+                    }}
+                >
+                    <Card sx={{ maxWidth: 500, m: 2 }}>
+                        <CardContent>
+                            <Box sx={{ mb: 3, textAlign: 'center' }}>
+                                <ExclamationTriangleIcon className="h-16 w-16 text-orange-600 mx-auto mb-2" />
+                                <Typography variant="h5" color="warning.main" fontWeight="bold" gutterBottom>
+                                    ⚠️ ADVERTENCIA: Limpiar Base de Datos
+                                </Typography>
+                            </Box>
+
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                Estás a punto de limpiar todas las sesiones de tu organización:
+                            </Typography>
+
+                            <Box component="ul" sx={{ mb: 3, pl: 2, '& li': { mb: 1 } }}>
+                                <li>Todas las sesiones</li>
+                                <li>Todas las mediciones (GPS, CAN, Rotativo, Estabilidad)</li>
+                                <li>Todos los eventos de estabilidad</li>
+                                <li>Todos los segmentos operacionales</li>
+                                <li>Toda la caché de KPIs</li>
+                            </Box>
+
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                <strong>Nota:</strong> Esta acción es útil para re-procesar archivos desde cero.
+                            </Alert>
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    color="warning"
+                                    onClick={handleCleanDatabase}
+                                    disabled={isCleaningDB}
+                                >
+                                    {isCleaningDB ? 'Limpiando...' : 'Sí, limpiar'}
+                                </Button>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    onClick={() => setShowCleanDBConfirmation(false)}
+                                    disabled={isCleaningDB}
+                                >
+                                    Cancelar
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Box>
+            )}
         </Box>
     );
 };

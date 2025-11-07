@@ -19,6 +19,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initialize = () => {
       try {
+        // 🆕 Capturar token de Google OAuth si existe en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+
+        if (oauthToken) {
+          logger.info('🔐 Token de Google OAuth detectado en URL');
+
+          // Guardar token en localStorage con la key correcta
+          localStorage.setItem('auth_token', oauthToken);
+
+          // ⚡ IMPORTANTE: También guardar como refresh_token (mismo token)
+          // porque authService.isAuthenticated() requiere ambos
+          localStorage.setItem('refresh_token', oauthToken);
+
+          // Decodificar JWT para obtener datos del usuario
+          try {
+            const tokenParts = oauthToken.split('.');
+            if (tokenParts.length === 3) {
+              const payload = JSON.parse(atob(tokenParts[1]));
+
+              // Guardar usuario en localStorage
+              const oauthUser = {
+                id: payload.id,
+                email: payload.email,
+                name: payload.name || payload.email,
+                role: payload.role,
+                organizationId: payload.organizationId,
+              };
+
+              localStorage.setItem('auth_user', JSON.stringify(oauthUser));
+              logger.info('✅ Usuario de Google OAuth guardado', { email: oauthUser.email });
+            }
+          } catch (decodeError) {
+            logger.warn('No se pudo decodificar el token, pero se guardó correctamente');
+          }
+
+          // Limpiar URL y redirigir
+          const cleanUrl = window.location.origin + '/dashboard';
+          logger.info('✅ Token y refresh_token guardados, redirigiendo a dashboard...');
+
+          // Recargar completamente para que se re-inicialice todo
+          window.location.replace(cleanUrl);
+          return; // Detener la ejecución hasta que se recargue
+        }
+
         const user = authService.getCurrentUser();
         const isAuthenticated = authService.isAuthenticated();
         const isInitialized = authService.getInitializationStatus();
@@ -35,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           user,
           isAuthenticated,
           isInitialized,
+          hadOAuthToken: !!oauthToken,
         });
       } catch (error) {
         logger.error('Error al inicializar autenticacion', error);

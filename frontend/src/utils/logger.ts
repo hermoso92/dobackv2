@@ -37,17 +37,17 @@ export const logger = {
     },
     info: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO && !IGNORED_MESSAGES.includes(message)) {
-            logger.info(`[INFO] ${message}`, data || '');
+            console.log(`[INFO] ${message}`, data || '');
         }
     },
     warn: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.WARN && !IGNORED_MESSAGES.includes(message)) {
-            logger.warn(`[WARN] ${message}`, data || '');
+            console.warn(`[WARN] ${message}`, data || '');
         }
     },
     error: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.ERROR && !IGNORED_MESSAGES.includes(message)) {
-            logger.error(`[ERROR] ${message}`, data || '');
+            console.error(`[ERROR] ${message}`, data || '');
         }
     }
 };

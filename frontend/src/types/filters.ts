@@ -123,9 +123,9 @@ export const DEFAULT_FILTER_PRESETS: FilterPreset[] = [
 export const DEFAULT_FILTERS: GlobalFilters = {
     vehicles: [],
     dateRange: {
-        // cambio aquí: usar el rango real de datos Doback por defecto
-        start: '2025-09-29',
-        end: '2025-10-08'
+        // ✅ CORREGIDO: Incluir todo el rango de datos procesados (8-22 octubre)
+        start: '2025-10-01',
+        end: '2025-10-31'
     },
     rotativo: 'all',
     clave: ['0', '2', '5', 'other'],

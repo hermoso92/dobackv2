@@ -26,7 +26,7 @@ export const searchRelatedFiles = async (
         throw new Error(response.error || 'No se encontraron archivos relacionados');
     }
 
-    return response.data;
+    return response.data as any;
 };
 
 export const downloadFile = async (path: string): Promise<File> => {

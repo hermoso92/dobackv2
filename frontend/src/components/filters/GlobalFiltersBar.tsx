@@ -52,18 +52,22 @@ const GlobalFiltersBar: React.FC = () => {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Box
                 sx={{
+                    position: 'fixed',
+                    top: '64px', // Debajo de la barra de navegación principal
+                    left: '0',
                     width: '100%',
                     height: '64px',
-                    backgroundColor: 'transparent',
+                    backgroundColor: '#ffffff',
                     borderBottom: '1px solid #e2e8f0',
-                    boxShadow: 'none',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                     display: 'flex !important',
                     alignItems: 'center !important',
-                    justifyContent: 'center !important',
-                    padding: '24px 20px 0 20px !important',
+                    justifyContent: 'flex-start !important',
+                    padding: '8px 20px !important',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
-                    gap: '12px'
+                    gap: '12px',
+                    zIndex: 999
                 }}
             >
 

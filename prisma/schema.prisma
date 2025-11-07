@@ -574,7 +574,7 @@ model GestorDeEventoVehicle {
 }
 
 model GpsMeasurement {
-  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  id         String                        @id @default(dbgenerated("gen_random_uuid()"))
   latitude   Float
   longitude  Float
   altitude   Float
@@ -582,16 +582,19 @@ model GpsMeasurement {
   satellites Int
   quality    String?
   sessionId  String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime                      @default(now())
   hdop       Float?
   timestamp  DateTime
   updatedAt  DateTime
   fix        String?
   heading    Float?
   accuracy   Float?
-  Session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  geog       Unsupported("geography(Point, 4326)")?
+  Session    Session                       @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([sessionId, timestamp], map: "gpsmeasurement_sessionid_timestamp_unique")
+  @@index([geog], map: "idx_gps_geog", type: Gist)
+  @@index([sessionId, timestamp, geog], map: "idx_gps_session_time_geog")
 }
 
 model InformeGenerado {
@@ -867,9 +870,9 @@ model ZoneAudit {
 // ❌ ELIMINADO: debug_overspeed (Tabla debug ignorada, sin utilidad)
 
 model stability_events {
-  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id              String                        @id @default(dbgenerated("(gen_random_uuid())::text"))
   session_id      String
-  timestamp       DateTime @db.Timestamptz(6)
+  timestamp       DateTime                      @db.Timestamptz(6)
   lat             Float?
   lon             Float?
   type            String
@@ -878,8 +881,9 @@ model stability_events {
   rotativoState   Int? // Estado del rotativo (0=apagado, 1=encendido, 2=clave2, 5=clave5)
   details         Json?
   keyType         Int? // Tipo de clave operacional en el momento del evento (0, 2, 5)
-  interpolatedGPS Boolean  @default(false) // Si las coordenadas GPS fueron interpoladas
-  Session         Session  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
+  interpolatedGPS Boolean                       @default(false) // Si las coordenadas GPS fueron interpoladas
+  geog            Unsupported("geography(Point, 4326)")?
+  Session         Session                       @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_session")
 
   @@index([session_id], map: "idx_stability_events_session")
   @@index([session_id, timestamp(sort: Desc)], map: "idx_stability_events_session_time")
@@ -887,6 +891,7 @@ model stability_events {
   @@index([type], map: "idx_stability_events_type")
   @@index([speed], map: "idx_stability_events_speed")
   @@index([rotativoState], map: "idx_stability_events_rotativo")
+  @@index([geog], map: "idx_stability_events_geog", type: Gist)
 }
 
 /// Tabla para persistir segmentos de claves operacionales (Mandamiento M2)

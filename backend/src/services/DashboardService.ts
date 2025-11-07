@@ -58,9 +58,9 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    eventVehicle: {
+                    EventVehicle: {
                         include: {
-                            vehicle: true
+                            Vehicle: true
                         }
                     }
                 },
@@ -82,7 +82,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.eventVehicle?.[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.EventVehicle?.[0]?.Vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -160,9 +160,9 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    eventVehicle: {
+                    EventVehicle: {
                         include: {
-                            vehicle: true
+                            Vehicle: true
                         }
                     }
                 },
@@ -190,7 +190,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.EventVehicle[0]?.Vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -218,7 +218,7 @@ export class DashboardService {
             // Obtener eventos recientes del vehículo
             const recentEvents = await prisma.event.findMany({
                 where: {
-                    eventVehicle: {
+                    EventVehicle: {
                         some: {
                             vehicleId,
                             vehicle: {
@@ -231,9 +231,9 @@ export class DashboardService {
                     }
                 },
                 include: {
-                    eventVehicle: {
+                    EventVehicle: {
                         include: {
-                            vehicle: true
+                            Vehicle: true
                         }
                     }
                 },
@@ -256,7 +256,7 @@ export class DashboardService {
                             ? (event.displayData as { message?: string }).message || ''
                             : '',
                     severity: event.type,
-                    vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
+                    vehicleName: event.EventVehicle[0]?.Vehicle?.name || 'N/A',
                     timestamp: event.timestamp.toISOString()
                 }))
             };
@@ -271,9 +271,9 @@ export class DashboardService {
             const events = await prisma.event.findMany({
                 where: { organizationId },
                 include: {
-                    eventVehicle: {
+                    EventVehicle: {
                         include: {
-                            vehicle: true
+                            Vehicle: true
                         }
                     }
                 },
@@ -291,7 +291,7 @@ export class DashboardService {
                         ? (event.displayData as { message?: string }).message || ''
                         : '',
                 severity: event.type,
-                vehicleName: event.eventVehicle[0]?.vehicle?.name || 'N/A',
+                vehicleName: event.EventVehicle[0]?.Vehicle?.name || 'N/A',
                 timestamp: event.timestamp.toISOString()
             }));
         } catch (error) {

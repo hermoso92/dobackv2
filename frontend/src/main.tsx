@@ -1,7 +1,10 @@
+import { logger } from '@/utils/logger';
 import { CacheProvider } from '@emotion/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
+    ArcElement,
+    BarElement,
     CategoryScale,
     Chart as ChartJS,
     Legend,
@@ -56,7 +59,7 @@ window.addEventListener('error', (event) => {
     if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
         event.preventDefault();
         event.stopPropagation();
-        console.debug('Silenced non-critical error:', errorMessage);
+        logger.debug('Silenced non-critical error:', errorMessage);
         return;
     }
 }, true); // Capturar en fase de captura para interceptar antes
@@ -76,13 +79,15 @@ window.addEventListener('unhandledrejection', (event) => {
 
     if (ignoredErrors.some(ignored => String(reason).includes(ignored))) {
         event.preventDefault();
-        console.debug('Silenced non-critical promise rejection:', reason);
+        logger.debug('Silenced non-critical promise rejection:', reason);
         return;
     }
 });
 
 // Registrar los componentes de Chart.js
 ChartJS.register(
+    ArcElement,
+    BarElement,
     CategoryScale,
     LinearScale,
     PointElement,

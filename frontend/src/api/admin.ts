@@ -465,7 +465,7 @@ export class AdminAPI {
     }
 
     // Suscribirse a eventos en tiempo real
-    static subscribeToAdminEvents(callback: (event: any) => void): () => void {
+    static subscribeToAdminEvents(_callback: (event: any) => void): () => void {
         // TODO: Implementar WebSocket para eventos en tiempo real
         logger.info('Suscribiéndose a eventos de administración');
 

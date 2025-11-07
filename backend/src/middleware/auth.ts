@@ -94,7 +94,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const user = await withPrismaReconnect(() => prisma.user.findUnique({
             where: { id: decoded.id },
             include: {
-                organization: true
+                Organization: true
             }
         }));
 
@@ -123,10 +123,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             organizationId: req.user.organizationId
         });
 
-        if (user.organization) {
+        if (user.Organization) {
             req.organization = {
-                id: user.organization.id,
-                name: user.organization.name
+                id: user.Organization.id,
+                name: user.Organization.name
             };
         }
 

@@ -3,7 +3,6 @@ import cors from 'cors';
 import express from 'express';
 import { createServer } from 'http';
 import { config } from './config/env';
-import { initializeGeofenceServices } from './config/geofenceServices';
 import { prisma } from './lib/prisma';
 import { apiLimiter, attackDetector, authLimiter, requestSizeLimiter, securityHeaders, uploadLimiter } from './middleware/security';
 import { DatabaseOptimizationService } from './services/DatabaseOptimizationService';
@@ -14,6 +13,8 @@ import { logger } from './utils/logger';
 const app = express();
 const server = createServer(app);
 const webSocketService = new WebSocketService(server);
+
+// ℹ️ Passport se configura en server.ts ANTES de importar rutas
 
 // Middleware de seguridad
 app.use(securityHeaders);
@@ -91,13 +92,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Inicializar servicios de geocercas
-try {
-    initializeGeofenceServices(prisma);
-    logger.info('✅ Servicios de geocercas inicializados correctamente');
-} catch (error) {
-    logger.error('❌ Error inicializando servicios de geocercas:', error);
-}
+// Nota: Servicios de geocercas inicializados en config/server.ts antes de cargar rutas
 
 // Inicializar servicio de optimización de base de datos
 let dbOptimizationService: DatabaseOptimizationService;

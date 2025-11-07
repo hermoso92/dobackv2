@@ -1,11 +1,13 @@
 /**
  * 🚨 SERVICIO DE DETECCIÓN DE EVENTOS DE ESTABILIDAD
  * Basado en tabla de eventos con índice SI
- * Última actualización: 14/Oct/2025 - Reglas de dominio + correlación GPS + deduplicación
+ * Última actualización: 06/Nov/2025 - Enum severidades centralizado (ChatGPT P3-11)
  */
 
 import { prisma } from '../config/prisma';
 import { createLogger } from '../utils/logger';
+import { Severity, clasificarSeveridadPorSI } from '../types/severity';
+
 const logger = createLogger('EventDetector');
 
 // ============================================================================
@@ -15,6 +17,8 @@ const logger = createLogger('EventDetector');
 /**
  * MANDAMIENTO M3.1: Solo generar eventos si SI < 0.50
  * MANDAMIENTO M3.2: Umbrales de severidad en [0,1]
+ * 
+ * ✅ ACTUALIZADO: Ahora usa enum centralizado (types/severity.ts)
  */
 const UMBRALES = {
     EVENTO_MAXIMO: 0.50,    // Solo generar eventos si SI < 0.50
@@ -22,18 +26,6 @@ const UMBRALES = {
     MODERADA: 0.35,         // 0.20 ≤ SI < 0.35
     LEVE: 0.50              // 0.35 ≤ SI < 0.50
 };
-
-/**
- * Clasificar severidad por SI según Mandamiento M3.2
- * @param si - Índice de estabilidad en [0,1]
- * @returns Severidad o null si SI ≥ 0.50 (condición normal)
- */
-function clasificarSeveridadPorSI(si: number): Severidad | null {
-    if (si >= UMBRALES.EVENTO_MAXIMO) return null; // Sin evento
-    if (si < UMBRALES.GRAVE) return 'GRAVE';
-    if (si < UMBRALES.MODERADA) return 'MODERADA';
-    return 'LEVE';
-}
 
 // ============================================================================
 // TIPOS
@@ -49,7 +41,7 @@ export type TipoEvento =
     | 'CAMBIO_CARGA'
     | 'ZONA_INESTABLE';
 
-export type Severidad = 'GRAVE' | 'MODERADA' | 'LEVE' | 'NORMAL';
+// ✅ REMOVIDO: export type Severidad (ahora importado desde types/severity.ts)
 
 export interface EventoDetectado {
     tipo: TipoEvento;
@@ -540,14 +532,20 @@ async function detectarYGuardarEventos(sessionId: string): Promise<{ total: numb
                 continue;
             }
 
+            // ✅ CRÍTICO: NO guardar eventos sin coordenadas GPS válidas
+            if (!evento.lat || !evento.lon || evento.lat === 0 || evento.lon === 0) {
+                logger.warn(`⚠️ Evento sin GPS válido, no se guardará: ${evento.tipo} en ${evento.timestamp}`);
+                continue;
+            }
+
             try {
-                await prisma.stabilityEvent.create({
+                await prisma.stability_events.create({
                     data: {
                         session_id: sessionId,
                         timestamp: evento.timestamp,
                         type: evento.tipo,
-                        lat: evento.lat || 0,
-                        lon: evento.lon || 0,
+                        lat: evento.lat,
+                        lon: evento.lon,
                         speed: evento.valores.velocity || 0,
                         rotativoState: evento.rotativo ? 1 : 0,
                         // ✅ MANDAMIENTO M3.6: details SIEMPRE incluye si
@@ -661,7 +659,11 @@ export async function generateStabilityEventsForSession(sessionId: string): Prom
 
         logger.info(`📡 Datos cargados: ${allGpsPoints.length} GPS, ${allRotativoPoints.length} Rotativo`);
 
-        // Función auxiliar para encontrar el punto más cercano
+        /**
+         * FASE 2: Búsqueda binaria optimizada para puntos GPS ordenados
+         * Complejidad: O(log n) vs O(n) anterior
+         * Asume que points está ordenado por timestamp (ascending)
+         */
         function findClosestPoint<T extends { timestamp: Date }>(
             points: T[],
             targetTime: Date,
@@ -669,18 +671,50 @@ export async function generateStabilityEventsForSession(sessionId: string): Prom
         ): T | null {
             if (points.length === 0) return null;
 
-            let closest: T | null = null;
+            const targetMs = targetTime.getTime();
+
+            // Búsqueda binaria para encontrar el índice más cercano
+            let left = 0;
+            let right = points.length - 1;
+            let closestIdx = 0;
             let minDiff = Infinity;
 
-            for (const point of points) {
-                const diff = Math.abs(point.timestamp.getTime() - targetTime.getTime());
-                if (diff < minDiff && diff <= maxDiffMs) {
+            // Encontrar el punto más cercano usando binary search
+            while (left <= right) {
+                const mid = Math.floor((left + right) / 2);
+                const midMs = points[mid].timestamp.getTime();
+                const diff = Math.abs(midMs - targetMs);
+
+                if (diff < minDiff) {
                     minDiff = diff;
-                    closest = point;
+                    closestIdx = mid;
+                }
+
+                if (midMs < targetMs) {
+                    left = mid + 1;
+                } else if (midMs > targetMs) {
+                    right = mid - 1;
+                } else {
+                    // Coincidencia exacta
+                    break;
                 }
             }
 
-            return closest;
+            // Verificar vecinos inmediatos del punto encontrado
+            // (podría haber un punto más cercano en ±1 posición)
+            for (let offset = -1; offset <= 1; offset++) {
+                const idx = closestIdx + offset;
+                if (idx >= 0 && idx < points.length) {
+                    const diff = Math.abs(points[idx].timestamp.getTime() - targetMs);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestIdx = idx;
+                    }
+                }
+            }
+
+            // Retornar solo si está dentro de la ventana temporal
+            return minDiff <= maxDiffMs ? points[closestIdx] : null;
         }
 
         // 4. Correlacionar con GPS y obtener velocidad (max ±30 segundos)

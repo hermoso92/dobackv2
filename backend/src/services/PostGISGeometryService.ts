@@ -235,7 +235,7 @@ export class PostGISGeometryService {
         try {
             // Migrar parques
             const parks = await prisma.park.findMany({
-                where: { geometryPostgis: null },
+                where: { geometry_postgis: null },
                 select: { id: true, geometry: true }
             });
 
@@ -245,7 +245,7 @@ export class PostGISGeometryService {
                     if (postgisGeom) {
                         await prisma.park.update({
                             where: { id: park.id },
-                            data: { geometryPostgis: postgisGeom }
+                            data: { geometry_postgis: postgisGeom }
                         });
                         success++;
                     }
@@ -257,7 +257,7 @@ export class PostGISGeometryService {
 
             // Migrar zonas
             const zones = await prisma.zone.findMany({
-                where: { geometryPostgis: null },
+                where: { geometry_postgis: null },
                 select: { id: true, geometry: true }
             });
 
@@ -267,7 +267,7 @@ export class PostGISGeometryService {
                     if (postgisGeom) {
                         await prisma.zone.update({
                             where: { id: zone.id },
-                            data: { geometryPostgis: postgisGeom }
+                            data: { geometry_postgis: postgisGeom }
                         });
                         success++;
                     }

@@ -33,7 +33,7 @@ const envSchema = z.object({
     APP_URL: z.string().default('http://localhost:9998'),
 
     // Server
-    SERVER_TIMEOUT: z.string().transform(Number).default('180000'), // 3 minutos para KPIs
+    SERVER_TIMEOUT: z.string().default('180000').transform(val => parseInt(val, 10)), // 3 minutos para KPIs
 
     // Logging
     LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

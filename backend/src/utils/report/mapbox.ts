@@ -2,10 +2,11 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore falta tipos
 import fetch from 'node-fetch';
+import { logger } from '../utils/logger';
 
 const TOKEN = process.env.MAPBOX_TOKEN;
 if (!TOKEN) {
-    console.warn('MAPBOX_TOKEN no definido; los mapas no estarán disponibles');
+    logger.warn('MAPBOX_TOKEN no definido; los mapas no estarán disponibles');
 }
 
 export function buildStaticMapUrl(

@@ -158,12 +158,13 @@ export class TomTomAdapter {
         }
 
         try {
-            const bboxString = `${bbox.minLng},${bbox.minLat},${bbox.maxLng},${bbox.maxLat}`;
-            const params = new URLSearchParams({
-                key: this.apiKey,
-                zoom: (options.zoom || 10).toString(),
-                style: options.style || 'relative'
-            });
+            // TODO: Usar bbox y params para consultas más específicas
+            // const bboxString = `${bbox.minLng},${bbox.minLat},${bbox.maxLng},${bbox.maxLat}`;
+            // const params = new URLSearchParams({
+            //     key: this.apiKey,
+            //     zoom: (options.zoom || 10).toString(),
+            //     style: options.style || 'relative'
+            // });
 
             const response = await fetch(
                 `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${bbox.minLat},${bbox.minLng}&key=${this.apiKey}`

@@ -1,5 +1,4 @@
 import {
-import { logger } from '../../utils/logger';
     DirectionsCar,
     Download,
     FilterList,
@@ -38,6 +37,7 @@ import {
     TileLayer,
     useMap
 } from 'react-leaflet';
+import { logger } from '../../utils/logger';
 // import { VehicleSelector } from './VehicleSelector';
 
 interface AdvancedHeatmapViewProps {

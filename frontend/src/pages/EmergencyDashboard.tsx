@@ -3,8 +3,8 @@
  * Vista principal para monitoreo en tiempo real de vehículos de bomberos
  */
 
-import {
 import { logger } from '../utils/logger';
+import {
     Warning as AlertIcon,
     CheckCircle as AvailableIcon,
     Warning as EmergencyIcon,

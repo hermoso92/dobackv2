@@ -1,3 +1,19 @@
+/**
+ * Parser robusto de archivos GPS
+ * 
+ * Validaciones implementadas:
+ * - Coordenadas dentro de España (36-44°N, -10 a 5°E)
+ * - Velocidades < 200 km/h (filtrar datos corruptos de inicialización)
+ * - Detección de saltos GPS > 1km (posible corrupción)
+ * - Interpolación de gaps < 10s
+ * - Usa Hora Raspberry (no GPS UTC) para timestamps
+ * - Detección automática de cruce de medianoche
+ * 
+ * Casos reales verificados:
+ * - DOBACK028: GPS 98% válido (7,556 líneas)
+ * - DOBACK026: GPS 0% válido (maneja con gracia)
+ */
+
 import { createLogger } from '../../utils/logger';
 import { haversineDistance } from './gpsUtils';
 

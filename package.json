@@ -5,7 +5,19 @@
   "main": "auth.js",
   "scripts": {
     "auth": "node auth.js",
-    "create-vehicle": "node create_vehicle.js"
+    "create-vehicle": "node create_vehicle.js",
+    "guardrails": "node scripts/guardrails/scan-simple.js",
+    "guardrails:scan": "node scripts/guardrails/scan-simple.js",
+    "guardrails:fix": "node scripts/guardrails/auto-fix-simple.js",
+    "guardrails:scan-and-fix": "ts-node scripts/guardrails/run-guardrails.ts scan-and-fix",
+    "guardrails:console-logs": "ts-node scripts/guardrails/scanners/scan-console-logs.ts",
+    "guardrails:hardcoded-urls": "ts-node scripts/guardrails/scanners/scan-hardcoded-urls.ts",
+    "guardrails:organization-id": "ts-node scripts/guardrails/scanners/scan-organization-id.ts",
+    "guardrails:component-size": "ts-node scripts/guardrails/scanners/scan-component-size.ts",
+    "guardrails:fix-console-logs": "ts-node scripts/guardrails/auto-fix/fix-console-logs.ts",
+    "guardrails:fix-hardcoded-urls": "ts-node scripts/guardrails/auto-fix/fix-hardcoded-urls.ts",
+    "guardrails:install-hook": "ts-node scripts/guardrails/ci/install-hooks.ts",
+    "guardrails:test": "jest --config=jest.config.guardrails.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -20,6 +32,7 @@
     "file-saver": "^2.0.5",
     "formik": "^2.4.6",
     "fs": "0.0.1-security",
+    "glob": "^10.3.10",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.1",
@@ -32,6 +45,8 @@
     "playwright": "^1.55.1",
     "prisma": "^6.16.2",
     "puppeteer": "^24.23.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },

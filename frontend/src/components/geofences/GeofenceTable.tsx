@@ -150,9 +150,11 @@ export const GeofenceTable: React.FC<GeofenceTableProps> = ({
                                 </TableCell>
                                 <TableCell>{getDepartmentFromTag(geofence.tag)}</TableCell>
                                 <TableCell>
-                                    <Typography variant="body2" fontWeight="medium">
-                                        0
-                                    </Typography>
+                                    <Chip
+                                        label={(geofence as any)._count?.events || 0}
+                                        size="small"
+                                        color={(geofence as any)._count?.events > 0 ? 'secondary' : 'default'}
+                                    />
                                 </TableCell>
                                 <TableCell>
                                     {formatDateTZ(geofence.updatedAt, userTimezone, { preset: 'medium' })}

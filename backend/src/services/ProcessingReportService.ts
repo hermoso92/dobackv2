@@ -70,6 +70,7 @@ export class ProcessingReportService {
         reportData: ProcessingReportData
     ): Promise<string> {
         try {
+            // ✅ WORKAROUND: Pasar updatedAt manualmente
             const report = await prisma.processingReport.create({
                 data: {
                     userId,
@@ -81,7 +82,8 @@ export class ProcessingReportService {
                     status: 'COMPLETED',
                     reportData: reportData as any,
                     endTime: new Date(),
-                    duration: Math.floor((new Date().getTime() - new Date().getTime()) / 1000)
+                    duration: Math.floor((new Date().getTime() - new Date().getTime()) / 1000),
+                    updatedAt: new Date() // ✅ WORKAROUND temporal
                 }
             });
 
@@ -102,6 +104,7 @@ export class ProcessingReportService {
         errorMessage?: string
     ): Promise<void> {
         try {
+            // ✅ WORKAROUND: Pasar updatedAt manualmente
             await prisma.processingReport.update({
                 where: { id: reportId },
                 data: {
@@ -109,7 +112,8 @@ export class ProcessingReportService {
                     errorMessage,
                     endTime: status === 'COMPLETED' || status === 'FAILED' ? new Date() : undefined,
                     duration: status === 'COMPLETED' || status === 'FAILED' ?
-                        Math.floor((new Date().getTime() - new Date().getTime()) / 1000) : undefined
+                        Math.floor((new Date().getTime() - new Date().getTime()) / 1000) : undefined,
+                    updatedAt: new Date() // ✅ WORKAROUND temporal
                 }
             });
 

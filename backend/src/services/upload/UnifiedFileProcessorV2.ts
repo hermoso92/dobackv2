@@ -498,6 +498,7 @@ export class UnifiedFileProcessorV2 {
 
     /**
      * Guarda una sesión correlacionada en la BD
+     * ✅ CHATGPT CRÍTICO 3: Wrapped en transaction para consistencia
      */
     private async guardarSesion(
         session: CorrelatedSession,
@@ -543,8 +544,11 @@ export class UnifiedFileProcessorV2 {
             };
         }
 
-        // Crear sesión en BD
-        const dbSession = await prisma.session.create({
+        // ✅ CHATGPT CRÍTICO 3: Transaction para garantizar consistencia
+        // Si falla el guardado de mediciones o post-procesamiento, hacer rollback completo
+        return await prisma.$transaction(async (tx) => {
+            // Crear sesión
+            const dbSession = await tx.session.create({
             data: {
                 vehicleId,
                 userId,
@@ -556,12 +560,11 @@ export class UnifiedFileProcessorV2 {
                 source: 'UPLOAD_UNIFIED_V2',
                 status: 'ACTIVE',
                 type: 'ROUTINE',
-                updatedAt: new Date() // ✅ REQUERIDO: Campo updatedAt obligatorio
+                    updatedAt: new Date()
             }
         });
 
         // Parsear y guardar mediciones de cada tipo
-        // IMPORTANTE: Parsear el archivo COMPLETO y filtrar por rango de tiempo de esta sesión
         let measurementCount = 0;
 
         if (session.gps && grupo.archivos.gps) {
@@ -572,7 +575,7 @@ export class UnifiedFileProcessorV2 {
 
             if (puntosSesion.length > 0) {
                 const puntosInterpolados = interpolarGPS(puntosSesion);
-                await this.guardarMedicionesGPSArray(dbSession.id, puntosInterpolados);
+                    await this.guardarMedicionesGPSArrayTx(tx, dbSession.id, puntosInterpolados);
                 measurementCount += puntosInterpolados.length;
             }
         }
@@ -584,7 +587,7 @@ export class UnifiedFileProcessorV2 {
             );
 
             if (medicionesSesion.length > 0) {
-                await this.guardarMedicionesEstabilidadArray(dbSession.id, medicionesSesion);
+                    await this.guardarMedicionesEstabilidadArrayTx(tx, dbSession.id, medicionesSesion);
                 measurementCount += medicionesSesion.length;
             }
         }
@@ -596,21 +599,22 @@ export class UnifiedFileProcessorV2 {
             );
 
             if (medicionesSesion.length > 0) {
-                await this.guardarMedicionesRotativoArray(dbSession.id, medicionesSesion);
+                    await this.guardarMedicionesRotativoArrayTx(tx, dbSession.id, medicionesSesion);
                 measurementCount += medicionesSesion.length;
             }
         }
 
-        logger.info(`   ✅ Sesión ${session.sessionNumber} guardada: ${dbSession.id}`);
-
-        // ✅ POST-PROCESAMIENTO AUTOMÁTICO movido a UploadPostProcessor (centralizado)
-        // await this.ejecutarPostProcesamiento(dbSession.id); // DESHABILITADO - ahora se ejecuta desde upload-unified.ts
+            logger.info(`   ✅ Sesión ${session.sessionNumber} guardada en transaction: ${dbSession.id}`);
 
         return {
             sessionId: dbSession.id,
             created: true,
             measurementCount
         };
+        }, {
+            timeout: 60000, // 1 minuto
+            maxWait: 5000   // Esperar máximo 5s para lock
+        });
     }
 
     /**
@@ -628,6 +632,37 @@ export class UnifiedFileProcessorV2 {
             const batch = puntos.slice(i, i + batchSize);
 
             await prisma.gpsMeasurement.createMany({
+                data: batch.map(p => ({
+                    sessionId,
+                    timestamp: p.timestamp,
+                    latitude: p.latitude,
+                    longitude: p.longitude,
+                    altitude: p.altitude,
+                    hdop: p.hdop || 0,
+                    speed: p.speed || 0,
+                    satellites: p.satellites || 0,
+                    updatedAt: new Date()
+                })),
+                skipDuplicates: true
+            });
+        }
+    }
+
+    /**
+     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
+     */
+    private async guardarMedicionesGPSArrayTx(
+        tx: any,
+        sessionId: string,
+        puntos: any[]
+    ): Promise<void> {
+        if (puntos.length === 0) return;
+
+        const batchSize = 1000;
+        for (let i = 0; i < puntos.length; i += batchSize) {
+            const batch = puntos.slice(i, i + batchSize);
+
+            await tx.gpsMeasurement.createMany({
                 data: batch.map(p => ({
                     sessionId,
                     timestamp: p.timestamp,
@@ -690,6 +725,52 @@ export class UnifiedFileProcessorV2 {
     }
 
     /**
+     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
+     */
+    private async guardarMedicionesEstabilidadArrayTx(
+        tx: any,
+        sessionId: string,
+        mediciones: any[]
+    ): Promise<void> {
+        if (mediciones.length === 0) return;
+
+        const batchSize = 1000;
+        for (let i = 0; i < mediciones.length; i += batchSize) {
+            const batch = mediciones.slice(i, i + batchSize);
+
+            await tx.stabilityMeasurement.createMany({
+                data: batch.map(m => ({
+                    sessionId,
+                    timestamp: m.timestamp,
+                    ax: m.ax,
+                    ay: m.ay,
+                    az: m.az,
+                    gx: m.gx,
+                    gy: m.gy,
+                    gz: m.gz,
+                    roll: m.roll,
+                    updatedAt: new Date(),
+                    pitch: m.pitch,
+                    yaw: m.yaw,
+                    timeantwifi: m.timeantwifi,
+                    si: m.si || 0,
+                    accmag: m.accmag || 0,
+                    microsds: m.microsds || 0,
+                    usciclo1: m.usciclo1 || 0,
+                    usciclo2: m.usciclo2 || 0,
+                    usciclo3: m.usciclo3 || 0,
+                    usciclo4: m.usciclo4 || 0,
+                    usciclo5: m.usciclo5 || 0,
+                    usciclo6: m.usciclo6 || 0,
+                    usciclo7: m.usciclo7 || 0,
+                    usciclo8: m.usciclo8 || 0
+                })),
+                skipDuplicates: true
+            });
+        }
+    }
+
+    /**
      * Guarda array de mediciones de ROTATIVO en BD
      */
     private async guardarMedicionesRotativoArray(
@@ -703,6 +784,32 @@ export class UnifiedFileProcessorV2 {
             const batch = mediciones.slice(i, i + batchSize);
 
             await prisma.rotativoMeasurement.createMany({
+                data: batch.map(m => ({
+                    sessionId,
+                    timestamp: m.timestamp,
+                    state: m.state,
+                    key: m.key
+                })),
+                skipDuplicates: true
+            });
+        }
+    }
+
+    /**
+     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
+     */
+    private async guardarMedicionesRotativoArrayTx(
+        tx: any,
+        sessionId: string,
+        mediciones: any[]
+    ): Promise<void> {
+        if (mediciones.length === 0) return;
+
+        const batchSize = 1000;
+        for (let i = 0; i < mediciones.length; i += batchSize) {
+            const batch = mediciones.slice(i, i + batchSize);
+
+            await tx.rotativoMeasurement.createMany({
                 data: batch.map(m => ({
                     sessionId,
                     timestamp: m.timestamp,
@@ -796,14 +903,81 @@ export class UnifiedFileProcessorV2 {
                 logger.warn(`⚠️ Error calculando segmentos de claves para sesión ${sessionId}:`, error?.message);
             }
 
-            // 3. ✅ VIOLACIONES DE VELOCIDAD
-            try {
-                const { analizarVelocidades } = await import('../speedAnalyzer');
-                await analizarVelocidades([sessionId]);
-                logger.info(`✅ Violaciones de velocidad analizadas para sesión ${sessionId}`);
-            } catch (error: any) {
-                logger.warn(`⚠️ Error analizando violaciones de velocidad para sesión ${sessionId}:`, error?.message);
-            }
+            // 3. ⚠️ VIOLACIONES DE VELOCIDAD (DESHABILITADO - MUY LENTO)
+            // TODO: Optimizar antes de re-habilitar
+            // Problema: Llama a TomTom API para cada punto GPS (147 puntos = 147 llamadas)
+            // try {
+            //     const { analizarVelocidades } = await import('../speedAnalyzer');
+            //     await analizarVelocidades([sessionId]);
+            //     logger.info(`✅ Violaciones de velocidad analizadas para sesión ${sessionId}`);
+            // } catch (error: any) {
+            //     logger.warn(`⚠️ Error analizando violaciones de velocidad para sesión ${sessionId}:`, error?.message);
+            // }
+
+            // 4. ⚠️ CALCULAR KPIs DIARIOS (DESHABILITADO - EJECUTAR EN BATCH AL FINAL DEL DÍA)
+            // TODO: Ejecutar una vez por día con todas las sesiones, no por sesión individual
+            // try {
+            //     const { AdvancedKPICalculationService } = await import('../AdvancedKPICalculationService');
+            //     const kpiService = new AdvancedKPICalculationService();
+            //     
+            //     const session = await prisma.session.findUnique({
+            //         where: { id: sessionId },
+            //         select: { 
+            //             vehicleId: true, 
+            //             startTime: true, 
+            //             Vehicle: { 
+            //                 select: { organizationId: true } 
+            //             } 
+            //         }
+            //     });
+            //     
+            //     if (session) {
+            //         const sessionDate = new Date(session.startTime);
+            //         await kpiService.calculateAndStoreDailyKPIs(
+            //             session.vehicleId,
+            //             sessionDate,
+            //             session.Vehicle.organizationId
+            //         );
+            //         logger.info(`✅ KPIs calculados para sesión ${sessionId}`);
+            //     }
+            // } catch (error: any) {
+            //     logger.warn(`⚠️ Error calculando KPIs para sesión ${sessionId}:`, error?.message);
+            // }
+
+            // 5. ⚠️ PROCESAR EVENTOS DE GEOCERCAS (DESHABILITADO - EJECUTAR EN BATCH)
+            // TODO: Optimizar para procesar múltiples sesiones a la vez
+            // try {
+            //     const { GeofenceService } = await import('../GeofenceService');
+            //     const geofenceService = new GeofenceService();
+            //     
+            //     const gpsPoints = await prisma.gpsMeasurement.findMany({
+            //         where: { sessionId },
+            //         orderBy: { timestamp: 'asc' }
+            //     });
+            //     
+            //     if (gpsPoints.length > 0) {
+            //         const session = await prisma.session.findUnique({
+            //             where: { id: sessionId },
+            //             select: { 
+            //                 vehicleId: true, 
+            //                 Vehicle: { 
+            //                     select: { organizationId: true } 
+            //                 } 
+            //             }
+            //         });
+            //         
+            //         if (session) {
+            //             await geofenceService.processGPSPoints(
+            //                 session.vehicleId,
+            //                 session.Vehicle.organizationId,
+            //                 gpsPoints
+            //             );
+            //             logger.info(`✅ Geocercas procesadas para sesión ${sessionId} (${gpsPoints.length} puntos GPS)`);
+            //         }
+            //     }
+            // } catch (error: any) {
+            //     logger.warn(`⚠️ Error procesando geocercas para sesión ${sessionId}:`, error?.message);
+            // }
 
             logger.info(`✅ Post-procesamiento completado para sesión ${sessionId}`);
 

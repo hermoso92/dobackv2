@@ -142,12 +142,12 @@ router.get('/violations', async (req, res) => {
 
         const gpsSessionWhere: any = {
             timestamp: {},
-            session: { organizationId }
+            Session: { organizationId }  // ✅ Mayúscula
         };
         if (dateFrom) (gpsSessionWhere.timestamp as any).gte = dateFrom;
         if (dateToExclusive) (gpsSessionWhere.timestamp as any).lt = dateToExclusive;
         if (filters.vehicleIds && filters.vehicleIds.length > 0) {
-            (gpsSessionWhere.session as any).vehicleId = { in: filters.vehicleIds };
+            (gpsSessionWhere.Session as any).vehicleId = { in: filters.vehicleIds };  // ✅ Mayúscula
         }
         // MANDAMIENTO M6.5: Sin límites artificiales
         const gpsSessions = await prisma.gpsMeasurement.findMany({
@@ -513,14 +513,14 @@ router.get('/critical-zones', async (req, res) => {
 
         // Construir filtros para obtener datos GPS con velocidad
         const whereClause: any = {
-            session: {
+            Session: {  // ✅ Mayúscula
                 organizationId
             }
         };
 
         // Filtro de vehículos
         if (vehicleIds && vehicleIds.length > 0) {
-            whereClause.session.vehicleId = { in: vehicleIds };
+            whereClause.Session.vehicleId = { in: vehicleIds };  // ✅ Mayúscula
         }
 
         // Filtro de fechas
@@ -545,7 +545,7 @@ router.get('/critical-zones', async (req, res) => {
         const sessionIds = Array.from(uniqueSessionIds);
         const sessions = await prisma.session.findMany({
             where: { id: { in: sessionIds } },
-            include: { vehicle: true }
+            include: { Vehicle: true }  // ✅ Mayúscula
         });
 
         const sessionMap = new Map(sessions.map(s => [s.id, s]));

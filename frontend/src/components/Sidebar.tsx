@@ -1,5 +1,5 @@
-import {
 import { logger } from '../utils/logger';
+import {
     Analytics as AnalyticsIcon,
     Brightness4,
     Brightness7,

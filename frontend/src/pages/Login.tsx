@@ -1,8 +1,10 @@
 import EmailIcon from '@mui/icons-material/Email';
+import GoogleIcon from '@mui/icons-material/Google';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { API_CONFIG } from '@/config/api';
 import {
     Alert,
     Box,
@@ -326,6 +328,12 @@ const LoginWithRegister: React.FC = () => {
         }
     };
 
+    const handleGoogleLogin = () => {
+        // Redirigir directamente al endpoint de Google OAuth
+        const backendUrl = API_CONFIG.BASE_URL;
+        window.location.href = `${backendUrl}/api/auth/google`;
+    };
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -352,7 +360,7 @@ const LoginWithRegister: React.FC = () => {
             logger.info('Creando nuevo usuario...', { username: registerData.username });
 
             // Usar fetch directo para evitar problemas con apiService que requiere token
-            const response = await fetch('http://localhost:9998/api/auth/register', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -498,6 +506,36 @@ const LoginWithRegister: React.FC = () => {
                     >
                         {isLoading ? <CircularProgress size={24} /> : t('login_button')}
                     </Button>
+
+                    {/* Botón de Google OAuth */}
+                    <Box sx={{ mt: 3 }}>
+                        <Divider sx={{ mb: 3 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                O continúa con
+                            </Typography>
+                        </Divider>
+
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<GoogleIcon />}
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                            sx={{
+                                py: 1.5,
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                borderColor: '#4285f4',
+                                color: '#4285f4',
+                                '&:hover': {
+                                    borderColor: '#357ae8',
+                                    backgroundColor: 'rgba(66, 133, 244, 0.04)',
+                                },
+                            }}
+                        >
+                            Iniciar sesión con Google
+                        </Button>
+                    </Box>
 
                     <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
                         <Typography variant="caption" display="block">

@@ -1,5 +1,4 @@
 import {
-import { logger } from '../utils/logger';
     DirectionsCar as CarIcon,
     Dashboard as DashboardIcon,
     BugReport as DiagnosticsIcon,
@@ -16,6 +15,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },

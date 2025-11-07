@@ -47,7 +47,7 @@ export const FEATURE_FLAGS: FeatureFlags = {
     // ⚙️ CONFIGURACIÓN
     uploadTimeoutMs: isProduction ? 300000 : 600000, // 5 min prod, 10 min dev
     maxFilesPerUpload: isProduction ? 1000 : 10000, // Límite de archivos
-    processingRateLimitMs: 10 * 60 * 1000 // 10 minutos entre procesamientos automáticos
+    processingRateLimitMs: isProduction ? (10 * 60 * 1000) : (30 * 1000) // 10 min prod, 30 seg dev
 };
 
 /**

@@ -404,7 +404,7 @@ export class ObservabilityAPI {
                 }
             );
 
-            return response.data;
+            return response.data as Blob;
         } catch (error) {
             logger.error('Error exportando logs', { error, filters, format });
             throw error;
@@ -421,7 +421,7 @@ export class ObservabilityAPI {
                 }
             );
 
-            return response.data;
+            return response.data as Blob;
         } catch (error) {
             logger.error('Error exportando métricas', { error, filters, format });
             throw error;
@@ -429,7 +429,7 @@ export class ObservabilityAPI {
     }
 
     // Suscribirse a eventos en tiempo real
-    static subscribeToObservabilityEvents(callback: (event: any) => void): () => void {
+    static subscribeToObservabilityEvents(_callback: (event: any) => void): () => void {
         // TODO: Implementar WebSocket para eventos en tiempo real
         logger.info('Suscribiéndose a eventos de observabilidad');
 

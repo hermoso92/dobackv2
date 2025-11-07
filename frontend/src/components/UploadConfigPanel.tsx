@@ -4,8 +4,8 @@
  * Permite configurar las reglas de procesamiento directamente desde la UI.
  */
 
-import {
 import { logger } from '../utils/logger';
+import {
     CheckCircle as CheckCircleIcon,
     ExpandMore as ExpandMoreIcon,
     Refresh as RefreshIcon,

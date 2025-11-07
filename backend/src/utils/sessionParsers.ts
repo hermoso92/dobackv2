@@ -708,6 +708,10 @@ export function parseStabilityFile(buffer: Buffer, descartes: any): StabilityDat
             const timestamp = new Date(tStart.getTime() + stepMs * (j + 0.5));
 
             try {
+                // ✅ Validar y normalizar SI en rango [0,1]
+                const siRaw = parseFloat(row.si || '0');
+                const siNormalizado = Math.max(0, Math.min(1, siRaw));
+                
                 data.push({
                     timestamp: timestamp.toISOString(),
                     ax: parseFloat(row.ax || '0'),
@@ -716,7 +720,7 @@ export function parseStabilityFile(buffer: Buffer, descartes: any): StabilityDat
                     gx: parseFloat(row.gx || '0'),
                     gy: parseFloat(row.gy || '0'),
                     gz: parseFloat(row.gz || '0'),
-                    si: parseFloat(row.si || '0'),
+                    si: siNormalizado, // ✅ VALIDADO: clamped a [0,1]
                     accmag: parseFloat(row.accmag || '0')
                 });
             } catch (error) {

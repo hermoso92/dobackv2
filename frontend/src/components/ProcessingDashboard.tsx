@@ -1,5 +1,5 @@
-import {
 import { logger } from '../utils/logger';
+import {
     Download as DownloadIcon,
     Error as ErrorIcon,
     Info as InfoIcon,

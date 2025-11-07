@@ -3,6 +3,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningIcon from '@mui/icons-material/Warning';
+import { API_CONFIG } from '@/config/api';
 import {
     Alert,
     Box,
@@ -104,7 +105,7 @@ const SystemDiagnostics: React.FC = () => {
     const testKPIEndpoint = async () => {
         setLoading({ ...loading, kpi: true });
         try {
-            const response = await fetch('http://localhost:9998/api/kpis/summary', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/kpis/summary`, {
                 headers: {
                     'x-organization-id': 'a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26'
                 }
@@ -124,7 +125,7 @@ const SystemDiagnostics: React.FC = () => {
         setLoading({ ...loading, kpiFiltered: true });
         try {
             const response = await fetch(
-                `http://localhost:9998/api/kpis/summary?from=${fromDate}&to=${toDate}`,
+                `${API_CONFIG.BASE_URL}/api/kpis/summary?from=${fromDate}&to=${toDate}`,
                 {
                     headers: {
                         'x-organization-id': 'a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26'
@@ -145,7 +146,7 @@ const SystemDiagnostics: React.FC = () => {
     const getVehicles = async () => {
         setLoading({ ...loading, vehicles: true });
         try {
-            const response = await fetch('http://localhost:9998/api/vehicles', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/vehicles`, {
                 headers: {
                     'x-organization-id': 'a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26'
                 }
@@ -162,7 +163,7 @@ const SystemDiagnostics: React.FC = () => {
     const getSessions = async () => {
         setLoading({ ...loading, sessions: true });
         try {
-            const response = await fetch('http://localhost:9998/api/sessions?limit=10', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/sessions?limit=10`, {
                 headers: {
                     'x-organization-id': 'a5dfb0b4-c608-4a9e-b47b-d57a2e4d8c26'
                 }

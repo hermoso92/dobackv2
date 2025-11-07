@@ -7,7 +7,6 @@ import { createTheme } from '@mui/material/styles';
 export const emotionCache = createCache({
     key: 'css',
     prepend: true,
-    compat: true,
 });
 
 // Configuración del tema Material-UI

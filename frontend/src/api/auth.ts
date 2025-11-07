@@ -1,6 +1,6 @@
+import { logger } from '../utils/logger';
 import { apiService } from './api';
 import { ENDPOINTS } from './config';
-import { logger } from '../utils/logger';
 
 export interface LoginCredentials {
   email: string;
@@ -100,6 +100,7 @@ class AuthApiService {
 
     try {
       const base64Url = token.split('.')[1];
+      if (!base64Url) return null;
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)

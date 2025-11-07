@@ -1,5 +1,4 @@
 import {
-import { logger } from '../../utils/logger';
     BellAlertIcon,
     BoltIcon,
     CalendarDaysIcon,
@@ -19,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { ExecutiveDashboardData } from '../../api/kpi';
 import { apiService } from '../../services/api';
+import { logger } from '../../utils/logger';
 import UnifiedMapComponent from '../maps/UnifiedMapComponent';
 import { AdvancedHeatmapView } from '../panel/AdvancedHeatmapView';
 import { SpeedTab } from '../speed/SpeedTab';

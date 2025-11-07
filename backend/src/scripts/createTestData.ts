@@ -9,9 +9,9 @@ async function createTestData() {
         // Buscar usuario de prueba
         const user = await prisma.user.findUnique({
             where: { email: 'admin@DobackSoft.com' },
-            include: { organization: true }
+            include: { Organization: true }
         });
-        if (!user || !user.organization) {
+        if (!user || !user.Organization) {
             throw new Error('Usuario o organización de prueba no encontrados');
         }
 
@@ -24,7 +24,7 @@ async function createTestData() {
                 brand: 'DobackSoft',
                 type: 'SUV',
                 status: 'ACTIVE',
-                organizationId: user.organization.id,
+                organizationId: user.Organization.id,
                 userId: user.id
             }
         });

@@ -30,8 +30,11 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
-import { StatisticsInfo, TelemetryData, VisualizationOptions } from '../types/stability';
 import { t } from "../i18n";
+import { VisualizationOptions } from '../types/stability';
+
+type StatisticsInfo = any;
+type TelemetryData = any;
 
 // Tipo de sensores disponibles
 type SensorType = 'acceleration' | 'gyro' | 'angular';

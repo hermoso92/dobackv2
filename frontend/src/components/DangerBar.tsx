@@ -2,7 +2,6 @@ import { Box, Paper, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import React, { useMemo } from 'react';
 import {
-import { logger } from '../utils/logger';
     CartesianGrid,
     Legend,
     Line,
@@ -21,6 +20,7 @@ import {
     TrendInfo,
     VehicleConfig
 } from '../types/stability';
+import { logger } from '../utils/logger';
 import {
     calculateDangerInfo,
     calculateDangerTrend

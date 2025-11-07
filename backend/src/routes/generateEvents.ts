@@ -151,7 +151,7 @@ router.post('/session/:id', authenticate, attachOrg, async (req, res) => {
         // Verificar que la sesión pertenece a la organización
         const session = await prisma.session.findFirst({
             where: { id, organizationId: orgId },
-            include: { vehicle: true }
+            include: { Vehicle: true }  // ✅ Mayúscula
         });
 
         if (!session) {
@@ -163,13 +163,13 @@ router.post('/session/:id', authenticate, attachOrg, async (req, res) => {
 
         // Si force=true, eliminar eventos existentes
         if (force) {
-            const deleted = await prisma.stabilityEvent.deleteMany({
+            const deleted = await prisma.stability_events.deleteMany({
                 where: { session_id: id }
             });
             logger.info(`🗑️ Eliminados ${deleted.count} eventos existentes`);
         } else {
             // Verificar si ya tiene eventos
-            const eventosExistentes = await prisma.stabilityEvent.count({
+            const eventosExistentes = await prisma.stability_events.count({
                 where: { session_id: id }
             });
 
@@ -196,7 +196,7 @@ router.post('/session/:id', authenticate, attachOrg, async (req, res) => {
             message: `Eventos regenerados exitosamente`,
             data: {
                 sessionId: id,
-                vehicleName: session.vehicle?.name || 'N/A',
+                vehicleName: session.Vehicle?.name || 'N/A',  // ✅ Mayúscula
                 eventosDetectados: resultado.total,
                 eventosGuardados: resultado.guardados,
                 status: 'completed'

@@ -1,6 +1,5 @@
 import InfoIcon from '@mui/icons-material/Info';
 import {
-import { logger } from '../utils/logger';
     Box,
     Checkbox,
     FormControlLabel,
@@ -26,6 +25,7 @@ import {
     YAxis
 } from 'recharts';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 // Tipos de datos
 interface StabilityDataPoint {

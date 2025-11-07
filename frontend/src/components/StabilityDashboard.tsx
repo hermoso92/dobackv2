@@ -1,5 +1,5 @@
-import {
 import { logger } from '../utils/logger';
+import {
     DeleteSweep as ClearIcon,
     Pause as PauseIcon,
     PlayArrow as PlayIcon

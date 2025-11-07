@@ -113,8 +113,10 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
         try {
             const response = await apiService.get('/api/geofence-rules');
             if (response.success) {
-                setRules(response.data as GeofenceRule[]);
-                logger.info('Reglas de geocercas cargadas', { count: (response.data as GeofenceRule[]).length });
+                // ✅ Asegurar que siempre sea un array
+                const rulesData = Array.isArray(response.data) ? response.data : [];
+                setRules(rulesData as GeofenceRule[]);
+                logger.info('Reglas de geocercas cargadas', { count: rulesData.length });
             } else {
                 throw new Error((response as any).message || 'Error cargando reglas');
             }
@@ -122,6 +124,8 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             setError(errorMessage);
             logger.error('Error cargando reglas de geocercas', { error: err });
+            // ✅ En caso de error, asegurar que rules sea un array vacío
+            setRules([]);
         } finally {
             setLoading(false);
         }
@@ -169,7 +173,7 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
 
             if (response.success) {
                 const updatedRule = response.data as GeofenceRule;
-                setRules(prev => prev.map(rule => rule.id === ruleId ? updatedRule : rule));
+                setRules(prev => (prev || []).map(rule => rule.id === ruleId ? updatedRule : rule));
                 setEditingRule(null);
                 resetForm();
                 onRuleUpdated?.(updatedRule);
@@ -210,7 +214,7 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
             });
 
             if (response.success) {
-                setRules(prev => prev.map(rule =>
+                setRules(prev => (prev || []).map(rule =>
                     rule.id === ruleId ? { ...rule, isActive } : rule
                 ));
                 logger.info('Estado de regla actualizado', { ruleId, isActive });
@@ -330,7 +334,7 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {rules.map((rule) => (
+                                {(rules || []).map((rule) => (
                                     <TableRow key={rule.id}>
                                         <TableCell>
                                             <Box>
@@ -552,9 +556,9 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
                             <Grid item xs={12}>
                                 <Divider sx={{ my: 2 }} />
                                 <Typography variant="h6" gutterBottom>
-                                    Condiciones ({selectedRule.conditions.length})
+                                    Condiciones ({selectedRule.conditions?.length || 0})
                                 </Typography>
-                                {selectedRule.conditions.map((condition, index) => (
+                                {(selectedRule.conditions || []).map((condition, index) => (
                                     <Card key={index} variant="outlined" sx={{ mb: 1 }}>
                                         <CardContent sx={{ py: 1 }}>
                                             <Typography variant="body2">
@@ -568,9 +572,9 @@ export const GeofenceRulesManager: React.FC<GeofenceRulesManagerProps> = ({
                             <Grid item xs={12}>
                                 <Divider sx={{ my: 2 }} />
                                 <Typography variant="h6" gutterBottom>
-                                    Acciones ({selectedRule.actions.length})
+                                    Acciones ({selectedRule.actions?.length || 0})
                                 </Typography>
-                                {selectedRule.actions.map((action, index) => (
+                                {(selectedRule.actions || []).map((action, index) => (
                                     <Card key={index} variant="outlined" sx={{ mb: 1 }}>
                                         <CardContent sx={{ py: 1 }}>
                                             <Typography variant="body2">

@@ -8,6 +8,7 @@ import {
     LinearProgress,
     Typography
 } from '@mui/material';
+import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import React, { useCallback, useEffect, useState } from 'react';
 import { SESSION_ENDPOINTS } from '../../config/api';
 import { getOrganizationId } from '../../config/organization';
@@ -230,6 +231,7 @@ interface SessionsAndRoutesViewProps {
 export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ onSessionDataChange }) => {
     const { user } = useAuth();
     const { useSessions } = useTelemetryData();
+    const exportFunction = useRouteExportFunction();  // ✅ Usar función de exportar
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -425,16 +427,28 @@ export const SessionsAndRoutesView: React.FC<SessionsAndRoutesViewProps> = ({ on
     }
 
     return (
-        <Box sx={{ p: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Selectores compactos */}
-            <Box sx={{ mb: 1, flexShrink: 0 }}>
-                <VehicleSessionSelector
-                    selectedVehicleId={selectedVehicleId}
-                    selectedSessionId={selectedSessionId}
-                    onVehicleChange={setSelectedVehicleId}
-                    onSessionChange={setSelectedSessionId}
-                    showSessionSelector={true}
-                />
+        <Box sx={{ p: 1, height: '100vh', display: 'flex', flexDirection: 'column' }} id="sesiones-tab-content">
+            {/* Barra superior con selectores y botón exportar */}
+            <Box sx={{ mb: 1, flexShrink: 0, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box sx={{ flex: 1 }}>
+                    <VehicleSessionSelector
+                        selectedVehicleId={selectedVehicleId}
+                        selectedSessionId={selectedSessionId}
+                        onVehicleChange={setSelectedVehicleId}
+                        onSessionChange={setSelectedSessionId}
+                        showSessionSelector={true}
+                    />
+                </Box>
+                {/* Botón Exportar PDF */}
+                {selectedSession && routeData && (
+                    <button
+                        onClick={() => exportFunction(selectedSession, routeData)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                    >
+                        <DocumentArrowDownIcon className="h-5 w-5" />
+                        Exportar Recorrido PDF
+                    </button>
+                )}
             </Box>
 
             {/* Grid: Mapa + Ranking */}

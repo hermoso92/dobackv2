@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { authService } from './auth';
 import { logger } from '../utils/logger';
+import { API_CONFIG } from '@/config/api';
 
 export interface Report {
     id: string;
@@ -43,7 +44,7 @@ export interface CreateReportRequest {
 
 class ReportService {
     private readonly basePath = '/api/reports';
-    private readonly baseURL = 'http://localhost:9998';
+    private readonly baseURL = `${API_CONFIG.BASE_URL}`;
 
     private async getAuthHeaders() {
         const token = authService.getToken() || 'test';

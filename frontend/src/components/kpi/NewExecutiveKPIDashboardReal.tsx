@@ -1,5 +1,4 @@
 import {
-import { logger } from '../../utils/logger';
     ChartBarIcon,
     ClockIcon,
     DocumentTextIcon,
@@ -13,6 +12,7 @@ import { logger } from '../../utils/logger';
 import React, { useEffect, useState } from 'react';
 import { useRealKPICalculation } from '../../hooks/useRealKPICalculation';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
+import { logger } from '../../utils/logger';
 
 // Tipos para datos reales de PostgreSQL
 interface DashboardData {

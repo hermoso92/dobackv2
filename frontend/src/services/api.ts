@@ -1,5 +1,5 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { API_CONFIG } from '../config/constants.js';
+import { API_CONFIG } from '@/config/api';
+import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse } from '../types/api.js';
 import { logger } from '../utils/logger.js';
 import { authService } from './auth.js';
@@ -66,13 +66,31 @@ class ApiService {
                     return config;
                 }
 
-                const token = this.authToken ?? authService.getToken();
-                if (token) {
-                    this.authToken = token;
+                const applyHeader = (name: string, value: string) => {
+                    if (!config.headers) {
+                        config.headers = { [name]: value };
+                        return;
+                    }
+
+                    if (config.headers instanceof AxiosHeaders) {
+                        config.headers.set(name, value);
+                        return;
+                    }
+
                     config.headers = {
                         ...config.headers,
-                        Authorization: `Bearer ${token}`
+                        [name]: value
                     };
+                };
+
+                // ✅ CORRECCIÓN: Siempre intentar obtener el token y organización más recientes
+                const token = authService.getToken();
+                const currentUser = authService.getCurrentUser();
+                const organizationId = currentUser?.organizationId;
+
+                if (token) {
+                    this.authToken = token;
+                    applyHeader('Authorization', `Bearer ${token}`);
                     if (this.shouldLog()) {
                         logger.info('Request configurada con token', {
                             url: config.url,
@@ -80,8 +98,19 @@ class ApiService {
                             requestCount: this.requestCount
                         });
                     }
-                } else if (this.shouldLog()) {
-                    logger.warn('Request sin token', {
+                } else {
+                    // ✅ SIEMPRE loggear cuando no hay token (importante para debugging)
+                    logger.warn('⚠️ Request sin token - Usuario probablemente no autenticado', {
+                        url: config.url,
+                        method: config.method,
+                        hasAuthToken: !!this.authToken
+                    });
+                }
+
+                if (organizationId) {
+                    applyHeader('X-Organization-ID', organizationId);
+                } else if (token) {
+                    logger.warn('⚠️ Request autenticada sin organizationId disponible', {
                         url: config.url,
                         method: config.method
                     });
@@ -258,7 +287,7 @@ class ApiService {
     // Métodos específicos para reportes (puerto 9998)
     async getReports<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
         const reportsApi = axios.create({
-            baseURL: 'http://localhost:9998',
+            baseURL: `${API_CONFIG.BASE_URL}`,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -280,7 +309,7 @@ class ApiService {
 
     async postReports<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
         const reportsApi = axios.create({
-            baseURL: 'http://localhost:9998',
+            baseURL: `${API_CONFIG.BASE_URL}`,
             headers: {
                 'Content-Type': 'application/json'
             },

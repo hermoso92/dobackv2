@@ -43,7 +43,7 @@ Write-Host "Abre tu navegador y sigue estos pasos:`n" -ForegroundColor White
 
 Write-Host "1️⃣  Ve a: https://console.cloud.google.com/" -ForegroundColor Cyan
 Write-Host "2️⃣  Crea un nuevo proyecto llamado 'DobackSoft OAuth'" -ForegroundColor Cyan
-Write-Host "3️⃣  Habilita la API de Google+ (APIs & Services > Library)" -ForegroundColor Cyan
+Write-Host "3️⃣  Habilita la API de Google+ (APIs and Services > Library)" -ForegroundColor Cyan
 Write-Host "4️⃣  Configura OAuth Consent Screen:" -ForegroundColor Cyan
 Write-Host "     - Tipo: External" -ForegroundColor Gray
 Write-Host "     - App name: DobackSoft" -ForegroundColor Gray
@@ -127,10 +127,7 @@ FRONTEND_URL=http://localhost:5174
 # FRONTEND_URL=https://dobacksoft.com
 "@
 
-# Remover configuración antigua si existe
-$envContent = $envContent -replace "(?ms)# ═+\s*# 🔐 GOOGLE OAUTH.*?# ═+\s*GOOGLE_CLIENT_ID=.*?FRONTEND_URL=.*?(\r?\n)", ""
-
-# Añadir nueva configuración
+# Añadir nueva configuración al final del archivo
 $envContent = $envContent.TrimEnd() + "`n" + $googleOAuthConfig
 
 # Guardar

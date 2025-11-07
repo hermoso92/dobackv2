@@ -1,5 +1,5 @@
-import {
 import { logger } from '../utils/logger';
+import {
     Edit as EditIcon,
     ExitToApp as LogoutIcon,
     Person as PersonIcon,

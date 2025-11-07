@@ -1,6 +1,7 @@
 
-import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
+import { PostGISGeometryService } from './PostGISGeometryService';
 
 
 
@@ -75,11 +76,18 @@ interface AdvancedKPIData {
 }
 
 export class AdvancedKPICalculationService {
+    private postGISService: PostGISGeometryService;
+    private organizationId: string = '';
+
+    constructor() {
+        this.postGISService = new PostGISGeometryService(prisma);
+    }
 
     /**
      * Calcula y almacena KPIs avanzados para un vehículo en una fecha específica
      */
     async calculateAndStoreDailyKPIs(vehicleId: string, date: Date, organizationId: string): Promise<AdvancedKPIData> {
+        this.organizationId = organizationId;
         try {
             logger.info(`[AdvancedKPI] Iniciando cálculo de KPIs para vehículo ${vehicleId} en fecha ${date.toISOString().split('T')[0]}`);
 
@@ -107,12 +115,15 @@ export class AdvancedKPICalculationService {
             const zones = await this.getZones(organizationId);
 
             // 5. Calcular estados del vehículo
-            const vehicleStates = this.calculateVehicleStates(sessionData, zones);
+            const vehicleStates = await this.calculateVehicleStates(sessionData, zones);
 
             // 6. Calcular KPIs
             const kpiData = this.calculateKPIs(vehicleStates, sessionData.stabilityEvents);
 
-            // 7. Almacenar en base de datos
+            // 7. Obtener y aplicar segmentos operacionales reales
+            await this.applyOperationalSegments(sessions.map(s => s.id), kpiData);
+
+            // 8. Almacenar en base de datos
             await this.storeKPIData(vehicleId, date, organizationId, kpiData);
 
             logger.info(`[AdvancedKPI] KPIs calculados y almacenados exitosamente para vehículo ${vehicleId}`);
@@ -265,13 +276,13 @@ export class AdvancedKPICalculationService {
     /**
      * Calcula los estados del vehículo basándose en los datos GPS y rotativo
      */
-    private calculateVehicleStates(sessionData: any, zones: any[]): VehicleState[] {
+    private async calculateVehicleStates(sessionData: any, zones: any[]): Promise<VehicleState[]> {
         const states: VehicleState[] = [];
 
         // Procesar cada punto GPS
         for (let i = 0; i < sessionData.gpsPoints.length; i++) {
             const gps = sessionData.gpsPoints[i];
-            const zone = this.determineZone(gps.latitude, gps.longitude, zones);
+            const zone = await this.determineZone(gps.latitude, gps.longitude, zones);
             const rotativo = this.getRotativoState(gps.timestamp, sessionData.rotativoEvents);
 
             // Calcular velocidad real basada en distancia y tiempo
@@ -343,32 +354,37 @@ export class AdvancedKPICalculationService {
     }
 
     /**
-     * Determina la zona basándose en las coordenadas GPS
+     * Determina la zona basándose en las coordenadas GPS usando PostGIS
      */
-    private determineZone(lat: number, lon: number, zones: any[]): 'parque' | 'taller' | 'fuera' | 'zona_sensible' {
-        // Implementar lógica de geocercas usando PostGIS
-        // Por ahora, lógica simplificada
+    private async determineZone(lat: number, lon: number, zones: any[]): Promise<'parque' | 'taller' | 'fuera' | 'zona_sensible'> {
+        // Verificar cada zona usando PostGIS
         for (const zone of zones) {
-            if (zone.type === 'PARK' && this.isPointInZone(lat, lon, zone.geometry)) {
+            const isInside = await this.isPointInZone(lat, lon, zone.id);
+            if (isInside) {
+                if (zone.type === 'PARK') {
                 return 'parque';
             }
-            if (zone.type === 'WORKSHOP' && this.isPointInZone(lat, lon, zone.geometry)) {
+                if (zone.type === 'WORKSHOP') {
                 return 'taller';
             }
-            if (zone.type === 'SENSITIVE' && this.isPointInZone(lat, lon, zone.geometry)) {
+                if (zone.type === 'SENSITIVE') {
                 return 'zona_sensible';
+                }
             }
         }
         return 'fuera';
     }
 
     /**
-     * Verifica si un punto está dentro de una zona (simplificado)
+     * Verifica si un punto está dentro de una zona usando PostGIS
      */
-    private isPointInZone(lat: number, lon: number, geometry: any): boolean {
-        // Implementar lógica PostGIS real
-        // Por ahora, retornar false para simplificar
+    private async isPointInZone(lat: number, lon: number, zoneId: string): Promise<boolean> {
+        try {
+            return await this.postGISService.isPointInZone(lon, lat, zoneId, this.organizationId);
+        } catch (error) {
+            logger.warn(`[AdvancedKPI] Error verificando punto en zona:`, error);
         return false;
+        }
     }
 
     /**
@@ -538,10 +554,10 @@ export class AdvancedKPICalculationService {
         // Calcular tiempo total
         kpi.totalTiempo = kpi.tiempoEnParque + kpi.tiempoEnTaller + kpi.tiempoFueraParque + kpi.tiempoEnZonaSensible;
 
-        // Procesar eventos de estabilidad
-        this.processStabilityEvents(stabilityEvents, kpi);
+        // Procesar eventos de estabilidad con correlación de ubicación
+        this.processStabilityEvents(stabilityEvents, kpi, vehicleStates);
 
-        // Calcular claves operativas
+        // Calcular claves operativas (estos valores se sobrescribirán si existen segmentos)
         kpi.clave2Minutes = kpi.tiempoFueraParqueConRotativo;
         kpi.clave5Minutes = kpi.tiempoFueraParqueSinRotativo;
         kpi.outOfParkMinutes = kpi.tiempoFueraParque;
@@ -553,19 +569,84 @@ export class AdvancedKPICalculationService {
     }
 
     /**
-     * Procesa eventos de estabilidad
+     * Aplica los segmentos operacionales reales a los KPIs
      */
-    private processStabilityEvents(stabilityEvents: any[], kpi: AdvancedKPIData) {
+    private async applyOperationalSegments(sessionIds: string[], kpiData: AdvancedKPIData): Promise<void> {
+        try {
+            // Obtener segmentos operacionales de las sesiones
+            const segments = await prisma.operational_state_segments.findMany({
+                where: { sessionId: { in: sessionIds } },
+                select: { clave: true, durationSeconds: true }
+            });
+
+            if (segments.length === 0) {
+                logger.warn(`[AdvancedKPI] No hay segmentos operacionales para las sesiones`);
+                return;
+            }
+
+            // Calcular minutos por clave
+            let clave0 = 0; // En taller
+            let clave1 = 0; // En parque
+            let clave2 = 0; // Circulación con rotativo
+            let clave5 = 0; // Circulación sin rotativo
+
+            for (const segment of segments) {
+                const minutes = segment.durationSeconds / 60;
+                switch (segment.clave) {
+                    case 0: clave0 += minutes; break;
+                    case 1: clave1 += minutes; break;
+                    case 2: clave2 += minutes; break;
+                    case 5: clave5 += minutes; break;
+                }
+            }
+
+            // Aplicar valores correctos
+            kpiData.clave2Minutes = Math.round(clave2);
+            kpiData.clave5Minutes = Math.round(clave5);
+            kpiData.timeInWorkshop = Math.round(clave0);
+            kpiData.outOfParkMinutes = Math.round(clave2 + clave5);
+
+            logger.info(`[AdvancedKPI] Segmentos operacionales aplicados: clave2=${clave2.toFixed(1)}min, clave5=${clave5.toFixed(1)}min, taller=${clave0.toFixed(1)}min`);
+
+        } catch (error) {
+            logger.error(`[AdvancedKPI] Error aplicando segmentos operacionales:`, error);
+        }
+    }
+
+    /**
+     * Procesa eventos de estabilidad con correlación de ubicación
+     */
+    private processStabilityEvents(stabilityEvents: any[], kpi: AdvancedKPIData, vehicleStates: VehicleState[]) {
         for (const event of stabilityEvents) {
+            // Buscar el estado del vehículo más cercano al evento
+            const eventTime = new Date(event.timestamp).getTime();
+            let closestState: VehicleState | null = null;
+            let minDiff = Infinity;
+
+            for (const state of vehicleStates) {
+                const diff = Math.abs(state.timestamp.getTime() - eventTime);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestState = state;
+                }
+                // Si la diferencia es muy pequeña, no seguir buscando
+                if (diff < 5000) break; // 5 segundos
+            }
+
+            const zone = closestState?.zone || 'fuera';
+
             switch (event.type) {
                 case 'CRITICAL':
                     kpi.eventosCriticos++;
-                    // Determinar ubicación del evento (simplificado)
-                    kpi.eventosCriticosFueraParque++;
+                    if (zone === 'parque') kpi.eventosCriticosEnParque++;
+                    else if (zone === 'taller') kpi.eventosCriticosEnTaller++;
+                    else kpi.eventosCriticosFueraParque++;
                     break;
                 case 'DANGEROUS':
                     kpi.eventosPeligrosos++;
-                    kpi.eventosPeligrososFueraParque++;
+                    if (zone === 'parque') kpi.eventosPeligrososEnParque++;
+                    else if (zone === 'taller') kpi.eventosPeligrososEnTaller++;
+                    else kpi.eventosPeligrososFueraParque++;
                     break;
                 case 'MODERATE':
                     kpi.eventosModerados++;

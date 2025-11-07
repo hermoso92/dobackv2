@@ -212,7 +212,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/geofences" element={
                     <ProtectedRoute>
                         <Suspense fallback={<PageLoadingSpinner />}>
-                            <UnifiedGeofences />
+                            <GeofencesManager />
                         </Suspense>
                     </ProtectedRoute>
                 } />

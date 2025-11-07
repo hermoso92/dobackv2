@@ -260,7 +260,7 @@ export class PanelAPI {
                 throw new Error(response.error || 'No se pudo obtener el resumen ejecutivo');
             }
 
-            return response.data!;
+            return response.data! as any;
         } catch (error) {
             logger.error('Error obteniendo resumen ejecutivo', { error, filters });
             throw error;

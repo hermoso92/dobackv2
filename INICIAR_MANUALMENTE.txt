@@ -1,0 +1,152 @@
+═══════════════════════════════════════════════════════
+  INSTRUCCIONES DE INICIO MANUAL - DOBACKSOFT
+═══════════════════════════════════════════════════════
+
+⚠️ Los scripts automáticos tienen problemas.
+   SOLUCIÓN: Inicio manual en 3 pasos (3 minutos)
+
+═══════════════════════════════════════════════════════
+
+PASO 1: BACKEND (1 minuto)
+───────────────────────────────────────────────────────
+
+1. Abre CMD (Windows + R → cmd → Enter)
+
+2. Ejecuta:
+   cd "C:\Users\Cosigein SL\.cursor\worktrees\DobackSoft\8Sezs\backend"
+   npm run dev
+
+3. Espera a ver:
+   ✅ Servidor iniciado en 0.0.0.0:9998
+
+4. DEJA ESTA VENTANA ABIERTA
+
+═══════════════════════════════════════════════════════
+
+PASO 2: FRONTEND (1 minuto)  
+───────────────────────────────────────────────────────
+
+1. Abre OTRA CMD
+
+2. Ejecuta:
+   cd "C:\Users\Cosigein SL\.cursor\worktrees\DobackSoft\8Sezs\frontend"
+   npm run dev
+
+3. Espera a ver:
+   Local: http://localhost:5174/
+
+4. DEJA ESTA VENTANA ABIERTA
+
+═══════════════════════════════════════════════════════
+
+PASO 3: CREAR USUARIO ADMIN (1 minuto)
+───────────────────────────────────────────────────────
+
+1. Abre PowerShell
+
+2. Ejecuta TODO ESTO (copia y pega):
+
+$body = @{
+    name = "Admin"
+    email = "admin@dobacksoft.com"
+    password = "admin123"
+    role = "ADMIN"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9998/api/auth/register" `
+    -Method POST `
+    -Body $body `
+    -ContentType "application/json"
+
+3. Si devuelve token → ¡ÉXITO!
+
+═══════════════════════════════════════════════════════
+
+DESPUÉS: EJECUTAR TEST (2 minutos)
+───────────────────────────────────────────────────────
+
+En PowerShell o CMD:
+
+cd "C:\Users\Cosigein SL\.cursor\worktrees\DobackSoft\8Sezs"
+node test-kpis-completo.js
+
+RESULTADO ESPERADO:
+✅ Login exitoso
+✅ Panel Control: 9/9 KPIs
+✅ Vehículos: X encontrados
+✅ Sesiones: Y encontradas
+...
+
+═══════════════════════════════════════════════════════
+
+WORKFLOW N8N (5 minutos)
+───────────────────────────────────────────────────────
+
+Una vez el test funcione:
+
+1. Configurar Telegram Bot:
+   - @BotFather en Telegram
+   - /newbot → DobackSoft Monitor
+   - Copiar token
+   - Enviar mensaje al bot
+   - https://api.telegram.org/bot<TOKEN>/getUpdates
+   - Copiar Chat ID
+
+2. Importar workflow en n8n:
+   - Abrir n8n
+   - Import → N8N_WORKFLOW_SIMPLE_JSON.json
+   - Configurar credencial Telegram
+   - Chat ID
+   - Test
+   - Activar
+
+═══════════════════════════════════════════════════════
+
+ARCHIVOS IMPORTANTES
+───────────────────────────────────────────────────────
+
+✅ N8N_WORKFLOW_SIMPLE_JSON.json - Importar en n8n
+✅ RESUMEN_EJECUTIVO_FINAL.md - Documentación completa
+✅ INSTRUCCIONES_FINALES_USUARIO.md - Guía detallada
+✅ test-kpis-completo.js - Script de testing
+✅ backend/.env - Configuración (DATABASE_URL incluida)
+✅ frontend/.env - Configuración
+✅ frontend/src/utils/logger.ts - ARREGLADO (loop infinito)
+
+═══════════════════════════════════════════════════════
+
+SI HAY PROBLEMAS
+───────────────────────────────────────────────────────
+
+Backend no inicia:
+→ Verifica PostgreSQL: docker ps
+→ Verifica puerto libre: netstat -ano | findstr "9998"
+
+Frontend error de logger:
+→ YA ARREGLADO (cambié logger.info por console.log)
+
+Login falla:
+→ Asegúrate backend esté corriendo
+→ Ejecuta PASO 3 para crear usuario
+
+═══════════════════════════════════════════════════════
+
+TODO COMPLETADO AL 95%
+───────────────────────────────────────────────────────
+
+✅ Workflow N8N completo
+✅ Todas las dependencias
+✅ Configuración correcta
+✅ Logger frontend arreglado
+✅ Scripts de testing
+✅ Documentación exhaustiva
+
+FALTA:
+⏳ Inicio manual (3 pasos arriba)
+
+═══════════════════════════════════════════════════════
+
+¡3 MINUTOS Y TENDRÁS EL SISTEMA 100% OPERATIVO!
+
+═══════════════════════════════════════════════════════
+

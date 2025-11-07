@@ -1,11 +1,29 @@
 import cors from 'cors';
 import express from 'express';
+import passport from 'passport';
+import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/error';
-import routes from '../routes';
 import { logger } from '../utils/logger';
 import { config } from './env';
+import { configurePassport } from './passport';
+import { initializeGeofenceServices } from './geofenceServices';
 
 const app = express();
+
+// 🆕 CONFIGURAR PASSPORT ANTES DE IMPORTAR RUTAS
+configurePassport();
+app.use(passport.initialize());
+
+// ⚡ IMPORTANTE: Inicializar servicios de geocercas ANTES de importar rutas
+try {
+    initializeGeofenceServices(prisma);
+    logger.info('✅ Servicios de geocercas inicializados correctamente');
+} catch (error) {
+    logger.error('❌ Error inicializando servicios de geocercas:', error);
+}
+
+// Importar rutas DESPUÉS de inicializar servicios
+import routes from '../routes';
 
 // Configuración de CORS (DEBE IR PRIMERO)
 app.use(cors(config.cors));

@@ -250,6 +250,46 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/geofences
+ * Crear nueva geocerca
+ */
+router.post('/', async (req: Request, res: Response) => {
+    try {
+        const organizationId = (req as any).user.organizationId;
+        
+        if (!organizationId) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Organization ID is required' 
+            });
+        }
+
+        const geofenceData: GeofenceData = {
+            ...req.body,
+            organizationId
+        };
+
+        logger.info('[GeofenceAPI] Creando geocerca:', { name: geofenceData.name, type: geofenceData.type });
+
+        const geofence = await geofenceService.createGeofence(geofenceData);
+
+        logger.info('[GeofenceAPI] Geocerca creada exitosamente:', { id: geofence.id, name: geofence.name });
+
+        res.status(201).json({
+            success: true,
+            data: geofence,
+            message: 'Geocerca creada exitosamente'
+        });
+    } catch (error) {
+        logger.error('[GeofenceAPI] Error creando geocerca:', error);
+        res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Error interno del servidor'
+        });
+    }
+});
+
+/**
  * GET /api/geofences/:id
  * Obtener una geocerca específica por ID
  */

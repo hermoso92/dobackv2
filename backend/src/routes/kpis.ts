@@ -1,11 +1,14 @@
 /**
  * Rutas API para KPIs operativos.
  * Implementación TypeScript para backend Node.js/Express
- * ACTUALIZADO: Usa kpiCalculator con datos reales
+ * ACTUALIZADO: Usa kpiCalculator con datos reales + Redis Caché
+ * 06/Nov/2025: Añadida validación organizationId (ChatGPT P0 CRÍTICO)
  */
 import { Request, Response, Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
+import { validateOrganization } from '../middleware/validateOrganization';
+import { cacheMiddleware } from '../middleware/cache';
 import { calcularTiemposPorClave } from '../services/keyCalculator';
 import { kpiCacheService } from '../services/KPICacheService';
 import { createLogger } from '../utils/logger';
@@ -83,7 +86,12 @@ router.get('/test', authenticate, async (req: Request, res: Response) => {
  * GET /api/v1/kpis/summary
  * Retorna resumen completo con todos los KPIs
  */
-router.get('/summary', authenticate, async (req: Request, res: Response) => {
+// ✅ CHATGPT P0 CRÍTICO: Validar organizationId antes de procesar
+router.get('/summary', 
+    authenticate, 
+    validateOrganization,
+    cacheMiddleware({ ttl: 300, keyPrefix: 'kpis' }), // ✅ Caché de 5 minutos
+    async (req: Request, res: Response) => {
     try {
         logger.info('🚀 Iniciando /api/kpis/summary');
 
@@ -164,12 +172,12 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         const { PrismaClient } = await import('@prisma/client');
         const prisma = new PrismaClient();
 
-        // DEBUG: Verificar que stabilityEvent esté disponible
-        logger.info('🔍 Verificando prisma.stabilityEvent (nuevo):', {
+        // DEBUG: Verificar que stability_events esté disponible
+        logger.info('🔍 Verificando prisma.stability_events (tabla correcta):', {
             prismaExists: !!prisma,
-            stabilityEventExists: !!(prisma && prisma.stabilityEvent),
+            stabilityEventsExists: !!(prisma && prisma.stability_events),
             prismaType: typeof prisma,
-            stabilityEventType: typeof (prisma && prisma.stabilityEvent),
+            stabilityEventsType: typeof (prisma && prisma.stability_events),
             prismaConstructor: prisma?.constructor?.name
         });
 
@@ -258,8 +266,16 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         if (sessionIds.length > 0) {
             try {
                 // Calcular estados operacionales usando keyCalculator
-                logger.info('🔑 Calculando estados operacionales...');
+                logger.info('🔑 Calculando estados operacionales...', { sessionIdsCount: sessionIds.length });
                 estadosOperacionales = await calcularTiemposPorClave(sessionIds);
+                logger.info('🔍 DEBUG: estadosOperacionales recibido:', {
+                    total_segundos: estadosOperacionales.total_segundos,
+                    clave0: estadosOperacionales.clave0_segundos,
+                    clave2: estadosOperacionales.clave2_segundos,
+                    clave3: estadosOperacionales.clave3_segundos,
+                    clave4: estadosOperacionales.clave4_segundos,
+                    clave5: estadosOperacionales.clave5_segundos
+                });
 
                 // Convertir a formato esperado
                 const stateNames = {
@@ -276,7 +292,7 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
 
                 // Si keyCalculator devolvió valores en 0, calcular tiempos básicos
                 if (estadosOperacionales.total_segundos === 0) {
-                    logger.info('⚠️ KeyCalculator devolvió 0, calculando tiempos básicos...');
+                    logger.warn('⚠️ FALLBACK: KeyCalculator devolvió 0, usando tiempos básicos (TODAS LAS CLAVES IGUALES)');
 
                     // Calcular tiempo total de las sesiones
                     const sessionDurations = sessions.map(s => {
@@ -302,8 +318,10 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
                     }
                 } else {
                     // Usar datos del keyCalculator (formato: clave0_segundos, clave1_segundos, etc.)
+                    logger.info('✅ USANDO DATOS REALES de keyCalculator (cada clave diferente)');
                     for (let clave = 0; clave <= 5; clave++) {
                         const duration = estadosOperacionales[`clave${clave}_segundos`] || 0;
+                        logger.info(`   Clave ${clave}: ${duration}s`);
 
                         states.push({
                             key: clave,
@@ -388,28 +406,45 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
                 logger.info(`📍 GPS: ${gpsData.length} puntos totales, ${validPoints} válidos, ${totalKm.toFixed(2)}km calculados`);
                 logger.info(`🚗 Velocidad: ${speedCount} puntos válidos, promedio ${averageSpeed.toFixed(2)} km/h`);
 
-                // Obtener datos de rotativo
-                const rotativoData = await prisma.rotativoMeasurement.findMany({
-                    where: { sessionId: { in: sessionIds } },
-                    select: { state: true, timestamp: true }
-                });
+                // ✅ CHATGPT P0-1: Obtener tiempo de rotativo desde segmentos (clave 2)
+                // Antes: contaba mediciones de rotativo (incorrecto)
+                // Ahora: suma duración de segmentos clave 2 (EMERGENCIA = rotativo ON)
+                const rotativoResult = await prisma.$queryRaw<Array<{ total_seconds: number }>>`
+                    SELECT COALESCE(SUM("durationSeconds"), 0)::int AS total_seconds
+                    FROM operational_state_segments seg
+                    JOIN "Session" s ON s.id = seg."sessionId"
+                    WHERE s."organizationId" = ${organizationId}
+                      AND seg.clave = 2
+                      AND seg."startTime" >= ${dateFrom}::timestamp
+                      AND seg."endTime" <= ${dateTo}::timestamp
+                `;
 
-                const rotativoOn = rotativoData.filter(r => r.state === 'ON' || r.state === '1').length;
-                const rotativoTotal = rotativoData.length;
-                const rotativoPercentage = rotativoTotal > 0 ? (rotativoOn / rotativoTotal) * 100 : 0;
+                const rotativo_on_seconds = rotativoResult[0]?.total_seconds || 0;
+
+                // ✅ Validación: advertir si no hay segmentos pero sí hay sesiones
+                if (rotativo_on_seconds === 0 && sessionIds.length > 0) {
+                    logger.warn('⚠️ No hay segmentos de clave 2 (EMERGENCIA), verificar post-procesamiento', {
+                        organizationId,
+                        sessionCount: sessionIds.length,
+                        dateRange: { from: dateFrom, to: dateTo }
+                    });
+                }
+
+                // Calcular porcentaje de rotativo sobre tiempo total
+                const rotativoPercentage = totalTime > 0 ? (rotativo_on_seconds / totalTime) * 100 : 0;
 
                 summary.activity = {
-                    km_total: Math.round(totalKm * 10) / 10, // Redondear a 1 decimal
+                    km_total: Math.round(totalKm * 10) / 10,
                     driving_hours: Math.round((timeOutside / 3600) * 10) / 10,
                     driving_hours_formatted: formatDuration(timeOutside),
-                    rotativo_on_seconds: rotativoOn * 15, // Asumiendo 15s por muestra
+                    rotativo_on_seconds,  // ✅ Desde segmentos oficiales
                     rotativo_on_percentage: Math.round(rotativoPercentage * 10) / 10,
-                    rotativo_on_formatted: formatDuration(rotativoOn * 15),
+                    rotativo_on_formatted: formatDuration(rotativo_on_seconds),
                     emergency_departures: Math.floor((estadosOperacionales?.clave2_segundos || 0) / 60) || 0,
-                    average_speed: Math.round(averageSpeed * 10) / 10 // Velocidad promedio en km/h
+                    average_speed: Math.round(averageSpeed * 10) / 10
                 };
 
-                logger.info(`✅ Actividad calculada: ${totalKm}km, ${rotativoPercentage}% rotativo`);
+                logger.info(`✅ Actividad calculada: ${totalKm}km, ${rotativoPercentage.toFixed(1)}% rotativo (${rotativo_on_seconds}s desde segmentos)`);
 
             } catch (e: any) {
                 logger.error('❌ Error calculando métricas de actividad:', e);
@@ -421,31 +456,101 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
                 logger.info(`🔍 Session IDs para eventos: ${sessionIds.length} IDs`);
                 logger.info(`🔍 Primeros 5 session IDs:`, sessionIds.slice(0, 5));
 
-                // Usar query SQL directa para evitar problemas con el modelo Prisma
-                const stabilityEvents: any[] = await prisma.$queryRaw`
-                    SELECT details, session_id
-                    FROM stability_events
-                    WHERE session_id::text = ANY(${sessionIds}::text[])
-                `;
+                // Obtener eventos con datos relacionados usando Prisma ORM
+                logger.info(`🔍 Obteniendo eventos para ${sessionIds.length} sesiones...`);
+                
+                const stabilityEventsRaw = await prisma.stability_events.findMany({
+                    where: {
+                        session_id: { in: sessionIds }
+                    },
+                    include: {
+                        Session: {
+                            include: {
+                                Vehicle: true  // ✅ Mayúscula (nombre correcto del modelo)
+                            }
+                        }
+                    },
+                    orderBy: {
+                        timestamp: 'desc'
+                    }
+                });
 
-                logger.info(`📊 Eventos encontrados: ${stabilityEvents.length}`);
+                logger.info(`📊 Eventos encontrados: ${stabilityEventsRaw.length}`);
+
+                // Transformar eventos a formato simple
+                const stabilityEvents: any[] = stabilityEventsRaw.map(e => ({
+                    details: e.details,
+                    session_id: e.session_id,
+                    timestamp: e.timestamp,
+                    type: e.type,
+                    session_date: e.Session?.startTime,
+                    vehicle_identifier: e.Session?.Vehicle?.identifier || 'N/A',  // ✅ Vehicle con mayúscula
+                    vehicle_name: e.Session?.Vehicle?.name || ''  // ✅ Vehicle con mayúscula
+                }));
 
                 if (stabilityEvents.length > 0) {
                     logger.info(`📊 Primeros 3 eventos:`, stabilityEvents.slice(0, 3).map(e => ({
-                        session_id: e.session_id,
-                        si: e.details?.valores?.si
+                        vehicle: e.vehicle_identifier,
+                        type: e.type,
+                        timestamp: e.timestamp,
+                        si: e.details?.si || e.details?.valores?.si
                     })));
                 }
 
-                // Calcular severidades basándose en SI
+                // Calcular severidades basándose en SI y agrupar por tipo
                 let critical = 0, moderate = 0, light = 0, noSi = 0;
+                const eventsByType: Record<string, number> = {};
+                const eventsBySeverity: Record<string, any[]> = {
+                    critical: [],
+                    moderate: [],
+                    light: []
+                };
+
                 stabilityEvents.forEach(evento => {
-                    // ✅ CORRECCIÓN: SI está en details.si, no en details.valores.si
+                    // ✅ CORRECCIÓN: SI está en details.si o details.valores.si
                     const si = evento.details?.si || evento.details?.valores?.si;
+                    
+                    // ✅ Extraer tipo desde múltiples fuentes posibles
+                    let tipo = evento.type || 'SIN_TIPO';
+                    
+                    // Mapear tipos técnicos a nombres legibles
+                    const tipoMap: Record<string, string> = {
+                        'dangerous_drift': 'Derrape Peligroso',
+                        'rollover_risk': 'Riesgo de Vuelco',
+                        'hard_braking': 'Frenada Brusca',
+                        'sharp_turn': 'Giro Brusco',
+                        'excessive_acceleration': 'Aceleración Excesiva',
+                        'high_lateral_g': 'Fuerza Lateral Alta',
+                        'stability_loss': 'Pérdida de Estabilidad'
+                    };
+                    
+                    const tipoLegible = tipoMap[tipo] || tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    // Contar por tipo
+                    eventsByType[tipoLegible] = (eventsByType[tipoLegible] || 0) + 1;
+                    
+                    // Clasificar por severidad y guardar detalles útiles para el cliente
                     if (si !== undefined && si !== null) {
-                        if (si < 0.20) critical++;
-                        else if (si < 0.35) moderate++;
-                        else if (si < 0.50) light++;
+                        const eventoDetalle = {
+                            session_id: evento.session_id,
+                            vehicle_identifier: evento.vehicle_identifier || 'N/A',
+                            vehicle_name: evento.vehicle_name || '',
+                            session_date: evento.session_date,
+                            tipo: tipoLegible,
+                            si: si,
+                            timestamp: evento.timestamp
+                        };
+
+                        if (si < 0.20) {
+                            critical++;
+                            eventsBySeverity.critical.push(eventoDetalle);
+                        } else if (si < 0.35) {
+                            moderate++;
+                            eventsBySeverity.moderate.push(eventoDetalle);
+                        } else if (si < 0.50) {
+                            light++;
+                            eventsBySeverity.light.push(eventoDetalle);
+                        }
                     } else {
                         noSi++;
                     }
@@ -455,7 +560,9 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
                     total_incidents: stabilityEvents.length,
                     critical,
                     moderate,
-                    light
+                    light,
+                    por_tipo: eventsByType,
+                    eventos_detallados: eventsBySeverity
                 };
 
                 logger.info(`✅ Estabilidad calculada: ${stabilityEvents.length} eventos totales`);
@@ -477,8 +584,53 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
 
         // El cálculo de estabilidad ya se hizo arriba, no duplicar
 
+        // Calcular quality metrics (índice de estabilidad)
+        try {
+            logger.info('📊 Calculando quality metrics...');
+            const siAggregate = await prisma.stabilityMeasurement.aggregate({
+                where: { sessionId: { in: sessionIds } },
+                _avg: { si: true },
+                _count: { si: true }
+            });
+
+            const indicePromedio = siAggregate._avg.si || 0;
+            const totalMuestras = siAggregate._count.si || 0;
+
+            let calificacion = 'DEFICIENTE';
+            let estrellas = '⭐⭐';
+
+            if (indicePromedio >= 0.90) {
+                calificacion = 'EXCELENTE';
+                estrellas = '⭐⭐⭐⭐⭐';
+            } else if (indicePromedio >= 0.85) {
+                calificacion = 'BUENA';
+                estrellas = '⭐⭐⭐⭐';
+            } else if (indicePromedio >= 0.75) {
+                calificacion = 'REGULAR';
+                estrellas = '⭐⭐⭐';
+            }
+
+            summary.quality = {
+                indice_promedio: indicePromedio,
+                calificacion,
+                estrellas,
+                total_muestras: totalMuestras
+            };
+
+            logger.info(`✅ Quality calculado: SI=${indicePromedio.toFixed(3)}, ${calificacion} ${estrellas}`);
+        } catch (e: any) {
+            logger.error('❌ Error calculando quality metrics:', e);
+            summary.quality = {
+                indice_promedio: 0,
+                calificacion: 'N/A',
+                estrellas: '',
+                total_muestras: 0
+            };
+        }
+
         logger.info('✅ Enviando respuesta con KPIs calculados');
         logger.info(`📊 Resumen final - Stability:`, summary.stability);
+        logger.info(`📊 Resumen final - Quality:`, summary.quality);
         return res.json({
             success: true,
             data: summary
@@ -631,11 +783,11 @@ router.get('/summary', authenticate, async (req: Request, res: Response) => {
         const totalVehicles = new Set(sessions.map(s => s.vehicleId)).size;
 
         // Obtener eventos de estabilidad (filtrando por timestamp si aplica)
-        const eventsWhere: any = { sessionId: { in: sessionIds } };
+        const eventsWhere: any = { session_id: { in: sessionIds } };
         if (usedMeasurementRange && dateFrom && dateToExclusive) {
             eventsWhere.timestamp = { gte: dateFrom, lt: dateToExclusive };
         }
-        const events = await prisma.stabilityEvent.findMany({
+        const events = await prisma.stability_events.findMany({
             where: eventsWhere,
             select: { type: true, session_id: true }
         });
