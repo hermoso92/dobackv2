@@ -1,3 +1,0 @@
-GPS RealTime;21/10/2025-21:57:50;Sesión:8
-HoraRaspberry,Fecha,Hora(GPS),Latitud,Longitud,Altitud,HDOP,Fix,NumSats,Velocidad(km/h)
-sin datos GPS
