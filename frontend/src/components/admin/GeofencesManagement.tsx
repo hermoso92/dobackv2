@@ -95,7 +95,7 @@ export const GeofencesManagement: React.FC = () => {
         try {
             setSyncing(true);
             // Llamar al script de importación desde Radar.com
-            const response = await apiService.post('/api/geofences/sync-radar', {});
+            const response = await apiService.post('/api/geofences/sync-radar', {}) as any;
 
             if (response.data?.success) {
                 logger.info('Geocercas sincronizadas desde Radar.com');

@@ -66,10 +66,21 @@ export const DEFAULT_HEADERS = {
     'Content-Type': 'application/json',
 } as const;
 
-// Configuración de timeout
+// Configuración completa de la API
 export const API_CONFIG = {
-    TIMEOUT: API_TIMEOUT,
     BASE_URL: API_BASE_URL,
+    TIMEOUTS: {
+        REQUEST: API_TIMEOUT,
+        AUTH: 10000, // 10 segundos para autenticación
+        UPLOAD: 300000, // 5 minutos para uploads
+    },
+    RETRY: {
+        DELAY: 1000, // 1 segundo entre reintentos
+        MAX_ATTEMPTS: 3,
+    },
+    HEADERS: {
+        'Content-Type': 'application/json',
+    },
 } as const;
 
 // Función helper para crear headers con autenticación
@@ -89,4 +100,42 @@ export const createOrgHeaders = (token: string, organizationId: string) => ({
 export const MAP_CONFIG = {
     TOMTOM_KEY: process.env.REACT_APP_TOMTOM_API_KEY || 'u8wN3BM4AMzDGGC76lLF14vHblDP37HG',
     RADAR_KEY: process.env.REACT_APP_RADAR_API_KEY || '',
+    GOOGLE_MAPS_KEY: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+} as const;
+
+// Configuración de Google Maps APIs
+export const GOOGLE_MAPS_CONFIG = {
+    API_KEY: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+    
+    // Endpoints de Google Maps APIs
+    ROUTES_API: 'https://routes.googleapis.com/directions/v2:computeRoutes',
+    ROADS_API: 'https://roads.googleapis.com/v1/snapToRoads',
+    GEOCODING_API: 'https://maps.googleapis.com/maps/api/geocode/json',
+    REVERSE_GEOCODING_API: 'https://maps.googleapis.com/maps/api/geocode/json',
+    ELEVATION_API: 'https://maps.googleapis.com/maps/api/elevation/json',
+    PLACES_API: 'https://places.googleapis.com/v1/places',
+    PLACES_NEARBY_API: 'https://places.googleapis.com/v1/places:searchNearby',
+    DISTANCE_MATRIX_API: 'https://maps.googleapis.com/maps/api/distancematrix/json',
+    
+    // Configuraciones por defecto
+    LANGUAGE: 'es',
+    REGION: 'ES',
+    
+    // Límites de rate limiting (requests por segundo)
+    RATE_LIMITS: {
+        GEOCODING: 50,  // 50 req/s
+        ROUTES: 100,    // 100 req/s
+        ROADS: 200,     // 200 req/s
+        ELEVATION: 100, // 100 req/s
+        PLACES: 100,    // 100 req/s
+    },
+    
+    // Cache TTL (en milisegundos)
+    CACHE_TTL: {
+        GEOCODING: 7 * 24 * 60 * 60 * 1000,  // 7 días
+        ROUTES: 24 * 60 * 60 * 1000,          // 1 día
+        ROADS: 24 * 60 * 60 * 1000,           // 1 día
+        ELEVATION: 30 * 24 * 60 * 60 * 1000,  // 30 días (datos estáticos)
+        PLACES: 7 * 24 * 60 * 60 * 1000,      // 7 días
+    },
 } as const;

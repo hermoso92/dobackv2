@@ -9,6 +9,7 @@ import { StabilityEvent } from '../../api/kpi';
 import {
     getViolationColor
 } from '../../config/dgtVehicleCategories';
+import { getOrganizationId } from '../../config/organization';
 import { apiService } from '../../services/api';
 import { SpeedViolation } from '../../types/deviceControl';
 import { logger } from '../../utils/logger';
@@ -60,6 +61,8 @@ const VelocityMapWithDGTFilters: React.FC<VelocityMapWithDGTFiltersProps> = ({
 
             // Construir parámetros de consulta
             const params = new URLSearchParams();
+            // Asegurar que organizationId siempre esté presente
+            params.append('organizationId', getOrganizationId());
             if (vehicleIds && vehicleIds.length > 0) {
                 params.append('vehicleIds', vehicleIds.join(','));
             }

@@ -284,3 +284,15 @@ node scripts/analisis/migrar-console-to-logger.js --dry-run
 
 *"La arquitectura limpia no es un destino, es un viaje continuo"*
 
+
+
+
+
+
+
+
+
+
+
+
+

@@ -88,13 +88,18 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
         });
 
         // Ajustar vista si hay geofences
-        if (geofences.length > 0) {
-            const bounds = markersRef.current.getBounds();
-            if (bounds.isValid()) {
-                mapInstanceRef.current.fitBounds(bounds, {
-                    padding: [30, 30],
-                    maxZoom: 15
-                });
+        if (geofences.length > 0 && markersRef.current.getLayers().length > 0) {
+            try {
+                const bounds = markersRef.current.getBounds();
+                if (bounds.isValid()) {
+                    mapInstanceRef.current.fitBounds(bounds, {
+                        padding: [30, 30],
+                        maxZoom: 15
+                    });
+                }
+            } catch (err) {
+                logger.warn('No se pudo calcular bounds, usando centro de Madrid', err);
+                mapInstanceRef.current.setView(madridCenter, 11);
             }
         } else {
             // Si no hay geofences, centrar en Madrid
@@ -289,17 +294,17 @@ export const GeofenceMap: React.FC<GeofenceMapProps> = ({
                     Visualización de todas las geofences activas con sus zonas de influencia
                 </Typography>
 
-                <Box
-                    ref={mapRef}
-                    sx={{
-                        height,
-                        width: '100%',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        position: 'relative',
-                        border: '2px solid',
-                        borderColor: 'divider',
-                        boxShadow: 2,
+                    <Box
+                        ref={mapRef}
+                        sx={{
+                            height: height || '800px', // ✅ Altura más grande por defecto
+                            width: '100%',
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            border: '2px solid',
+                            borderColor: 'divider',
+                            boxShadow: 2,
                         '& .leaflet-control-zoom': {
                             borderRadius: '8px !important',
                         },

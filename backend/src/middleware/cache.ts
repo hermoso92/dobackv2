@@ -1,129 +1,222 @@
-import { NextFunction, Request, Response } from 'express';
-import NodeCache from 'node-cache';
-import { logger } from '../utils/logger';
+/**
+ * 🚀 CACHE MIDDLEWARE
+ * 
+ * Middleware para cachear responses de endpoints
+ * Reduce latencia en endpoints de lectura frecuente
+ * 
+ * @version 1.0
+ * @date 2025-11-03
+ */
 
-interface CacheConfig {
-    ttl: number; // Tiempo de vida en segundos
-    checkperiod?: number; // Período de revisión en segundos
-    useClones?: boolean; // Usar clones de objetos
+import { Request, Response, NextFunction } from 'express';
+import { redisService } from '../services/RedisService';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('CacheMiddleware');
+
+interface CacheMiddlewareOptions {
+    ttl?: number; // Time to live en segundos
+    keyPrefix?: string; // Prefijo para las claves
+    varyBy?: string[]; // Headers para variar el caché (ej: ['organizationId'])
 }
 
-interface CacheStats {
-    hits: number;
-    misses: number;
-    keys: number;
-    ksize: number;
-    vsize: number;
-}
-
-// Crear instancia de caché
-const cache = new NodeCache({
-    stdTTL: 300, // 5 minutos por defecto
-    checkperiod: 60, // Revisar cada minuto
-    useClones: false // No usar clones para mejorar rendimiento
-});
-
-// Generar clave de caché
-const generateCacheKey = (req: Request): string => {
-    const key = `${req.method}:${req.originalUrl}`;
-    const queryParams = Object.keys(req.query)
-        .sort()
-        .map((k) => `${k}=${req.query[k]}`)
-        .join('&');
-    return queryParams ? `${key}?${queryParams}` : key;
-};
-
-// Middleware de caché
-export const cacheMiddleware = (config?: Partial<CacheConfig>) => {
-    const ttl = config?.ttl || 300;
-
-    return (req: Request, res: Response, next: NextFunction) => {
-        // Solo cachear peticiones GET
+/**
+ * Middleware para cachear responses
+ * 
+ * @example
+ * router.get('/api/kpis/summary',
+ *   authenticate,
+ *   cacheMiddleware({ ttl: 300, keyPrefix: 'kpis' }),
+ *   controller.getSummary
+ * );
+ */
+export function cacheMiddleware(options: CacheMiddlewareOptions = {}) {
+    const ttl = options.ttl || 300; // Default: 5 minutos
+    const keyPrefix = options.keyPrefix || 'cache';
+    const varyBy = options.varyBy || [];
+    
+    return async (req: Request, res: Response, next: NextFunction) => {
+        // Solo cachear GET requests
         if (req.method !== 'GET') {
             return next();
         }
-
-        const key = generateCacheKey(req);
-        const cachedResponse = cache.get(key);
-
-        if (cachedResponse) {
-            logger.debug('Cache hit', { key });
-            return res.json(cachedResponse);
+        
+        // Si Redis no está conectado, skip caché
+        if (!redisService.isConnected()) {
+            logger.debug('Redis no disponible, saltando caché');
+            return next();
         }
-
-        // Capturar la respuesta
-        const originalJson = res.json;
-        res.json = function (body) {
-            cache.set(key, body, ttl);
-            logger.debug('Cache set', { key, ttl });
-            return originalJson.call(this, body);
-        };
-
-        next();
-    };
-};
-
-// Middleware para invalidar caché
-export const invalidateCacheMiddleware = (pattern?: string) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-        if (pattern) {
-            const keys = cache.keys().filter((key) => key.includes(pattern));
-            cache.del(keys);
-            logger.debug('Cache invalidated by pattern', { pattern, count: keys.length });
-        } else {
-            cache.flushAll();
-            logger.debug('Cache flushed');
+        
+        try {
+            // Construir clave de caché
+            const cacheKey = buildCacheKey(req, keyPrefix, varyBy);
+            
+            // Intentar obtener de caché
+            const cached = await redisService.get<any>(cacheKey);
+            
+            if (cached) {
+                logger.info('✅ Cache HIT', { key: cacheKey });
+                
+                // Agregar header indicando que viene de caché
+                res.setHeader('X-Cache', 'HIT');
+                res.setHeader('X-Cache-Key', cacheKey);
+                
+                return res.json(cached);
+            }
+            
+            logger.debug('⚠️ Cache MISS', { key: cacheKey });
+            res.setHeader('X-Cache', 'MISS');
+            res.setHeader('X-Cache-Key', cacheKey);
+            
+            // Interceptar el response para guardarlo en caché
+            const originalJson = res.json.bind(res);
+            
+            res.json = function(data: any) {
+                // Guardar en caché de forma asíncrona (no bloqueante)
+                redisService.set(cacheKey, data, { ttl })
+                    .then(() => {
+                        logger.debug('Respuesta guardada en caché', { key: cacheKey });
+                    })
+                    .catch((error) => {
+                        logger.error('Error guardando en caché', { key: cacheKey, error });
+                    });
+                
+                return originalJson(data);
+            };
+            
+            next();
+            
+        } catch (error: any) {
+            logger.error('Error en cache middleware', { error: error.message });
+            // En caso de error, continuar sin caché
+            next();
         }
-        next();
     };
-};
+}
 
-// Middleware para estadísticas de caché
-export const cacheStatsMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    const stats = cache.getStats();
-    (req as any).cacheStats = {
-        hits: stats.hits,
-        misses: stats.misses,
-        keys: cache.keys().length,
-        ksize: stats.ksize,
-        vsize: stats.vsize
-    };
-    next();
-};
-
-// Funciones de utilidad
-export const getCacheStats = (): CacheStats => {
-    const stats = cache.getStats();
-    return {
-        hits: stats.hits,
-        misses: stats.misses,
-        keys: cache.keys().length,
-        ksize: stats.ksize,
-        vsize: stats.vsize
-    };
-};
-
-export const clearCache = (pattern?: string): void => {
-    if (pattern) {
-        const keys = cache.keys().filter((key) => key.includes(pattern));
-        cache.del(keys);
-        logger.debug('Cache cleared by pattern', { pattern, count: keys.length });
-    } else {
-        cache.flushAll();
-        logger.debug('Cache cleared');
+/**
+ * Construir clave de caché basada en request
+ */
+function buildCacheKey(req: Request, prefix: string, varyBy: string[]): string {
+    const parts = [prefix];
+    
+    // Agregar path
+    parts.push(req.path.replace(/\//g, ':'));
+    
+    // Agregar query params (ordenados para consistencia)
+    const queryKeys = Object.keys(req.query).sort();
+    if (queryKeys.length > 0) {
+        const queryString = queryKeys
+            .map(key => `${key}=${req.query[key]}`)
+            .join('&');
+        parts.push(queryString);
     }
-};
+    
+    // Agregar headers especificados en varyBy
+    for (const header of varyBy) {
+        const value = req.get(header) || req.headers[header.toLowerCase()];
+        if (value) {
+            parts.push(`${header}:${value}`);
+        }
+    }
+    
+    // Agregar organizationId si está en el user
+    const user = (req as any).user;
+    if (user?.organizationId) {
+        parts.push(`org:${user.organizationId}`);
+    }
+    
+    return parts.join(':');
+}
 
-export const setCacheValue = (key: string, value: any, ttl?: number): void => {
-    cache.set(key, value, ttl);
-    logger.debug('Cache value set', { key, ttl });
-};
+/**
+ * Middleware para invalidar caché por patrón
+ * 
+ * Usar en endpoints que modifican datos (POST, PUT, DELETE)
+ * 
+ * @example
+ * router.post('/api/sessions',
+ *   authenticate,
+ *   invalidateCachePattern('kpis:*'),
+ *   controller.createSession
+ * );
+ */
+export function invalidateCachePattern(pattern: string) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        // Ejecutar después de que el handler termine
+        res.on('finish', async () => {
+            // Solo invalidar si la operación fue exitosa (2xx)
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                    const deleted = await redisService.delPattern(pattern);
+                    
+                    if (deleted > 0) {
+                        logger.info('🗑️ Caché invalidado', { pattern, deleted });
+                    }
+                } catch (error: any) {
+                    logger.error('Error invalidando caché', { pattern, error: error.message });
+                }
+            }
+        });
+        
+        next();
+    };
+}
 
-export const getCacheValue = <T>(key: string): T | undefined => {
-    return cache.get<T>(key);
-};
+/**
+ * Middleware para invalidar caché por organización
+ * 
+ * Invalida todo el caché relacionado con la organización del usuario
+ */
+export function invalidateOrgCache() {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        res.on('finish', async () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                const user = (req as any).user;
+                
+                if (user?.organizationId) {
+                    try {
+                        const pattern = `*:org:${user.organizationId}*`;
+                        const deleted = await redisService.delPattern(pattern);
+                        
+                        if (deleted > 0) {
+                            logger.info('🗑️ Caché de organización invalidado', {
+                                organizationId: user.organizationId,
+                                deleted
+                            });
+                        }
+                    } catch (error: any) {
+                        logger.error('Error invalidando caché de organización', { error: error.message });
+                    }
+                }
+            }
+        });
+        
+        next();
+    };
+}
 
-export const deleteCacheValue = (key: string): void => {
-    cache.del(key);
-    logger.debug('Cache value deleted', { key });
-};
+/**
+ * Endpoint de health check para Redis
+ */
+export async function cacheHealthCheck(req: Request, res: Response) {
+    try {
+        const stats = await redisService.getStats();
+        
+        res.json({
+            success: true,
+            redis: {
+                connected: stats.connected,
+                dbSize: stats.dbSize,
+                usedMemory: stats.usedMemory,
+                hitRate: stats.hitRate ? `${stats.hitRate.toFixed(2)}%` : 'N/A'
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            error: 'Error obteniendo estado de Redis',
+            message: error.message
+        });
+    }
+}

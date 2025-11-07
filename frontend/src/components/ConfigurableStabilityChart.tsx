@@ -26,6 +26,7 @@ import {
     YAxis
 } from 'recharts';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 // Tipos de datos
 interface StabilityDataPoint {

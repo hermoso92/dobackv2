@@ -1,193 +1,298 @@
-# ============================================
-# DOBACKSOFT - SCRIPT DE INICIO SIMPLIFICADO
-# ============================================
+# Script único de inicio para DobackSoft V3
+# Método oficial para iniciar todo el sistema
 
-Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "  INICIANDO DOBACKSOFT" -ForegroundColor Cyan
-Write-Host "=========================================" -ForegroundColor Cyan
-
-# 1. DETENER PROCESOS ANTERIORES
-Write-Host "`n[1/5] Deteniendo procesos anteriores..." -ForegroundColor Yellow
-
-# Detener todos los procesos node
-Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
-
-# Liberar puertos específicos
-$ports = @(9998, 5174)
-foreach ($port in $ports) {
-    $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if ($conn) {
-        Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
-    }
-}
-
-Write-Host "✅ Procesos detenidos y puertos liberados" -ForegroundColor Green
-Start-Sleep -Seconds 2
-
-# 2. VERIFICAR ARCHIVOS
-Write-Host "`n[2/5] Verificando archivos..." -ForegroundColor Yellow
-
-if (-not (Test-Path "backend\src\index.ts")) {
-    Write-Host "❌ ERROR: No existe backend\src\index.ts" -ForegroundColor Red
-    exit 1
-}
-
-if (-not (Test-Path "frontend\package.json")) {
-    Write-Host "❌ ERROR: No existe frontend\package.json" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "✅ Archivos verificados" -ForegroundColor Green
-
-# 3. CREAR CARPETA DE LOGS
-Write-Host "`n[3/5] Preparando logs..." -ForegroundColor Yellow
-
-if (-not (Test-Path "logs")) {
-    New-Item -ItemType Directory -Path "logs" | Out-Null
-}
-
-$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$backendLog = "logs\backend_$timestamp.log"
-$frontendLog = "logs\frontend_$timestamp.log"
-
-Write-Host "✅ Logs preparados" -ForegroundColor Green
-
-# 4. INICIAR BACKEND
-Write-Host "`n[4/5] Iniciando BACKEND en puerto 9998..." -ForegroundColor Yellow
-
-$backendScript = @"
-Write-Host "================================================" -ForegroundColor Cyan
-Write-Host "  BACKEND - Puerto 9998" -ForegroundColor Cyan
-Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
-Set-Location "$PWD\backend"
-`$env:NODE_ENV = "development"
-`$env:PORT = "9998"
-`$env:DATABASE_URL = "postgresql://postgres:cosigein@localhost:5432/dobacksoft"
-`$env:JWT_SECRET = "DobackSoft-jwt-secret-key-cosigein"
-`$env:JWT_EXPIRES_IN = "24h"
-`$env:CORS_ORIGIN = "http://localhost:5174"
-Write-Host "Iniciando con ts-node-dev..." -ForegroundColor Yellow
-npx ts-node-dev --respawn --transpile-only src/index.ts 2>&1 | Tee-Object -FilePath "$PWD\$backendLog"
-"@
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  DOBACKSOFT V3 - INICIO COMPLETO" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
 
-# Guardar script temporal
-$backendScript | Out-File -FilePath "temp_backend.ps1" -Encoding UTF8
+# Directorio raíz del proyecto
+$projectRoot = $PSScriptRoot
+$backendDir = Join-Path $projectRoot "backend"
+$frontendDir = Join-Path $projectRoot "frontend"
 
-# Iniciar en nueva ventana
-Start-Process powershell -ArgumentList @(
-    "-NoProfile",
-    "-ExecutionPolicy", "Bypass",
-    "-File", "$PWD\temp_backend.ps1"
-)
+# 🆕 LIMPIEZA DE PROCESOS ANTERIORES
+Write-Host "[0] Limpiando procesos anteriores..." -ForegroundColor Yellow
 
-Write-Host "⏳ Esperando 10 segundos para que backend se inicie..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
-
-# Verificar backend
-$backendOk = $false
-for ($i = 1; $i -le 10; $i++) {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:9998/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-        if ($response.StatusCode -eq 200) {
-            Write-Host "✅ Backend funcionando correctamente" -ForegroundColor Green
-            $backendOk = $true
-            break
-        }
-    }
-    catch {
-        Write-Host "⏳ Intento $i/10 - Backend aún iniciando..." -ForegroundColor Gray
-        Start-Sleep -Seconds 3
-    }
+# Limpiar procesos Node.js antiguos
+$nodeProcesses = Get-Process node -ErrorAction SilentlyContinue
+if ($nodeProcesses) {
+    Write-Host "   Encontrados $($nodeProcesses.Count) procesos Node.js" -ForegroundColor Gray
+    Write-Host "   Cerrando procesos anteriores..." -ForegroundColor Gray
+    $nodeProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+    Write-Host "   [OK] Procesos Node.js limpiados" -ForegroundColor Green
+} else {
+    Write-Host "   [OK] No hay procesos Node.js previos" -ForegroundColor Green
 }
 
-if (-not $backendOk) {
-    Write-Host "❌ ERROR: Backend no responde" -ForegroundColor Red
-    Write-Host "Revisa el log: $backendLog" -ForegroundColor Yellow
-    Write-Host "O revisa la ventana de PowerShell del backend" -ForegroundColor Yellow
+# Liberar puertos si están en uso
+$backendPort = 9998
+$frontendPort = 5174
+
+$backendConn = Get-NetTCPConnection -LocalPort $backendPort -ErrorAction SilentlyContinue
+if ($backendConn) {
+    Write-Host "   Liberando puerto $backendPort..." -ForegroundColor Gray
+    $backendPID = $backendConn.OwningProcess
+    Stop-Process -Id $backendPID -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    Write-Host "   [OK] Puerto $backendPort liberado" -ForegroundColor Green
+}
+
+$frontendConn = Get-NetTCPConnection -LocalPort $frontendPort -ErrorAction SilentlyContinue
+if ($frontendConn) {
+    Write-Host "   Liberando puerto $frontendPort..." -ForegroundColor Gray
+    $frontendPID = $frontendConn.OwningProcess
+    Stop-Process -Id $frontendPID -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    Write-Host "   [OK] Puerto $frontendPort liberado" -ForegroundColor Green
+}
+
+Write-Host ""
+
+# Verificar que los directorios existen
+if (-not (Test-Path $backendDir)) {
+    Write-Host "[ERROR] Directorio backend no encontrado: $backendDir" -ForegroundColor Red
     exit 1
 }
 
-# 5. INICIAR FRONTEND
-Write-Host "`n[5/5] Iniciando FRONTEND en puerto 5174..." -ForegroundColor Yellow
+if (-not (Test-Path $frontendDir)) {
+    Write-Host "[ERROR] Directorio frontend no encontrado: $frontendDir" -ForegroundColor Red
+    exit 1
+}
 
-$frontendScript = @"
-Write-Host "================================================" -ForegroundColor Magenta
-Write-Host "  FRONTEND - Puerto 5174" -ForegroundColor Magenta
-Write-Host "================================================" -ForegroundColor Magenta
+Write-Host "[1] Verificando estructura del proyecto..." -ForegroundColor Yellow
+Write-Host "   [OK] Backend: $backendDir" -ForegroundColor Green
+Write-Host "   [OK] Frontend: $frontendDir" -ForegroundColor Green
 Write-Host ""
-Set-Location "$PWD\frontend"
-`$env:NODE_ENV = "development"
-`$env:VITE_API_URL = "http://localhost:9998"
-`$env:VITE_PORT = "5174"
-Write-Host "Iniciando Vite..." -ForegroundColor Yellow
-npm run dev -- --port 5174 --host 2>&1 | Tee-Object -FilePath "$PWD\$frontendLog"
-"@
 
-# Guardar script temporal
-$frontendScript | Out-File -FilePath "temp_frontend.ps1" -Encoding UTF8
-
-# Iniciar en nueva ventana
-Start-Process powershell -ArgumentList @(
-    "-NoProfile",
-    "-ExecutionPolicy", "Bypass",
-    "-File", "$PWD\temp_frontend.ps1"
-)
-
-Write-Host "⏳ Esperando 10 segundos para que frontend se inicie..." -ForegroundColor Yellow
-Start-Sleep -Seconds 10
-
-# Verificar frontend
-$frontendOk = $false
-for ($i = 1; $i -le 10; $i++) {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:5174" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-        Write-Host "✅ Frontend funcionando correctamente" -ForegroundColor Green
-        $frontendOk = $true
-        break
-    }
-    catch {
-        Write-Host "⏳ Intento $i/10 - Frontend aún iniciando..." -ForegroundColor Gray
-        Start-Sleep -Seconds 3
-    }
+# Verificar Node.js
+Write-Host "[2] Verificando Node.js..." -ForegroundColor Yellow
+try {
+    $nodeVersion = node --version
+    Write-Host "   [OK] Node.js $nodeVersion disponible" -ForegroundColor Green
+}
+catch {
+    Write-Host "   [ERROR] Node.js no está instalado" -ForegroundColor Red
+    Write-Host "   Instala Node.js desde: https://nodejs.org/" -ForegroundColor Yellow
+    exit 1
 }
 
-if (-not $frontendOk) {
-    Write-Host "⚠️  ADVERTENCIA: Frontend no responde aún" -ForegroundColor Yellow
-    Write-Host "Revisa el log: $frontendLog" -ForegroundColor Yellow
-    Write-Host "O revisa la ventana de PowerShell del frontend" -ForegroundColor Yellow
-    Write-Host "El sistema puede tardar un poco más en estar listo" -ForegroundColor Yellow
+# Verificar npm
+Write-Host "[3] Verificando npm..." -ForegroundColor Yellow
+try {
+    $npmVersion = npm --version
+    Write-Host "   [OK] npm $npmVersion disponible" -ForegroundColor Green
 }
+catch {
+    Write-Host "   [ERROR] npm no está instalado" -ForegroundColor Red
+    exit 1
+}
+Write-Host ""
 
-# 6. ABRIR NAVEGADOR
-Write-Host "`n=========================================" -ForegroundColor Green
-Write-Host "  ✅ SISTEMA INICIADO" -ForegroundColor Green
-Write-Host "=========================================" -ForegroundColor Green
+# Verificar puertos (ya deberían estar libres)
+Write-Host "[4] Verificando puertos..." -ForegroundColor Yellow
 
-Write-Host "`n📊 SERVICIOS:" -ForegroundColor Cyan
-Write-Host "Backend:  http://localhost:9998 ✅" -ForegroundColor Green
-if ($frontendOk) {
-    Write-Host "Frontend: http://localhost:5174 ✅" -ForegroundColor Green
+$backendProcess = Get-NetTCPConnection -LocalPort $backendPort -ErrorAction SilentlyContinue
+if ($backendProcess) {
+    Write-Host "   [ERROR] Puerto $backendPort AÚN en uso después de limpieza" -ForegroundColor Red
+    Write-Host "   PID: $($backendProcess.OwningProcess)" -ForegroundColor Gray
+    Write-Host "   Intentando liberar nuevamente..." -ForegroundColor Yellow
+    Stop-Process -Id $backendProcess.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
 }
 else {
-    Write-Host "Frontend: http://localhost:5174 ⏳ (aún iniciando)" -ForegroundColor Yellow
+    Write-Host "   [OK] Puerto $backendPort disponible" -ForegroundColor Green
 }
 
-Write-Host "`n🔐 CREDENCIALES:" -ForegroundColor Yellow
-Write-Host "MANAGER: test@bomberosmadrid.es / admin123" -ForegroundColor White
-Write-Host "ADMIN:   antoniohermoso92@gmail.com / admin123" -ForegroundColor White
+$frontendProcess = Get-NetTCPConnection -LocalPort $frontendPort -ErrorAction SilentlyContinue
+if ($frontendProcess) {
+    Write-Host "   [ERROR] Puerto $frontendPort AÚN en uso después de limpieza" -ForegroundColor Red
+    Write-Host "   PID: $($frontendProcess.OwningProcess)" -ForegroundColor Gray
+    Write-Host "   Intentando liberar nuevamente..." -ForegroundColor Yellow
+    Stop-Process -Id $frontendProcess.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}
+else {
+    Write-Host "   [OK] Puerto $frontendPort disponible" -ForegroundColor Green
+}
+Write-Host ""
 
-Write-Host "`n📝 LOGS:" -ForegroundColor Cyan
-Write-Host "Backend:  $backendLog" -ForegroundColor Gray
-Write-Host "Frontend: $frontendLog" -ForegroundColor Gray
+# Verificar .env en backend
+Write-Host "[5] Verificando configuración del backend..." -ForegroundColor Yellow
+$backendEnv = Join-Path $backendDir ".env"
+if (-not (Test-Path $backendEnv)) {
+    Write-Host "   [WARNING] Archivo .env no encontrado en backend" -ForegroundColor Yellow
+    Write-Host "   Algunas variables de entorno pueden faltar" -ForegroundColor Gray
+}
+else {
+    Write-Host "   [OK] Archivo .env encontrado" -ForegroundColor Green
+    
+    # Verificar variables críticas
+    $envContent = Get-Content $backendEnv -Raw
+    if ($envContent -notmatch "JWT_SECRET") {
+        Write-Host "   [WARNING] JWT_SECRET no encontrado en .env" -ForegroundColor Yellow
+    }
+    if ($envContent -notmatch "JWT_REFRESH_SECRET") {
+        Write-Host "   [WARNING] JWT_REFRESH_SECRET no encontrado en .env" -ForegroundColor Yellow
+    }
+    if ($envContent -notmatch "DATABASE_URL") {
+        Write-Host "   [WARNING] DATABASE_URL no encontrado en .env" -ForegroundColor Yellow
+    }
+}
+Write-Host ""
 
-Write-Host "`n🌐 Abriendo navegador..." -ForegroundColor Green
+# Verificar node_modules
+Write-Host "[6] Verificando dependencias..." -ForegroundColor Yellow
+$backendNodeModules = Join-Path $backendDir "node_modules"
+$frontendNodeModules = Join-Path $frontendDir "node_modules"
+
+if (-not (Test-Path $backendNodeModules)) {
+    Write-Host "   [WARNING] node_modules del backend no encontrado" -ForegroundColor Yellow
+    Write-Host "   Instalando dependencias del backend..." -ForegroundColor Gray
+    Set-Location $backendDir
+    npm install
+    Set-Location $projectRoot
+}
+else {
+    Write-Host "   [OK] Dependencias del backend instaladas" -ForegroundColor Green
+}
+
+if (-not (Test-Path $frontendNodeModules)) {
+    Write-Host "   [WARNING] node_modules del frontend no encontrado" -ForegroundColor Yellow
+    Write-Host "   Instalando dependencias del frontend..." -ForegroundColor Gray
+    Set-Location $frontendDir
+    npm install --legacy-peer-deps
+    Set-Location $projectRoot
+}
+else {
+    Write-Host "   [OK] Dependencias del frontend instaladas" -ForegroundColor Green
+}
+Write-Host ""
+
+# Preparar logs
+Write-Host "[7] Preparando directorio de logs..." -ForegroundColor Yellow
+$logsDir = Join-Path $projectRoot "logs"
+if (-not (Test-Path $logsDir)) {
+    New-Item -ItemType Directory -Path $logsDir | Out-Null
+}
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$backendLogFile = Join-Path $logsDir "backend_$timestamp.log"
+$frontendLogFile = Join-Path $logsDir "frontend_$timestamp.log"
+Write-Host "   [OK] Directorio de logs preparado: $logsDir" -ForegroundColor Green
+Write-Host ""
+
+# Iniciar Backend
+Write-Host "[8] Iniciando Backend..." -ForegroundColor Yellow
+Write-Host "   Puerto: $backendPort" -ForegroundColor Gray
+Write-Host "   Directorio: $backendDir" -ForegroundColor Gray
+
+$backendScript = Join-Path $env:TEMP "dobacksoft_backend_$timestamp.ps1"
+@"
+Set-Location '$backendDir'
+Write-Host '========================================' -ForegroundColor Cyan
+Write-Host '  DOBACKSOFT BACKEND - LOGS' -ForegroundColor Green
+Write-Host '========================================' -ForegroundColor Cyan
+Write-Host ''
+Write-Host 'Puerto: http://localhost:$backendPort' -ForegroundColor Yellow
+Write-Host 'Log guardado en: $backendLogFile' -ForegroundColor Gray
+Write-Host ''
+Write-Host 'Presiona Ctrl+C para detener' -ForegroundColor Gray
+Write-Host ''
+npm run dev 2>&1 | Tee-Object -FilePath '$backendLogFile'
+"@ | Out-File -FilePath $backendScript -Encoding UTF8
+
+Start-Process powershell.exe -ArgumentList @(
+    "-NoExit",
+    "-ExecutionPolicy", "Bypass",
+    "-File", $backendScript
+)
+
+Start-Sleep -Seconds 3
+Write-Host "   [OK] Backend iniciado en nueva ventana" -ForegroundColor Green
+Write-Host ""
+
+# Iniciar Frontend
+Write-Host "[9] Iniciando Frontend..." -ForegroundColor Yellow
+Write-Host "   Puerto: $frontendPort" -ForegroundColor Gray
+Write-Host "   Directorio: $frontendDir" -ForegroundColor Gray
+
+$frontendScript = Join-Path $env:TEMP "dobacksoft_frontend_$timestamp.ps1"
+@"
+Set-Location '$frontendDir'
+Write-Host '========================================' -ForegroundColor Cyan
+Write-Host '  DOBACKSOFT FRONTEND - LOGS' -ForegroundColor Green
+Write-Host '========================================' -ForegroundColor Cyan
+Write-Host ''
+Write-Host 'Puerto: http://localhost:$frontendPort' -ForegroundColor Yellow
+Write-Host 'Log guardado en: $frontendLogFile' -ForegroundColor Gray
+Write-Host ''
+Write-Host 'Presiona Ctrl+C para detener' -ForegroundColor Gray
+Write-Host ''
+npm run dev 2>&1 | Tee-Object -FilePath '$frontendLogFile'
+"@ | Out-File -FilePath $frontendScript -Encoding UTF8
+
+Start-Process powershell.exe -ArgumentList @(
+    "-NoExit",
+    "-ExecutionPolicy", "Bypass",
+    "-File", $frontendScript
+)
+
+Start-Sleep -Seconds 3
+Write-Host "   [OK] Frontend iniciado en nueva ventana" -ForegroundColor Green
+Write-Host ""
+
+# Esperar y verificar
+Write-Host "[10] Esperando a que los servicios inicien..." -ForegroundColor Yellow
+Start-Sleep -Seconds 8
+
+Write-Host "[11] Verificando conectividad..." -ForegroundColor Yellow
+try {
+    $backendResponse = Invoke-WebRequest -Uri "http://localhost:$backendPort/health" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop 2>&1
+    Write-Host "   [OK] Backend respondiendo (Status: $($backendResponse.StatusCode))" -ForegroundColor Green
+}
+catch {
+    Write-Host "   [WARNING] Backend aún iniciando..." -ForegroundColor Yellow
+}
+
+try {
+    $frontendResponse = Invoke-WebRequest -Uri "http://localhost:$frontendPort" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop 2>&1
+    Write-Host "   [OK] Frontend respondiendo (Status: $($frontendResponse.StatusCode))" -ForegroundColor Green
+}
+catch {
+    Write-Host "   [WARNING] Frontend aún iniciando..." -ForegroundColor Yellow
+}
+Write-Host ""
+
+# Abrir navegador
+Write-Host "[12] Abriendo navegador..." -ForegroundColor Yellow
 Start-Sleep -Seconds 2
-Start-Process "http://localhost:5174"
+Start-Process "http://localhost:$frontendPort"
+Write-Host "   [OK] Navegador abierto" -ForegroundColor Green
+Write-Host ""
 
-Write-Host "`n✨ Sistema iniciado correctamente" -ForegroundColor Green
-Write-Host "Las ventanas de backend y frontend están abiertas." -ForegroundColor White
-Write-Host "NO las cierres o los servicios se detendrán." -ForegroundColor Yellow
-Write-Host "`nPresiona ENTER para salir de este script..." -ForegroundColor Gray
-Read-Host
+# Resumen
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Green
+Write-Host "  SISTEMA INICIADO EXITOSAMENTE" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "URLs disponibles:" -ForegroundColor Yellow
+Write-Host "  Frontend: http://localhost:$frontendPort" -ForegroundColor White
+Write-Host "  Backend API: http://localhost:$backendPort" -ForegroundColor White
+Write-Host ""
+Write-Host "Ventanas PowerShell abiertas:" -ForegroundColor Yellow
+Write-Host "  - Backend (logs en tiempo real)" -ForegroundColor White
+Write-Host "  - Frontend (logs en tiempo real)" -ForegroundColor White
+Write-Host ""
+Write-Host "Logs guardados en:" -ForegroundColor Yellow
+Write-Host "  Backend: $backendLogFile" -ForegroundColor Gray
+Write-Host "  Frontend: $frontendLogFile" -ForegroundColor Gray
+Write-Host ""
+Write-Host "COMANDOS UTILES:" -ForegroundColor Yellow
+Write-Host "  Detener servicios: Cerrar las ventanas PowerShell" -ForegroundColor Gray
+Write-Host "  Ver logs: Abrir archivos en logs/" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Listo para usar!" -ForegroundColor Green
+Write-Host ""

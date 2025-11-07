@@ -31,6 +31,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGeofences } from '../../hooks/useGeofences';
 import { Geofence } from '../../types/geofence';
+import { logger } from '../../utils/logger';
 import { GeofenceEvents } from './GeofenceEvents';
 import { GeofenceForm } from './GeofenceForm';
 import { GeofenceImporter } from './GeofenceImporter';

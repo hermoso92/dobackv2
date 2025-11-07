@@ -111,7 +111,7 @@ export class ReportsAPI {
                 responseType: 'blob'
             });
 
-            return response as Blob;
+            return (response as any) as Blob;
         } catch (error) {
             logger.error('Error descargando reporte', { error, jobId });
             throw error;
@@ -405,7 +405,7 @@ export class ReportsAPI {
                 throw new Error(response.error || 'No se pudo generar el análisis IA');
             }
 
-            return response.data!;
+            return response.data! as any;
         } catch (error) {
             logger.error('Error generando análisis IA', { error, module, data, prompt });
             throw error;
@@ -436,7 +436,7 @@ export class ReportsAPI {
                 throw new Error(response.error || 'No se pudo obtener el historial de reportes');
             }
 
-            return response.data!;
+            return response.data! as any;
         } catch (error) {
             logger.error('Error obteniendo historial de reportes', { error, filters });
             throw error;

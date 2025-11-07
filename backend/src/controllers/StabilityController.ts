@@ -390,7 +390,7 @@ export class StabilityController {
             });
 
             // Obtener eventos de estabilidad
-            const stabilityEvents = await prisma.stabilityEvent.findMany({
+            const stabilityEvents = await prisma.stability_events.findMany({
                 where: { session_id: id },
                 orderBy: { timestamp: 'asc' }
             });
@@ -487,7 +487,7 @@ export class StabilityController {
             }
 
             // Obtener eventos de estabilidad
-            const events = await prisma.stabilityEvent.findMany({
+            const events = await prisma.stability_events.findMany({
                 where: {
                     session_id: id
                 },
@@ -998,7 +998,7 @@ export class StabilityController {
             }
 
             // Obtener eventos de estabilidad con información de sesión y vehículo
-            const events = await prisma.stabilityEvent.findMany({
+            const events = await prisma.stability_events.findMany({
                 where: whereClause,
                 include: {
                     Session: {
@@ -1126,7 +1126,7 @@ export class StabilityController {
             }
 
             // Obtener eventos
-            const events = await prisma.stabilityEvent.findMany({
+            const events = await prisma.stability_events.findMany({
                 where: whereClause,
                 include: {
                     Session: {

@@ -54,7 +54,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
 }) => {
     // Estados de filtros
     const [severityFilter, setSeverityFilter] = useState<'all' | 'grave' | 'moderada' | 'leve'>('all');
-    const [minFrequency, setMinFrequency] = useState(2); // default más estricto
+    const [minFrequency, setMinFrequency] = useState(1); // ✅ Cambio a 1 (menos restrictivo)
     const [rotativoFilter, setRotativoFilter] = useState<'all' | 'on' | 'off'>('all');
     const [clusterRadius, setClusterRadius] = useState(30); // default más amplio
     const [individualMode, setIndividualMode] = useState<boolean>(false); // modo eventos individuales (sin clustering)
@@ -88,8 +88,12 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             setLoading(true);
             setError(null);
 
+            // ✅ Asegurar que organizationId no esté vacío
+            const validOrgId = organizationId || '';
+
             logger.info('Cargando puntos negros', {
-                organizationId,
+                organizationId: validOrgId,
+                organizationIdOriginal: organizationId,
                 vehicleIds,
                 startDate,
                 endDate,
@@ -101,7 +105,7 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             });
 
             const params = new URLSearchParams({
-                organizationId,
+                organizationId: validOrgId,
                 severity: severityFilter,
                 minFrequency: minFrequency.toString(),
                 rotativoOn: rotativoFilter,
@@ -169,6 +173,15 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             }
 
             logger.info(`Puntos negros cargados: ${clustersResponse.data?.clusters?.length || 0} clusters`);
+
+            // ✅ Advertencia si no hay clusters
+            const numClusters = clustersResponse.data?.clusters?.length || 0;
+            if (numClusters === 0) {
+                logger.warn('⚠️ No se encontraron clusters de puntos negros', {
+                    organizationId,
+                    filters: { severityFilter, minFrequency, rotativoFilter }
+                });
+            }
 
         } catch (err) {
             logger.error('Error cargando puntos negros:', err);
@@ -354,6 +367,32 @@ const BlackSpotsTab: React.FC<BlackSpotsTabProps> = ({
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-red-700">
                     <span>{error}</span>
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ Mensaje si no hay datos
+    if (!loading && clusters.length === 0) {
+        return (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 text-blue-700">
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <h3 className="font-semibold text-lg">No hay suficientes datos de puntos negros</h3>
+                        <p className="text-sm mt-1">
+                            No se encontraron clusters de eventos de estabilidad con los filtros actuales.
+                            Pruebe a:
+                        </p>
+                        <ul className="text-sm mt-2 ml-4 list-disc">
+                            <li>Reducir la frecuencia mínima (actualmente: {minFrequency})</li>
+                            <li>Cambiar el filtro de severidad a "Todos"</li>
+                            <li>Ampliar el rango de fechas</li>
+                            <li>Subir más archivos de sesiones</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         );

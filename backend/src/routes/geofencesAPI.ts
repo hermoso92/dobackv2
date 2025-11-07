@@ -311,6 +311,43 @@ router.get('/stats/summary', apiCacheMiddleware(60000), async (req: Request, res
 });
 
 /**
+ * GET /api/geofences/events
+ * Obtener eventos de geocercas con filtros opcionales
+ */
+router.get('/events', apiCacheMiddleware(30000), async (req: Request, res: Response) => {
+    try {
+        const organizationId = (req as any).user.organizationId;
+        const { limit = 50, vehicleId, geofenceId, type } = req.query;
+
+        const filters = {
+            organizationId,
+            vehicleId: vehicleId as string,
+            geofenceId: geofenceId as string,
+            type: type as string,
+            limit: parseInt(limit as string),
+            offset: 0
+        };
+
+        const result = await geofenceDatabaseService.getGeofenceEvents(filters);
+
+        res.json({
+            success: true,
+            data: result.events,
+            pagination: {
+                total: result.total,
+                hasMore: result.hasMore
+            }
+        });
+    } catch (error) {
+        logger.error('Error obteniendo eventos de geocercas:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+});
+
+/**
  * GET /api/geofences/events/recent
  * Obtener eventos recientes de todas las geocercas
  */

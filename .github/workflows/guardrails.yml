@@ -1,0 +1,130 @@
+name: 🛡️ Guardrails - Architecture Protection
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  guardrails-scan:
+    name: Run Guardrails Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 📚 Install dependencies
+        run: |
+          npm install -g ts-node typescript
+          npm install glob
+      
+      - name: 🔍 Run Guardrails Scanners
+        id: scan
+        run: |
+          npx ts-node scripts/guardrails/run-guardrails.ts scan
+        continue-on-error: true
+      
+      - name: 📊 Upload Scan Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardrails-reports
+          path: scripts/guardrails/reports/*.json
+          retention-days: 30
+      
+      - name: 📝 Comment PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const summaryPath = 'scripts/guardrails/reports/summary.json';
+            
+            if (!fs.existsSync(summaryPath)) {
+              console.log('No summary report found');
+              return;
+            }
+            
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+            
+            const criticalIcon = summary.passed ? '✅' : '❌';
+            const body = `## ${criticalIcon} Guardrails Scan Results
+            
+            **Status:** ${summary.passed ? 'PASSED ✅' : 'FAILED ❌'}
+            **Total Violations:** ${summary.totalViolations}
+            **Scanned at:** ${summary.timestamp}
+            
+            ### Results by Scanner
+            
+            ${summary.results.map(r => {
+              const icon = r.passed ? '✅' : (r.severity === 'critical' ? '🔴' : r.severity === 'high' ? '🟠' : '🟡');
+              return `${icon} **${r.scanner}** - ${r.violations} violations (${r.severity})`;
+            }).join('\n')}
+            
+            ${summary.totalViolations > 0 ? `
+            ### 🔧 Auto-fix Available
+            
+            Run locally to fix violations:
+            \`\`\`bash
+            npm run guardrails fix --dry-run  # Preview fixes
+            npm run guardrails fix            # Apply fixes
+            \`\`\`
+            ` : ''}
+            
+            <details>
+            <summary>📄 View detailed reports in artifacts</summary>
+            
+            - console-logs-violations.json
+            - hardcoded-urls-violations.json
+            - organizationid-violations.json
+            - component-size-violations.json
+            </details>
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
+      - name: ❌ Fail if critical violations found
+        if: steps.scan.outcome == 'failure'
+        run: |
+          echo "::error::Critical guardrails violations detected! Fix violations before merging."
+          exit 1
+
+  # Optional: Run fitness function tests
+  fitness-functions:
+    name: Run Fitness Function Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 📚 Install dependencies
+        run: |
+          npm install -g ts-node typescript jest @types/jest
+          npm install glob
+      
+      - name: 🧪 Run Fitness Function Tests
+        run: |
+          npx jest scripts/guardrails/fitness-functions --config=jest.config.guardrails.js
+        continue-on-error: true
+

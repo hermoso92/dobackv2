@@ -1,3 +1,4 @@
+import { API_CONFIG } from '@/config/api';
 import {
     Add as AddIcon,
     Warning as AlertIcon,
@@ -400,7 +401,7 @@ const UnifiedReports: React.FC = () => {
 
         setGeneratingReport(true);
         try {
-            const response = await fetch('http://localhost:9998/api/reports/generate', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports/generate`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,

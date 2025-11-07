@@ -1,52 +1,146 @@
 import { Router } from 'express';
 import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
+import { authenticate } from '../middleware/auth';
+import { validateOrganization } from '../middleware/validateOrganization';
 
 const router = Router();
 
 
 /**
- * Calcula la distancia en metros entre dos puntos GPS usando la fórmula de Haversine
+ * FASE 2: Clustering nativo PostGIS con ST_ClusterDBSCAN
+ * Reemplaza clustering O(n²) JavaScript con query eficiente en DB
+ * Beneficio: O(n log n) performance, cálculo en PostgreSQL
  */
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371000; // Radio de la Tierra en metros
+async function clusterEventsPostGIS(
+    organizationId: string,
+    radiusMeters: number = 20,
+    filters: {
+        from?: string;
+        to?: string;
+        vehicleIds?: string[];
+        severity?: string;
+        rotativo?: string;
+    } = {}
+): Promise<any[]> {
+    const { from, to, vehicleIds, severity, rotativo } = filters;
 
-    const lat1Rad = (lat1 * Math.PI) / 180;
-    const lat2Rad = (lat2 * Math.PI) / 180;
-    const deltaLat = ((lat2 - lat1) * Math.PI) / 180;
-    const deltaLng = ((lng2 - lng1) * Math.PI) / 180;
+    // Construir WHERE dinámico
+    const conditions: string[] = [
+        'se.geog IS NOT NULL',
+        `s."organizationId" = '${organizationId}'`
+    ];
 
-    const a =
-        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-        Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    if (from && to) {
+        conditions.push(`se.timestamp >= '${new Date(from).toISOString()}'`);
+        conditions.push(`se.timestamp <= '${new Date(to).toISOString()}'`);
+    }
 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    if (vehicleIds && vehicleIds.length > 0) {
+        const vehicleIdList = vehicleIds.map(id => `'${id}'`).join(',');
+        conditions.push(`s."vehicleId" IN (${vehicleIdList})`);
+    }
 
-    return R * c; // Distancia en metros
+    const whereClause = conditions.join(' AND ');
+
+    // Query PostGIS con ST_ClusterDBSCAN
+    const clusteredEvents = await prisma.$queryRawUnsafe(`
+        WITH event_data AS (
+            SELECT 
+                se.id,
+                se.lat,
+                se.lon,
+                se.geog,
+                se.timestamp,
+                se.type,
+                se.details,
+                se."rotativoState",
+                se.severity,
+                s."vehicleId",
+                v.name as "vehicleName",
+                v.identifier as "vehicleIdentifier"
+            FROM stability_events se
+            JOIN "Session" s ON se."session_id" = s.id
+            JOIN "Vehicle" v ON s."vehicleId" = v.id
+            WHERE ${whereClause}
+        ),
+        clustered AS (
+            SELECT 
+                *,
+                ST_ClusterDBSCAN(geog::geometry, eps := ${radiusMeters}, minpoints := 1) OVER () as cluster_id
+            FROM event_data
+        )
+        SELECT 
+            cluster_id,
+            ST_Y(ST_Centroid(ST_Collect(geog::geometry))::geography::geometry) as lat,
+            ST_X(ST_Centroid(ST_Collect(geog::geometry))::geography::geometry) as lng,
+            array_agg(DISTINCT id) as event_ids,
+            COUNT(DISTINCT id) as frequency,
+            MAX(timestamp) as last_occurrence,
+            array_agg(DISTINCT "vehicleId") as vehicle_ids,
+            SUM(CASE WHEN severity = 'CRÍTICA' OR severity = 'GRAVE' THEN 1 ELSE 0 END)::int as grave_count,
+            SUM(CASE WHEN severity = 'MODERADA' THEN 1 ELSE 0 END)::int as moderada_count,
+            SUM(CASE WHEN severity = 'LEVE' THEN 1 ELSE 0 END)::int as leve_count,
+            jsonb_agg(jsonb_build_object(
+                'id', id,
+                'lat', lat,
+                'lng', lon,
+                'timestamp', timestamp,
+                'severity', severity,
+                'type', type,
+                'rotativoState', "rotativoState",
+                'vehicleId', "vehicleId",
+                'vehicleName', "vehicleName",
+                'details', details
+            )) as events
+        FROM clustered
+        WHERE cluster_id IS NOT NULL
+        GROUP BY cluster_id
+        ORDER BY frequency DESC, last_occurrence DESC
+    `) as any[];
+
+    // Transformar a formato esperado por el endpoint
+    return clusteredEvents.map((cluster, idx) => {
+        // Determinar severidad dominante
+        let dominantSeverity = 'leve';
+        if (cluster.grave_count > 0) dominantSeverity = 'grave';
+        else if (cluster.moderada_count > 0) dominantSeverity = 'moderada';
+
+        return {
+            id: `postgis_cluster_${cluster.cluster_id || idx}`,
+            lat: parseFloat(cluster.lat),
+            lng: parseFloat(cluster.lng),
+            location: `${parseFloat(cluster.lat).toFixed(4)}, ${parseFloat(cluster.lng).toFixed(4)}`,
+            events: cluster.events || [],
+            severity_counts: {
+                grave: cluster.grave_count || 0,
+                moderada: cluster.moderada_count || 0,
+                leve: cluster.leve_count || 0
+            },
+            frequency: parseInt(cluster.frequency) || 0,
+            vehicleIds: cluster.vehicle_ids || [],
+            lastOccurrence: cluster.last_occurrence,
+            dominantSeverity
+        };
+    });
 }
 
 /**
- * Agrupa eventos por proximidad geográfica
+ * DEPRECATED: Fallback clustering JavaScript (solo para eventos sin geog)
+ * Se mantiene por compatibilidad hasta migración geography completa
  */
-/**
- * MANDAMIENTO M5: Clustering con IDs únicos
- * Radio en metros, frecuencia = eventos distintos (no duplicados)
- */
-function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
+function clusterEventsFallback(events: any[], radiusMeters: number = 20): any[] {
     const clusters: any[] = [];
     const usedEvents = new Set<number>();
 
     events.forEach((event, i) => {
         if (usedEvents.has(i)) return;
 
-        // MANDAMIENTO M5.2: Usar Set para IDs únicos
         const eventIds = new Set<string>();
         eventIds.add(event.id);
 
-        // Crear nuevo cluster
         const cluster: any = {
-            id: `cluster_${clusters.length}`,
+            id: `fallback_cluster_${clusters.length}`,
             lat: event.lat,
             lng: event.lng,
             location: event.location || 'Ubicación desconocida',
@@ -56,60 +150,13 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
                 moderada: event.severity === 'moderada' ? 1 : 0,
                 leve: event.severity === 'leve' ? 1 : 0
             },
-            frequency: 1, // Se actualizará al final con eventIds.size
+            frequency: 1,
             vehicleIds: [event.vehicleId],
             lastOccurrence: event.timestamp,
             dominantSeverity: event.severity || 'leve'
         };
 
         usedEvents.add(i);
-
-        // Buscar eventos cercanos
-        events.forEach((otherEvent, j) => {
-            if (usedEvents.has(j)) return;
-
-            const distance = calculateDistance(
-                event.lat,
-                event.lng,
-                otherEvent.lat,
-                otherEvent.lng
-            );
-
-            // MANDAMIENTO M5.1: Radio en metros
-            if (distance <= radiusMeters) {
-                cluster.events.push(otherEvent);
-                eventIds.add(otherEvent.id); // Añadir ID único
-
-                const severity = otherEvent.severity || 'leve';
-                cluster.severity_counts[severity as keyof typeof cluster.severity_counts] =
-                    (cluster.severity_counts[severity as keyof typeof cluster.severity_counts] || 0) + 1;
-
-                if (!cluster.vehicleIds.includes(otherEvent.vehicleId)) {
-                    cluster.vehicleIds.push(otherEvent.vehicleId);
-                }
-
-                if (new Date(otherEvent.timestamp) > new Date(cluster.lastOccurrence)) {
-                    cluster.lastOccurrence = otherEvent.timestamp;
-                    cluster.location = otherEvent.location || cluster.location;
-                }
-
-                usedEvents.add(j);
-            }
-        });
-
-        // Calcular centro del cluster (promedio de coordenadas)
-        cluster.lat = cluster.events.reduce((sum: number, e: any) => sum + e.lat, 0) / cluster.events.length;
-        cluster.lng = cluster.events.reduce((sum: number, e: any) => sum + e.lng, 0) / cluster.events.length;
-
-        // MANDAMIENTO M5.2: Frecuencia = número de IDs únicos
-        cluster.frequency = eventIds.size;
-
-        // Determinar severidad dominante
-        const maxSeverity = Object.entries(cluster.severity_counts)
-            .reduce((max, [severity, count]) => (count as number) > max.count ? { severity, count: count as number } : max, { severity: 'leve', count: 0 });
-
-        cluster.dominantSeverity = maxSeverity.severity;
-
         clusters.push(cluster);
     });
 
@@ -120,8 +167,9 @@ function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
  * GET /api/hotspots/critical-points
  * Obtiene puntos negros (zonas críticas) con clustering
  * ACTUALIZADO: Usa eventDetector con índice SI
+ * 06/Nov/2025: Añadida validación organizationId (ChatGPT P0 CRÍTICO)
  */
-router.get('/critical-points', async (req, res) => {
+router.get('/critical-points', authenticate, validateOrganization, async (req, res) => {
     try {
         const organizationId = req.query.organizationId as string || 'default-org';
         const vehicleIds = req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined;
@@ -138,154 +186,139 @@ router.get('/critical-points', async (req, res) => {
         const to = (req.query.to as string) || (req.query.endDate as string);
         const mode = (req.query.mode as string) || 'cluster'; // 'cluster' | 'single'
 
-        logger.info('Obteniendo puntos críticos con eventDetector', { organizationId, severityFilter, minFrequency, clusterRadius, from, to, vehicleIds });
+        logger.info('Obteniendo puntos críticos con PostGIS clustering', { organizationId, severityFilter, minFrequency, clusterRadius, from, to, vehicleIds });
 
-        // LEER EVENTOS DESDE BD filtrando por timestamp, organización y vehículos
-        let eventosDB;
+        // FASE 2: Usar clustering PostGIS nativo (mucho más eficiente)
+        let filteredClusters: any[] = [];
+        
+        if (mode !== 'single') {
+            try {
+                // Intentar clustering PostGIS (requiere columna geog poblada)
+                filteredClusters = await clusterEventsPostGIS(
+                    organizationId,
+                    clusterRadius,
+                    {
+                        from,
+                        to,
+                        vehicleIds,
+                        severity: severityFilter !== 'all' ? severityFilter : undefined,
+                        rotativo: rotativoFilter
+                    }
+                );
 
-        if (from && to && vehicleIds && vehicleIds.length > 0) {
-            eventosDB = await prisma.$queryRaw`
-                SELECT 
-                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
-                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
-                FROM stability_events se
-                JOIN "Session" s ON se."session_id" = s.id
-                JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE se.lat != 0 AND se.lon != 0
-                AND s."organizationId" = ${organizationId}
-                AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
-                AND s."vehicleId" = ANY(${vehicleIds})
-            ` as any[];
-        } else if (from && to) {
-            eventosDB = await prisma.$queryRaw`
-                SELECT 
-                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
-                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
-                FROM stability_events se
-                JOIN "Session" s ON se."session_id" = s.id
-                JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE se.lat != 0 AND se.lon != 0
-                AND s."organizationId" = ${organizationId}
-                AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
-            ` as any[];
-        } else if (vehicleIds && vehicleIds.length > 0) {
-            eventosDB = await prisma.$queryRaw`
-                SELECT 
-                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
-                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
-                FROM stability_events se
-                JOIN "Session" s ON se."session_id" = s.id
-                JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE se.lat != 0 AND se.lon != 0
-                AND s."organizationId" = ${organizationId}
-                AND s."vehicleId" = ANY(${vehicleIds})
-            ` as any[];
-        } else {
-            eventosDB = await prisma.$queryRaw`
-                SELECT 
-                    se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
-                    s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
-                FROM stability_events se
-                JOIN "Session" s ON se."session_id" = s.id
-                JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE se.lat != 0 AND se.lon != 0
-                AND s."organizationId" = ${organizationId}
-            ` as any[];
-        }
+                // Filtrar por frecuencia mínima
+                filteredClusters = filteredClusters.filter(cluster => cluster.frequency >= minFrequency);
 
-        logger.info(`Eventos encontrados en BD: ${eventosDB.length}`);
+                logger.info(`Clusters PostGIS generados: ${filteredClusters.length}`);
+            } catch (error) {
+                logger.warn('Error en clustering PostGIS, usando fallback JavaScript', { error });
+                
+                // Fallback: cargar eventos manualmente si falla PostGIS
+                let eventosDB;
+                if (from && to && vehicleIds && vehicleIds.length > 0) {
+                    eventosDB = await prisma.$queryRaw`
+                        SELECT 
+                            se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                            s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                        FROM stability_events se
+                        JOIN "Session" s ON se."session_id" = s.id
+                        JOIN "Vehicle" v ON s."vehicleId" = v.id
+                        WHERE se.lat != 0 AND se.lon != 0
+                        AND s."organizationId" = ${organizationId}
+                        AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
+                        AND s."vehicleId" = ANY(${vehicleIds})
+                    ` as any[];
+                } else if (from && to) {
+                    eventosDB = await prisma.$queryRaw`
+                        SELECT 
+                            se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                            s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                        FROM stability_events se
+                        JOIN "Session" s ON se."session_id" = s.id
+                        JOIN "Vehicle" v ON s."vehicleId" = v.id
+                        WHERE se.lat != 0 AND se.lon != 0
+                        AND s."organizationId" = ${organizationId}
+                        AND se.timestamp >= ${new Date(from)} AND se.timestamp <= ${new Date(to)}
+                    ` as any[];
+                } else {
+                    eventosDB = await prisma.$queryRaw`
+                        SELECT 
+                            se.id, se.lat, se.lon, se.timestamp, se.type, se.details, se."rotativoState",
+                            s."vehicleId", v.name as "vehicleName", v.identifier as "vehicleIdentifier"
+                        FROM stability_events se
+                        JOIN "Session" s ON se."session_id" = s.id
+                        JOIN "Vehicle" v ON s."vehicleId" = v.id
+                        WHERE se.lat != 0 AND se.lon != 0
+                        AND s."organizationId" = ${organizationId}
+                    ` as any[];
+                }
 
-        // Convertir eventos a formato del endpoint
-        const eventos = eventosDB.map(e => {
-            const details = e.details as any || {};
-            // CORREGIDO: El SI está en details.valores.si, no en details.si
-            const si = details.valores?.si || details.si || 0;
-            const roll = details.valores?.roll || details.roll || 0;
-            const ay = details.valores?.ay || details.ay || 0;
-            const gx = details.valores?.gx || details.gx || 0;
-            const speed = details.valores?.speed || details.speed || 0;
+                const eventos = eventosDB.map(e => {
+                    const details = e.details as any || {};
+                    const si = details.valores?.si || details.si || 0;
+                    let severity = 'leve';
+                    if (si < 0.20) severity = 'grave';
+                    else if (si < 0.35) severity = 'moderada';
 
-            // Calcular severidad basada en SI
-            let severity = 'leve';
-            if (si < 0.20) severity = 'grave';
-            else if (si < 0.35) severity = 'moderada';
+                    return {
+                        id: e.id,
+                        lat: e.lat,
+                        lng: e.lon,
+                        timestamp: e.timestamp.toISOString(),
+                        vehicleId: e.vehicleId,
+                        vehicleName: e.vehicleName || e.vehicleIdentifier || 'unknown',
+                        type: e.type,
+                        severity,
+                        rotativo: e.rotativoState === 1,
+                        location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`
+                    };
+                });
 
-            return {
-                id: e.id,
-                lat: e.lat,
-                lng: e.lon,
-                timestamp: e.timestamp.toISOString(),
-                vehicleId: e.vehicleId,
-                vehicleName: e.vehicleName || e.vehicleIdentifier || 'unknown',
-                type: e.type, // ✅ Cambiado de eventType a type
-                eventType: e.type, // ✅ Mantener para compatibilidad
-                severity,
-                si,
-                roll,
-                ay,
-                gx,
-                speed,
-                rotativo: e.rotativoState === 1,
-                rotativoState: e.rotativoState,
-                location: `${e.lat.toFixed(4)}, ${e.lon.toFixed(4)}`,
-                descripcion: e.type,
-                details // ✅ Incluir detalles completos
-            };
-        });
+                // Aplicar filtros
+                let filteredEvents = eventos;
+                if (rotativoFilter !== 'all') {
+                    filteredEvents = filteredEvents.filter(e => 
+                        rotativoFilter === 'on' ? e.rotativo : !e.rotativo
+                    );
+                }
+                if (severityFilter !== 'all') {
+                    filteredEvents = filteredEvents.filter(e => e.severity === severityFilter);
+                }
 
-        logger.info(`Eventos procesados: ${eventos.length}`);
-
-        // Aplicar filtro de rotativo
-        let filteredEvents = eventos;
-        if (rotativoFilter !== 'all') {
-            if (rotativoFilter === 'on') {
-                filteredEvents = eventos.filter(e => e.rotativo);
-            } else if (rotativoFilter === 'off') {
-                filteredEvents = eventos.filter(e => !e.rotativo);
+                // Usar fallback clustering
+                const clusters = clusterEventsFallback(filteredEvents, clusterRadius);
+                filteredClusters = clusters.filter(cluster => cluster.frequency >= minFrequency);
             }
         }
 
-        // Aplicar filtro de severidad
-        if (severityFilter !== 'all') {
-            filteredEvents = filteredEvents.filter(e => e.severity === severityFilter);
-        }
-
-        // Realizar clustering (o forzar modo individual)
-        let clusters = mode === 'single' ? [] : clusterEvents(filteredEvents, clusterRadius);
-
-        // Filtrar por frecuencia mínima (si hay clustering)
-        let filteredClusters = mode === 'single'
-            ? []
-            : clusters.filter(cluster => cluster.frequency >= minFrequency);
-
-        // Fallback: si no hay clusters pero sí eventos, mostrar eventos individuales como clusters
-        if ((filteredClusters.length === 0 || mode === 'single') && filteredEvents.length > 0) {
-            logger.warn('[Hotspots] Sin clusters con los parámetros actuales; usando fallback de eventos individuales', {
-                filteredEvents: filteredEvents.length,
-                clusterRadius,
-                minFrequency
+        // Modo single: si se fuerza modo individual, convertir clusters en eventos individuales
+        if (mode === 'single' && filteredClusters.length > 0) {
+            const singleEvents: any[] = [];
+            filteredClusters.forEach(cluster => {
+                cluster.events.forEach((e: any, idx: number) => {
+                    singleEvents.push({
+                        id: `single_${cluster.id}_${idx}`,
+                        lat: e.lat,
+                        lng: e.lng,
+                        location: e.location || `${e.lat}, ${e.lng}`,
+                        events: [e],
+                        severity_counts: {
+                            grave: e.severity === 'grave' ? 1 : 0,
+                            moderada: e.severity === 'moderada' ? 1 : 0,
+                            leve: e.severity === 'leve' ? 1 : 0
+                        },
+                        frequency: 1,
+                        vehicleIds: [e.vehicleId],
+                        lastOccurrence: e.timestamp,
+                        dominantSeverity: e.severity
+                    });
+                });
             });
-
-            filteredClusters = filteredEvents.map((e, idx) => ({
-                id: `single_${idx}`,
-                lat: e.lat,
-                lng: e.lng,
-                location: e.location,
-                events: [e],
-                severity_counts: {
-                    grave: e.severity === 'grave' ? 1 : 0,
-                    moderada: e.severity === 'moderada' ? 1 : 0,
-                    leve: e.severity === 'leve' ? 1 : 0
-                },
-                frequency: 1,
-                vehicleIds: [e.vehicleId],
-                lastOccurrence: e.timestamp,
-                dominantSeverity: e.severity
-            }));
+            filteredClusters = singleEvents;
         }
 
-        // Fallback 2: si no hay eventos de estabilidad, intentar con excesos de velocidad como puntos críticos
-        if (eventos.length === 0 && filteredClusters.length === 0) {
+        // Fallback: si no hay clusters, intentar con excesos de velocidad como puntos críticos
+        if (filteredClusters.length === 0) {
             try {
                 const { analizarVelocidades } = await import('../services/speedAnalyzer');
                 // Mantener compatibilidad: si no hay eventos, no forzamos análisis fuera del alcance de la función
@@ -371,8 +404,9 @@ router.get('/critical-points', async (req, res) => {
  * GET /api/hotspots/ranking
  * Obtiene ranking de zonas críticas ordenadas por frecuencia y gravedad
  * ACTUALIZADO: Usa eventDetector con índice SI
+ * 06/Nov/2025: Añadida validación organizationId (ChatGPT P0 CRÍTICO)
  */
-router.get('/ranking', async (req, res) => {
+router.get('/ranking', authenticate, validateOrganization, async (req, res) => {
     try {
         const organizationId = req.query.organizationId as string || 'default-org';
         const limit = parseInt(req.query.limit as string) || 10;

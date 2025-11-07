@@ -1,0 +1,664 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "project": "DobackSoft - StabilSafe V2",
+  "lastUpdate": "2025-11-03",
+  "categories": [
+    {
+      "id": "security",
+      "name": "Seguridad & Aislamiento",
+      "description": "Reglas críticas de seguridad, autenticación y aislamiento de datos",
+      "rules": [
+        {
+          "id": "SEC-001",
+          "title": "OrganizationId obligatorio en queries",
+          "description": "Todas las queries Prisma deben filtrar por organizationId para garantizar aislamiento de datos entre organizaciones",
+          "severity": "CRITICAL",
+          "pattern": {
+            "type": "ast",
+            "regex": "prisma\\.(\\w+)\\.(findMany|findFirst|update|delete)",
+            "mustInclude": "organizationId",
+            "context": "where clause"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Requiere análisis manual del contexto de negocio",
+            "suggestion": "Agregar: where: { organizationId: user.organizationId }"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": [
+              "user.findUnique por ID",
+              "organization.findUnique",
+              "session de autenticación"
+            ],
+            "marker": "// GUARDRAILS:SAFE - [justificación]"
+          },
+          "responsible": "Backend Team / Security",
+          "example": {
+            "bad": "const vehicles = await prisma.vehicle.findMany();",
+            "good": "const vehicles = await prisma.vehicle.findMany({ where: { organizationId: user.organizationId } });"
+          },
+          "impact": "Exposición de datos entre organizaciones (CRÍTICO)",
+          "validation": "Scan AST de archivos en backend/src/{controllers,services,repositories}",
+          "slo": {
+            "target": "100%",
+            "current": "85%",
+            "deadline": "30 días"
+          }
+        },
+        {
+          "id": "SEC-002",
+          "title": "JWT en cookies httpOnly",
+          "description": "Los tokens JWT deben almacenarse en cookies httpOnly, no en localStorage",
+          "severity": "CRITICAL",
+          "pattern": {
+            "type": "regex",
+            "regex": "res\\.cookie.*token.*httpOnly:\\s*true"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Cambio arquitectónico significativo",
+            "suggestion": "res.cookie('token', jwt, { httpOnly: true, secure: true, sameSite: 'strict' })"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": []
+          },
+          "responsible": "Backend Team / Security",
+          "example": {
+            "bad": "localStorage.setItem('token', jwt);",
+            "good": "res.cookie('token', jwt, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });"
+          },
+          "impact": "Vulnerabilidad XSS (CRÍTICO)",
+          "validation": "Scan de archivos auth*.ts",
+          "slo": {
+            "target": "100%",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "SEC-003",
+          "title": "CSRF Protection activo",
+          "description": "Todas las rutas POST/PUT/DELETE deben tener protección CSRF",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "middleware",
+            "regex": "csrf|csurf"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Requiere configuración de middleware",
+            "suggestion": "Implementar middleware CSRF con csurf o similar"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["APIs públicas específicas", "Webhooks externos"],
+            "marker": "// CSRF:EXEMPT - [justificación]"
+          },
+          "responsible": "Backend Team",
+          "impact": "Ataques CSRF (ALTO)",
+          "slo": {
+            "target": "100%",
+            "current": "80%",
+            "deadline": "60 días"
+          }
+        },
+        {
+          "id": "SEC-004",
+          "title": "S3 con SSE-KMS",
+          "description": "Archivos en S3 deben usar cifrado SSE-KMS",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "config",
+            "file": "upload config",
+            "mustInclude": "SSE-KMS"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Configuración de infraestructura"
+          },
+          "responsible": "DevOps / Backend Team",
+          "slo": {
+            "target": "100%",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "SEC-005",
+          "title": "No hardcoded secrets",
+          "description": "API keys, passwords y secrets deben estar en variables de entorno",
+          "severity": "CRITICAL",
+          "pattern": {
+            "type": "regex",
+            "regex": "(apiKey|password|secret|token)\\s*[:=]\\s*['\"][^'\"]{20,}['\"]"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Requiere migración a .env",
+            "suggestion": "Mover a process.env.VARIABLE_NAME"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["Ejemplos en .example files", "Tests con mocks"],
+            "marker": "// GUARDRAILS:SAFE"
+          },
+          "responsible": "All Teams",
+          "example": {
+            "bad": "const apiKey = 'sk_live_51H8xKzL...';",
+            "good": "const apiKey = process.env.STRIPE_API_KEY;"
+          },
+          "impact": "Exposición de credenciales (CRÍTICO)",
+          "slo": {
+            "target": "100%",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "name": "Arquitectura & Modularidad",
+      "description": "Reglas de estructura, organización y modularidad del código",
+      "rules": [
+        {
+          "id": "ARCH-001",
+          "title": "No console.log en producción",
+          "description": "Usar logger centralizado en lugar de console.log/error/warn",
+          "severity": "CRITICAL",
+          "pattern": {
+            "type": "regex",
+            "regex": "console\\.(log|error|warn|debug|info)",
+            "exclude": ["logger.ts", "*.test.ts", "scripts/"]
+          },
+          "autofix": {
+            "available": true,
+            "tool": "scripts/guardrails/auto-fix-simple.js",
+            "transformation": "console.log → logger.info, console.error → logger.error"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["Scripts de utilidad", "Tests", "Setup files"],
+            "marker": "// GUARDRAILS:SAFE"
+          },
+          "responsible": "All Teams",
+          "example": {
+            "bad": "console.log('Usuario creado:', user);",
+            "good": "logger.info('Usuario creado', { userId: user.id });"
+          },
+          "impact": "Logs no centralizados, posible exposición de datos sensibles",
+          "validation": "npm run guardrails:console-logs",
+          "slo": {
+            "target": "0 violations",
+            "current": "0 violations",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "ARCH-002",
+          "title": "No URLs hardcodeadas",
+          "description": "URLs de API deben usar config/api.ts, no hardcodeadas",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "regex",
+            "regex": "['\"](https?://localhost:\\d+[^'\"]*)['\"]",
+            "exclude": ["config/api.ts", "*.test.ts"]
+          },
+          "autofix": {
+            "available": true,
+            "tool": "scripts/guardrails/auto-fix-simple.js",
+            "transformation": "URL literal → `${API_CONFIG.BASE_URL}/endpoint`"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["Config files", "External services (TomTom, etc)"],
+            "marker": "// GUARDRAILS:SAFE"
+          },
+          "responsible": "Frontend Team",
+          "example": {
+            "bad": "fetch('http://localhost:9998/api/vehicles')",
+            "good": "fetch(`${API_CONFIG.BASE_URL}/api/vehicles`)"
+          },
+          "impact": "Dificulta deployment, migración de ambientes",
+          "validation": "npm run guardrails:hardcoded-urls",
+          "slo": {
+            "target": "0 violations",
+            "current": "0 violations",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "ARCH-003",
+          "title": "Puertos fijos",
+          "description": "Backend puerto 9998, Frontend puerto 5174 (no modificar)",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "config",
+            "files": ["vite.config.ts", "server.ts"],
+            "mustMatch": {"backend": "9998", "frontend": "5174"}
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Configuración de infraestructura crítica"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": []
+          },
+          "responsible": "DevOps / Arquitectura",
+          "impact": "Rompe `iniciar.ps1`, documentación y configuración",
+          "slo": {
+            "target": "100%",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "ARCH-004",
+          "title": "Módulos del menú inmutables",
+          "description": "Solo módulos oficiales permitidos: Panel, Estabilidad, Telemetría, IA, Geofences, Operaciones, Reportes, Administración, Conocimiento, Perfil",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "manual",
+            "files": ["Sidebar.tsx", "routes/*"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Decisión arquitectónica de producto"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": [],
+            "approval": "Product Owner + Arquitecto"
+          },
+          "responsible": "Product + Frontend Team",
+          "officialModules": [
+            "dashboard",
+            "estabilidad", 
+            "telemetria",
+            "ia",
+            "geofences",
+            "operaciones",
+            "reportes",
+            "administracion",
+            "conocimiento",
+            "perfil"
+          ],
+          "impact": "Fragmentación del producto, inconsistencia UX",
+          "slo": {
+            "target": "10 módulos fijos",
+            "current": "10 módulos",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "ARCH-005",
+          "title": "Inicio único con iniciar.ps1",
+          "description": "Sistema se inicia solo con iniciar.ps1 (libera puertos, verifica archivos, inicia servicios)",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "documentation",
+            "file": "iniciar.ps1"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Script de infraestructura"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": []
+          },
+          "responsible": "DevOps",
+          "impact": "Confusión en onboarding, problemas de puerto",
+          "slo": {
+            "target": "1 script único",
+            "current": "1 script",
+            "deadline": "Completado"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain",
+      "name": "Dominio & Reglas de Negocio",
+      "description": "Reglas específicas del dominio de StabilSafe V2",
+      "rules": [
+        {
+          "id": "DOM-001",
+          "title": "Roles: solo ADMIN y MANAGER",
+          "description": "Sistema solo permite roles ADMIN y MANAGER, no otros",
+          "severity": "HIGH",
+          "pattern": {
+            "type": "prisma_enum",
+            "file": "schema.prisma",
+            "enum": "Role",
+            "allowedValues": ["ADMIN", "MANAGER"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Cambio en modelo de datos, requiere migración"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": [],
+            "approval": "Product Owner"
+          },
+          "responsible": "Backend Team + Product",
+          "impact": "Complejidad innecesaria, confusión en permisos",
+          "slo": {
+            "target": "2 roles únicamente",
+            "current": "2 roles",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "DOM-002",
+          "title": "Telemetría y Estabilidad separadas",
+          "description": "Comparadores de sesiones deben validar que sean del mismo tipo (no mezclar telemetría con estabilidad)",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "logic",
+            "files": ["*comparador*.ts", "*compare*.ts"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Lógica de negocio compleja"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": []
+          },
+          "responsible": "Backend Team",
+          "example": {
+            "bad": "comparar sesión GPS con sesión CAN de vehículos diferentes",
+            "good": "comparar solo sesiones del mismo tipo y contexto"
+          },
+          "impact": "Comparaciones sin sentido, datos erróneos",
+          "slo": {
+            "target": "100% comparadores validados",
+            "current": "90%",
+            "deadline": "30 días"
+          }
+        },
+        {
+          "id": "DOM-003",
+          "title": "Flujo obligatorio: Subida → Procesamiento → Visualización → Comparación → Exportación",
+          "description": "Todos los módulos deben respetar este flujo funcional",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "documentation",
+            "verification": "manual"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Arquitectura de producto"
+          },
+          "responsible": "Product + Arquitectura",
+          "impact": "Inconsistencia en UX, datos incompletos",
+          "slo": {
+            "target": "100% módulos conformes",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "DOM-004",
+          "title": "Mapas: Leaflet + TomTom obligatorios",
+          "description": "Visualizaciones geográficas deben usar Leaflet con TomTom, no otras librerías",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "dependencies",
+            "package": "package.json",
+            "required": ["leaflet", "tomtom-sdk"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Decisión de arquitectura"
+          },
+          "exception": {
+            "allowed": false,
+            "cases": []
+          },
+          "responsible": "Frontend Team",
+          "impact": "Inconsistencia visual, costes de licencias duplicados",
+          "slo": {
+            "target": "100% mapas con Leaflet+TomTom",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "DOM-005",
+          "title": "Validación de datos: fechas >= 2025-09-01",
+          "description": "Solo procesar archivos con fechas >= 1 sept 2025 (auditoría determinó datos anteriores son inválidos)",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "logic",
+            "files": ["*parser*.ts", "*upload*.ts"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Lógica de validación"
+          },
+          "responsible": "Backend Team",
+          "example": {
+            "good": "if (fileDate < new Date('2025-09-01')) { reject(); }"
+          },
+          "impact": "Procesamiento de datos corruptos/inválidos",
+          "slo": {
+            "target": "100% archivos válidos",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "DOM-006",
+          "title": "GPS: coordenadas válidas España (36-44°N, -10 a 5°E)",
+          "description": "Filtrar coordenadas GPS fuera de España como inválidas",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "validation",
+            "files": ["*gps*.ts", "*parser*.ts"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Lógica de validación geográfica"
+          },
+          "responsible": "Backend Team",
+          "example": {
+            "good": "if (lat < 36 || lat > 44 || lng < -10 || lng > 5) { invalid(); }"
+          },
+          "impact": "Datos geográficos erróneos en mapas",
+          "slo": {
+            "target": "100% coordenadas válidas",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        },
+        {
+          "id": "DOM-007",
+          "title": "Velocidad: filtrar > 200 km/h como inválidas",
+          "description": "Velocidades físicamente imposibles deben filtrarse",
+          "severity": "LOW",
+          "pattern": {
+            "type": "validation",
+            "files": ["*speed*.ts", "*parser*.ts"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Lógica de validación"
+          },
+          "responsible": "Backend Team",
+          "example": {
+            "good": "if (speed > 200) { filterOut(); }"
+          },
+          "impact": "Datos de velocidad erróneos",
+          "slo": {
+            "target": "100% velocidades realistas",
+            "current": "100%",
+            "deadline": "Completado"
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "Performance & Tamaño",
+      "description": "Reglas de optimización y tamaño de código",
+      "rules": [
+        {
+          "id": "PERF-001",
+          "title": "Bundle size < 300 KB por vista",
+          "description": "Ninguna vista debe superar 300 KB sin lazy loading",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "bundle_analysis",
+            "tool": "webpack-bundle-analyzer"
+          },
+          "autofix": {
+            "available": "partial",
+            "suggestion": "Implementar React.lazy() y code splitting"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["Dashboard con muchos KPIs"],
+            "marker": "// BUNDLE:APPROVED"
+          },
+          "responsible": "Frontend Team",
+          "impact": "Carga lenta, mala UX",
+          "slo": {
+            "target": "< 300 KB",
+            "current": "~250 KB avg",
+            "deadline": "60 días"
+          }
+        },
+        {
+          "id": "PERF-002",
+          "title": "Componentes < 300 líneas",
+          "description": "Componentes React deben tener menos de 300 líneas (sin comentarios)",
+          "severity": "LOW",
+          "pattern": {
+            "type": "loc",
+            "tool": "scripts/guardrails/scan-component-size.ts"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Requiere refactorización manual"
+          },
+          "exception": {
+            "allowed": true,
+            "cases": ["Componentes legacy en migración"],
+            "marker": "// SIZE:LEGACY"
+          },
+          "responsible": "Frontend Team",
+          "impact": "Mantenibilidad reducida",
+          "slo": {
+            "target": "< 300 lines",
+            "current": "~280 avg",
+            "deadline": "90 días"
+          }
+        },
+        {
+          "id": "PERF-003",
+          "title": "Lazy loading en rutas",
+          "description": "Páginas deben usar React.lazy para code splitting",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "code",
+            "files": ["routes/*.tsx", "App.tsx"]
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Cambio arquitectónico"
+          },
+          "responsible": "Frontend Team",
+          "example": {
+            "bad": "import Dashboard from './pages/Dashboard';",
+            "good": "const Dashboard = React.lazy(() => import('./pages/Dashboard'));"
+          },
+          "impact": "Initial bundle demasiado grande",
+          "slo": {
+            "target": "100% rutas lazy",
+            "current": "70%",
+            "deadline": "60 días"
+          }
+        },
+        {
+          "id": "PERF-004",
+          "title": "No queries N+1",
+          "description": "Evitar queries en loops, usar include/select de Prisma",
+          "severity": "MEDIUM",
+          "pattern": {
+            "type": "ast",
+            "detection": "await prisma dentro de .forEach/.map"
+          },
+          "autofix": {
+            "available": false,
+            "reason": "Optimización de queries compleja"
+          },
+          "responsible": "Backend Team",
+          "example": {
+            "bad": "vehicles.forEach(async v => await prisma.session.findMany({where: {vehicleId: v.id}}))",
+            "good": "await prisma.vehicle.findMany({include: {sessions: true}})"
+          },
+          "impact": "Performance de base de datos degradada",
+          "slo": {
+            "target": "0 queries N+1",
+            "current": "~5 detectadas",
+            "deadline": "60 días"
+          }
+        }
+      ]
+    }
+  ],
+  "slos": {
+    "security": {
+      "target": "100%",
+      "current": "95%",
+      "criticalViolations": 0
+    },
+    "architecture": {
+      "target": "100%",
+      "current": "100%",
+      "criticalViolations": 0
+    },
+    "domain": {
+      "target": "100%",
+      "current": "95%",
+      "criticalViolations": 0
+    },
+    "performance": {
+      "target": "90%",
+      "current": "75%",
+      "criticalViolations": 0
+    }
+  },
+  "enforcement": {
+    "ci": {
+      "blocker": ["CRITICAL"],
+      "warning": ["HIGH"],
+      "info": ["MEDIUM", "LOW"]
+    },
+    "preCommit": {
+      "check": ["CRITICAL", "HIGH"]
+    }
+  },
+  "metadata": {
+    "totalRules": 24,
+    "critical": 5,
+    "high": 8,
+    "medium": 9,
+    "low": 2,
+    "autoFixAvailable": 2,
+    "nextReview": "2025-12-03"
+  }
+}
+
+
+
+
+
+

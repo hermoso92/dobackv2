@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { TelemetryV2Controller } from '../controllers/TelemetryV2Controller';
 import { attachOrg } from '../middleware/attachOrg';
 import { authenticate } from '../middleware/auth';
+import { validateOrganization } from '../middleware/validateOrganization';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -212,24 +213,25 @@ router.get('/debug-sessions', async (req, res) => {
     }
 });
 
-// Rutas de sesiones de telemetría
-router.get('/sessions', telemetryController.getSessions);
-router.get('/sessions/:id', telemetryController.getSession);
-router.get('/sessions/:id/points', telemetryController.getSessionPoints);
+// Rutas de sesiones de telemetría - CON autenticación y validación organizationId
+// ✅ CHATGPT P0 CRÍTICO: Añadida validación de organizationId
+router.get('/sessions', authenticate, validateOrganization, attachOrg, telemetryController.getSessions);
+router.get('/sessions/:id', authenticate, validateOrganization, attachOrg, telemetryController.getSession);
+router.get('/sessions/:id/points', authenticate, validateOrganization, attachOrg, telemetryController.getSessionPoints);
 
 // Rutas de eventos
-router.get('/events', telemetryController.getEvents);
+router.get('/events', authenticate, attachOrg, telemetryController.getEvents);
 
 // Rutas de geocercas (Radar)
-router.get('/radar/geofences', telemetryController.getGeofences);
-router.post('/radar/geofences', telemetryController.createGeofence);
-router.put('/radar/geofences/:id', telemetryController.updateGeofence);
-router.delete('/radar/geofences/:id', telemetryController.deleteGeofence);
+router.get('/radar/geofences', authenticate, attachOrg, telemetryController.getGeofences);
+router.post('/radar/geofences', authenticate, attachOrg, telemetryController.createGeofence);
+router.put('/radar/geofences/:id', authenticate, attachOrg, telemetryController.updateGeofence);
+router.delete('/radar/geofences/:id', authenticate, attachOrg, telemetryController.deleteGeofence);
 router.post('/radar/webhook', telemetryController.processRadarWebhook);
 
 // Rutas de exportación
-router.post('/sessions/:id/export/csv', telemetryController.exportToCSV);
-router.post('/sessions/:id/export/pdf', telemetryController.exportToPDF);
+router.post('/sessions/:id/export/csv', authenticate, attachOrg, telemetryController.exportToCSV);
+router.post('/sessions/:id/export/pdf', authenticate, attachOrg, telemetryController.exportToPDF);
 
 // Rutas de tiles de TomTom (proxy)
 router.get('/tomtom/tiles/:style/:z/:x/:y', telemetryController.getTomTomTiles);

@@ -1,10 +1,11 @@
 import { logger } from '../utils/logger';
+import { API_CONFIG } from '@/config/api';
 
 export const createTestOrganization = async () => {
     try {
         logger.info('🏢 Creando organización de prueba...');
 
-        const response = await fetch('http://localhost:9998/api/auth/create-test-organization', {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/create-test-organization`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

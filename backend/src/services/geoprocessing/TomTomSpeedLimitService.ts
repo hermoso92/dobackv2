@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
+import { speedLimitCorrectionService } from '../SpeedLimitCorrectionService';
 
 export interface SpeedLimitResult {
     speedLimit: number;
@@ -49,7 +50,32 @@ export class TomTomSpeedLimitService {
             }
         }
 
-        // 3. Fallback: usar configuración por defecto
+        // 3. Fallback: Intentar obtener de OSM (road_speed_limits)
+        try {
+            const osmLimit = await speedLimitCorrectionService.getCorrectedSpeedLimit(lat, lon);
+            if (osmLimit) {
+                logger.debug(`📍 Límite de velocidad desde OSM: ${osmLimit} km/h`);
+
+                // Determinar tipo de vía según el límite
+                let roadType: 'urban' | 'interurban' | 'highway' = 'urban';
+                if (osmLimit >= 100) roadType = 'highway';
+                else if (osmLimit >= 70) roadType = 'interurban';
+
+                // Guardar en caché
+                await this.saveToCache(lat, lon, osmLimit, roadType);
+
+                return {
+                    speedLimit: osmLimit,
+                    confidence: 'medium',
+                    source: 'cache', // Se guarda como cache
+                    roadType,
+                };
+            }
+        } catch (error: any) {
+            logger.debug(`OSM no disponible: ${error.message}`);
+        }
+
+        // 4. Último fallback: usar configuración por defecto
         logger.debug(`📍 Usando límite de velocidad por defecto para ${vehicleType}`);
         return this.getDefaultSpeedLimit(vehicleType);
     }
@@ -107,17 +133,17 @@ export class TomTomSpeedLimitService {
         try {
             const result = await prisma.speed_limits_cache.findFirst({
                 where: {
-                    latitude: {
+                    lat: {
                         gte: lat - 0.001, // ~100m
                         lte: lat + 0.001,
                     },
-                    longitude: {
+                    lon: {
                         gte: lon - 0.001,
                         lte: lon + 0.001,
                     },
                 },
                 orderBy: {
-                    created_at: 'desc',
+                    cached_at: 'desc',
                 },
             });
 
@@ -132,9 +158,9 @@ export class TomTomSpeedLimitService {
      * Verifica si el caché es válido
      */
     private isCacheValid(cached: any): boolean {
-        if (!cached.created_at) return false;
+        if (!cached.cached_at) return false;
 
-        const age = Date.now() - new Date(cached.created_at).getTime();
+        const age = Date.now() - new Date(cached.cached_at).getTime();
         return age < this.CACHE_TTL;
     }
 
@@ -150,11 +176,10 @@ export class TomTomSpeedLimitService {
         try {
             await prisma.speed_limits_cache.create({
                 data: {
-                    latitude: lat,
-                    longitude: lon,
+                    lat: lat,
+                    lon: lon,
                     speed_limit: speedLimit,
                     road_type: roadType,
-                    created_at: new Date(),
                 },
             });
 
@@ -205,7 +230,7 @@ export class TomTomSpeedLimitService {
 
             const result = await prisma.speed_limits_cache.deleteMany({
                 where: {
-                    created_at: {
+                    cached_at: {
                         lt: oneDayAgo,
                     },
                 },

@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import passport from 'passport';
+import { config } from '../config/env';
 import { AuthController } from '../controllers/AuthController';
 import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimit';
@@ -139,6 +142,63 @@ router.get('/test', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+// 🆕 RUTAS DE GOOGLE OAUTH 2.0 ✅ ACTIVAS
+// Ruta para iniciar autenticación con Google
+router.get(
+    '/google',
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+    })
+);
+
+// Callback de Google OAuth
+router.get(
+    '/google/callback',
+    passport.authenticate('google', { session: false, failureRedirect: '/login?error=oauth_failed' }),
+    async (req, res) => {
+        try {
+            const user = req.user as any;
+
+            if (!user) {
+                logger.error('❌ Usuario no encontrado después de OAuth');
+                return res.redirect('http://localhost:5174/login?error=user_not_found');
+            }
+
+            // Generar JWT (igual que login tradicional)
+            const token = jwt.sign(
+                {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    organizationId: user.organizationId,
+                },
+                config.jwt.secret,
+                { expiresIn: '24h' }
+            );
+
+            logger.info('✅ JWT generado para usuario OAuth', {
+                userId: user.id,
+                email: user.email,
+            });
+
+            // Establecer cookie httpOnly (igual que login tradicional)
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            });
+
+            // Redirigir al dashboard con token en query param (fallback)
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+            res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+        } catch (error) {
+            logger.error('❌ Error en callback de Google OAuth', { error });
+            res.redirect('http://localhost:5174/login?error=oauth_error');
+        }
+    }
+);
 
 // Rutas protegidas
 router.get('/verify', authenticate, authController.verifyToken);

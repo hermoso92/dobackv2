@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useGeocoding } from '../hooks/useGeocoding';
+import { logger } from '../utils/logger';
 
 interface EventDetail {
     id: string;

@@ -15,6 +15,8 @@ import {
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { GeofenceAnalytics } from '../components/geofences/GeofenceAnalytics';
+import { GeofenceMapManager } from '../components/geofences/GeofenceMapManager';
 import { GeofenceRulesManager } from '../components/geofences/GeofenceRulesManager';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../utils/logger';
@@ -152,27 +154,11 @@ const UnifiedGeofences: React.FC = () => {
                     </TabPanel>
 
                     <TabPanel value={currentTab} index={1}>
-                        <Box sx={{ textAlign: 'center', py: 4 }}>
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
-                                Gestión de Zonas Geográficas
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Funcionalidad en desarrollo. Aquí podrás crear y gestionar zonas geográficas
-                                para aplicar reglas de geocercas.
-                            </Typography>
-                        </Box>
+                        <GeofenceMapManager />
                     </TabPanel>
 
                     <TabPanel value={currentTab} index={2}>
-                        <Box sx={{ textAlign: 'center', py: 4 }}>
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
-                                Analíticas de Geocercas
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Funcionalidad en desarrollo. Aquí podrás ver estadísticas y análisis
-                                del comportamiento de las geocercas.
-                            </Typography>
-                        </Box>
+                        <GeofenceAnalytics />
                     </TabPanel>
 
                     <TabPanel value={currentTab} index={3}>

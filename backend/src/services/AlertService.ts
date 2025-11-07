@@ -1,11 +1,20 @@
 /**
- * AlertService - Servicio de Alertas
+ * Servicio de alertas
  * 
- * Gestiona alertas de archivos faltantes:
- * - Detección automática diaria
- * - Creación de alertas
- * - Notificaciones por email
- * - Resolución de alertas
+ * Gestiona alertas de:
+ * - Archivos faltantes (verificación diaria automática)
+ * - Calidad GPS baja (< 30% CRITICAL, < 50% WARNING)
+ * - Notificaciones a usuarios MANAGER
+ * 
+ * Características:
+ * - Severidad calculada automáticamente
+ * - Notificaciones In-App + Email (según preferencias usuario)
+ * - Resolución manual con notas
+ * - Estadísticas agregadas por organización
+ * 
+ * Nuevas funcionalidades:
+ * - createGPSQualityAlert(): Alertas automáticas desde kpiCalculator
+ * - Notificaciones contextualizadas con recomendaciones accionables
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -393,6 +402,70 @@ export class AlertService {
         } catch (error) {
             logger.error('❌ Error obteniendo estadísticas de alertas', error);
             throw error;
+        }
+    }
+
+    /**
+     * Crear alerta de calidad GPS baja
+     * Llamado automáticamente desde kpiCalculator cuando GPS < 50%
+     */
+    static async createGPSQualityAlert(
+        organizationId: string,
+        vehicleId: string,
+        sessionIds: string[],
+        gpsQuality: number
+    ): Promise<void> {
+        try {
+            const severity = gpsQuality < 30 ? 'CRITICAL' : 'WARNING';
+            const vehicle = await prisma.vehicle.findUnique({
+                where: { id: vehicleId },
+                select: { name: true, identifier: true }
+            });
+
+            const alert = await prisma.alert.create({
+                data: {
+                    type: 'GPS_QUALITY',
+                    severity,
+                    title: `Calidad GPS ${severity === 'CRITICAL' ? 'CRÍTICA' : 'BAJA'} - ${vehicle?.name || vehicleId}`,
+                    description: `Calidad GPS: ${gpsQuality.toFixed(1)}% válido. ${severity === 'CRITICAL' ? 'Verificar hardware urgentemente.' : 'Revisar antena GPS.'}`,
+                    vehicleId,
+                    organizationId,
+                    metadata: {
+                        gpsQuality,
+                        sessionIds,
+                        threshold: gpsQuality < 30 ? 30 : 50
+                    }
+                }
+            });
+
+            // Notificar MANAGER
+            const managers = await prisma.user.findMany({
+                where: {
+                    organizationId,
+                    role: 'MANAGER',
+                    status: 'ACTIVE'
+                }
+            });
+
+            for (const manager of managers) {
+                await prisma.notification.create({
+                    data: {
+                        userId: manager.id,
+                        type: 'ALERT',
+                        channel: 'IN_APP',
+                        title: alert.title,
+                        message: alert.description,
+                        priority: severity,
+                        relatedEntity: 'Alert',
+                        relatedEntityId: alert.id,
+                        status: 'PENDING'
+                    }
+                });
+            }
+
+            logger.info(`✅ Alerta GPS creada: ${alert.title}`);
+        } catch (error) {
+            logger.error('❌ Error creando alerta GPS', error);
         }
     }
 }

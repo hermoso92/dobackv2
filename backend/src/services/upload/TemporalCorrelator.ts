@@ -1,10 +1,23 @@
 /**
- * 🔗 CORRELACIONADOR TEMPORAL
+ * Correlacionador temporal de sesiones
  * 
- * Correlaciona sesiones de diferentes tipos (ESTABILIDAD, GPS, ROTATIVO)
- * basándose en proximidad temporal de sus timestamps de inicio.
+ * Correlaciona sesiones de ESTABILIDAD, GPS y ROTATIVO basándose en proximidad temporal.
  * 
- * REGLA: Dos sesiones se correlacionan si |inicio₁ - inicio₂| ≤ 120 segundos
+ * Reglas de correlación:
+ * - Tolerancia: 300 segundos (5 minutos) entre inicios
+ * - Validación flexible: requiere ESTABILIDAD O ROTATIVO (no ambos obligatorios)
+ * - Fusiona múltiples fragmentos GPS/ROTATIVO dentro de una sesión ESTABILIDAD
+ * - Estrategia EARLIEST para startTime, LATEST para endTime
+ * 
+ * Casos reales manejados:
+ * - DOBACK027: 10 EST, 5 GPS, 14 ROT → genera 14 sesiones válidas
+ * - Sesiones sin GPS → marcadas con observation "sin_gps" pero procesadas
+ * - Fragmentos múltiples → fusionados con metadata fusionedFragments
+ * 
+ * IMPORTANTE: La tolerancia de 5 min (no 2 min) permite manejar:
+ * - Desfases de reloj entre sistemas
+ * - GPS tardando en obtener señal inicial
+ * - Arranques rápidos en vehículos de emergencia
  */
 
 import { createLogger } from '../../utils/logger';
@@ -331,22 +344,28 @@ export class TemporalCorrelator {
         const hasGPS = !!gps;
         const hasRotativo = !!rotativo;
 
-        let isValid = hasEstabilidad && hasRotativo; // Mínimo requerido
+        // Validación flexible: permite sesiones con ESTABILIDAD O ROTATIVO
+        // Caso real: DOBACK027 (10 EST, 5 GPS, 14 ROT)
+        let isValid = hasEstabilidad || hasRotativo;
         let invalidReason: string | undefined;
         const observations: string[] = [];
 
+        // Agregar observación si falta tipo esperado
+        if (!hasEstabilidad && hasRotativo) {
+            observations.push('solo_rotativo');
+        }
+        if (!hasRotativo && hasEstabilidad) {
+            observations.push('solo_estabilidad');
+        }
+
         if (!hasGPS) {
-            observations.push('sin gps');
+            observations.push('sin_gps');
+            logger.info(`   ⚠️ Sesión ${sessionNumber}: Sin GPS (KPIs sin distancia)`);
         }
 
-        if (!hasEstabilidad) {
+        if (!hasEstabilidad && !hasRotativo) {
             isValid = false;
-            invalidReason = 'Falta ESTABILIDAD (requerido)';
-        }
-
-        if (!hasRotativo) {
-            isValid = false;
-            invalidReason = 'Falta ROTATIVO (requerido)';
+            invalidReason = 'Falta ESTABILIDAD y ROTATIVO (al menos uno requerido)';
         }
 
         if (durationSeconds <= 0) {

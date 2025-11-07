@@ -1,4 +1,5 @@
 import {
+import { logger } from '../utils/logger';
     CANData,
     GPSData,
     SessionHeader,
@@ -35,7 +36,7 @@ const parseHeader = (line: string): SessionHeader | null => {
             isNaN(minutesNum) ||
             isNaN(secondsNum)
         ) {
-            console.error('Componentes de fecha inválidos:', {
+            logger.error('Componentes de fecha inválidos:', {
                 year,
                 month,
                 day,
@@ -49,11 +50,11 @@ const parseHeader = (line: string): SessionHeader | null => {
         // Crear la fecha y validar que sea válida
         const timestamp = new Date(yearNum, monthNum - 1, dayNum, hour, minutesNum, secondsNum);
         if (isNaN(timestamp.getTime())) {
-            console.error('Fecha inválida creada:', timestamp);
+            logger.error('Fecha inválida creada:', timestamp);
             return null;
         }
 
-        console.log('Fecha parseada:', {
+        logger.info('Fecha parseada:', {
             original: dateTime,
             parsed: timestamp,
             components: {
@@ -76,7 +77,7 @@ const parseHeader = (line: string): SessionHeader | null => {
             vehicleName: vehicleId.trim()
         };
     } catch (error) {
-        console.error('Error parsing header:', error);
+        logger.error('Error parsing header:', error);
         return null;
     }
 };
@@ -141,6 +142,10 @@ export const parseStabilityData = (fileContent: string): VehicleSession<Stabilit
         const values = line.split(';').map((v) => v.trim());
         if (values.length < 18) continue; // Skip invalid lines
 
+        // ✅ Validar y normalizar SI en rango [0,1]
+        const siRaw = parseFloat(values[15]) || 0;
+        const siNormalizado = Math.max(0, Math.min(1, siRaw));
+        
         const data: StabilityData = {
             timestamp: new Date(),
             ax: parseFloat(values[0]) || 0,
@@ -158,7 +163,7 @@ export const parseStabilityData = (fileContent: string): VehicleSession<Stabilit
             usciclo3: parseFloat(values[12]) || 0,
             usciclo4: parseFloat(values[13]) || 0,
             usciclo5: parseFloat(values[14]) || 0,
-            si: parseFloat(values[15]) || 0,
+            si: siNormalizado, // ✅ VALIDADO: clamped a [0,1]
             accmag: parseFloat(values[16]) || 0,
             microsds: parseFloat(values[17]) || 0,
             isLateralGForceHigh: false,
@@ -311,7 +316,7 @@ export const parseCANData = (fileContent: string, fileName?: string): VehicleSes
 
             currentSession.data.push(canData);
         } catch (error) {
-            console.error(`Error parsing CAN data line: ${cleanLine}`, error);
+            logger.error(`Error parsing CAN data line: ${cleanLine}`, error);
             continue;
         }
     }
@@ -360,7 +365,7 @@ export const parseGPSData = (fileContent: string, fileName?: string): VehicleSes
                     );
                     if (isNaN(timestamp.getTime())) throw new Error('Fecha inválida');
                 } catch (e) {
-                    console.error('Error parseando fecha GPS header:', dateTime, e);
+                    logger.error('Error parseando fecha GPS header:', dateTime, e);
                     timestamp = new Date(0);
                 }
                 currentSession = {
@@ -404,7 +409,7 @@ export const parseGPSData = (fileContent: string, fileName?: string): VehicleSes
                     const hour24 = isPM ? (hours % 12) + 12 : hours % 12;
                     defaultTimestamp = new Date(year, month - 1, day, hour24, minutes, seconds);
                 } catch (e) {
-                    console.error('Error parseando fecha GPS por defecto:', e);
+                    logger.error('Error parseando fecha GPS por defecto:', e);
                 }
             }
 
@@ -450,7 +455,7 @@ export const parseGPSData = (fileContent: string, fileName?: string): VehicleSes
 
             currentSession.data.push(gpsData);
         } catch (error) {
-            console.error(`Error parsing GPS data line: ${cleanLine}`, error);
+            logger.error(`Error parsing GPS data line: ${cleanLine}`, error);
             continue;
         }
     }

@@ -359,7 +359,7 @@ export class AIAPI {
     }
 
     // Suscribirse a eventos en tiempo real
-    static subscribeToAIEvents(callback: (event: any) => void): () => void {
+    static subscribeToAIEvents(_callback: (event: any) => void): () => void {
         // TODO: Implementar WebSocket para eventos en tiempo real
         logger.info('Suscribiéndose a eventos de IA');
 

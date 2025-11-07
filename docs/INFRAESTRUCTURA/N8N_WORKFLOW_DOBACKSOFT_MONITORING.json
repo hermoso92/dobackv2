@@ -1,0 +1,426 @@
+{
+  "name": "DobackSoft - Monitoreo 24/7 Premium",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Ejecutar cada 6 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:9998/api/auth/login",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "admin@dobacksoft.com"
+            },
+            {
+              "name": "password",
+              "value": "admin123"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "login-dobacksoft",
+      "name": "1. Login DobackSoft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:9998/api/dashboard/kpis",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $node['1. Login DobackSoft'].json.token }}"
+            },
+            {
+              "name": "x-organization-id",
+              "value": "org-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-kpis",
+      "name": "2. Obtener KPIs Dashboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:9998/api/vehicles",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $node['1. Login DobackSoft'].json.token }}"
+            },
+            {
+              "name": "x-organization-id",
+              "value": "org-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-vehicles",
+      "name": "3. Obtener Vehículos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:9998/api/sessions",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $node['1. Login DobackSoft'].json.token }}"
+            },
+            {
+              "name": "x-organization-id",
+              "value": "org-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-sessions",
+      "name": "4. Obtener Sesiones",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const kpis = $node['2. Obtener KPIs Dashboard'].json;\nconst vehicles = $node['3. Obtener Vehículos'].json;\nconst sessions = $node['4. Obtener Sesiones'].json;\n\n// Calcular métricas\nconst disponibilidad = kpis.disponibilidadFlota || 0;\nconst totalVehiculos = vehicles.length || 0;\nconst totalSesiones = sessions.length || 0;\nconst kmRecorridos = kpis.kmRecorridos || 0;\nconst incidencias = kpis.totalIncidencias || 0;\n\n// Detectar alertas\nconst alertas = [];\n\nif (disponibilidad < 80) {\n  alertas.push(`⚠️ Disponibilidad BAJA: ${disponibilidad.toFixed(1)}% (objetivo: >80%)`);\n}\n\nif (disponibilidad < 50) {\n  alertas.push(`🚨 CRÍTICO: Disponibilidad en ${disponibilidad.toFixed(1)}%`);\n}\n\nif (incidencias > 10) {\n  alertas.push(`⚠️ Alto número de incidencias: ${incidencias}`);\n}\n\nif (totalVehiculos === 0) {\n  alertas.push(`🚨 CRÍTICO: No hay vehículos en el sistema`);\n}\n\nif (totalSesiones === 0) {\n  alertas.push(`⚠️ No hay sesiones registradas hoy`);\n}\n\n// Calcular tiempo operativo total\nconst tiempoOperativo = kpis.tiempoOperativo || 0;\nconst horasOperativas = (tiempoOperativo / 3600).toFixed(1);\n\n// Estado general del sistema\nlet estadoGeneral = '✅ ÓPTIMO';\nif (alertas.length > 0) {\n  estadoGeneral = alertas.some(a => a.includes('CRÍTICO')) ? '🚨 CRÍTICO' : '⚠️ ATENCIÓN';\n}\n\nreturn {\n  timestamp: new Date().toISOString(),\n  estadoGeneral,\n  disponibilidad: disponibilidad.toFixed(1),\n  totalVehiculos,\n  totalSesiones,\n  kmRecorridos: kmRecorridos.toFixed(1),\n  horasOperativas,\n  incidencias,\n  alertas,\n  tieneAlertas: alertas.length > 0,\n  raw: {\n    kpis,\n    vehicles,\n    sessions\n  }\n};"
+      },
+      "id": "analyze-data",
+      "name": "5. Analizar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.tieneAlertas }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-alerts",
+      "name": "6. ¿Hay Alertas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "TU_CHAT_ID_AQUI",
+        "text": "=🚨 *ALERTA DOBACKSOFT*\n\n*Estado:* {{ $json.estadoGeneral }}\n*Fecha:* {{ $json.timestamp.split('T')[0] }}\n*Hora:* {{ $json.timestamp.split('T')[1].split('.')[0] }}\n\n📊 *MÉTRICAS:*\n• Disponibilidad: {{ $json.disponibilidad }}%\n• Vehículos: {{ $json.totalVehiculos }}\n• Sesiones: {{ $json.totalSesiones }}\n• Km recorridos: {{ $json.kmRecorridos }} km\n• Horas operativas: {{ $json.horasOperativas }}h\n• Incidencias: {{ $json.incidencias }}\n\n⚠️ *ALERTAS DETECTADAS:*\n{{ $json.alertas.join('\\n') }}\n\n💡 *Acción requerida:* Revisar dashboard",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "id": "send-alert-telegram",
+      "name": "7a. Enviar Alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1650, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "TU_CREDENCIAL_TELEGRAM",
+          "name": "Telegram DobackSoft"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "TU_CHAT_ID_AQUI",
+        "text": "=✅ *REPORTE DOBACKSOFT*\n\n*Estado:* {{ $json.estadoGeneral }}\n*Fecha:* {{ $json.timestamp.split('T')[0] }}\n*Hora:* {{ $json.timestamp.split('T')[1].split('.')[0] }}\n\n📊 *MÉTRICAS:*\n• Disponibilidad: {{ $json.disponibilidad }}%\n• Vehículos: {{ $json.totalVehiculos }}\n• Sesiones: {{ $json.totalSesiones }}\n• Km recorridos: {{ $json.kmRecorridos }} km\n• Horas operativas: {{ $json.horasOperativas }}h\n• Incidencias: {{ $json.incidencias }}\n\n✅ Todo operando correctamente",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "id": "send-ok-telegram",
+      "name": "7b. Enviar OK Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1650, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "TU_CREDENCIAL_TELEGRAM",
+          "name": "Telegram DobackSoft"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $json.timestamp.split('T')[0] }}",
+            "Hora": "={{ $json.timestamp.split('T')[1].split('.')[0] }}",
+            "Estado": "={{ $json.estadoGeneral }}",
+            "Disponibilidad": "={{ $json.disponibilidad }}",
+            "Vehiculos": "={{ $json.totalVehiculos }}",
+            "Sesiones": "={{ $json.totalSesiones }}",
+            "Km": "={{ $json.kmRecorridos }}",
+            "Horas_Operativas": "={{ $json.horasOperativas }}",
+            "Incidencias": "={{ $json.incidencias }}",
+            "Alertas": "={{ $json.alertas.join('; ') || 'Ninguna' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "save-google-sheets",
+      "name": "8. Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [1850, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TU_CREDENCIAL_GOOGLE",
+          "name": "Google Sheets DobackSoft"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "content": "=Eres un analista de sistemas de gestión de flotas. Analiza estos datos de DobackSoft y proporciona:\n1. Evaluación del estado general\n2. Tendencias detectadas\n3. Recomendaciones de acción\n4. Predicciones de mantenimiento\n\nDatos:\n- Disponibilidad: {{ $json.disponibilidad }}%\n- Vehículos totales: {{ $json.totalVehiculos }}\n- Sesiones: {{ $json.totalSesiones }}\n- Km recorridos: {{ $json.kmRecorridos }}\n- Horas operativas: {{ $json.horasOperativas }}\n- Incidencias: {{ $json.incidencias }}\n- Alertas: {{ $json.alertas.join(', ') || 'Ninguna' }}\n\nProporciona análisis breve (máximo 200 palabras)."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        }
+      },
+      "id": "ai-analysis",
+      "name": "9. Análisis IA (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [2050, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "TU_CREDENCIAL_OPENAI",
+          "name": "OpenAI DobackSoft"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "TU_CHAT_ID_AQUI",
+        "text": "=🤖 *ANÁLISIS IA - DOBACKSOFT*\n\n{{ $json.choices[0].message.content }}\n\n---\n_Generado automáticamente cada 6 horas_",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "id": "send-ai-analysis",
+      "name": "10. Enviar Análisis IA",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [2250, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "TU_CREDENCIAL_TELEGRAM",
+          "name": "Telegram DobackSoft"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Ejecutar cada 6 horas": {
+      "main": [
+        [
+          {
+            "node": "1. Login DobackSoft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Login DobackSoft": {
+      "main": [
+        [
+          {
+            "node": "2. Obtener KPIs Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Obtener KPIs Dashboard": {
+      "main": [
+        [
+          {
+            "node": "3. Obtener Vehículos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Obtener Vehículos": {
+      "main": [
+        [
+          {
+            "node": "4. Obtener Sesiones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Obtener Sesiones": {
+      "main": [
+        [
+          {
+            "node": "5. Analizar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Analizar Datos": {
+      "main": [
+        [
+          {
+            "node": "6. ¿Hay Alertas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. ¿Hay Alertas?": {
+      "main": [
+        [
+          {
+            "node": "7a. Enviar Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "7b. Enviar OK Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7a. Enviar Alerta Telegram": {
+      "main": [
+        [
+          {
+            "node": "8. Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7b. Enviar OK Telegram": {
+      "main": [
+        [
+          {
+            "node": "8. Guardar en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Guardar en Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "9. Análisis IA (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Análisis IA (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "10. Enviar Análisis IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "versionId": "1"
+}
+

@@ -423,3 +423,15 @@ if (require.main === module) {
 
 module.exports = { scanFile, scanDirectory, violations };
 
+
+
+
+
+
+
+
+
+
+
+
+

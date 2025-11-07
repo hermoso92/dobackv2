@@ -1,20 +1,34 @@
 /**
- * EstadosYTiemposTab - Componente para MANAGER
+ * EstadosYTiemposTab - Dashboard de Estados Operacionales para Bomberos
  * 
- * Muestra:
- * - Estados operacionales del vehículo (Parque, Taller, Emergencia, Incendio, Regreso)
- * - Distribución de tiempo por estado
- * - Eventos agrupados por estado
- * - Gráficos interactivos
- * - Exportación a PDF
+ * Muestra métricas específicas para operaciones de bomberos:
+ * - Emergencias atendidas (IDA → INCIDENCIA → VUELTA)
+ * - Tiempo promedio en incidencia
+ * - Distancia IDA vs VUELTA
+ * - Distribución por estado (claves 0-5)
+ * 
+ * Layout modular sin scroll obligatorio (reglas DobackSoft V3)
+ * 
+ * @version 2.0
+ * @date 2025-11-05
  */
 
+import {
+    ClockIcon,
+    DocumentArrowDownIcon,
+    FireIcon,
+    MapPinIcon,
+    TruckIcon
+} from '@heroicons/react/24/outline';
 import { Box, Card, CardContent, CircularProgress, Grid, Tab, Tabs, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
+import { normalizeKPI } from '../../utils/normalizeKPIs';
+import { KPICard } from '../Dashboard/ExecutiveDashboard/components/KPICard';
 import OperationalKeysTab from '../operations/OperationalKeysTab';
 
 interface TabPanelProps {
@@ -68,6 +82,9 @@ const EstadosYTiemposTab: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<EstadosData | null>(null);
     const [activeTab, setActiveTab] = useState(0);
+    
+    // Hook para exportación PDF
+    const { exportEnhancedTabToPDF, isExporting } = usePDFExport();
 
     useEffect(() => {
         fetchEstadosData();
@@ -78,7 +95,7 @@ const EstadosYTiemposTab: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            const response = await apiService.get('/api/operational-keys/summary', {
+            const response = await apiService.get('/api/operational-keys/estados-summary', {
                 params: {
                     organizationId: user?.organizationId
                 }
@@ -244,84 +261,169 @@ const EstadosYTiemposTab: React.FC = () => {
         }
     };
 
+    // Calcular métricas específicas para bomberos
+    const numEmergencias = data?.summary?.numEmergencias || 0;
+    const tiempoPromedioIncidencia = data?.summary?.tiempoPromedioIncidencia || 0;
+    const distanciaIda = data?.summary?.distanciaIda || 0;
+    const distanciaVuelta = data?.summary?.distanciaVuelta || 0;
+
     return (
-        <Box>
-            {/* Resumen General */}
-            <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Box sx={{ 
+            p: 2, 
+            minHeight: '100vh',  // ✅ Evita cortes en monitores altos
+            height: '100%', 
+            overflow: 'auto' 
+        }} id="estados-tiempos-tab-content">
+            {/* Botón Exportar PDF */}
+            <div className="mb-4 flex justify-end">
+                <button
+                    onClick={() => exportEnhancedTabToPDF(
+                        'estados-tiempos-tab-content',
+                        'Reporte_Estados_Tiempos_Bomberos',
+                        {
+                            title: 'Estados & Tiempos - Dashboard Bomberos',
+                            subtitle: `Generado: ${new Date().toLocaleString('es-ES')}`,
+                            kpis: {
+                                emergencias: numEmergencias,
+                                tiempoIncidencia: tiempoPromedioIncidencia,
+                                distanciaIda: distanciaIda,
+                                distanciaVuelta: distanciaVuelta,
+                                totalSesiones: data?.summary?.totalSessions || 0,
+                                duracionTotal: data?.summary?.totalDuration || 0
+                            }
+                        }
+                    )}
+                    disabled={isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                    <DocumentArrowDownIcon className="h-5 w-5" />
+                    {isExporting ? 'Generando PDF...' : 'Exportar Reporte PDF'}
+                </button>
+            </div>
+
+            {/* FILA 1: KPIs Principales para Bomberos - Layout Modular Sin Scroll */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} md={3}>
-                    <Card>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-red-100 rounded-lg">
+                                <FireIcon className="h-6 w-6 text-red-600" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-slate-500">Emergencias Atendidas</div>
+                                <div className="text-2xl font-bold text-red-600">{normalizeKPI(numEmergencias)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-orange-100 rounded-lg">
+                                <ClockIcon className="h-6 w-6 text-orange-600" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-slate-500">Tiempo Prom. Incidencia</div>
+                                <div className="text-2xl font-bold text-orange-600">
+                                    {Math.floor(tiempoPromedioIncidencia / 60)}:{(tiempoPromedioIncidencia % 60).toString().padStart(2, '0')} min
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-blue-100 rounded-lg">
+                                <TruckIcon className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-slate-500">Distancia IDA</div>
+                                <div className="text-2xl font-bold text-blue-600">{normalizeKPI(distanciaIda)} km</div>
+                            </div>
+                        </div>
+                    </div>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-green-100 rounded-lg">
+                                <MapPinIcon className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-slate-500">Distancia VUELTA</div>
+                                <div className="text-2xl font-bold text-green-600">{normalizeKPI(distanciaVuelta)} km</div>
+                            </div>
+                        </div>
+                    </div>
+                </Grid>
+            </Grid>
+
+            {/* FILA 2: Gráficos con altura fija - Layout Modular */}
+            <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: 400, minHeight: 400 }}>
                         <CardContent>
-                            <Typography variant="h6" color="textSecondary" gutterBottom>
-                                Total Sesiones
+                            <Typography variant="h6" gutterBottom className="text-slate-700 font-semibold">
+                                Distribución por Estado
                             </Typography>
-                            <Typography variant="h4" color="primary">
-                                {data.summary.totalSessions}
-                            </Typography>
+                            <Box sx={{ height: 340 }}>
+                                <Pie key="estados-pie-chart" data={pieData} options={pieOptions} />
+                            </Box>
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={12} md={3}>
-                    <Card>
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: 400, minHeight: 400 }}>
                         <CardContent>
-                            <Typography variant="h6" color="textSecondary" gutterBottom>
-                                Duración Total
+                            <Typography variant="h6" gutterBottom className="text-slate-700 font-semibold">
+                                Evolución Temporal
                             </Typography>
-                            <Typography variant="h4" color="primary">
-                                {(data.summary.totalDuration / 3600).toFixed(1)} h
-                            </Typography>
+                            <Box sx={{ height: 340, overflow: 'auto' }}>
+                                <Bar key="estados-bar-chart" data={barData} options={barOptions} />
+                            </Box>
                         </CardContent>
                     </Card>
                 </Grid>
+            </Grid>
+
+            {/* FILA 3: Timeline de Claves Operacionales (Opcional - Con Scroll) */}
+            <Card sx={{ mt: 2 }}>
+                <Tabs value={activeTab} onChange={handleTabChange} aria-label="estados tabs">
+                    <Tab label="Resumen Estados" />
+                    <Tab label="Timeline Detallado" />
+                </Tabs>
+
+                {/* Panel 1: Resumen de estados */}
+                <TabPanel value={activeTab} index={0}>
+                    <Box sx={{ height: 300, overflow: 'auto' }}>
+                        <Grid container spacing={2}>
                 {Object.entries(data.summary.byState).map(([state, stats]) => (
-                    <Grid item xs={12} md={3} key={state}>
-                        <Card>
+                                <Grid item xs={12} md={4} key={state}>
+                                    <Card variant="outlined">
                             <CardContent>
-                                <Typography variant="h6" color="textSecondary" gutterBottom>
+                                            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
                                     {state.charAt(0) + state.slice(1).toLowerCase()}
                                 </Typography>
-                                <Typography variant="h4" color="primary">
+                                            <Typography variant="h5" color="primary">
                                     {(stats.duration / 3600).toFixed(1)} h
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                    {stats.percentage.toFixed(1)}% del tiempo
+                                                {stats.percentage.toFixed(1)}% del tiempo total
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                 ))}
             </Grid>
-
-            {/* Pestañas */}
-            <Card>
-                <Tabs value={activeTab} onChange={handleTabChange} aria-label="estados tabs">
-                    <Tab label="Distribución por Estado" />
-                    <Tab label="Distribución Temporal" />
-                    <Tab label="Eventos Detallados" />
-                </Tabs>
-
-                {/* Panel 1: Distribución por Estado (Pie Chart) */}
-                <TabPanel value={activeTab} index={0}>
-                    <Box sx={{ height: 400 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Distribución de Tiempo por Estado
-                        </Typography>
-                        <Pie data={pieData} options={pieOptions} />
                     </Box>
                 </TabPanel>
 
-                {/* Panel 2: Distribución Temporal (Bar Chart) */}
+                {/* Panel 2: Timeline detallado de claves */}
                 <TabPanel value={activeTab} index={1}>
-                    <Box sx={{ height: 400 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Distribución de Tiempo a lo Largo del Tiempo
-                        </Typography>
-                        <Bar data={barData} options={barOptions} />
+                    <Box sx={{ height: 400, overflow: 'auto' }}>
+                        <OperationalKeysTab organizationId={user?.organizationId || ''} />
                     </Box>
-                </TabPanel>
-
-                {/* Panel 3: Eventos Detallados */}
-                <TabPanel value={activeTab} index={2}>
-                    <OperationalKeysTab organizationId={''} />
                 </TabPanel>
             </Card>
         </Box>

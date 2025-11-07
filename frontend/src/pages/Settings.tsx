@@ -1,4 +1,6 @@
 import { NotificationsActive as AlertIcon, Settings as SettingsIcon, PersonOutline as UserIcon } from '@mui/icons-material';
+import { logger } from '../utils/logger';
+import { API_CONFIG } from '@/config/api';
 import {
 import { logger } from '../utils/logger';
     Box,
@@ -306,7 +308,7 @@ const Settings = () => {
                                             fullWidth
                                             label="URL del Servidor API"
                                             name="apiUrl"
-                                            value="http://localhost:9998"
+                                            value={API_CONFIG.BASE_URL}
                                             disabled
                                         />
                                     </Grid>

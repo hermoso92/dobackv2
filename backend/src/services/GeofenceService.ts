@@ -300,7 +300,7 @@ export class GeofenceService {
             const events = await prisma.geofenceEvent.findMany({
                 where,
                 include: {
-                    geofence: true
+                    Geofence: true
                 },
                 orderBy: { timestamp: 'desc' }
             });

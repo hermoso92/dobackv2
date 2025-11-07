@@ -13,9 +13,9 @@
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
 import { generateStabilityEventsForSession } from '../eventDetector';
-import { routeProcessorService } from '../geoprocessing/RouteProcessorService';
+import { geofenceDetectorService } from '../geoprocessing/GeofenceDetectorService';
 import { kpiCacheService } from '../KPICacheService';
-import { generateOperationalSegments } from '../OperationalKeyCalculator';
+import { convertSegmentsToOperationalKeys, generateOperationalSegments } from '../OperationalKeyCalculator';
 
 export interface SessionEventsSummary {
     sessionId: string;
@@ -144,6 +144,12 @@ export class UploadPostProcessor {
             results.eventsGenerated += events.length;
             summary.eventsGenerated = events.length;
 
+            // ✅ Logging adicional para diagnosticar eventos
+            logger.info(`📊 Generación de eventos para ${sessionId}:`, {
+                eventos_detectados: events.length,
+                tiene_eventos: events.length > 0
+            });
+
             // ✅ NUEVO: Obtener los eventos guardados de la BD para incluir en el resumen
             const savedEvents = await prisma.$queryRaw<Array<{
                 type: string;
@@ -188,6 +194,20 @@ export class UploadPostProcessor {
             logger.info(`✅ Segmentos generados para sesión ${sessionId}:`, {
                 count: segments.length
             });
+
+            // 3.1 Convertir segmentos a OperationalKeys (DESACTIVADO - tabla obsoleta)
+            // ✅ Los KPIs ahora leen directamente de operational_state_segments
+            // ❌ La tabla operationalKey es obsoleta y causaba errores PostGIS
+            /*
+            try {
+                const keysCreated = await convertSegmentsToOperationalKeys(sessionId);
+                logger.info(`✅ ${keysCreated} OperationalKeys creados para sesión ${sessionId}`);
+            } catch (keyError: any) {
+                logger.error(`❌ Error convirtiendo segmentos a OperationalKeys: ${keyError.message}`);
+                // No fallar todo el proceso si esto falla
+            }
+            */
+            logger.info(`✅ Segmentos guardados en operational_state_segments (conversión a operationalKey desactivada)`);
         } catch (error: any) {
             logger.error(`❌ Error generando segmentos para sesión ${sessionId}:`, error);
             // No fallar si no hay datos de rotativo
@@ -196,20 +216,70 @@ export class UploadPostProcessor {
             }
         }
 
-        // 4. ✅ NUEVO: Geoprocesamiento
+        // 4. ✅ DETECCIÓN DE GEOCERCAS (HABILITADO)
+        // Detecta eventos de entrada/salida de geocercas
+        // NO requiere TomTom API, usa solo PostGIS + Turf.js
         try {
-            logger.debug(`🗺️ Ejecutando geoprocesamiento para sesión ${sessionId}`);
-            const geoResult = await routeProcessorService.processSession(sessionId);
+            logger.debug(`🗺️ Ejecutando detección de geocercas para sesión ${sessionId}`);
 
-            summary.geofenceEvents = geoResult.geofenceEvents;
-            summary.routeDistance = geoResult.distance;
-            summary.routeConfidence = geoResult.confidence;
-            summary.speedViolations = geoResult.speedViolations;
+            // Obtener puntos GPS de la sesión
+            const gpsPoints = await prisma.gpsMeasurement.findMany({
+                where: { sessionId },
+                select: {
+                    latitude: true,
+                    longitude: true,
+                    timestamp: true
+                },
+                orderBy: { timestamp: 'asc' }
+            });
 
-            logger.debug(`✅ Geoprocesamiento OK: ${geoResult.distance.toFixed(2)}m, ${geoResult.geofenceEvents} eventos, confianza: ${(geoResult.confidence * 100).toFixed(1)}%`);
+            if (gpsPoints.length === 0) {
+                logger.debug(`⏭️ No hay puntos GPS para detectar geocercas en sesión ${sessionId}`);
+            } else {
+                // Detectar eventos de geocerca
+                const geofenceEvents = await geofenceDetectorService.detectGeofenceEvents(
+                    sessionId,
+                    gpsPoints.map(p => ({
+                        lat: p.latitude,
+                        lon: p.longitude,
+                        timestamp: p.timestamp
+                    }))
+                );
+
+                // Guardar eventos en BD
+                const session = await prisma.session.findUnique({
+                    where: { id: sessionId },
+                    select: { vehicleId: true, organizationId: true }
+                });
+
+                if (session) {
+                    for (const event of geofenceEvents) {
+                        await prisma.$executeRaw`
+                            INSERT INTO "GeofenceEvent" (
+                                id, "geofenceId", "vehicleId", "organizationId",
+                                type, timestamp, latitude, longitude, status, "updatedAt"
+                            ) VALUES (
+                                (gen_random_uuid())::text,
+                                ${event.geofenceId},
+                                ${session.vehicleId},
+                                ${session.organizationId},
+                                ${event.type}::text::"GeofenceEventType",
+                                ${event.timestamp},
+                                ${event.lat},
+                                ${event.lon},
+                                'ACTIVE'::"GeofenceEventStatus",
+                                NOW()
+                            )
+                        `;
+                    }
+                }
+
+                summary.geofenceEvents = geofenceEvents.length;
+                logger.info(`✅ Geocercas OK: ${geofenceEvents.length} eventos detectados en sesión ${sessionId}`);
+            }
         } catch (geoError: any) {
-            logger.warn(`⚠️ Error en geoprocesamiento: ${geoError.message}`);
-            // No bloquear post-procesamiento
+            logger.warn(`⚠️ Error en detección de geocercas: ${geoError.message}`);
+            // No fallar el procesamiento completo si falla geocercas
         }
 
         return summary;

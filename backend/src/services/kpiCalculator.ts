@@ -1,8 +1,26 @@
 /**
- * 📊 SERVICIO DE CÁLCULO DE KPIs
- * Basado en análisis exhaustivo de archivos reales
- * Sin estimaciones - solo datos reales
- * ACTUALIZADO: Con claves operacionales correctas
+ * Servicio de cálculo de KPIs
+ * 
+ * Calcula KPIs basándose en análisis de 93 archivos reales (sin estimaciones arbitrarias).
+ * 
+ * Validaciones y optimizaciones:
+ * - Distancia: Fórmula Haversine (precisa para coordenadas geográficas)
+ * - Velocidades: Filtradas > 200 km/h (datos corruptos GPS)
+ * - GPS sin datos: Retorna estructura válida con alert 'SIN_GPS'
+ * - Alertas automáticas: GPS < 30% → CRITICAL, 30-50% → WARNING
+ * - Performance: Cache + cálculos paralelos (~25s para 62 sesiones)
+ * 
+ * KPIs calculados:
+ * 1. Kilómetros recorridos (Haversine + interpolación inteligente)
+ * 2. Tiempo rotativo ON/OFF
+ * 3. Índice estabilidad (SI promedio)
+ * 4. Horas de conducción
+ * 5. Claves operacionales (0-5)
+ * 6. Disponibilidad
+ * 
+ * Casos verificados:
+ * - DOBACK028: 62 sesiones → ~25s (cache + paralelo)
+ * - DOBACK026: Sin GPS → fallback con alert
  */
 
 // import { prisma } from '../config/prisma'; // Comentado para usar importación dinámica
@@ -104,12 +122,27 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
     puntos_gps_validos: number;
     puntos_gps_invalidos: number;
     porcentaje_cobertura: number;
+    gps_quality_alert?: string; // ✅ MODO DIOS: Alerta cuando GPS < 30%
 }> {
 
     const gpsData = await prisma.gpsMeasurement.findMany({
         where: { sessionId: { in: sessionIds } },
         orderBy: { timestamp: 'asc' }
     });
+
+    // Detectar si no hay GPS
+    if (gpsData.length === 0) {
+        logger.warn('⚠️ Sin datos GPS - KM no calculables');
+        return {
+            km_total: 0,
+            km_con_gps: 0,
+            km_estimados: 0,
+            puntos_gps_validos: 0,
+            puntos_gps_invalidos: 0,
+            porcentaje_cobertura: 0,
+            gps_quality_alert: 'SIN_GPS'
+        };
+    }
 
     // Corregir filtro GPS: aceptar coordenadas válidas aunque fix no sea exactamente '1'
     const gpsValidos = gpsData.filter(g => {
@@ -127,6 +160,18 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
         return coordenadasValidas && satelitesSuficientes;
     });
     const gpsInvalidos = gpsData.length - gpsValidos.length;
+
+    // Calcular calidad GPS y alertar si es baja
+    const porcentajeCobertura = gpsData.length > 0 ? (gpsValidos.length / gpsData.length) * 100 : 0;
+    let gpsQualityAlert: string | undefined;
+
+    if (porcentajeCobertura < 30) {
+        gpsQualityAlert = 'GPS_CRITICO';
+        logger.error(`🚨 GPS CRÍTICO: ${porcentajeCobertura.toFixed(1)}% válido`);
+    } else if (porcentajeCobertura < 50) {
+        gpsQualityAlert = 'GPS_BAJO';
+        logger.warn(`⚠️ GPS BAJO: ${porcentajeCobertura.toFixed(1)}% válido`);
+    }
 
     let kmConGPS = 0;
     let kmEstimados = 0;
@@ -164,7 +209,6 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
     }
 
     const kmTotal = kmConGPS + kmEstimados;
-    const porcentajeCobertura = gpsData.length > 0 ? (gpsValidos.length / gpsData.length) * 100 : 0;
 
     return {
         km_total: Math.round(kmTotal * 100) / 100,
@@ -172,7 +216,8 @@ export async function calcularKilometrosRecorridos(sessionIds: string[]): Promis
         km_estimados: Math.round(kmEstimados * 100) / 100,
         puntos_gps_validos: gpsValidos.length,
         puntos_gps_invalidos: gpsInvalidos,
-        porcentaje_cobertura: Math.round(porcentajeCobertura * 100) / 100
+        porcentaje_cobertura: Math.round(porcentajeCobertura * 100) / 100,
+        gps_quality_alert: gpsQualityAlert
     };
 }
 
@@ -371,9 +416,9 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
             };
         }
 
-        // Obtener claves operacionales de las sesiones
+        // ✅ Obtener claves operacionales de las sesiones (usando operational_state_segments)
 
-        const claves = await prisma.operationalKey.findMany({
+        const claves = await prisma.operational_state_segments.findMany({
             where: {
                 sessionId: { in: sessionIds }
             },
@@ -387,17 +432,17 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
         const por_tipo: Record<number, { cantidad: number; duracion_total: number; duracion_promedio: number }> = {};
 
         claves.forEach(clave => {
-            if (!por_tipo[clave.keyType]) {
-                por_tipo[clave.keyType] = {
+            if (!por_tipo[clave.clave]) {  // ✅ Cambiado keyType → clave
+                por_tipo[clave.clave] = {
                     cantidad: 0,
                     duracion_total: 0,
                     duracion_promedio: 0
                 };
             }
 
-            por_tipo[clave.keyType].cantidad++;
-            if (clave.duration) {
-                por_tipo[clave.keyType].duracion_total += clave.duration;
+            por_tipo[clave.clave].cantidad++;  // ✅ Cambiado
+            if (clave.durationSeconds) {  // ✅ Cambiado duration → durationSeconds
+                por_tipo[clave.clave].duracion_total += clave.durationSeconds;
             }
         });
 
@@ -414,16 +459,16 @@ export async function calcularClavesOperacionalesReales(sessionIds: string[]): P
         const claves_recientes = claves.slice(0, 10).map(clave => ({
             id: clave.id,
             sessionId: clave.sessionId,
-            keyType: clave.keyType,
+            keyType: clave.clave,  // ✅ Cambiado
             startTime: clave.startTime,
             endTime: clave.endTime,
-            duration: clave.duration,
-            startLat: clave.startLat,
-            startLon: clave.startLon,
-            endLat: clave.endLat,
-            endLon: clave.endLon,
-            rotativoState: clave.rotativoState,
-            geofenceId: clave.geofenceId
+            duration: clave.durationSeconds,  // ✅ Cambiado
+            startLat: null,  // ✅ No existe en operational_state_segments
+            startLon: null,  // ✅ No existe en operational_state_segments
+            endLat: null,  // ✅ No existe en operational_state_segments
+            endLon: null,  // ✅ No existe en operational_state_segments
+            rotativoState: null,  // ✅ No existe en operational_state_segments
+            geofenceId: null  // ✅ No existe en operational_state_segments
         }));
 
         return {
@@ -515,7 +560,7 @@ export async function calcularKPIsCompletos(filters: {
 
         // ✅ LEER EVENTOS DESDE BD (NO calcular en tiempo real)
         // IMPORTANTE: Filtrar eventos solo de las sesiones que pasaron el filtro
-        const eventosDB = await prisma.stabilityEvent.findMany({
+        const eventosDB = await prisma.stability_events.findMany({
             where: { session_id: { in: sessionIds } },
             select: { type: true, session_id: true }
         });

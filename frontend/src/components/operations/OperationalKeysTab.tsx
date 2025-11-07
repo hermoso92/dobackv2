@@ -30,6 +30,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { apiService } from '../../services/api';
+import { logger } from '../../utils/logger';
 
 // Fix para iconos de Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';

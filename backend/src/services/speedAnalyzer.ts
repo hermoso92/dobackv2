@@ -110,7 +110,7 @@ export async function detectarExcesosSesion(
         where: { id: sessionId },
         include: {
             // cambio aquí: incluir TODOS los puntos GPS en rango (sin filtrar por speed) para poder calcular velocidad por Haversine
-            gpsMeasurements: {
+            GpsMeasurement: {
                 where: {
                     ...(dateFrom && dateTo ? { timestamp: { gte: dateFrom, lte: dateTo } } : {})
                 },
@@ -119,7 +119,7 @@ export async function detectarExcesosSesion(
             RotativoMeasurement: {
                 orderBy: { timestamp: 'asc' }
             },
-            vehicle: {
+            Vehicle: {
                 select: { id: true }
             }
         }
@@ -150,9 +150,9 @@ export async function detectarExcesosSesion(
         return R * c;
     };
 
-    for (let i = 0; i < session.gpsMeasurements.length; i++) {
-        const gps = session.gpsMeasurements[i];
-        const prev = i > 0 ? session.gpsMeasurements[i - 1] : null;
+    for (let i = 0; i < session.GpsMeasurement.length; i++) {
+        const gps = session.GpsMeasurement[i];
+        const prev = i > 0 ? session.GpsMeasurement[i - 1] : null;
         // Buscar estado de rotativo más cercano
         let rotativoOn = false;
         const timestampGPS = gps.timestamp.getTime();
@@ -216,7 +216,7 @@ export async function detectarExcesosSesion(
                 justificado,
                 severidad,
                 timestamp: gps.timestamp,
-                vehicleId: session.vehicle.id,
+                vehicleId: session.Vehicle.id,
                 sessionId: session.id
             };
 
@@ -278,7 +278,11 @@ export async function analizarVelocidades(sessionIds: string[], from?: Date | st
     const velocidades = gpsData
         .map(g => Number(g.speed) || 0)
         .filter(s => esVelocidadValida(s));
-    const velocidadMaxima = velocidades.length > 0 ? Math.max(...velocidades) : 0;
+    
+    // ✅ FIX: Evitar stack overflow con arrays grandes usando reduce en lugar de Math.max(...array)
+    const velocidadMaxima = velocidades.length > 0 
+        ? velocidades.reduce((max, v) => Math.max(max, v), 0) 
+        : 0;
     const velocidadPromedio = velocidades.length > 0
         ? velocidades.reduce((a, b) => a + b, 0) / velocidades.length
         : 0;
@@ -298,8 +302,8 @@ export async function analizarVelocidades(sessionIds: string[], from?: Date | st
 // ============================================================================
 
 export const speedAnalyzer = {
-    detectarExcesosSesion,
-    analizarVelocidades,
+    detectarExcesosSesion,  // ✅ Coma verificada
+    analizarVelocidades,   // ✅ Coma verificada
     LIMITES_CAMIONES,
     TOLERANCIA_EMERGENCIA
 };

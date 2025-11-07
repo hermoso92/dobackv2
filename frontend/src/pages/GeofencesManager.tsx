@@ -129,6 +129,19 @@ const GeofencesManager: React.FC = () => {
             logger.info('Datos de geofences cargados', { count: dataCount });
 
             if (geofencesResponse.success && geofencesResponse.data && Array.isArray(geofencesResponse.data)) {
+                // Cargar eventos para contar por geocerca
+                const eventsResponse = await apiService.get('/api/geofences/events?limit=1000');
+                const allEvents = eventsResponse.success && Array.isArray(eventsResponse.data) ? eventsResponse.data : [];
+                
+                logger.info('Eventos de geofences cargados', { count: allEvents.length });
+
+                // Contar eventos por geocerca
+                const eventCountByGeofence = allEvents.reduce((acc: any, event: any) => {
+                    const geoId = event.geofenceId;
+                    acc[geoId] = (acc[geoId] || 0) + 1;
+                    return acc;
+                }, {});
+
                 const convertedGeofences: Geofence[] = geofencesResponse.data.map((apiGeofence: any) => ({
                     id: apiGeofence.id,
                     externalId: apiGeofence.externalId,
@@ -146,33 +159,28 @@ const GeofencesManager: React.FC = () => {
                     ip: apiGeofence.ip,
                     organizationId: apiGeofence.organizationId,
                     createdAt: apiGeofence.createdAt,
-                    updatedAt: apiGeofence.updatedAt
+                    updatedAt: apiGeofence.updatedAt,
+                    _count: { events: eventCountByGeofence[apiGeofence.id] || 0 } // ✅ AGREGAR CONTADOR
                 }));
 
                 setGeofences(convertedGeofences);
 
-                // Cargar eventos de geofences
-                try {
-                    const eventsResponse = await apiService.get('/api/geofences/events?limit=50');
-                    if (eventsResponse.success && eventsResponse.data && Array.isArray(eventsResponse.data)) {
-                        const convertedEvents: GeofenceEvent[] = eventsResponse.data.map((apiEvent: any) => ({
-                            id: apiEvent.id,
-                            geofenceId: apiEvent.geofenceId,
-                            vehicleId: apiEvent.vehicleId,
-                            vehicleName: apiEvent.vehicleId,
-                            eventType: apiEvent.type.toLowerCase() === 'enter' ? 'entry' : 'exit',
-                            timestamp: apiEvent.timestamp,
-                            coordinates: [apiEvent.latitude, apiEvent.longitude],
-                            speed: apiEvent.speed || 0,
-                            duration: undefined
-                        }));
-                        setGeofenceEvents(convertedEvents);
-                        logger.info('Eventos de geofences cargados', { count: convertedEvents.length });
-                    }
-                } catch (eventsError) {
-                    logger.warn('No se pudieron cargar eventos de geofences', { error: eventsError });
-                    setGeofenceEvents([]);
-                }
+                // Convertir eventos para la tabla
+                const convertedEvents: GeofenceEvent[] = allEvents.map((apiEvent: any) => ({
+                    id: apiEvent.id,
+                    geofenceId: apiEvent.geofenceId,
+                    vehicleId: apiEvent.vehicleId,
+                    vehicleName: apiEvent.vehicleName || apiEvent.vehicleId,
+                    eventType: apiEvent.eventType || (apiEvent.type?.toLowerCase() === 'enter' ? 'entry' : 'exit'),
+                    timestamp: apiEvent.timestamp,
+                    coordinates: [apiEvent.latitude, apiEvent.longitude],
+                    speed: apiEvent.speed || 0,
+                    duration: undefined,
+                    geofenceName: apiEvent.geofenceName,
+                    geofenceType: apiEvent.geofenceType
+                }));
+                
+                setGeofenceEvents(convertedEvents);
             } else {
                 throw new Error('Formato de respuesta inválido');
             }
@@ -220,9 +228,40 @@ const GeofencesManager: React.FC = () => {
         setActiveTab(newValue);
     };
 
-    const handleCreateGeofence = () => {
-        // TODO: Implementar diálogo de creación de geofence
-        logger.info('Crear nuevo geofence');
+    const handleCreateGeofence = async () => {
+        try {
+            // Crear geocerca de ejemplo para testing
+            const newGeofence = {
+                name: `Nueva Geocerca ${geofences.length + 1}`,
+                description: 'Geocerca creada desde la interfaz',
+                tag: 'test',
+                type: 'CIRCLE',
+                mode: 'CAR',
+                enabled: true,
+                live: true,
+                geometry: {
+                    type: 'Point',
+                    coordinates: [-3.7038, 40.4168] // Madrid centro
+                },
+                geometryCenter: {
+                    type: 'Point',
+                    coordinates: [-3.7038, 40.4168]
+                },
+                geometryRadius: 500
+            };
+
+            const response = await apiService.post('/api/geofences', newGeofence);
+            
+            if (response.success) {
+                setSuccess('Geocerca creada exitosamente');
+                await loadData();
+            } else {
+                setError('Error al crear geocerca');
+            }
+        } catch (error) {
+            logger.error('Error creando geocerca', { error });
+            setError('Error al crear la geocerca');
+        }
     };
 
     const handleCreateRealData = async () => {
@@ -310,25 +349,7 @@ const GeofencesManager: React.FC = () => {
     }
 
     return (
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-            {/* Header */}
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <MapIcon sx={{ mr: 2, fontSize: 40 }} />
-                    Gestión de Geofences - Bomberos Madrid
-                </Typography>
-                <Typography variant="h6" color="text.secondary">
-                    Administra zonas geográficas de interés para el seguimiento y alertas de vehículos
-                </Typography>
-            </Box>
-
-            {/* Estadísticas rápidas */}
-            <GeofenceStats
-                geofences={geofences}
-                geofenceEvents={geofenceEvents}
-                getPriorityFromTag={helpers.getPriorityFromTag}
-            />
-
+        <Container maxWidth="xl" sx={{ pt: 10, pb: 2 }}>
             <Paper elevation={2}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={activeTab} onChange={handleTabChange} aria-label="geofences tabs">
@@ -404,33 +425,23 @@ const GeofencesManager: React.FC = () => {
                 {/* Pestaña: Mapa Interactivo */}
                 <TabPanel value={activeTab} index={2}>
                     <Typography variant="h6" gutterBottom>
-                        Mapa Interactivo de Geofences
+                        Mapa Interactivo de Geocercas
                     </Typography>
 
-                    {geofences.length === 0 ? (
-                        <Alert severity="info" sx={{ mb: 3 }}>
-                            <Typography variant="body2">
-                                <strong>No hay geofences configuradas.</strong><br />
-                                Haz clic en "Crear Datos Reales" para generar geofences de ejemplo para Bomberos Madrid, incluyendo:
-                                <br />• Parque Central (Puerta del Sol)
-                                <br />• Estaciones de Chamberí, Vallecas y Carabanchel
-                                <br />• Zonas de alto riesgo (Gran Vía, Retiro)
-                            </Typography>
-                        </Alert>
-                    ) : (
-                        <Alert severity="success" sx={{ mb: 3 }}>
-                            <Typography variant="body2">
-                                <strong>Mapa interactivo activo</strong> con {geofences.length} geofences configuradas ({geofences.filter(g => g.enabled).length} activas).
-                                Haz clic en los marcadores para ver detalles completos.
-                            </Typography>
-                        </Alert>
-                    )}
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        <Typography variant="body2">
+                            <strong>Visualización de geocercas:</strong> {geofences.length} geocercas configuradas ({geofences.filter(g => g.enabled).length} activas).
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                            💡 Las geocercas se crean automáticamente desde el backend. Para agregar nuevas, usa el botón "Crear Geocerca" arriba.
+                        </Typography>
+                    </Alert>
 
                     {/* Mapa Interactivo */}
                     <Box sx={{ mb: 3 }}>
                         <GeofenceMap
                             geofences={geofences}
-                            height="600px"
+                            height="calc(100vh - 300px)"
                         />
                     </Box>
 

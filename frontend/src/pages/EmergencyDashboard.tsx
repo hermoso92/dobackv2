@@ -3,6 +3,7 @@
  * Vista principal para monitoreo en tiempo real de vehículos de bomberos
  */
 
+import { logger } from '../utils/logger';
 import {
 import { logger } from '../utils/logger';
     Warning as AlertIcon,

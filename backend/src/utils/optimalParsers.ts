@@ -203,6 +203,10 @@ export class StabilityStreamParser {
             const timestamp = this.getCurrentTimestamp();
             if (!timestamp) return null;
 
+            // ✅ Validar y normalizar SI en rango [0,1]
+            const siRaw = parseFloat(parts[15]) || 0;
+            const siNormalizado = Math.max(0, Math.min(1, siRaw));
+            
             return {
                 timestamp,
                 ax: parseFloat(parts[0]) || 0,
@@ -214,7 +218,7 @@ export class StabilityStreamParser {
                 roll: parseFloat(parts[6]) || 0,
                 pitch: parseFloat(parts[7]) || 0,
                 yaw: parseFloat(parts[8]) || 0,
-                si: parseFloat(parts[15]) || 0,
+                si: siNormalizado, // ✅ VALIDADO: clamped a [0,1]
                 accmag: parseFloat(parts[16]) || 0
             };
 

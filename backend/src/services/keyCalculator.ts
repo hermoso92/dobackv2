@@ -1,5 +1,5 @@
-import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
 
 // ============================================================================
 // CONFIGURACIÓN
@@ -103,9 +103,11 @@ export async function calcularTiemposPorClave(
         }
 
         if (segmentos.length === 0) {
-            logger.warn('No hay segmentos operacionales persistidos, retornando tiempos vacíos');
+            logger.warn('⚠️ No hay segmentos operacionales persistidos, retornando tiempos vacíos');
             return crearTiemposVacios();
         }
+
+        logger.info(`📊 Procesando ${segmentos.length} segmentos operacionales`);
 
         // Calcular tiempos desde segmentos persistidos
         const tiempos = {
@@ -115,6 +117,15 @@ export async function calcularTiemposPorClave(
         segmentos.forEach((segmento: any) => {
             const duracionSegundos = (segmento.endTime.getTime() - segmento.startTime.getTime()) / 1000;
             tiempos[`clave${segmento.clave}` as keyof typeof tiempos] += duracionSegundos;
+        });
+
+        logger.info('🔍 DEBUG: Tiempos por clave calculados:', {
+            clave0: tiempos.clave0,
+            clave1: tiempos.clave1,
+            clave2: tiempos.clave2,
+            clave3: tiempos.clave3,
+            clave4: tiempos.clave4,
+            clave5: tiempos.clave5
         });
 
         const totalSegundos = tiempos.clave0 + tiempos.clave1 + tiempos.clave2 + tiempos.clave3 + tiempos.clave4 + tiempos.clave5;

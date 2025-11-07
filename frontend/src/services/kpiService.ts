@@ -27,12 +27,27 @@ export interface ActivityMetrics {
     emergency_departures: number;
 }
 
+export interface EventDetail {
+    session_id: string;
+    vehicle_identifier: string;
+    vehicle_name: string;
+    session_date: string;
+    tipo: string;
+    si: number;
+    timestamp: string;
+}
+
 export interface StabilityMetrics {
     total_incidents: number;
     critical: number;
     moderate: number;
     light: number;
     por_tipo?: Record<string, number>; // Eventos por tipo
+    eventos_detallados?: {
+        critical: EventDetail[];
+        moderate: EventDetail[];
+        light: EventDetail[];
+    };
 }
 
 export interface QualityMetrics {

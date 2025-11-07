@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useTelemetryData } from '../../hooks/useTelemetryData';
+import { logger } from '../../utils/logger';
 import RouteMapComponent from '../maps/RouteMapComponent';
 import { VehicleSessionSelector } from '../selectors/VehicleSessionSelector';
 

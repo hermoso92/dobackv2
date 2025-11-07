@@ -21,6 +21,7 @@ import {
     TrendInfo,
     VehicleConfig
 } from '../types/stability';
+import { logger } from '../utils/logger';
 import {
     calculateDangerInfo,
     calculateDangerTrend

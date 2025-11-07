@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { API_CONFIG } from '@/config/api';
 
 
 export const createSuperAdmin = async () => {
@@ -9,7 +10,7 @@ export const createSuperAdmin = async () => {
         let response;
         try {
             // Hacer petición directa sin el wrapper de api para evitar autenticación
-            response = await fetch('http://localhost:9998/api/auth/create-superadmin', {
+            response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/create-superadmin`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -29,7 +30,7 @@ export const createSuperAdmin = async () => {
 
             // Intentar con el endpoint directo como fallback
             try {
-                response = await fetch('http://localhost:9998/create-superadmin', {
+                response = await fetch(`${API_CONFIG.BASE_URL}/create-superadmin`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

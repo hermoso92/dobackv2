@@ -17,18 +17,24 @@ export class TelemetryV2Controller {
     getSessions = async (req: Request, res: Response) => {
         try {
             const { from, to, vehicleId, page = 1, limit = 20 } = req.query;
-            const orgId = req.orgId;
+
+            // ✅ FALLBACK completo para orgId
+            const orgId = req.orgId || (req as any).user?.organizationId;
 
             logger.info('TelemetryV2Controller.getSessions called', {
                 orgId,
+                orgIdFromAttach: req.orgId,
+                orgIdFromUser: (req as any).user?.organizationId,
                 query: req.query,
                 user: req.user
             });
 
             if (!orgId) {
-                logger.warn('Organization ID no encontrado', {
-                    orgId,
-                    user: req.user
+                logger.error('Organization ID no encontrado después de fallback', {
+                    orgIdFromAttach: req.orgId,
+                    orgIdFromUser: (req as any).user?.organizationId,
+                    user: (req as any).user,
+                    hasAuthHeader: !!req.headers.authorization
                 });
                 return res.status(400).json({
                     success: false,
@@ -52,44 +58,55 @@ export class TelemetryV2Controller {
 
             logger.info('Consultando sesiones con filtros', { where });
 
-            const sessions = await prisma.session.findMany({
-                where,
-                include: {
-                    vehicle: {
-                        select: {
-                            name: true,
-                            licensePlate: true
-                        }
-                    },
-                    gpsMeasurements: {
-                        select: {
-                            latitude: true,
-                            longitude: true,
-                            speed: true,
-                            timestamp: true
+            // ✅ CHATGPT CRÍTICO 2: Paginación completa con total
+            const [sessions, total] = await Promise.all([
+                prisma.session.findMany({
+                    where,
+                    include: {
+                        Vehicle: {  // ✅ Mayúscula
+                            select: {
+                                name: true,
+                                licensePlate: true
+                            }
                         },
-                        orderBy: {
-                            timestamp: 'asc'
+                        GpsMeasurement: {  // ✅ Mayúscula
+                            select: {
+                                latitude: true,
+                                longitude: true,
+                                speed: true,
+                                timestamp: true
+                            },
+                            orderBy: {
+                                timestamp: 'asc'
+                            }
+                        },
+                        _count: {
+                            select: {
+                                GpsMeasurement: true  // ✅ Mayúscula
+                            }
                         }
                     },
-                    _count: {
-                        select: {
-                            gpsMeasurements: true
-                        }
-                    }
-                },
-                orderBy: {
-                    startTime: 'desc'
-                },
-                skip: (Number(page) - 1) * Number(limit),
-                take: Number(limit)
-            });
+                    orderBy: {
+                        startTime: 'desc'
+                    },
+                    skip: (Number(page) - 1) * Number(limit),
+                    take: Number(limit)
+                }),
+                prisma.session.count({ where })
+            ]);
 
-            logger.info('Sesiones encontradas', { count: sessions.length });
+            const totalPages = Math.ceil(total / Number(limit));
+
+            logger.info('Sesiones encontradas', {
+                count: sessions.length,
+                total,
+                page: Number(page),
+                totalPages
+            });
 
             const sessionsDTO: TelemetrySessionDTO[] = sessions.map(session => {
                 // Calcular bbox de los puntos GPS
-                const bbox = this.calculateBbox(session.gpsMeasurements || []);
+                const bbox = this.calculateBbox(session.GpsMeasurement || []);  // ✅ Mayúscula
 
                 // Calcular resumen
                 const summary = this.calculateSessionSummary(session);
@@ -100,21 +117,36 @@ export class TelemetryV2Controller {
                     vehicleId: session.vehicleId,
                     startedAt: session.startTime.toISOString(),
                     endedAt: session.endTime?.toISOString(),
-                    pointsCount: session._count.gpsMeasurements,
+                    pointsCount: session._count.GpsMeasurement,  // ✅ Mayúscula
                     bbox,
                     summary
                 };
             });
 
+            // ✅ CHATGPT CRÍTICO 2: Respuesta con metadata de paginación
             return res.json({
                 success: true,
-                data: sessionsDTO
+                data: sessionsDTO,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    totalPages,
+                    hasMore: Number(page) < totalPages
+                }
             });
-        } catch (error) {
-            logger.error('Error obteniendo sesiones de telemetría', { error });
+        } catch (error: any) {
+            // ✅ Control de errores global mejorado
+            logger.error('Error en TelemetryV2Controller.getSessions', {
+                error: error.message,
+                stack: error.stack,
+                query: req.query,
+                orgId: req.orgId
+            });
             return res.status(500).json({
                 success: false,
-                error: 'Error al obtener las sesiones de telemetría'
+                error: 'Error interno del servidor',
+                message: error.message
             });
         }
     };
@@ -126,7 +158,16 @@ export class TelemetryV2Controller {
     getSession = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
-            const orgId = req.orgId;
+            // ✅ FALLBACK para orgId
+            const orgId = req.orgId || (req as any).user?.organizationId;
+
+            if (!orgId) {
+                logger.error('Organization ID no encontrado en getSession');
+                return res.status(400).json({
+                    success: false,
+                    error: 'Organization ID requerido'
+                });
+            }
 
             const session = await prisma.session.findFirst({
                 where: {
@@ -166,7 +207,7 @@ export class TelemetryV2Controller {
                 });
             }
 
-            const bbox = this.calculateBbox(session.gpsMeasurements || []);
+            const bbox = this.calculateBbox(session.GpsMeasurement || []);  // ✅ Mayúscula
             const summary = this.calculateSessionSummary(session);
 
             const sessionDTO: TelemetrySessionDTO = {
@@ -175,7 +216,7 @@ export class TelemetryV2Controller {
                 vehicleId: session.vehicleId,
                 startedAt: session.startTime.toISOString(),
                 endedAt: session.endTime?.toISOString(),
-                pointsCount: session._count.gpsMeasurements,
+                pointsCount: session._count.GpsMeasurement,  // ✅ Mayúscula
                 bbox,
                 summary
             };
@@ -184,11 +225,16 @@ export class TelemetryV2Controller {
                 success: true,
                 data: sessionDTO
             });
-        } catch (error) {
-            logger.error('Error obteniendo sesión de telemetría', { error });
+        } catch (error: any) {
+            logger.error('Error en TelemetryV2Controller.getSession', {
+                error: error.message,
+                stack: error.stack,
+                sessionId: req.params.id
+            });
             return res.status(500).json({
                 success: false,
-                error: 'Error al obtener la sesión de telemetría'
+                error: 'Error interno del servidor',
+                message: error.message
             });
         }
     };
@@ -201,7 +247,16 @@ export class TelemetryV2Controller {
         try {
             const { id } = req.params;
             const { downsample = '10s' } = req.query;
-            const orgId = req.orgId;
+            // ✅ FALLBACK para orgId
+            const orgId = req.orgId || (req as any).user?.organizationId;
+
+            if (!orgId) {
+                logger.error('Organization ID no encontrado en getSessionPoints');
+                return res.status(400).json({
+                    success: false,
+                    error: 'Organization ID requerido'
+                });
+            }
 
             const session = await prisma.session.findFirst({
                 where: {
@@ -244,11 +299,16 @@ export class TelemetryV2Controller {
                 success: true,
                 data: pointsDTO
             });
-        } catch (error) {
-            logger.error('Error obteniendo puntos de sesión', { error });
+        } catch (error: any) {
+            logger.error('Error en TelemetryV2Controller.getSessionPoints', {
+                error: error.message,
+                stack: error.stack,
+                sessionId: req.params.id
+            });
             return res.status(500).json({
                 success: false,
-                error: 'Error al obtener los puntos de la sesión'
+                error: 'Error interno del servidor',
+                message: error.message
             });
         }
     };
@@ -269,7 +329,13 @@ export class TelemetryV2Controller {
             if (sessionId) where.sessionId = sessionId;
             if (type) where.type = type;
             if (severity) where.severity = severity;
-            if (vehicleId) where.vehicleId = vehicleId;
+            if (vehicleId) {
+                where.EventVehicle = {
+                    some: {
+                        vehicleId: vehicleId as string
+                    }
+                };
+            }
 
             if (from || to) {
                 where.timestamp = {};
@@ -279,6 +345,13 @@ export class TelemetryV2Controller {
 
             const events = await prisma.event.findMany({
                 where,
+                include: {
+                    EventVehicle: {
+                        select: {
+                            vehicleId: true
+                        }
+                    }
+                },
                 orderBy: {
                     timestamp: 'desc'
                 }
@@ -295,7 +368,7 @@ export class TelemetryV2Controller {
                     type: event.type as string,
                     severity: (eventData?.severity || 'MEDIUM') as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
                     sessionId: eventData?.sessionId || event.id,
-                    vehicleId: eventData?.vehicleId || '',
+                    vehicleId: eventData?.vehicleId || event.EventVehicle?.[0]?.vehicleId || '',
                     lat: eventData?.latitude || eventData?.lat || 0,
                     lng: eventData?.longitude || eventData?.lon || 0,
                     meta: eventData
@@ -643,7 +716,7 @@ export class TelemetryV2Controller {
     }
 
     private calculateSessionSummary(session: any): any {
-        const points = session.gpsMeasurements || [];
+        const points = session.GpsMeasurement || [];  // ✅ Mayúscula
 
         if (points.length === 0) {
             return {

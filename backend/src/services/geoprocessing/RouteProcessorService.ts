@@ -18,12 +18,12 @@ export interface ProcessedRoute {
 const PROCESSING_VERSION = '2.0'; // ✅ Nueva versión con validación GPS
 
 export class RouteProcessorService {
-    async processSession(sessionId: string): Promise<ProcessedRoute> {
+    async processSession(sessionId: string, samplingRate: number = 1): Promise<ProcessedRoute> {
         const startTime = Date.now();
         let logId: string | null = null;
 
         try {
-            logger.info(`🗺️ Iniciando geoprocesamiento para sesión ${sessionId}`);
+            logger.info(`🗺️ Iniciando geoprocesamiento para sesión ${sessionId} (muestreo: 1/${samplingRate})`);
 
             // Crear registro de auditoría
             const logResult = await prisma.$queryRaw<Array<{ id: string }>>`
@@ -115,9 +115,14 @@ export class RouteProcessorService {
 
             logger.info(`✅ Detectados ${geofenceEvents.length} eventos de geocerca`);
 
-            // 8. Detectar violaciones de velocidad
+            // 8. Detectar violaciones de velocidad (con muestreo)
+            // Aplicar muestreo: tomar 1 punto cada N puntos
+            const sampledPoints = validPoints.filter((_, index) => index % samplingRate === 0);
+
+            logger.debug(`Muestreando puntos GPS para velocidad: ${sampledPoints.length}/${validPoints.length} (ratio: 1/${samplingRate})`);
+
             const speedViolations = await speedLimitService.detectViolations(
-                validPoints.map(p => ({
+                sampledPoints.map(p => ({
                     lat: p.lat,
                     lon: p.lon,
                     timestamp: p.timestamp,
@@ -126,7 +131,7 @@ export class RouteProcessorService {
                 'emergencia' // Tipo de vehículo: emergencia (bomberos)
             );
 
-            logger.info(`✅ Detectadas ${speedViolations.length} violaciones de velocidad`);
+            logger.info(`✅ Detectadas ${speedViolations.length} violaciones de velocidad (sobre ${sampledPoints.length} puntos muestreados)`);
 
             // 6. Guardar resultados
             await prisma.session.update({

@@ -136,32 +136,32 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
             text: 'Operaciones',
             path: '/operations',
             icon: <OperationsIcon fontSize="small" />,
-            // ✅ ADMIN y MANAGER
-            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            // ✅ SOLO ADMIN (MANAGERS no tienen acceso)
+            allowedRoles: [UserRole.ADMIN],
             requiredPermission: Permission.OPERATIONS_VIEW,
         },
         {
             text: 'Reportes',
             path: '/reports',
             icon: <ReportIcon fontSize="small" />,
-            // ✅ ADMIN y MANAGER
-            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            // ✅ SOLO ADMIN (MANAGERS no tienen acceso)
+            allowedRoles: [UserRole.ADMIN],
             requiredPermission: Permission.REPORTS_VIEW,
         },
         {
             text: 'Alertas',
             path: '/alerts',
             icon: <BellIcon fontSize="small" />,
-            // ✅ ADMIN y MANAGER (NUEVO)
-            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            // ✅ SOLO ADMIN (MANAGERS no tienen acceso)
+            allowedRoles: [UserRole.ADMIN],
             requiredPermission: Permission.ALERTS_VIEW,
         },
         {
             text: 'Administración',
             path: '/administration',
             icon: <ManagementIcon fontSize="small" />,
-            // ✅ ADMIN y MANAGER (contenido diferente por rol)
-            allowedRoles: [UserRole.ADMIN, UserRole.MANAGER],
+            // ✅ SOLO ADMIN (MANAGERS no tienen acceso)
+            allowedRoles: [UserRole.ADMIN],
         },
         {
             text: 'Configuración Sistema',
@@ -188,9 +188,54 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
         }
     ], []);
 
+    // ✅ NUEVO: Dashboard tabs para MANAGERS (menú superior = pestañas del dashboard)
+    const isManager = user?.role === UserRole.MANAGER;
+
+    const dashboardTabs: NavItem[] = useMemo(() => [
+        {
+            text: 'KPIs Ejecutivos',
+            path: '/dashboard?tab=0',
+            icon: <DashboardIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
+            text: 'Estados & Tiempos',
+            path: '/dashboard?tab=1',
+            icon: <StabilityIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
+            text: 'Puntos Negros',
+            path: '/dashboard?tab=2',
+            icon: <GeofenceIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
+            text: 'Velocidad',
+            path: '/dashboard?tab=3',
+            icon: <TelemetryIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
+            text: 'Sesiones & Recorridos',
+            path: '/dashboard?tab=4',
+            icon: <ReportIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
+            text: 'Subir Archivos',
+            path: '/upload',
+            icon: <CloudUploadIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        }
+    ], []);
+
     // ✅ Filtrar ítems por permisos granulares
     const filteredNavItems = useMemo(() => {
-        return navItems.filter(item => {
+        // Si es MANAGER, usar dashboardTabs en lugar de navItems
+        const itemsToFilter = isManager ? dashboardTabs : navItems;
+        
+        return itemsToFilter.filter(item => {
             // Verificar roles permitidos
             if (item.allowedRoles && user?.role) {
                 const hasRequiredRole = item.allowedRoles.includes(user.role as UserRole);
@@ -209,12 +254,30 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
 
             return true;
         });
-    }, [navItems, user?.role, hasPermission]);
+    }, [navItems, dashboardTabs, isManager, user?.role, hasPermission]);
 
     // Determina la tab activa basada en la ruta actual
     const getCurrentTabValue = () => {
         const currentPath = location.pathname;
-        const index = filteredNavItems.findIndex(item => item.path === currentPath);
+        const currentSearch = location.search;
+        
+        // Para MANAGERS con pestañas del dashboard, verificar el parámetro ?tab=X
+        if (isManager && currentPath === '/dashboard' && currentSearch) {
+            const tabMatch = currentSearch.match(/tab=(\d+)/);
+            if (tabMatch) {
+                const tabIndex = parseInt(tabMatch[1], 10);
+                // Si el tab es válido (0-4), retornar su posición en filteredNavItems
+                if (tabIndex >= 0 && tabIndex <= 4) {
+                    return tabIndex;
+                }
+            }
+        }
+        
+        const index = filteredNavItems.findIndex(item => {
+            // Comparar solo el pathname, ignorando query params
+            const itemPath = item.path.split('?')[0];
+            return itemPath === currentPath;
+        });
         return index >= 0 ? index : 0;
     };
 

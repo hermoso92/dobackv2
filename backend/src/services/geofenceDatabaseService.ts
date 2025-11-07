@@ -7,6 +7,7 @@
 import { EventEmitter } from 'events';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
+import { PostGISGeometryService } from './PostGISGeometryService';
 
 
 
@@ -51,12 +52,26 @@ interface GeofenceQuery {
 }
 
 class GeofenceDatabaseService extends EventEmitter {
+    private postgisService: PostGISGeometryService;
+
+    constructor() {
+        super();
+        this.postgisService = new PostGISGeometryService(prisma);
+    }
+
     /**
      * Crear una nueva geocerca
      */
     async createGeofence(data: GeofenceData): Promise<any> {
         try {
             logger.info(`[GeofenceDB] Creando geocerca: ${data.name}`);
+
+            // ✅ Convertir geometría JSON a PostGIS
+            let geometryPostgis = null;
+            if (data.geometry) {
+                geometryPostgis = await this.postgisService.convertJsonToPostGIS(data.geometry);
+                logger.info(`[GeofenceDB] Geometría PostGIS generada: ${geometryPostgis ? 'SÍ' : 'NO'}`);
+            }
 
             const geofence = await prisma.geofence.create({
                 data: {
@@ -73,11 +88,13 @@ class GeofenceDatabaseService extends EventEmitter {
                     geometryRadius: data.geometryRadius,
                     disallowedPrecedingTagSubstrings: data.disallowedPrecedingTagSubstrings,
                     ip: data.ip,
-                    organizationId: data.organizationId
+                    organizationId: data.organizationId,
+                    // ✅ NUEVO: Guardar geometría PostGIS
+                    geometry_postgis: geometryPostgis ? prisma.$queryRawUnsafe(`ST_GeomFromText('${geometryPostgis}', 4326)`) : null
                 }
             });
 
-            logger.info(`[GeofenceDB] Geocerca creada: ${geofence.id}`);
+            logger.info(`[GeofenceDB] Geocerca creada: ${geofence.id} (PostGIS: ${geometryPostgis ? 'SÍ' : 'NO'})`);
             this.emit('geofenceCreated', geofence);
             return geofence;
         } catch (error) {

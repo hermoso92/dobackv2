@@ -477,207 +477,209 @@ export const DetailedProcessingReport: React.FC<DetailedProcessingReportProps> =
                                         </Typography>
 
                                         {file.sessionDetails && file.sessionDetails.length > 0 ? (
-                                            <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-                                                <Table size="small">
-                                                    <TableHead>
-                                                        <TableRow>
-                                                            <TableCell><strong>#</strong></TableCell>
-                                                            <TableCell><strong>ID Sesión</strong></TableCell>
-                                                            <TableCell><strong>Inicio</strong></TableCell>
-                                                            <TableCell><strong>Fin</strong></TableCell>
-                                                            <TableCell align="center"><strong>Mediciones</strong></TableCell>
-                                                            <TableCell><strong>Estado</strong></TableCell>
-                                                            <TableCell><strong>Razón</strong></TableCell>
-                                                        </TableRow>
-                                                    </TableHead>
-                                                    <TableBody>
-                                                        {file.sessionDetails.map((session, idx) => (
-                                                            <TableRow
-                                                                key={idx}
-                                                                sx={{
-                                                                    bgcolor: session.status === 'CREADA'
-                                                                        ? 'success.50'
-                                                                        : 'warning.50'
-                                                                }}
-                                                            >
-                                                                <TableCell>{session.sessionNumber}</TableCell>
-                                                                <TableCell>
-                                                                    <Typography variant="caption" fontFamily="monospace">
-                                                                        {session.sessionId.substring(0, 8)}...
-                                                                    </Typography>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Typography variant="caption">
-                                                                        {formatDate(session.startTime)}
-                                                                    </Typography>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Typography variant="caption">
-                                                                        {formatDate(session.endTime)}
-                                                                    </Typography>
-                                                                </TableCell>
-                                                                <TableCell align="center">
-                                                                    <Chip
-                                                                        label={session.measurements}
-                                                                        size="small"
-                                                                        color="info"
-                                                                    />
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {session.status === 'CREADA' ? (
-                                                                        <Chip
-                                                                            icon={<CheckCircleIcon />}
-                                                                            label="CREADA"
-                                                                            color="success"
-                                                                            size="small"
-                                                                        />
-                                                                    ) : (
-                                                                        <Chip
-                                                                            icon={<CancelIcon />}
-                                                                            label="OMITIDA"
-                                                                            color="warning"
-                                                                            size="small"
-                                                                        />
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Typography variant="caption" color="text.secondary">
-                                                                        {session.reason}
-                                                                    </Typography>
-                                                                </TableCell>
+                                            <>
+                                                <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell><strong>#</strong></TableCell>
+                                                                <TableCell><strong>ID Sesión</strong></TableCell>
+                                                                <TableCell><strong>Inicio</strong></TableCell>
+                                                                <TableCell><strong>Fin</strong></TableCell>
+                                                                <TableCell align="center"><strong>Mediciones</strong></TableCell>
+                                                                <TableCell><strong>Estado</strong></TableCell>
+                                                                <TableCell><strong>Razón</strong></TableCell>
                                                             </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </TableContainer>
-
-                                            {/* ✅ NUEVO: Información detallada de eventos y procesamiento */}
-                                        {file.sessionDetails.some(s => s.eventsGenerated || s.segmentsGenerated) && (
-                                            <Box sx={{ mt: 2 }}>
-                                                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                                                    📊 Información de Procesamiento:
-                                                </Typography>
-                                                <Grid container spacing={2}>
-                                                    {file.sessionDetails.map((session, idx) => (
-                                                        <Grid item xs={12} key={idx}>
-                                                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
-                                                                <Typography variant="caption" fontWeight="bold" color="primary">
-                                                                    Sesión #{session.sessionNumber}
-                                                                </Typography>
-                                                                <Grid container spacing={1} sx={{ mt: 1 }}>
-                                                                    {session.eventsGenerated !== undefined && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`🚨 ${session.eventsGenerated} Eventos`}
-                                                                                size="small"
-                                                                                color="error"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.segmentsGenerated !== undefined && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`🔑 ${session.segmentsGenerated} Segmentos`}
-                                                                                size="small"
-                                                                                color="primary"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.gpsPoints !== undefined && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`📍 ${session.gpsPoints} GPS`}
-                                                                                size="small"
-                                                                                color="info"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.stabilityMeasurements !== undefined && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`📊 ${session.stabilityMeasurements} Estabilidad`}
-                                                                                size="small"
-                                                                                color="warning"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.routeDistance !== undefined && session.routeDistance > 0 && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`🗺️ ${(session.routeDistance / 1000).toFixed(2)} km`}
-                                                                                size="small"
-                                                                                color="success"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.geofenceEvents !== undefined && session.geofenceEvents > 0 && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`⭕ ${session.geofenceEvents} Geocercas`}
-                                                                                size="small"
-                                                                                color="secondary"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                    {session.speedViolations !== undefined && session.speedViolations > 0 && (
-                                                                        <Grid item xs={6} sm={3}>
-                                                                            <Chip
-                                                                                label={`⚡ ${session.speedViolations} Velocidad`}
-                                                                                size="small"
-                                                                                color="error"
-                                                                                variant="outlined"
-                                                                            />
-                                                                        </Grid>
-                                                                    )}
-                                                                </Grid>
-
-                                                                {/* Mostrar eventos si existen */}
-                                                                {session.events && session.events.length > 0 && (
-                                                                    <Box sx={{ mt: 2 }}>
-                                                                        <Typography variant="caption" fontWeight="bold" color="text.secondary">
-                                                                            Eventos Detectados:
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {file.sessionDetails.map((session, idx) => (
+                                                                <TableRow
+                                                                    key={idx}
+                                                                    sx={{
+                                                                        bgcolor: session.status === 'CREADA'
+                                                                            ? 'success.50'
+                                                                            : 'warning.50'
+                                                                    }}
+                                                                >
+                                                                    <TableCell>{session.sessionNumber}</TableCell>
+                                                                    <TableCell>
+                                                                        <Typography variant="caption" fontFamily="monospace">
+                                                                            {session.sessionId.substring(0, 8)}...
                                                                         </Typography>
-                                                                        <List dense>
-                                                                            {session.events.map((event, eventIdx) => (
-                                                                                <ListItem key={eventIdx} sx={{ py: 0.5 }}>
-                                                                                    <ListItemText
-                                                                                        primary={
-                                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                                                <Chip
-                                                                                                    label={event.type}
-                                                                                                    size="small"
-                                                                                                    color={
-                                                                                                        event.severity === 'critical' ? 'error' :
-                                                                                                            event.severity === 'moderate' ? 'warning' : 'info'
-                                                                                                    }
-                                                                                                />
-                                                                                                <Typography variant="caption" color="text.secondary">
-                                                                                                    {new Date(event.timestamp).toLocaleString('es-ES')}
-                                                                                                </Typography>
-                                                                                            </Box>
-                                                                                        }
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Typography variant="caption">
+                                                                            {formatDate(session.startTime)}
+                                                                        </Typography>
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Typography variant="caption">
+                                                                            {formatDate(session.endTime)}
+                                                                        </Typography>
+                                                                    </TableCell>
+                                                                    <TableCell align="center">
+                                                                        <Chip
+                                                                            label={session.measurements}
+                                                                            size="small"
+                                                                            color="info"
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {session.status === 'CREADA' ? (
+                                                                            <Chip
+                                                                                icon={<CheckCircleIcon />}
+                                                                                label="CREADA"
+                                                                                color="success"
+                                                                                size="small"
+                                                                            />
+                                                                        ) : (
+                                                                            <Chip
+                                                                                icon={<CancelIcon />}
+                                                                                label="OMITIDA"
+                                                                                color="warning"
+                                                                                size="small"
+                                                                            />
+                                                                        )}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {session.reason}
+                                                                        </Typography>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </TableContainer>
+
+                                                {/* ✅ NUEVO: Información detallada de eventos y procesamiento */}
+                                                {file.sessionDetails.some(s => s.eventsGenerated || s.segmentsGenerated) && (
+                                                    <Box sx={{ mt: 2 }}>
+                                                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                                            📊 Información de Procesamiento:
+                                                        </Typography>
+                                                        <Grid container spacing={2}>
+                                                            {file.sessionDetails.map((session, idx) => (
+                                                                <Grid item xs={12} key={idx}>
+                                                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                                                        <Typography variant="caption" fontWeight="bold" color="primary">
+                                                                            Sesión #{session.sessionNumber}
+                                                                        </Typography>
+                                                                        <Grid container spacing={1} sx={{ mt: 1 }}>
+                                                                            {session.eventsGenerated !== undefined && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`🚨 ${session.eventsGenerated} Eventos`}
+                                                                                        size="small"
+                                                                                        color="error"
+                                                                                        variant="outlined"
                                                                                     />
-                                                                                </ListItem>
-                                                                            ))}
-                                                                        </List>
-                                                                    </Box>
-                                                                )}
-                                                            </Paper>
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.segmentsGenerated !== undefined && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`🔑 ${session.segmentsGenerated} Segmentos`}
+                                                                                        size="small"
+                                                                                        color="primary"
+                                                                                        variant="outlined"
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.gpsPoints !== undefined && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`📍 ${session.gpsPoints} GPS`}
+                                                                                        size="small"
+                                                                                        color="info"
+                                                                                        variant="outlined"
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.stabilityMeasurements !== undefined && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`📊 ${session.stabilityMeasurements} Estabilidad`}
+                                                                                        size="small"
+                                                                                        color="warning"
+                                                                                        variant="outlined"
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.routeDistance !== undefined && session.routeDistance > 0 && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`🗺️ ${(session.routeDistance / 1000).toFixed(2)} km`}
+                                                                                        size="small"
+                                                                                        color="success"
+                                                                                        variant="outlined"
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.geofenceEvents !== undefined && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`🗺️ ${session.geofenceEvents} Geocercas`}
+                                                                                        size="small"
+                                                                                        color={session.geofenceEvents > 0 ? "secondary" : "default"}
+                                                                                        variant={session.geofenceEvents > 0 ? "filled" : "outlined"}
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                            {session.speedViolations !== undefined && session.speedViolations > 0 && (
+                                                                                <Grid item xs={6} sm={3}>
+                                                                                    <Chip
+                                                                                        label={`⚡ ${session.speedViolations} Velocidad`}
+                                                                                        size="small"
+                                                                                        color="error"
+                                                                                        variant="outlined"
+                                                                                    />
+                                                                                </Grid>
+                                                                            )}
+                                                                        </Grid>
+
+                                                                        {/* Mostrar eventos si existen */}
+                                                                        {session.events && session.events.length > 0 && (
+                                                                            <Box sx={{ mt: 2 }}>
+                                                                                <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                                                                                    Eventos Detectados:
+                                                                                </Typography>
+                                                                                <List dense>
+                                                                                    {session.events.map((event, eventIdx) => (
+                                                                                        <ListItem key={eventIdx} sx={{ py: 0.5 }}>
+                                                                                            <ListItemText
+                                                                                                primary={
+                                                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                                                        <Chip
+                                                                                                            label={event.type}
+                                                                                                            size="small"
+                                                                                                            color={
+                                                                                                                event.severity === 'critical' ? 'error' :
+                                                                                                                    event.severity === 'moderate' ? 'warning' : 'info'
+                                                                                                            }
+                                                                                                        />
+                                                                                                        <Typography variant="caption" color="text.secondary">
+                                                                                                            {new Date(event.timestamp).toLocaleString('es-ES')}
+                                                                                                        </Typography>
+                                                                                                    </Box>
+                                                                                                }
+                                                                                            />
+                                                                                        </ListItem>
+                                                                                    ))}
+                                                                                </List>
+                                                                            </Box>
+                                                                        )}
+                                                                    </Paper>
+                                                                </Grid>
+                                                            ))}
                                                         </Grid>
-                                                    ))}
-                                                </Grid>
-                                            </Box>
-                                        )}
+                                                    </Box>
+                                                )}
+                                            </>
                                         ) : (
-                                        <Alert severity="info" sx={{ mb: 2 }}>
-                                            No se detectaron sesiones en este archivo
-                                        </Alert>
+                                            <Alert severity="info" sx={{ mb: 2 }}>
+                                                No se detectaron sesiones en este archivo
+                                            </Alert>
                                         )}
 
                                         {/* Errores del Archivo */}

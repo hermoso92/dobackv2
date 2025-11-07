@@ -37,7 +37,7 @@ export const logger = {
     },
     info: (message: string, data?: any) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO && !IGNORED_MESSAGES.includes(message)) {
-            logger.info(`[INFO] ${message}`, data || '');
+            console.log(`[INFO] ${message}`, data || '');
         }
     },
     warn: (message: string, data?: any) => {

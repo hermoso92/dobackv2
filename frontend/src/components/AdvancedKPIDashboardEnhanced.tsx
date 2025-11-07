@@ -12,6 +12,7 @@ import { logger } from '../utils/logger';
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 import DateRangeSelector, { DateRangeConfig } from './DateRangeSelector';
 
 import MultiVehicleSelector, { VehicleSelection } from './MultiVehicleSelector';

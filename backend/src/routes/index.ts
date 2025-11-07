@@ -32,6 +32,7 @@ import kpiRoutes from './kpiRoutes';
 // import advancedKPIRoutes from './advancedKPI';
 import kpisOperationalRoutes from './kpis';
 import kpisTempRoutes from './kpis-temp';
+import cacheRoutes from './cache';
 import mantenimientosRouter from './mantenimientos';
 import observabilityRoutes from './observability';
 import operationsRoutes from './operations';
@@ -168,7 +169,7 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
         const sessions = await prisma.session.findMany({
             where: whereClause,
             include: {
-                vehicle: {
+                Vehicle: {  // ✅ Mayúscula
                     select: { name: true }
                 }
             },
@@ -212,14 +213,14 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
             const distance = duration > 0 ? (avgSpeed * duration / 3600) : 0;
 
             // Obtener eventos de estabilidad para esta sesión
-            const eventCount = await prisma.stabilityEvent.count({
+            const eventCount = await prisma.stability_events.count({
                 where: { session_id: session.id }
             });
 
             return {
                 id: session.id,
                 vehicleId: session.vehicleId,
-                vehicleName: session.vehicle?.name || session.vehicleId,
+                vehicleName: session.Vehicle?.name || session.vehicleId,  // ✅ Mayúscula
                 startTime: session.startTime,
                 endTime: session.endTime,
                 duration,
@@ -255,14 +256,16 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
         // Obtener detalles de eventos para el top ranking
         const topSessions = sortedSessions.slice(0, limit);
 
+        // ✅ Try-catch mejorado para prevenir errores 500
         const ranking = await Promise.all(topSessions.map(async (session, index) => {
+            try {
             // Obtener eventos de esta sesión para clasificarlos
-            const events = await prisma.stabilityEvent.findMany({
-                where: { session_id: session.id },
+                const events = await prisma.stability_events.findMany({
+                    where: { session_id: session.id },
                 select: {
                     type: true
                 }
-            });
+                }).catch(() => []); // Fallback si falla la query
 
             // Clasificar eventos por severidad
             const mapSeverity = (eventType: string): string => {
@@ -294,6 +297,26 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
                 leve,
                 status: session.status
             };
+            } catch (error: any) {
+                // Fallback si falla el procesamiento de una sesión individual
+                logger.warn(`⚠️ Error procesando sesión en ranking: ${error.message}`);
+                return {
+                    rank: index + 1,
+                    sessionId: session.id,
+                    vehicleName: session.vehicleName || 'Desconocido',
+                    vehicleId: session.vehicleId,
+                    startTime: session.startTime,
+                    duration: session.durationFormatted || '00:00',
+                    distance: Math.round(session.distance * 10) / 10,
+                    avgSpeed: Math.round(session.avgSpeed * 10) / 10,
+                    maxSpeed: Math.round(session.maxSpeed * 10) / 10,
+                    totalEvents: session.totalEvents || 0,
+                    grave: 0,
+                    moderada: 0,
+                    leve: 0,
+                    status: session.status
+                };
+            }
         }));
 
         logger.info(`Ranking generado: ${ranking.length} sesiones`);
@@ -335,7 +358,7 @@ router.get('/session-route/:id', authenticate, attachOrg, async (req, res) => {
         // Obtener sesión con vehículo
         const session = await prisma.session.findFirst({
             where: { id, organizationId: orgId },
-            include: { vehicle: true }
+            include: { Vehicle: true }  // ✅ Mayúscula
         });
 
         if (!session) {
@@ -469,7 +492,7 @@ router.get('/session-route/:id', authenticate, attachOrg, async (req, res) => {
                     route: [],
                     events: [],
                     session: {
-                        vehicleName: session.vehicle?.name || 'Vehículo',
+                        vehicleName: session.Vehicle?.name || 'Vehículo',  // ✅ Mayúscula
                         startTime: session.startTime,
                         endTime: session.endTime
                     },
@@ -535,7 +558,7 @@ router.get('/session-route/:id', authenticate, attachOrg, async (req, res) => {
                 };
             }),
             session: {
-                vehicleName: session.vehicle?.name || 'Vehículo',
+                vehicleName: session.Vehicle?.name || 'Vehículo',  // ✅ Mayúscula
                 startTime: session.startTime,
                 endTime: session.endTime
             },
@@ -694,6 +717,9 @@ router.use('/kpi-calculation', dashboardCacheMiddleware, kpiCalculationRoutes);
 router.use('/kpis', kpisOperationalRoutes); // KPIs operativos (claves 0-5)
 router.use('/kpis-temp', kpisTempRoutes); // KPIs temporales (para resolver problema de importación)
 
+// 🚀 Rutas de caché Redis (NUEVO - 3 nov 2025)
+router.use('/cache', cacheRoutes);
+
 // Rutas de claves operacionales (NUEVO - FASE 4)
 router.use('/operational-keys', operationalKeysRoutes);
 
@@ -787,62 +813,114 @@ logger.info('  ✅ Ranking de Sesiones: /api/sessions/ranking');
 
 /**
  * POST /api/clean-all-sessions
- * Endpoint para limpiar/eliminar todas las sesiones de la base de datos
- * CUIDADO: Esta operación es destructiva y no se puede deshacer
+ * Endpoint para limpiar/eliminar todas las sesiones de UNA organización
+ * ⚠️ CUIDADO: Esta operación es destructiva y no se puede deshacer
+ * ✅ CORREGIDO: Ahora solo elimina datos de la organización del usuario autenticado
  */
 router.post('/clean-all-sessions', authenticate, async (req, res) => {
     try {
+        // Verificar que el usuario es ADMIN o MANAGER
+        if (req.user?.role !== 'ADMIN' && req.user?.role !== 'MANAGER') {
+            logger.warn(`⚠️ Intento de limpieza de BD por usuario no autorizado: ${req.user?.id} (rol: ${req.user?.role})`);
+            return res.status(403).json({ 
+                success: false,
+                error: 'Solo usuarios ADMIN o MANAGER pueden ejecutar esta acción' 
+            });
+        }
 
-        logger.warn('⚠️ Iniciando limpieza de base de datos - OPERACIÓN DESTRUCTIVA');
-        logger.warn('⚠️ Esta acción eliminará TODAS las sesiones de TODAS las organizaciones');
+        const orgId = req.user.organizationId;
 
-        // ✅ Obtener conteo REAL (sin filtros) antes de eliminar
-        const sessionCount = await prisma.session.count({});
-        const stabilityEventCount = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) as count FROM stability_events`.then(r => Number(r[0]?.count || 0));
-        const gpsCount = await prisma.gpsMeasurement.count({});
-        const rotativoCount = await prisma.rotativoMeasurement.count({});
-        const stabilityMeasurementCount = await prisma.stabilityMeasurement.count({});
+        logger.warn(`⚠️ Iniciando limpieza de base de datos - OPERACIÓN DESTRUCTIVA`);
+        logger.warn(`⚠️ Esta acción eliminará TODAS las sesiones de la organización ${orgId}`);
 
-        logger.info(`📊 Elementos a eliminar (TODAS las organizaciones): ${sessionCount} sesiones, ${stabilityEventCount} eventos, ${gpsCount} GPS, ${rotativoCount} rotativo, ${stabilityMeasurementCount} estabilidad`);
+        // Objeto para contar registros eliminados
+        const deletedCounts = {
+            sessions: 0,
+            events: 0,
+            segments: 0,
+            gps: 0,
+            can: 0,
+            rotativo: 0,
+            estabilidad: 0,
+            operationalKeys: 0,
+            dataQualityMetrics: 0
+        };
 
-        // ✅ Eliminar en orden correcto (por dependencias foreign keys)
-        logger.info('🗑️ Eliminando datos relacionados...');
+        // ✅ Usar transacción para seguridad (todo o nada)
+        await prisma.$transaction(async (tx) => {
+            // ORDEN CORRECTO: Eliminar tablas dependientes primero, padres al final
 
-        await prisma.$executeRaw`DELETE FROM stability_events`;
-        logger.info('  ✓ StabilityEvent eliminados');
+            // 1. Eliminar segmentos operacionales (dependen de Session)
+            const seg = await tx.operational_state_segments.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.segments = seg.count;
 
-        await prisma.gpsMeasurement.deleteMany({});
-        logger.info('  ✓ GpsMeasurement eliminados');
+            // 2. Eliminar OperationalKeys (tabla vieja, por si acaso)
+            try {
+                const opKeys = await tx.operationalKey.deleteMany({
+                    where: { Session: { organizationId: orgId } }
+                });
+                deletedCounts.operationalKeys = opKeys.count;
+            } catch (e) {
+                logger.warn('No se pudieron eliminar OperationalKeys (tabla puede no existir)');
+            }
 
-        await prisma.stabilityMeasurement.deleteMany({});
-        logger.info('  ✓ StabilityMeasurement eliminados');
+            // 3. Eliminar eventos de estabilidad (dependen de Session)
+            const evt = await tx.stability_events.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.events = evt.count;
 
-        await prisma.rotativoMeasurement.deleteMany({});
-        logger.info('  ✓ RotativoMeasurement eliminados');
+            // 4. Eliminar mediciones GPS (dependen de Session)
+            const gps = await tx.gpsMeasurement.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.gps = gps.count;
 
-        await prisma.canMeasurement.deleteMany({});
-        logger.info('  ✓ CanMeasurement eliminados');
+            // 5. Eliminar mediciones CAN (dependen de Session)
+            const can = await tx.canMeasurement.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.can = can.count;
 
-        await prisma.dataQualityMetrics.deleteMany({});
-        logger.info('  ✓ DataQualityMetrics eliminados');
+            // 6. Eliminar mediciones Rotativo (dependen de Session)
+            const rot = await tx.rotativoMeasurement.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.rotativo = rot.count;
 
-        await prisma.operationalKey.deleteMany({});
-        logger.info('  ✓ OperationalKey eliminados');
+            // 7. Eliminar mediciones de Estabilidad (dependen de Session)
+            const stb = await tx.stabilityMeasurement.deleteMany({
+                where: { Session: { organizationId: orgId } }
+            });
+            deletedCounts.estabilidad = stb.count;
 
-        // Por último, eliminar sesiones
-        await prisma.session.deleteMany({});
-        logger.info('  ✓ Session eliminadas');
+            // 8. Eliminar métricas de calidad (dependen de Session)
+            try {
+                const metrics = await tx.dataQualityMetrics.deleteMany({
+                    where: { Session: { organizationId: orgId } }
+                });
+                deletedCounts.dataQualityMetrics = metrics.count;
+            } catch (e) {
+                logger.warn('No se pudieron eliminar DataQualityMetrics (tabla puede no existir)');
+            }
 
-        // ✅ Verificar que todo fue eliminado
-        const sessionsRemaining = await prisma.session.count();
-        const gpsRemaining = await prisma.gpsMeasurement.count();
-        const stabilityRemaining = await prisma.stabilityMeasurement.count();
-        const rotativoRemaining = await prisma.rotativoMeasurement.count();
+            // 9. Eliminar sesiones (tabla padre, al final)
+            const ses = await tx.session.deleteMany({
+                where: { organizationId: orgId }
+            });
+            deletedCounts.sessions = ses.count;
 
-        if (sessionsRemaining > 0 || gpsRemaining > 0 || stabilityRemaining > 0 || rotativoRemaining > 0) {
-            logger.warn(`⚠️ Datos restantes: ${sessionsRemaining} sesiones, ${gpsRemaining} GPS, ${stabilityRemaining} estabilidad, ${rotativoRemaining} rotativo`);
-        } else {
-            logger.info('✅ Verificado: 0 datos restantes en BD');
+            logger.warn(`✅ Limpieza completada exitosamente para org ${orgId}:`, deletedCounts);
+        });
+
+        // Invalidar TODA la caché de KPIs de la organización
+        try {
+            await kpiCacheService.invalidateAllByOrg(orgId);
+            logger.info('✅ Caché de KPIs invalidada');
+        } catch (cacheError) {
+            logger.error('Error invalidando caché (no crítico):', cacheError);
         }
 
         logger.info('✅ Base de datos limpiada exitosamente');
@@ -851,19 +929,8 @@ router.post('/clean-all-sessions', authenticate, async (req, res) => {
             success: true,
             data: {
                 message: 'Base de datos limpiada exitosamente',
-                deleted: {
-                    sessions: sessionCount,
-                    stabilityEvents: stabilityEventCount,
-                    stabilityMeasurements: stabilityMeasurementCount,
-                    gpsPoints: gpsCount,
-                    rotativoMeasurements: rotativoCount
-                },
-                remaining: {
-                    sessions: sessionsRemaining,
-                    gpsPoints: gpsRemaining,
-                    stabilityMeasurements: stabilityRemaining,
-                    rotativoMeasurements: rotativoRemaining
-                }
+                organizationId: orgId,
+                deleted: deletedCounts
             }
         });
 

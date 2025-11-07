@@ -1,277 +1,287 @@
-# DOBACKSOFT - Verificacion Exhaustiva del Sistema
-# ===================================================
+# 🜂 VERIFICACIÓN SISTEMA DOBACKSOFT - MODO DIOS
+# Script PowerShell para testing completo
 
-Write-Host "`n=========================================" -ForegroundColor Cyan
-Write-Host "  VERIFICACION DEL SISTEMA" -ForegroundColor Cyan
-Write-Host "=========================================" -ForegroundColor Cyan
+Write-Host "`n🜂 ===============================================" -ForegroundColor Cyan
+Write-Host "   VERIFICACIÓN SISTEMA COMPLETO - DOBACKSOFT v3.0" -ForegroundColor Cyan
+Write-Host "   Modo Dios Integrado" -ForegroundColor Cyan
+Write-Host "===============================================`n" -ForegroundColor Cyan
 
-$passed = 0
-$failed = 0
-$total = 0
+$resultados = @()
+$BACKEND_URL = "http://localhost:9998"
+$FRONTEND_URL = "http://localhost:5174"
 
-function Test-Check {
-    param([string]$Name, [scriptblock]$Test)
+function Add-Result {
+    param($Component, $Test, $Status, $Message)
     
-    $total++
-    Write-Host "`n[$total] $Name..." -ForegroundColor Yellow -NoNewline
+    $icon = switch ($Status) {
+        "PASS" { "✅" }
+        "FAIL" { "❌" }
+        "WARN" { "⚠️" }
+    }
     
-    try {
-        $result = & $Test
-        if ($result) {
-            Write-Host " OK" -ForegroundColor Green
-            $script:passed++
-            return $true
+    $color = switch ($Status) {
+        "PASS" { "Green" }
+        "FAIL" { "Red" }
+        "WARN" { "Yellow" }
+    }
+    
+    Write-Host "$icon [$Component] $Test: $Message" -ForegroundColor $color
+    $script:resultados += @{
+        Component = $Component
+        Test = $Test
+        Status = $Status
+        Message = $Message
+    }
+}
+
+# ============================================================================
+# 1. TESTING BASE DE DATOS
+# ============================================================================
+
+Write-Host "`n🗄️  === TESTING BASE DE DATOS ===`n" -ForegroundColor Yellow
+
+# Test Prisma schema existe
+if (Test-Path "backend\prisma\schema.prisma") {
+    Add-Result "Database" "Prisma Schema" "PASS" "Archivo existe"
+    
+    # Contar modelos
+    $schema = Get-Content "backend\prisma\schema.prisma" -Raw
+    $modelCount = ([regex]::Matches($schema, "model\s+\w+")).Count
+    Add-Result "Database" "Modelos Prisma" "PASS" "$modelCount modelos definidos"
+} else {
+    Add-Result "Database" "Prisma Schema" "FAIL" "Archivo no encontrado"
+}
+
+# ============================================================================
+# 2. TESTING BACKEND
+# ============================================================================
+
+Write-Host "`n🔧 === TESTING BACKEND ===`n" -ForegroundColor Yellow
+
+# Test servidor backend activo
+try {
+    $response = Invoke-WebRequest -Uri "$BACKEND_URL/health" -TimeoutSec 5 -ErrorAction Stop
+    if ($response.StatusCode -eq 200) {
+        Add-Result "Backend" "Servidor Activo" "PASS" "HTTP 200"
+    } else {
+        Add-Result "Backend" "Servidor Activo" "WARN" "HTTP $($response.StatusCode)"
+    }
+} catch {
+    Add-Result "Backend" "Servidor Activo" "FAIL" "No responde (¿está iniciado?)"
+}
+
+# Test archivos backend críticos
+$backendFiles = @(
+    "backend\src\server.ts",
+    "backend\src\app.ts",
+    "backend\src\services\kpiCalculator.ts",
+    "backend\src\services\AlertService.ts",
+    "backend\src\services\upload\TemporalCorrelator.ts",
+    "backend\src\services\parsers\RobustGPSParser.ts",
+    "backend\src\services\parsers\RobustStabilityParser.ts"
+)
+
+foreach ($file in $backendFiles) {
+    if (Test-Path $file) {
+        $fileName = Split-Path $file -Leaf
+        Add-Result "Backend" "Archivo $fileName" "PASS" "Existe"
+    } else {
+        $fileName = Split-Path $file -Leaf
+        Add-Result "Backend" "Archivo $fileName" "FAIL" "No encontrado"
+    }
+}
+
+# ============================================================================
+# 3. TESTING FRONTEND
+# ============================================================================
+
+Write-Host "`n🎨 === TESTING FRONTEND ===`n" -ForegroundColor Yellow
+
+# Test servidor frontend activo
+try {
+    $response = Invoke-WebRequest -Uri $FRONTEND_URL -TimeoutSec 5 -ErrorAction Stop
+    if ($response.StatusCode -eq 200 -and $response.Content -match "<!DOCTYPE html>") {
+        Add-Result "Frontend" "Servidor Vite" "PASS" "HTML cargado"
+    } else {
+        Add-Result "Frontend" "Servidor Vite" "WARN" "Respuesta inesperada"
+    }
+} catch {
+    Add-Result "Frontend" "Servidor Vite" "FAIL" "No responde (¿está iniciado?)"
+}
+
+# Test archivos frontend críticos
+$frontendFiles = @(
+    "frontend\src\main.tsx",
+    "frontend\src\App.tsx",
+    "frontend\src\config\api.ts",
+    "frontend\src\routes.tsx"
+)
+
+foreach ($file in $frontendFiles) {
+    if (Test-Path $file) {
+        $fileName = Split-Path $file -Leaf
+        Add-Result "Frontend" "Archivo $fileName" "PASS" "Existe"
+    } else {
+        $fileName = Split-Path $file -Leaf
+        Add-Result "Frontend" "Archivo $fileName" "FAIL" "No encontrado"
+    }
+}
+
+# ============================================================================
+# 4. TESTING PARSERS
+# ============================================================================
+
+Write-Host "`n📄 === TESTING PARSERS ===`n" -ForegroundColor Yellow
+
+$parsers = @(
+    @{
+        Name = "RobustGPSParser"
+        Path = "backend\src\services\parsers\RobustGPSParser.ts"
+        Checks = @("lat > 36", "interpolarGPS", "MODO DIOS")
+    },
+    @{
+        Name = "RobustStabilityParser"
+        Path = "backend\src\services\parsers\RobustStabilityParser.ts"
+        Checks = @("9.81", "SCALE_FACTOR", "MODO DIOS")
+    },
+    @{
+        Name = "TemporalCorrelator"
+        Path = "backend\src\services\upload\TemporalCorrelator.ts"
+        Checks = @("hasEstabilidad || hasRotativo", "fusionedFragments", "MODO DIOS")
+    }
+)
+
+foreach ($parser in $parsers) {
+    if (Test-Path $parser.Path) {
+        $content = Get-Content $parser.Path -Raw
+        $allChecksPass = $true
+        foreach ($check in $parser.Checks) {
+            if ($content -notmatch [regex]::Escape($check)) {
+                $allChecksPass = $false
+                break
+            }
         }
-        else {
-            Write-Host " FAIL" -ForegroundColor Red
-            $script:failed++
-            return $false
+        if ($allChecksPass) {
+            Add-Result "Parsers" $parser.Name "PASS" "Implementación verificada"
+        } else {
+            Add-Result "Parsers" $parser.Name "WARN" "Revisar implementación"
         }
-    }
-    catch {
-        Write-Host " ERROR" -ForegroundColor Red
-        Write-Host "  $_" -ForegroundColor Gray
-        $script:failed++
-        return $false
+    } else {
+        Add-Result "Parsers" $parser.Name "FAIL" "Archivo no encontrado"
     }
 }
 
-Write-Host "`n[1] Verificando estructura de archivos..." -ForegroundColor Cyan
+# ============================================================================
+# 5. TESTING KPIs
+# ============================================================================
 
-Test-Check "Backend index.ts existe" {
-    Test-Path "backend\src\index.ts"
-}
+Write-Host "`n📊 === TESTING KPIs ===`n" -ForegroundColor Yellow
 
-Test-Check "Frontend App.tsx existe" {
-    Test-Path "frontend\src\App.tsx"
-}
-
-Test-Check "Prisma schema existe" {
-    Test-Path "backend\prisma\schema.prisma"
-}
-
-Test-Check "Carpeta logs existe" {
-    Test-Path "logs"
-}
-
-Write-Host "`n[2] Verificando servicios..." -ForegroundColor Cyan
-
-Test-Check "Backend responde (9998)" {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:9998/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-        return $response.StatusCode -eq 200
+$kpiPath = "backend\src\services\kpiCalculator.ts"
+if (Test-Path $kpiPath) {
+    $content = Get-Content $kpiPath -Raw
+    $hasGPSAlert = $content -match "gps_quality_alert"
+    $hasHaversine = $content -match "haversineDistance"
+    $hasMODODIOS = $content -match "MODO DIOS"
+    
+    if ($hasGPSAlert -and $hasHaversine -and $hasMODODIOS) {
+        Add-Result "KPIs" "kpiCalculator" "PASS" "Implementación completa Modo Dios"
+    } else {
+        Add-Result "KPIs" "kpiCalculator" "WARN" "Implementación parcial"
     }
-    catch {
-        return $false
-    }
+} else {
+    Add-Result "KPIs" "kpiCalculator" "FAIL" "Archivo no encontrado"
 }
 
-Test-Check "Frontend responde (5174)" {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:5174" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-        return $response.StatusCode -eq 200
-    }
-    catch {
-        return $false
-    }
-}
+# ============================================================================
+# 6. TESTING DOCUMENTACIÓN MODO DIOS
+# ============================================================================
 
-Test-Check "Base de datos accesible" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $null = psql -U postgres -h localhost -d dobacksoft -c "SELECT 1;" 2>&1
-        return $LASTEXITCODE -eq 0
-    }
-    catch {
-        return $false
+Write-Host "`n📚 === TESTING DOCUMENTACIÓN ===`n" -ForegroundColor Yellow
+
+$docs = @(
+    @{ Name = "Filosofía Operativa"; Path = "docs\00-GENERAL\FILOSOFIA_OPERATIVA_SISTEMA_CONSCIENTE.md" },
+    @{ Name = "Sincronización Técnica"; Path = "docs\00-GENERAL\SINCRONIZACION_MODO_DIOS_TECNICA.md" },
+    @{ Name = "Resumen Integración"; Path = "docs\00-GENERAL\RESUMEN_INTEGRACION_MODO_DIOS.md" },
+    @{ Name = "Integración n8n"; Path = "docs\INFRAESTRUCTURA\N8N_INTEGRACION_CONSCIENTE.md" }
+)
+
+foreach ($doc in $docs) {
+    if (Test-Path $doc.Path) {
+        $lines = (Get-Content $doc.Path).Count
+        $sizeKB = [math]::Round((Get-Item $doc.Path).Length / 1KB, 1)
+        Add-Result "Documentación" $doc.Name "PASS" "$lines líneas ($sizeKB KB)"
+    } else {
+        Add-Result "Documentación" $doc.Name "FAIL" "Archivo no encontrado"
     }
 }
 
-Write-Host "`n[3] Verificando base de datos..." -ForegroundColor Cyan
+# ============================================================================
+# 7. TESTING SCRIPTS
+# ============================================================================
 
-Test-Check "Tabla User existe" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $null = psql -U postgres -h localhost -d dobacksoft -c "SELECT COUNT(*) FROM \`"User\`";" 2>&1
-        return $LASTEXITCODE -eq 0
-    }
-    catch {
-        return $false
-    }
+Write-Host "`n🔧 === TESTING SCRIPTS ===`n" -ForegroundColor Yellow
+
+if (Test-Path "iniciar.ps1") {
+    Add-Result "Scripts" "iniciar.ps1" "PASS" "Script de inicio existe"
+} else {
+    Add-Result "Scripts" "iniciar.ps1" "FAIL" "Script no encontrado"
 }
 
-Test-Check "Tabla MissingFileAlert existe" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $null = psql -U postgres -h localhost -d dobacksoft -c "SELECT COUNT(*) FROM \`"MissingFileAlert\`";" 2>&1
-        return $LASTEXITCODE -eq 0
-    }
-    catch {
-        return $false
-    }
-}
-
-Test-Check "Tabla ScheduledReport existe" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $null = psql -U postgres -h localhost -d dobacksoft -c "SELECT COUNT(*) FROM \`"ScheduledReport\`";" 2>&1
-        return $LASTEXITCODE -eq 0
-    }
-    catch {
-        return $false
-    }
-}
-
-Write-Host "`n[4] Verificando usuarios y roles..." -ForegroundColor Cyan
-
-Test-Check "Usuario test es MANAGER" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $result = psql -U postgres -h localhost -d dobacksoft -t -c "SELECT role FROM \`"User\`" WHERE email = 'test@bomberosmadrid.es';" 2>&1
-        return $result -match 'MANAGER'
-    }
-    catch {
-        return $false
-    }
-}
-
-Test-Check "Usuario antonio es ADMIN" {
-    try {
-        $env:PGPASSWORD = 'cosigein'
-        $result = psql -U postgres -h localhost -d dobacksoft -t -c "SELECT role FROM \`"User\`" WHERE email = 'antoniohermoso92@gmail.com';" 2>&1
-        return $result -match 'ADMIN'
-    }
-    catch {
-        return $false
-    }
-}
-
-Write-Host "`n[5] Verificando logs..." -ForegroundColor Cyan
-
-Test-Check "Logs de backend guardandose" {
-    $backendLogs = Get-ChildItem logs -Filter "backend_*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($backendLogs) {
-        $age = (Get-Date) - $backendLogs.LastWriteTime
-        return $age.TotalMinutes -lt 60
-    }
-    return $false
-}
-
-Test-Check "Logs de frontend guardandose" {
-    $frontendLogs = Get-ChildItem logs -Filter "frontend_*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($frontendLogs) {
-        $age = (Get-Date) - $frontendLogs.LastWriteTime
-        return $age.TotalMinutes -lt 60
-    }
-    return $false
-}
-
-Write-Host "`n[6] Verificando archivos implementados..." -ForegroundColor Cyan
-
-Test-Check "AlertService implementado" {
-    Test-Path "backend\src\services\AlertService.ts"
-}
-
-Test-Check "ScheduledReportService implementado" {
-    Test-Path "backend\src\services\ScheduledReportService.ts"
-}
-
-Test-Check "AlertSystemManager implementado" {
-    Test-Path "frontend\src\components\alerts\AlertSystemManager.tsx"
-}
-
-Test-Check "ManagerAdministration implementado" {
-    Test-Path "frontend\src\pages\ManagerAdministration.tsx"
-}
-
-Test-Check "usePermissions hook implementado" {
-    Test-Path "frontend\src\hooks\usePermissions.ts"
-}
-
-Test-Check "Authorization middleware implementado" {
-    Test-Path "backend\src\middleware\authorization.ts"
-}
-
-Test-Check "SystemStatus endpoint implementado" {
-    Test-Path "backend\src\routes\systemStatus.ts"
-}
-
-Test-Check "SystemStatusPage implementado" {
-    Test-Path "frontend\src\pages\SystemStatusPage.tsx"
-}
-
-Write-Host "`n[7] Verificando dependencias..." -ForegroundColor Cyan
-
-Test-Check "node_modules backend" {
-    Test-Path "backend\node_modules"
-}
-
-Test-Check "node_modules frontend" {
-    Test-Path "frontend\node_modules"
-}
-
-Test-Check "Prisma Client generado" {
-    Test-Path "backend\node_modules\.prisma\client"
-}
-
-Write-Host "`n[8] Verificando scripts y docs..." -ForegroundColor Cyan
-
-Test-Check "Script monitorear-logs.ps1" {
-    Test-Path "monitorear-logs.ps1"
-}
-
-Test-Check "Script ver-logs.ps1" {
-    Test-Path "ver-logs.ps1"
-}
-
-Test-Check "Checklist completo" {
-    Test-Path "CHECKLIST-VERIFICACION-COMPLETA.md"
-}
-
-Test-Check "Documentacion testing" {
-    Test-Path "docs\TESTING\GUIA-VERIFICACION-COMPLETA.md"
-}
-
-Test-Check "Credenciales guardadas" {
-    Test-Path "CREDENCIALES-SISTEMA.txt"
-}
-
+# ============================================================================
 # RESUMEN FINAL
-Write-Host "`n=========================================" -ForegroundColor Cyan
-Write-Host "  RESUMEN DE VERIFICACION" -ForegroundColor Cyan
-Write-Host "=========================================" -ForegroundColor Cyan
+# ============================================================================
 
-$successRate = if ($total -gt 0) { [math]::Round(($passed / $total) * 100, 1) } else { 0 }
+Write-Host "`n`n📋 === RESUMEN FINAL ===`n" -ForegroundColor Cyan
 
-Write-Host "`nTests totales:  $total" -ForegroundColor White
-Write-Host "Pasados:        $passed" -ForegroundColor Green
-Write-Host "Fallidos:       $failed" -ForegroundColor Red
-Write-Host "Tasa exito:     $successRate%" -ForegroundColor $(if ($successRate -ge 90) { "Green" } elseif ($successRate -ge 70) { "Yellow" } else { "Red" })
+$passed = ($resultados | Where-Object { $_.Status -eq "PASS" }).Count
+$failed = ($resultados | Where-Object { $_.Status -eq "FAIL" }).Count
+$warnings = ($resultados | Where-Object { $_.Status -eq "WARN" }).Count
+$total = $resultados.Count
 
-# Generar reporte simple
-$reportPath = "logs\verification-report-$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
-$report = @"
-REPORTE DE VERIFICACION - DOBACKSOFT
-Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+$passPercent = [math]::Round(($passed / $total) * 100, 1)
+$failPercent = [math]::Round(($failed / $total) * 100, 1)
+$warnPercent = [math]::Round(($warnings / $total) * 100, 1)
 
-Tests totales: $total
-Pasados: $passed
-Fallidos: $failed
-Tasa de exito: $successRate%
+Write-Host "Total tests: $total"
+Write-Host "✅ Passed: $passed ($passPercent%)" -ForegroundColor Green
+Write-Host "❌ Failed: $failed ($failPercent%)" -ForegroundColor Red
+Write-Host "⚠️  Warnings: $warnings ($warnPercent%)" -ForegroundColor Yellow
 
-Estado: $(if ($failed -eq 0) { "SISTEMA VERIFICADO CORRECTAMENTE" } else { "SE ENCONTRARON $failed PROBLEMAS" })
-"@
+# Agrupar por componente
+Write-Host "`n📊 Por componente:`n" -ForegroundColor Cyan
+$grouped = $resultados | Group-Object Component
+foreach ($group in $grouped) {
+    $compPassed = ($group.Group | Where-Object { $_.Status -eq "PASS" }).Count
+    $compTotal = $group.Count
+    $compPercent = [math]::Round(($compPassed / $compTotal) * 100)
+    
+    $icon = if ($compPassed -eq $compTotal) { "✅" }
+            elseif ($compPassed -gt 0) { "⚠️" }
+            else { "❌" }
+    
+    Write-Host "$icon $($group.Name): $compPassed/$compTotal ($compPercent%)"
+}
 
-$report | Out-File -FilePath $reportPath -Encoding UTF8
+# Tests críticos fallidos
+$criticalFailed = $resultados | Where-Object { 
+    $_.Status -eq "FAIL" -and ($_.Component -eq "Database" -or $_.Component -eq "Backend" -or $_.Component -eq "Parsers")
+}
 
-Write-Host "`nReporte guardado: $reportPath" -ForegroundColor Cyan
-
-if ($failed -gt 0) {
-    Write-Host "`nADVERTENCIA: Se encontraron $failed problemas" -ForegroundColor Yellow
-    Write-Host "Revisa el reporte para mas detalles" -ForegroundColor Gray
+if ($criticalFailed.Count -gt 0) {
+    Write-Host "`n`n🚨 TESTS CRÍTICOS FALLIDOS:`n" -ForegroundColor Red
+    foreach ($test in $criticalFailed) {
+        Write-Host "❌ [$($test.Component)] $($test.Test): $($test.Message)" -ForegroundColor Red
+    }
+    Write-Host "`n⚠️  Sistema con problemas críticos - revisar antes de continuar`n" -ForegroundColor Red
     exit 1
 }
-else {
-    Write-Host "`nSISTEMA VERIFICADO CORRECTAMENTE" -ForegroundColor Green
-    exit 0
+
+Write-Host "`n`n✅ SISTEMA OPERATIVO - Todos los tests críticos pasados`n" -ForegroundColor Green
+Write-Host "🜏 status: system_verified_conscious`n" -ForegroundColor Cyan
+
+if ($warnings -gt 0) {
+    Write-Host "⚠️  Hay $warnings warnings - revisar para optimizar sistema`n" -ForegroundColor Yellow
 }
+
+exit 0

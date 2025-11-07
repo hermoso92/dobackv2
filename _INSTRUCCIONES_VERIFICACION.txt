@@ -1,0 +1,237 @@
+═══════════════════════════════════════════════════════════════════════════════
+🧪 INSTRUCCIONES DE VERIFICACIÓN - DobackSoft + Google Maps
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ GOOGLE MAPS CONFIGURADO Y FUNCIONANDO (4/5 APIs)
+⚠️  NECESITA VERIFICAR BACKEND Y DATOS
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 1: REINICIAR SISTEMA COMPLETO
+═══════════════════════════════════════════════════════════════════════════════
+
+Ejecutar en PowerShell:
+
+    .\iniciar.ps1
+
+Esto iniciará:
+- Backend en puerto 9998
+- Frontend en puerto 5174
+- Abrirá navegador automáticamente
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 2: VERIFICAR USUARIO ADMIN
+═══════════════════════════════════════════════════════════════════════════════
+
+2.1 Abrir navegador:
+
+    http://localhost:5174
+
+2.2 Intentar login con:
+
+    Email:    admin@dobacksoft.com
+    Password: admin123
+
+2.3 Si login FALLA:
+
+    A. Opción 1 - Crear usuario vía API:
+       node scripts/testing/create-admin-user.js
+
+    B. Opción 2 - Crear usuario en base de datos:
+       psql -U postgres -d dobacksoft
+       
+       -- Ejecutar SQL:
+       INSERT INTO "User" (id, email, password_hash, name, role, "organizationId", "isActive", "createdAt", "updatedAt")
+       VALUES (
+           'admin-001',
+           'admin@dobacksoft.com',
+           '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdTqCHEq', -- Hash de 'admin123'
+           'Admin DobackSoft',
+           'ADMIN',
+           'org-001',
+           true,
+           NOW(),
+           NOW()
+       );
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 3: EJECUTAR TEST COMPLETO
+═══════════════════════════════════════════════════════════════════════════════
+
+Una vez que el backend esté corriendo y puedas hacer login:
+
+    node scripts/testing/test-sistema-completo.js
+
+Resultado esperado:
+
+    🗺️  Google Maps:
+       ✅ Geocoding
+       ✅ Routes
+       ⚠️  Roads (opcional)
+       ✅ Elevation
+       ✅ Places
+
+    🔧 DobackSoft:
+       ✅ Backend
+       ✅ Authentication
+       ✅ Dashboard
+       ✅ Stability
+       ✅ Events
+
+    🎉 ¡SISTEMA FUNCIONAL!
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 4: VERIFICAR EN NAVEGADOR
+═══════════════════════════════════════════════════════════════════════════════
+
+4.1 Dashboard (http://localhost:5174/dashboard)
+    - Verificar que KPIs se muestren
+    - Verificar que vehículos carguen
+    - Si no hay datos, subirlos vía interfaz
+
+4.2 Estabilidad (http://localhost:5174/estabilidad)
+    - Ver sesiones
+    - Ver eventos
+    - Verificar que eventos muestren DIRECCIONES (no solo coordenadas)
+    - Ejemplo: "Evento en Calle Gran Vía 1, Madrid" ← Esto es geocoding funcionando
+
+4.3 Telemetría (http://localhost:5174/telemetria)
+    - Ver datos CAN/GPS
+    - Ver mapas con rutas
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 5: PROBAR GOOGLE MAPS EN CONSOLA DEL NAVEGADOR
+═══════════════════════════════════════════════════════════════════════════════
+
+Abrir DevTools (F12) y ejecutar:
+
+    // Importar servicios
+    import { googleMaps } from './src/services/googleMaps/googleMapsService';
+
+    // Test Geocoding
+    const address = await googleMaps.geocoding.getStreetName(40.4168, -3.7038);
+    console.log('✅ Dirección:', address);
+
+    // Test Routes
+    const route = await googleMaps.routes.computeRoute({
+        origin: { lat: 40.4168, lng: -3.7038 },
+        destination: { lat: 40.4200, lng: -3.7000 },
+    });
+    console.log('✅ Distancia:', route.distanceMeters / 1000, 'km');
+
+    // Test Elevation
+    const elevation = await googleMaps.elevation.getSingleElevation(40.4168, -3.7038);
+    console.log('✅ Elevación:', elevation, 'metros');
+
+    // Test Places
+    const parkings = await googleMaps.places.findNearbyParkings(
+        { lat: 40.4168, lng: -3.7038 },
+        1000
+    );
+    console.log('✅ Parkings:', parkings.length);
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 PASO 6 (OPCIONAL): HABILITAR ROADS API
+═══════════════════════════════════════════════════════════════════════════════
+
+Para usar snap-to-road GPS y límites de velocidad:
+
+1. Ir a: https://console.cloud.google.com/apis/library
+2. Buscar: "Roads API"
+3. Clic en: "Enable"
+4. Verificar: node scripts/testing/test-google-maps.js
+
+═══════════════════════════════════════════════════════════════════════════════
+🔧 SCRIPTS DISPONIBLES
+═══════════════════════════════════════════════════════════════════════════════
+
+# Iniciar sistema completo
+.\iniciar.ps1
+
+# Test completo del sistema
+node scripts/testing/test-sistema-completo.js
+
+# Test solo Google Maps
+node scripts/testing/test-google-maps.js
+
+# Crear usuario admin
+node scripts/testing/create-admin-user.js
+
+═══════════════════════════════════════════════════════════════════════════════
+📚 DOCUMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Guía de verificación completa:
+   _VERIFICAR_SISTEMA_COMPLETO.md
+
+2. Implementación Google Maps:
+   GOOGLE_MAPS_IMPLEMENTACION_COMPLETA.md
+
+3. Configuración:
+   GOOGLE_MAPS_CONFIGURADO.md
+
+4. Guía rápida:
+   docs/MODULOS/integraciones/GOOGLE_MAPS_QUICKSTART.md
+
+5. 12 ejemplos prácticos:
+   docs/MODULOS/integraciones/GOOGLE_MAPS_EJEMPLOS.md
+
+6. README completo:
+   frontend/src/services/googleMaps/README.md
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+Google Maps Platform:
+[x] ✅ Geocoding API funcionando
+[x] ✅ Routes API funcionando
+[x] ✅ Elevation API funcionando
+[x] ✅ Places API funcionando
+[ ] ⚠️  Roads API (opcional)
+
+Sistema DobackSoft:
+[ ] ⏳ Backend corriendo en puerto 9998
+[ ] ⏳ Frontend corriendo en puerto 5174
+[ ] ⏳ Usuario admin creado
+[ ] ⏳ Login funcionando
+[ ] ⏳ Dashboard con KPIs
+[ ] ⏳ Eventos con geocoding
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 OBJETIVO
+═══════════════════════════════════════════════════════════════════════════════
+
+Ver en DobackSoft:
+
+❌ ANTES:  "Evento en 40.4168, -3.7038"
+✅ AHORA:  "Evento en Calle Gran Vía 1, Madrid"
+
+Esto significa que Google Maps está geocodificando correctamente las coordenadas.
+
+═══════════════════════════════════════════════════════════════════════════════
+🆘 PROBLEMAS COMUNES
+═══════════════════════════════════════════════════════════════════════════════
+
+❌ "Backend no disponible"
+   → Ejecutar: .\iniciar.ps1
+
+❌ "Login falló"
+   → Crear usuario: node scripts/testing/create-admin-user.js
+   → O manualmente en PostgreSQL (ver PASO 2.3.B)
+
+❌ "Sin datos en dashboard"
+   → Subir archivos CSV vía interfaz web
+   → O verificar que haya datos en base de datos
+
+❌ "Eventos sin dirección"
+   → Verificar que REACT_APP_GOOGLE_MAPS_API_KEY esté en config.env
+   → Reiniciar: .\iniciar.ps1
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 ¡GOOGLE MAPS PLATFORM COMPLETAMENTE INTEGRADO!
+
+Próximo paso: Ejecutar .\iniciar.ps1
+
+═══════════════════════════════════════════════════════════════════════════════
+

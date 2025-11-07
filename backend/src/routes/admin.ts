@@ -1,53 +1,164 @@
-import { Router } from 'express';
-import { AdminController } from '../controllers/AdminController';
-import { attachOrg } from '../middleware/attachOrg';
+/**
+ * 🔐 ENDPOINTS ADMINISTRATIVOS
+ * Solo accesibles por rol ADMIN
+ * 
+ * Endpoints:
+ * - POST /api/admin/delete-all-data - Eliminar TODOS los datos de la organización
+ */
+
+import { Router, Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+import { createLogger } from '../utils/logger';
 import { authenticate } from '../middleware/auth';
+import { kpiCacheService } from '../services/KPICacheService';
 
 const router = Router();
-const adminController = new AdminController();
+const logger = createLogger('AdminAPI');
 
-// Aplicar middleware de autenticación y organización a todas las rutas
-router.use(authenticate);
-router.use(attachOrg);
+/**
+ * POST /api/admin/delete-all-data
+ * Elimina TODOS los datos de una organización
+ * ⚠️ ACCIÓN IRREVERSIBLE - Para ADMIN o MANAGER
+ */
+router.post('/delete-all-data', authenticate, async (req: Request, res: Response) => {
+    try {
+        // Verificar que el usuario es ADMIN o MANAGER
+        if (req.user?.role !== 'ADMIN' && req.user?.role !== 'MANAGER') {
+            logger.warn(`⚠️ Intento de borrado total por usuario no autorizado: ${req.user?.id} (rol: ${req.user?.role})`);
+            return res.status(403).json({ 
+                success: false,
+                error: 'Solo usuarios ADMIN o MANAGER pueden ejecutar esta acción' 
+            });
+        }
 
-// Rutas para gestión de usuarios
-router.get('/users', adminController.getUsers);
-router.get('/users/:id', adminController.getUser);
-router.post('/users', adminController.createUser);
-router.put('/users/:id', adminController.updateUser);
-router.delete('/users/:id', adminController.deleteUser);
+        const { confirmacion } = req.body;
+        
+        if (confirmacion !== 'ELIMINAR_TODO') {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Confirmación incorrecta. Debe enviar: confirmacion: "ELIMINAR_TODO"' 
+            });
+        }
 
-// Rutas para gestión de organizaciones
-router.get('/organizations', adminController.getOrganizations);
-router.get('/organizations/:id', adminController.getOrganization);
-router.put('/organizations/:id', adminController.updateOrganization);
+        const orgId = req.user.organizationId;
 
-// Rutas para gestión de API Keys
-router.get('/api-keys', adminController.getApiKeys);
-router.post('/api-keys', adminController.createApiKey);
-router.put('/api-keys/:id', adminController.updateApiKey);
-router.delete('/api-keys/:id', adminController.revokeApiKey);
+        logger.warn(`🚨 BORRADO TOTAL DE DATOS iniciado`, {
+            userId: req.user.id,
+            userEmail: req.user.email,
+            organizationId: orgId,
+            timestamp: new Date().toISOString()
+        });
 
-// Rutas para gestión de Feature Flags
-router.get('/feature-flags', adminController.getFeatureFlags);
-router.put('/feature-flags/:id', adminController.updateFeatureFlag);
+        // Objeto para contar registros eliminados
+        const deletedCounts = {
+            sessions: 0,
+            events: 0,
+            segments: 0,
+            gps: 0,
+            can: 0,
+            rotativo: 0,
+            estabilidad: 0,
+            operationalKeys: 0
+        };
 
-// Rutas para configuración de seguridad
-router.get('/security/settings', adminController.getSecuritySettings);
-router.put('/security/settings', adminController.updateSecuritySettings);
+        // Usar transacción para seguridad (todo o nada)
+        await prisma.$transaction(async (tx) => {
+            // ORDEN CORRECTO: Eliminar tablas dependientes primero, padres al final
 
-// Rutas para eventos de seguridad
-router.get('/security/events', adminController.getSecurityEvents);
-router.post('/security/events/:id/resolve', adminController.resolveSecurityEvent);
+            // 1. Eliminar segmentos operacionales (dependen de Session)
+            const seg = await tx.operational_state_segments.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.segments = seg.count;
 
-// Rutas para logs de auditoría
-router.get('/audit/logs', adminController.getAuditLogs);
+            // 2. Eliminar OperationalKeys (tabla vieja, por si acaso)
+            try {
+                const opKeys = await tx.operationalKey.deleteMany({
+                    where: { 
+                        Session: { organizationId: orgId } 
+                    }
+                });
+                deletedCounts.operationalKeys = opKeys.count;
+            } catch (e) {
+                logger.warn('No se pudieron eliminar OperationalKeys (tabla puede no existir)');
+            }
 
-// Rutas para estadísticas de administración
-router.get('/stats', adminController.getAdminStats);
+            // 3. Eliminar eventos de estabilidad (dependen de Session)
+            const evt = await tx.stability_events.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.events = evt.count;
 
-// Rutas para configuración general
-router.get('/settings', adminController.getAdminSettings);
-router.put('/settings', adminController.updateAdminSettings);
+            // 4. Eliminar mediciones GPS (dependen de Session)
+            const gps = await tx.gpsMeasurement.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.gps = gps.count;
+
+            // 5. Eliminar mediciones CAN (dependen de Session)
+            const can = await tx.canMeasurement.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.can = can.count;
+
+            // 6. Eliminar mediciones Rotativo (dependen de Session)
+            const rot = await tx.rotativoMeasurement.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.rotativo = rot.count;
+
+            // 7. Eliminar mediciones de Estabilidad (dependen de Session)
+            const stb = await tx.stabilityMeasurement.deleteMany({
+                where: { 
+                    Session: { organizationId: orgId } 
+                }
+            });
+            deletedCounts.estabilidad = stb.count;
+
+            // 8. Eliminar sesiones (tabla padre, al final)
+            const ses = await tx.session.deleteMany({
+                where: { organizationId: orgId }
+            });
+            deletedCounts.sessions = ses.count;
+
+            logger.warn(`✅ Borrado completado exitosamente:`, deletedCounts);
+        });
+
+        // Invalidar TODA la caché de KPIs
+        try {
+            await kpiCacheService.invalidateAllByOrg(orgId);
+            logger.info('✅ Caché de KPIs invalidada');
+        } catch (cacheError) {
+            logger.error('Error invalidando caché (no crítico):', cacheError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Todos los datos han sido eliminados exitosamente',
+            deleted: deletedCounts
+        });
+
+    } catch (error: any) {
+        logger.error('❌ Error ejecutando borrado total de datos:', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            success: false,
+            error: 'Error al eliminar datos',
+            details: error.message 
+        });
+    }
+});
 
 export default router;

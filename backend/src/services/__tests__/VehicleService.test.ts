@@ -103,7 +103,7 @@ describe('VehicleService', () => {
                 include: {
                     sessions: true,
                     events: true,
-                    organization: true
+                    Organization: true
                 }
             });
             expect(result).toEqual(expectedVehicle);
@@ -149,7 +149,7 @@ describe('VehicleService', () => {
             expect(mockPrisma.vehicle.create).toHaveBeenCalledWith({
                 data: vehicleData,
                 include: {
-                    organization: true
+                    Organization: true
                 }
             });
             expect(result).toEqual(expectedVehicle);
@@ -207,7 +207,7 @@ describe('VehicleService', () => {
                 },
                 data: updateData,
                 include: {
-                    organization: true
+                    Organization: true
                 }
             });
             expect(result).toEqual(expectedVehicle);

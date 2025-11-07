@@ -42,13 +42,13 @@ export const KPICard: React.FC<KPICardProps> = ({
                     {icon}
                 </div>
                 <div className="text-right">
-                    <p className={`text-xl font-bold ${colorClass}`}>
+                    <p className={`text-2xl font-bold ${colorClass}`}>
                         {value}
                     </p>
-                    {unit && <span className="text-xs text-slate-500 ml-1">{unit}</span>}
+                    {unit && <span className="text-sm text-slate-500 ml-1">{unit}</span>}
                 </div>
             </div>
-            <h3 className="text-xs font-semibold text-slate-700">{title}</h3>
+            <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
             {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
             {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
         </div>

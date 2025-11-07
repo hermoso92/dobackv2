@@ -4,9 +4,9 @@ import { GeofenceAction, GeofenceCondition, GeofenceRule, GeofenceRuleEngine } f
 import { logger } from '../utils/logger';
 
 export class GeofenceRuleController {
-    private ruleEngine: GeofenceRuleEngine;
+    private ruleEngine?: GeofenceRuleEngine;
 
-    constructor(prisma: PrismaClient, ruleEngine: GeofenceRuleEngine) {
+    constructor(prisma: PrismaClient, ruleEngine?: GeofenceRuleEngine) {
         this.ruleEngine = ruleEngine;
     }
 

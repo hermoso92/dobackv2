@@ -7,7 +7,7 @@ import { prisma } from '../lib/prisma';
 async function checkData() {
     const user = await prisma.user.findUnique({
         where: { email: 'admin@cosigein.com' },
-        include: { organization: true }
+        include: { Organization: true }
     });
     console.log('Usuario:', user);
 

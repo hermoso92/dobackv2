@@ -1,0 +1,57 @@
+# Guardrails Ignore File
+# Similar to .gitignore, but for guardrails scanners
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__/**
+
+# Build outputs
+**/dist/**
+**/build/**
+**/coverage/**
+
+# Node modules
+**/node_modules/**
+
+# Temporary files
+**/temp/**
+**/*.backup.*
+**/*.old.*
+
+# Configuration files
+**/.env*
+**/config.env*
+
+# Legacy/Historical code (marcado para refactor)
+# backend/migrations/legacy/**
+
+# Scripts de utilidad (permitir console.log)
+scripts/analisis/**
+scripts/testing/**
+backend/src/scripts/**
+
+# Setup/config files (permitir console.log)
+**/setupProxy.js
+**/i18n*.ts
+**/vite.config.*
+**/jest.config.*
+**/webpack.config.*
+
+# Logger files (obvio)
+**/logger.ts
+**/logger.js
+
+# Generated files
+**/*.generated.ts
+**/*.generated.js
+
+# Documentation
+**/*.md
+
+# Ejemplos y demos
+**/examples/**
+**/demo/**
+

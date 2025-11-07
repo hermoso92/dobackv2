@@ -1,6 +1,10 @@
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
-import { SpeedLimitResult, tomTomSpeedLimitService } from './TomTomSpeedLimitService';
+import { googleRoadsService, GoogleSpeedLimitResult } from './GoogleRoadsService';
+import { tomTomSpeedLimitService, SpeedLimitResult as TomTomSpeedLimitResult } from './TomTomSpeedLimitService';
+
+// Tipo unificado que acepta tanto Google como TomTom
+export type SpeedLimitResult = GoogleSpeedLimitResult | TomTomSpeedLimitResult;
 
 export interface SpeedViolation {
     timestamp: Date;
@@ -15,16 +19,51 @@ export interface SpeedViolation {
 }
 
 export class SpeedLimitService {
+    private readonly USE_GOOGLE_ROADS = process.env.GOOGLE_ROADS_ENABLED !== 'false'; // Por defecto: true
+    private readonly USE_TOMTOM_FALLBACK = process.env.TOMTOM_FALLBACK_ENABLED === 'true'; // Por defecto: false
+
     /**
      * Obtener límite de velocidad para una ubicación
-     * Prioridad: TomTom API > Cache > Configuración manual
+     * Prioridad: Google Roads API > TomTom API (fallback) > Cache > Configuración manual
      */
     async getSpeedLimit(
         lat: number,
         lon: number,
         vehicleType: 'turismo' | 'camion' | 'emergencia' = 'emergencia'
     ): Promise<SpeedLimitResult> {
-        return await tomTomSpeedLimitService.getSpeedLimit(lat, lon, vehicleType);
+        // 1. Intentar Google Roads API primero
+        if (this.USE_GOOGLE_ROADS) {
+            try {
+                const googleResult = await googleRoadsService.getSpeedLimit(lat, lon, vehicleType);
+                
+                // Si Google devolvió un resultado con confianza alta o media, usarlo
+                if (googleResult.source === 'google' || googleResult.source === 'cache') {
+                    return googleResult;
+                }
+
+                logger.debug('Google Roads devolvió resultado por defecto, intentando fallback...');
+            } catch (error: any) {
+                logger.warn(`Error en Google Roads API: ${error.message}, intentando fallback...`);
+            }
+        }
+
+        // 2. Fallback a TomTom si está habilitado
+        if (this.USE_TOMTOM_FALLBACK) {
+            try {
+                const tomtomResult = await tomTomSpeedLimitService.getSpeedLimit(lat, lon, vehicleType);
+                
+                if (tomtomResult.source === 'tomtom' || tomtomResult.source === 'cache') {
+                    logger.info('Usando TomTom como fallback');
+                    return tomtomResult;
+                }
+            } catch (error: any) {
+                logger.warn(`Error en TomTom API: ${error.message}`);
+            }
+        }
+
+        // 3. Último recurso: valores por defecto
+        logger.debug('Usando valores por defecto para límite de velocidad');
+        return googleRoadsService['getDefaultSpeedLimit'](vehicleType);
     }
 
     /**
@@ -95,7 +134,32 @@ export class SpeedLimitService {
      * Limpiar caché antiguo
      */
     async cleanOldCache(): Promise<void> {
+        await googleRoadsService.cleanOldCache();
+        
+        if (this.USE_TOMTOM_FALLBACK) {
         await tomTomSpeedLimitService.cleanOldCache();
+        }
+    }
+
+    /**
+     * Batch processing: Obtener límites para múltiples puntos de una vez
+     * (Optimización para reducir costes de API)
+     */
+    async getBatchSpeedLimits(
+        points: Array<{ lat: number; lon: number }>,
+        vehicleType: 'turismo' | 'camion' | 'emergencia' = 'emergencia'
+    ): Promise<SpeedLimitResult[]> {
+        if (this.USE_GOOGLE_ROADS) {
+            return await googleRoadsService.getBatchSpeedLimits(points, vehicleType);
+        }
+
+        // Fallback: procesar uno por uno
+        const results: SpeedLimitResult[] = [];
+        for (const point of points) {
+            const result = await this.getSpeedLimit(point.lat, point.lon, vehicleType);
+            results.push(result);
+        }
+        return results;
     }
 }
 

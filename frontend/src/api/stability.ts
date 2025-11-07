@@ -141,7 +141,7 @@ export class StabilityAPI {
                 { responseType: 'blob' }
             );
 
-            return response.data;
+            return response.data as Blob;
         } catch (error) {
             logger.error('Error exportando datos de estabilidad', { error, sessionId, options });
             throw error;

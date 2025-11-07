@@ -4,6 +4,7 @@
  * Permite configurar las reglas de procesamiento directamente desde la UI.
  */
 
+import { logger } from '../utils/logger';
 import {
 import { logger } from '../utils/logger';
     CheckCircle as CheckCircleIcon,
