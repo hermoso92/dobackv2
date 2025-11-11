@@ -1198,5 +1198,6 @@
   "login_email": "Email",
   "login_password": "Password",
   "login_logging_in": "Logging in...",
-  "login_log_in": "Log in"
+  "login_log_in": "Log in",
+  "login_button": "Log in"
 }

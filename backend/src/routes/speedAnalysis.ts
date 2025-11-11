@@ -7,6 +7,28 @@ import { prisma } from '../lib/prisma';
 const router = Router();
 
 // Interface para violación de velocidad
+type RoadTypeCode =
+    | 'AUTOPISTA_AUTOVIA'
+    | 'AUTOPISTA_URBANA'
+    | 'CARRETERA_ARCEN_PAVIMENTADO'
+    | 'RESTO_VIAS_FUERA_POBLADO'
+    | 'CONVENCIONAL_SEPARACION_FISICA'
+    | 'CONVENCIONAL_SIN_SEPARACION'
+    | 'VIA_SIN_PAVIMENTAR';
+
+const ROAD_TYPE_CODES: RoadTypeCode[] = [
+    'AUTOPISTA_AUTOVIA',
+    'AUTOPISTA_URBANA',
+    'CARRETERA_ARCEN_PAVIMENTADO',
+    'RESTO_VIAS_FUERA_POBLADO',
+    'CONVENCIONAL_SEPARACION_FISICA',
+    'CONVENCIONAL_SIN_SEPARACION',
+    'VIA_SIN_PAVIMENTAR'
+];
+
+const isRoadTypeCode = (value: unknown): value is RoadTypeCode =>
+    typeof value === 'string' && ROAD_TYPE_CODES.includes(value as RoadTypeCode);
+
 interface SpeedViolation {
     id: string;
     vehicleId: string;
@@ -19,7 +41,7 @@ interface SpeedViolation {
     violationType: 'grave' | 'moderada' | 'leve' | 'correcto';
     rotativoOn: boolean;
     inPark: boolean;
-    roadType: 'urban' | 'interurban' | 'highway';
+    roadType: RoadTypeCode;
     excess: number;
 }
 
@@ -28,6 +50,7 @@ interface SpeedFilters {
     rotativoFilter?: 'all' | 'on' | 'off';
     parkFilter?: 'all' | 'in' | 'out';
     violationFilter?: 'all' | 'grave' | 'moderada' | 'leve' | 'correcto';
+    roadTypeFilter?: 'all' | RoadTypeCode;
     vehicleIds?: string[];
     startDate?: string;
     endDate?: string;
@@ -117,10 +140,22 @@ router.get('/violations', async (req, res) => {
         // Hacer 'to' inclusivo convirtiéndolo a límite exclusivo (lt next day)
         const dateFrom = from ? new Date(from) : undefined;
         const dateToExclusive = to ? (() => { const d = new Date(to as string); d.setDate(d.getDate() + 1); return d; })() : undefined;
+        const minLatMadrid = 40.15;
+        const maxLatMadrid = 40.80;
+        const minLonMadrid = -4.10;
+        const maxLonMadrid = -3.30;
+
+        const normalizeRoadTypeQuery = (value: unknown): 'all' | RoadTypeCode => {
+            if (typeof value !== 'string') return 'all';
+            const upper = value.toUpperCase();
+            return isRoadTypeCode(upper) ? upper : 'all';
+        };
+
         const filters: SpeedFilters = {
             rotativoFilter: req.query.rotativoOn as any || 'all',
             parkFilter: req.query.inPark as any || 'all',
             violationFilter: req.query.violationType as any || 'all',
+            roadTypeFilter: normalizeRoadTypeQuery(req.query.roadType),
             vehicleIds: req.query.vehicleIds ? (req.query.vehicleIds as string).split(',') : undefined,
             startDate: from,
             endDate: to,
@@ -200,19 +235,19 @@ router.get('/violations', async (req, res) => {
         const clampExcess = (speed: number, limit: number) => Math.max(0, speed - limit);
 
         // Convertir excesos a formato SpeedViolation
-        const speedViolations: SpeedViolation[] = excesosFiltrados.map(exceso => {
-            // Mapear tipo de vía a roadType
-            const roadTypeMap: Record<string, 'urban' | 'interurban' | 'highway'> = {
-                'AUTOPISTA_AUTOVIA': 'highway',
-                'CARRETERA_ARCEN_PAVIMENTADO': 'interurban',
-                'RESTO_VIAS_FUERA_POBLADO': 'interurban',
-                'AUTOPISTA_URBANA': 'highway',
-                'CONVENCIONAL_SEPARACION_FISICA': 'interurban',
-                'CONVENCIONAL_SIN_SEPARACION': 'interurban',
-                'VIA_SIN_PAVIMENTAR': 'urban'
-            };
+        const isWithinMadridBounds = (lat: number, lon: number) =>
+            Number.isFinite(lat) &&
+            Number.isFinite(lon) &&
+            lat >= minLatMadrid &&
+            lat <= maxLatMadrid &&
+            lon >= minLonMadrid &&
+            lon <= maxLonMadrid;
 
-            const roadType = roadTypeMap[exceso.tipoVia] || 'urban';
+        const speedViolations: SpeedViolation[] = excesosFiltrados
+            .filter(exceso => {
+                return isWithinMadridBounds(exceso.lat, exceso.lon);
+            })
+            .map(exceso => {
             const inPark = isInPark(exceso.lat, exceso.lon);
 
             // Mapear severidad a violationType
@@ -225,6 +260,7 @@ router.get('/violations', async (req, res) => {
             const speed = isValidSpeed(exceso.velocidad) ? exceso.velocidad : 0;
             const speedLimit = isValidSpeed(exceso.limite) ? exceso.limite : 0;
             const excess = clampExcess(speed, speedLimit);
+            const roadType = isRoadTypeCode(exceso.tipoVia) ? exceso.tipoVia : 'RESTO_VIAS_FUERA_POBLADO';
 
             return {
                 id: `${exceso.sessionId}_${exceso.timestamp.getTime()}`,
@@ -270,6 +306,13 @@ router.get('/violations', async (req, res) => {
         if (filters.violationFilter !== 'all') {
             filteredViolations = filteredViolations.filter(violation =>
                 violation.violationType === filters.violationFilter
+            );
+        }
+
+        // Filtro de tipo de vía
+        if (filters.roadTypeFilter && filters.roadTypeFilter !== 'all') {
+            filteredViolations = filteredViolations.filter(
+                violation => violation.roadType === filters.roadTypeFilter
             );
         }
 

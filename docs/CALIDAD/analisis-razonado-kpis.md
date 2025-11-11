@@ -565,3 +565,11 @@ GROUP BY severity
 - ✅ Frontend `getStateDuration(key)` busca en el array correctamente
 - ✅ Puntos negros usa eventos con GPS correlacionado
 
+
+
+
+
+
+
+
+

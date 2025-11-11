@@ -291,13 +291,25 @@ export const useGlobalFilters = () => {
         }
 
         // Rango de fechas (respetar exactamente lo seleccionado por el usuario)
-        if (state.filters.dateRange.start) {
-            query.startDate = state.filters.dateRange.start;
-            query.from = state.filters.dateRange.start;
+        const normalizedRange = (() => {
+            const { dateRange } = state.filters;
+            if (!dateRange) {
+                return { start: undefined, end: undefined };
+            }
+
+            const start = dateRange.start || (dateRange as any).startDate || (dateRange as any).from;
+            const end = dateRange.end || (dateRange as any).endDate || (dateRange as any).to;
+
+            return { start, end };
+        })();
+
+        if (normalizedRange.start) {
+            query.startDate = normalizedRange.start;
+            query.from = normalizedRange.start;
         }
-        if (state.filters.dateRange.end) {
-            query.endDate = state.filters.dateRange.end;
-            query.to = state.filters.dateRange.end;
+        if (normalizedRange.end) {
+            query.endDate = normalizedRange.end;
+            query.to = normalizedRange.end;
         }
 
         // Rotativo

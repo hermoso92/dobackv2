@@ -3,7 +3,26 @@ import { prisma } from '../lib/prisma';
 import { StabilityMeasurements } from '../types/stability';
 import { logger } from '../utils/logger';
 
+const normalizeUploadedSi = (rawSi: unknown): number => {
+    if (rawSi === null || rawSi === undefined) return 0;
+    const value = Number(rawSi);
+    if (!Number.isFinite(value)) return 0;
 
+    if (value > 1 && value <= 120) {
+        return Math.min(Math.max(value / 100, 0), 1);
+    }
+
+    if (value > 0 && value < 0.2) {
+        const scaled = value * 100;
+        if (scaled <= 1.2) {
+            return Math.min(Math.max(scaled, 0), 1);
+        }
+    }
+
+    if (value < 0) return 0;
+
+    return Math.min(Math.max(value, 0), 1);
+};
 
 export class StabilityMeasurementRepository {
     async createMeasurements(measurements: StabilityMeasurements[]): Promise<void> {
@@ -45,7 +64,7 @@ export class StabilityMeasurementRepository {
                     usciclo3: m.usciclo3 ? Number(m.usciclo3) : 0,
                     usciclo4: m.usciclo4 ? Number(m.usciclo4) : 0,
                     usciclo5: m.usciclo5 ? Number(m.usciclo5) : 0,
-                    si: m.si ? Number(m.si) : 0,
+                    si: normalizeUploadedSi(m.si),
                     accmag: m.accmag ? Number(m.accmag) : 0,
                     microsds: m.microsds ? Number(m.microsds) : 0,
                     timeantwifi: m.timeantwifi ? Number(m.timeantwifi) : 0,

@@ -365,3 +365,11 @@ Con esta documentación tienes todo lo necesario para:
 - ✅ 16 casos de uso prácticos
 - ✅ Integración con Telegram, Google Sheets, OpenAI
 
+
+
+
+
+
+
+
+

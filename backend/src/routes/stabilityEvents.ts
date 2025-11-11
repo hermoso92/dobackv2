@@ -5,6 +5,149 @@ import { logger } from '../utils/logger';
 const router = Router();
 const prisma = new PrismaClient();
 
+type RawSi = number | string | null | undefined;
+
+function normalizeSiValue(raw: RawSi): number {
+    if (raw === null || raw === undefined) {
+        return 0;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+
+    if (value > 1 && value <= 120) {
+        return Math.min(Math.max(value / 100, 0), 1);
+    }
+
+    if (value > 0 && value < 0.2) {
+        const scaled = value * 100;
+        if (scaled <= 1.2) {
+            return Math.min(Math.max(scaled, 0), 1);
+        }
+    }
+
+    if (value < 0) {
+        return 0;
+    }
+
+    return Math.min(Math.max(value, 0), 1);
+}
+
+function formatSiDisplay(si: number): string {
+    return si <= 0 ? '0.00' : si.toFixed(2);
+}
+
+function classifySeverityBySi(si: number): 'G' | 'M' | 'L' {
+    if (si < 0.20) return 'G';
+    if (si < 0.35) return 'M';
+    return 'L';
+}
+
+async function resolveFallbackSi(
+    sessionId: string,
+    timestamp: Date
+): Promise<number> {
+    const windowStart = new Date(timestamp.getTime() - 30_000);
+    const windowEnd = new Date(timestamp.getTime() + 30_000);
+
+    const measurement = await prisma.stabilityMeasurement.findFirst({
+        where: {
+            sessionId,
+            timestamp: {
+                gte: windowStart,
+                lte: windowEnd
+            }
+        },
+        orderBy: {
+            timestamp: 'asc'
+        }
+    });
+
+    if (!measurement) {
+        return 0;
+    }
+
+    return normalizeSiValue(measurement.si);
+}
+
+async function transformEvents(
+    events: Array<Awaited<ReturnType<typeof prisma.stability_events.findFirst>>>,
+    includeGps: boolean
+) {
+    const processed: Array<Record<string, any>> = [];
+
+    for (const event of events) {
+        if (!event) continue;
+        const details = (event.details as any) || {};
+        const valores = details.valores || {};
+
+        const rawSi: RawSi =
+            valores.si ??
+            details.si ??
+            details.SI ??
+            null;
+
+        let si = normalizeSiValue(rawSi);
+
+        if (si === 0 && event.session_id) {
+            si = await resolveFallbackSi(event.session_id, event.timestamp);
+        }
+
+        if (si === 0) {
+            logger.warn('Evento descartado por SI inválido', {
+                eventId: event.id,
+                sessionId: event.session_id,
+                rawSi
+            });
+            continue;
+        }
+
+        const severity = classifySeverityBySi(si);
+
+        processed.push({
+            id: event.id,
+            vehicle_id: event.Session?.vehicleId || 'unknown',
+            vehicle_name:
+                event.Session?.Vehicle?.name ||
+                event.Session?.Vehicle?.identifier ||
+                'Vehículo desconocido',
+            timestamp: event.timestamp.toISOString(),
+            event_type: event.type || 'EVENTO_ESTABILIDAD',
+            severity,
+            speed: detallesCan(details)?.vehicleSpeed || 0,
+            speed_limit: detallesCan(details)?.speedLimit || 50,
+            rotativo: !!detallesCan(details)?.rotativo,
+            road_type: detallesCan(details)?.roadType || 'urban',
+            location: formatLocation(event.lat, event.lon),
+            gps_lat: includeGps ? event.lat : null,
+            gps_lng: includeGps ? event.lon : null,
+            ltr: valores.ltr || 0,
+            ssf: valores.ssf || 0,
+            drs: valores.drs || 0,
+            lateral_acceleration: valores.ay || 0,
+            longitudinal_acceleration: valores.ax || 0,
+            vertical_acceleration: valores.az || 0,
+            si: Number(si.toFixed(3)),
+            si_display: formatSiDisplay(si),
+            session_id: event.session_id
+        });
+    }
+
+    return processed;
+}
+
+function detallesCan(details: any): any {
+    return details.can || details.telemetria || null;
+}
+
+function formatLocation(lat?: number | null, lon?: number | null): string {
+    if (!Number.isFinite(lat as number) || !Number.isFinite(lon as number)) {
+        return '0.0000, 0.0000';
+    }
+    return `${(lat as number).toFixed(4)}, ${(lon as number).toFixed(4)}`;
+}
+
 /**
  * GET /api/stability-events (endpoint raíz)
  * Obtiene eventos de estabilidad con datos GPS
@@ -12,7 +155,13 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
     try {
         const organizationId = (req as any).user?.organizationId;
-        const { limit = 100, includeGPS = 'false', vehicleIds, startDate, endDate } = req.query;
+        const {
+            limit = '100',
+            includeGPS = 'false',
+            vehicleIds,
+            startDate,
+            endDate
+        } = req.query;
 
         logger.info('Eventos de estabilidad solicitados (raíz)', {
             organizationId,
@@ -54,7 +203,12 @@ router.get('/', async (req, res) => {
         }
 
         // Obtener eventos reales de la base de datos
-        const events = await prisma.stability_events.findMany({
+        const takeValue = Array.isArray(limit) ? limit[0] : limit;
+        const normalizedLimit = typeof takeValue === 'string' ? takeValue.toLowerCase() : `${takeValue}`;
+        const shouldLimit = normalizedLimit !== 'all';
+        const numericLimit = shouldLimit ? Number.parseInt(normalizedLimit, 10) : undefined;
+
+        const queryOptions: Parameters<typeof prisma.stability_events.findMany>[0] = {
             where: whereConditions,
             include: {
                 Session: {
@@ -70,49 +224,26 @@ router.get('/', async (req, res) => {
             },
             orderBy: {
                 timestamp: 'desc'
-            },
-            take: parseInt(limit as string) || 100
-        });
+            }
+        };
 
-        // Procesar eventos para el formato de respuesta
-        const processedEvents = events.map(event => {
-            const details = event.details as any || {};
-            const si = details.valores?.si || details.si || 0;
+        if (
+            shouldLimit &&
+            Number.isFinite(numericLimit) &&
+            (numericLimit as unknown as number) > 0
+        ) {
+            queryOptions.take = numericLimit as unknown as number;
+        }
 
-            // Calcular severidad basada en SI
-            let severity = 'L';
-            if (si < 0.20) severity = 'G';
-            else if (si < 0.35) severity = 'M';
+        const events = await prisma.stability_events.findMany(queryOptions);
 
-            return {
-                id: event.id,
-                vehicle_id: event.Session?.vehicleId || 'unknown',
-                vehicle_name: event.Session?.Vehicle?.name || event.Session?.Vehicle?.identifier || 'Vehículo desconocido',
-                timestamp: event.timestamp.toISOString(),
-                event_type: event.type || 'EVENTO_ESTABILIDAD',
-                severity: severity,
-                speed: details.can?.vehicleSpeed || 0,
-                speed_limit: 50, // Valor por defecto
-                rotativo: details.can?.rotativo || false,
-                road_type: 'urban', // Valor por defecto
-                location: `${event.lat?.toFixed(4) || 0}, ${event.lon?.toFixed(4) || 0}`,
-                gps_lat: includeGPS === 'true' ? event.lat : null,
-                gps_lng: includeGPS === 'true' ? event.lon : null,
-                ltr: details.valores?.ltr || 0,
-                ssf: details.valores?.ssf || 0,
-                drs: details.valores?.drs || 0,
-                lateral_acceleration: details.valores?.ay || 0,
-                longitudinal_acceleration: details.valores?.ax || 0,
-                vertical_acceleration: details.valores?.az || 0,
-                si: si,
-                session_id: event.session_id
-            };
-        });
+        const processedEvents = await transformEvents(events, includeGPS === 'true');
 
         logger.info('Eventos de estabilidad obtenidos de BD', {
             organizationId,
             count: processedEvents.length,
-            includeGPS: includeGPS === 'true'
+            includeGPS: includeGPS === 'true',
+            requestedLimit: limit
         });
 
         return res.json({
@@ -138,7 +269,7 @@ router.get('/', async (req, res) => {
 router.get('/events', async (req, res) => {
     try {
         const organizationId = (req as any).orgId;
-        const { limit = 100, includeGPS = 'false' } = req.query;
+        const { limit = '100', includeGPS = 'false' } = req.query;
 
         if (!organizationId) {
             return res.status(400).json({
@@ -149,7 +280,12 @@ router.get('/events', async (req, res) => {
 
         // Obtener datos reales de la base de datos
         try {
-            const events = await prisma.stability_events.findMany({
+            const takeValue = Array.isArray(limit) ? limit[0] : limit;
+            const normalizedLimit = typeof takeValue === 'string' ? takeValue.toLowerCase() : `${takeValue}`;
+            const shouldLimit = normalizedLimit !== 'all';
+            const numericLimit = shouldLimit ? Number.parseInt(normalizedLimit, 10) : undefined;
+
+            const queryOptions: Parameters<typeof prisma.stability_events.findMany>[0] = {
                 where: {
                     Session: {
                         organizationId
@@ -169,48 +305,26 @@ router.get('/events', async (req, res) => {
                 },
                 orderBy: {
                     timestamp: 'desc'
-                },
-                take: parseInt(limit as string) || 100
-            });
+                }
+            };
 
-            const processedEvents = events.map(event => {
-                const details = event.details as any || {};
-                const si = details.valores?.si || details.si || 0;
+            if (
+                shouldLimit &&
+                Number.isFinite(numericLimit) &&
+                (numericLimit as unknown as number) > 0
+            ) {
+                queryOptions.take = numericLimit as unknown as number;
+            }
 
-                // Calcular severidad basada en SI
-                let severity = 'L';
-                if (si < 0.20) severity = 'G';
-                else if (si < 0.35) severity = 'M';
+            const events = await prisma.stability_events.findMany(queryOptions);
 
-                return {
-                    id: event.id,
-                    vehicle_id: event.Session?.vehicleId || 'unknown',
-                    vehicle_name: event.Session?.Vehicle?.name || event.Session?.Vehicle?.identifier || 'Vehículo desconocido',
-                    timestamp: event.timestamp.toISOString(),
-                    event_type: event.type || 'EVENTO_ESTABILIDAD',
-                    severity: severity,
-                    speed: details.can?.vehicleSpeed || 0,
-                    speed_limit: 50, // Valor por defecto
-                    rotativo: details.can?.rotativo || false,
-                    road_type: 'urban', // Valor por defecto
-                    location: `${event.lat?.toFixed(4) || 0}, ${event.lon?.toFixed(4) || 0}`,
-                    gps_lat: includeGPS === 'true' ? event.lat : null,
-                    gps_lng: includeGPS === 'true' ? event.lon : null,
-                    ltr: details.valores?.ltr || 0,
-                    ssf: details.valores?.ssf || 0,
-                    drs: details.valores?.drs || 0,
-                    lateral_acceleration: details.valores?.ay || 0,
-                    longitudinal_acceleration: details.valores?.ax || 0,
-                    vertical_acceleration: details.valores?.az || 0,
-                    si: si,
-                    session_id: event.session_id
-                };
-            });
+            const processedEvents = await transformEvents(events, includeGPS === 'true');
 
             logger.info('Eventos de estabilidad obtenidos', {
                 organizationId,
                 count: processedEvents.length,
-                includeGPS: includeGPS === 'true'
+                includeGPS: includeGPS === 'true',
+                requestedLimit: limit
             });
 
             return res.json({

@@ -250,3 +250,11 @@ function detectarClave(gpsPoint, rotativoState, prevClave) {
 **Autor**: Sistema DobackSoft
 
 
+
+
+
+
+
+
+
+

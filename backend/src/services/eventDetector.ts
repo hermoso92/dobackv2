@@ -27,6 +27,31 @@ const UMBRALES = {
     LEVE: 0.50              // 0.35 ≤ SI < 0.50
 };
 
+function normalizeMeasurementSi(rawSi: unknown): number {
+    if (rawSi === null || rawSi === undefined) return 0;
+    const value = Number(rawSi);
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+
+    if (value > 1 && value <= 120) {
+        return Math.min(Math.max(value / 100, 0), 1);
+    }
+
+    if (value > 0 && value < 0.2) {
+        const scaled = value * 100;
+        if (scaled <= 1.2) {
+            return Math.min(Math.max(scaled, 0), 1);
+        }
+    }
+
+    if (value < 0) {
+        return 0;
+    }
+
+    return Math.min(Math.max(value, 0), 1);
+}
+
 // ============================================================================
 // TIPOS
 // ============================================================================
@@ -79,7 +104,8 @@ export interface EventoDetectado {
  * MANDAMIENTO M3
  */
 function detectarRiesgoVuelco(measurement: any): EventoDetectado | null {
-    const si = measurement.si || 0; // Ya en [0,1]
+    const si = normalizeMeasurementSi(measurement.si);
+    measurement.si = si;
 
     const severidad = clasificarSeveridadPorSI(si);
     if (!severidad) return null; // SI ≥ 0.50 → sin evento
@@ -88,7 +114,7 @@ function detectarRiesgoVuelco(measurement: any): EventoDetectado | null {
         tipo: 'RIESGO_VUELCO',
         severidad,
         timestamp: measurement.timestamp,
-        valores: { si: measurement.si },
+        valores: { si },
         descripcion: `Pérdida general de estabilidad (SI=${(si * 100).toFixed(1)}%)`
     };
 }
@@ -100,7 +126,8 @@ function detectarRiesgoVuelco(measurement: any): EventoDetectado | null {
  * MANDAMIENTO M3.5
  */
 function detectarVuelcoInminente(measurement: any): EventoDetectado | null {
-    const si = measurement.si || 0; // Ya en [0,1]
+    const si = normalizeMeasurementSi(measurement.si);
+    measurement.si = si;
     const roll = measurement.roll || 0;
     const gx = measurement.gx || 0;
 
@@ -109,7 +136,7 @@ function detectarVuelcoInminente(measurement: any): EventoDetectado | null {
             tipo: 'VUELCO_INMINENTE',
             severidad: 'GRAVE', // Forzado
             timestamp: measurement.timestamp,
-            valores: { si: measurement.si, roll, gx },
+            valores: { si, roll, gx },
             descripcion: `⚠️ VUELCO INMINENTE: SI=${(si * 100).toFixed(1)}%, Roll=${roll.toFixed(1)}°, gx=${gx.toFixed(1)}°/s`
         };
     }
@@ -125,7 +152,8 @@ function detectarVuelcoInminente(measurement: any): EventoDetectado | null {
  */
 function detectarDerivaPeligrosa(measurement: any, sostenido: boolean = false): EventoDetectado | null {
     const gx = measurement.gx || 0;
-    const si = measurement.si || 0; // Ya en [0,1]
+    const si = normalizeMeasurementSi(measurement.si);
+    measurement.si = si;
 
     // DERIVA PELIGROSA: giro lateral fuerte + estabilidad BAJA
     if (Math.abs(gx) > 45) {
@@ -137,7 +165,7 @@ function detectarDerivaPeligrosa(measurement: any, sostenido: boolean = false): 
             tipo: 'DERIVA_PELIGROSA',
             severidad,
             timestamp: measurement.timestamp,
-            valores: { gx, si: measurement.si },
+            valores: { gx, si },
             descripcion: `Sobreviraje o pérdida de tracción: gx=${gx.toFixed(1)}°/s, SI=${(si * 100).toFixed(1)}%`
         };
     }
@@ -154,7 +182,8 @@ function detectarDerivaPeligrosa(measurement: any, sostenido: boolean = false): 
 function detectarManiobraBrusca(measurement: any, gxAnterior?: number): EventoDetectado | null {
     const ay = measurement.ay || 0;
     const gx = measurement.gx || 0;
-    const si = measurement.si || 0; // Ya en [0,1]
+    const si = normalizeMeasurementSi(measurement.si);
+    measurement.si = si;
 
     // Cambio brusco en giroscopio o aceleración alta
     const cambioGx = gxAnterior !== undefined ? Math.abs(gx - gxAnterior) : 0;
@@ -170,7 +199,7 @@ function detectarManiobraBrusca(measurement: any, gxAnterior?: number): EventoDe
             tipo: 'MANIOBRA_BRUSCA',
             severidad,
             timestamp: measurement.timestamp,
-            valores: { ay, gx, si: measurement.si },
+            valores: { ay, gx, si },
             descripcion: `Frenazo o cambio violento: ay=${ay.toFixed(0)}mg, Δgx=${cambioGx.toFixed(0)}°/s², SI=${si.toFixed(1)}%`
         };
     }
@@ -185,7 +214,9 @@ function detectarManiobraBrusca(measurement: any, gxAnterior?: number): EventoDe
  */
 function detectarCurvaEstable(measurement: any): EventoDetectado | null {
     const ay = measurement.ay || 0;
-    const si = (measurement.si || 0) * 100; // Convertir a porcentaje
+    const siRatio = normalizeMeasurementSi(measurement.si);
+    measurement.si = siRatio;
+    const si = siRatio * 100;
     const roll = measurement.roll || 0;
 
     // ✅ CORRECCIÓN: Umbrales actualizados después de fix escala 100x
@@ -194,7 +225,7 @@ function detectarCurvaEstable(measurement: any): EventoDetectado | null {
             tipo: 'CURVA_ESTABLE',
             severidad: 'NORMAL',
             timestamp: measurement.timestamp,
-            valores: { ay, si: measurement.si, roll },
+            valores: { ay, si: siRatio, roll },
             descripcion: `✅ Curva controlada: ay=${ay.toFixed(0)}mg, SI=${si.toFixed(1)}%, Roll=${roll.toFixed(1)}°`
         };
     }

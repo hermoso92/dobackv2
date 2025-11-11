@@ -382,3 +382,11 @@ Así podré verificar si los fixes funcionaron o si hay un problema adicional.
 
 **¿LISTO? Ve a `/upload` y sigue los 5 pasos arriba. Tarda ~6 minutos total.** 🚀
 
+
+
+
+
+
+
+
+

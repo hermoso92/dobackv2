@@ -224,3 +224,11 @@ console.log(segmentos);
 **Estado**: ⚠️ VERIFICACIÓN PENDIENTE
 
 
+
+
+
+
+
+
+
+

@@ -9,7 +9,6 @@
  */
 
 import {
-import { logger } from '../../utils/logger';
     Alert,
     Box,
     Card,

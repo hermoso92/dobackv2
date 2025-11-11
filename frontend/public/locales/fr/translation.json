@@ -1209,5 +1209,6 @@
   "login_email": "Courriel",
   "login_password": "Mot de passe",
   "login_logging_in": "Connexion en cours...",
-  "login_log_in": "Connexion"
+  "login_log_in": "Connexion",
+  "login_button": "Connexion"
 }

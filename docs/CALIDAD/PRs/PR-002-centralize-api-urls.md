@@ -412,3 +412,11 @@ URLs hardcodeadas están ahora **prohibidas** (detectado por guardrails).
 
 
 
+
+
+
+
+
+
+
+

@@ -1,8 +1,6 @@
-import { NotificationsActive as AlertIcon, Settings as SettingsIcon, PersonOutline as UserIcon } from '@mui/icons-material';
-import { logger } from '../utils/logger';
 import { API_CONFIG } from '@/config/api';
+import { NotificationsActive as AlertIcon, Settings as SettingsIcon, PersonOutline as UserIcon } from '@mui/icons-material';
 import {
-import { logger } from '../utils/logger';
     Box,
     Button,
     Card,
@@ -27,6 +25,7 @@ import { logger } from '../utils/logger';
 import { useState } from 'react';
 import BackButton from '../components/BackButton';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 // Definir un tipo más preciso para el manejador de eventos
 type InputChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent;

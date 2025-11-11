@@ -647,3 +647,11 @@ Si no coincide → hay gaps temporales no cubiertos.
 → Hay un bug adicional en frontend o en la lógica de agregación
 → Usar `docs/CALIDAD/analisis-razonado-kpis.md` para diagnóstico profundo
 
+
+
+
+
+
+
+
+

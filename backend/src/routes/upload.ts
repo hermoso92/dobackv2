@@ -25,11 +25,15 @@ import path from 'path';
 import { config } from '../config/env';
 import { prisma } from '../config/prisma';
 import { authenticate } from '../middleware/auth';
+import { validateOrganization } from '../middleware/validateOrganization';
 import { kpiCacheService } from '../services/KPICacheService';
 import { unifiedFileProcessorV2 } from '../services/upload/UnifiedFileProcessorV2';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// ✅ Todas las rutas requieren autenticación y pertenecer a la organización del usuario
+router.use(authenticate, validateOrganization);
 
 // Configuración de multer para subida de archivos
 const storage = multer.diskStorage({
@@ -363,7 +367,6 @@ async function getOrCreateVehicle(vehicleId: string, organizationId: string): Pr
       logger.info(`✨ Vehículo creado: ${vehicleId}`);
     }
 
-    await prisma.$disconnect();
     return vehicle.id;
   } catch (error) {
     logger.error('Error en getOrCreateVehicle:', error);
@@ -467,7 +470,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     const userId = (req as any).user?.id || 'system';
-    const organizationId = (req as any).user?.organizationId || 'default';
+    const organizationId = (req as any).orgId || (req as any).user?.organizationId;
 
     // Parsear información del archivo
     const fileInfo = parseFileName(req.file.originalname);
@@ -571,7 +574,7 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
     }
 
     const userId = (req as any).user?.id || 'system';
-    const organizationId = (req as any).user?.organizationId || 'default';
+    const organizationId = (req as any).orgId || (req as any).user?.organizationId;
 
     logger.info(`📁 Procesando ${req.files.length} archivos:`);
     (req.files as Express.Multer.File[]).forEach((file: Express.Multer.File) => logger.info(`  - ${file.originalname}`));
@@ -708,43 +711,6 @@ router.get('/test', (req, res) => {
 });
 
 // Endpoint para obtener archivos subidos (simulado)
-router.get('/files', async (req, res) => {
-  try {
-    const organizationId = (req as any).user?.organizationId || 'default';
-
-    // Datos simulados para testing
-    const mockFiles = [
-      {
-        id: 1,
-        nombre: 'ESTABILIDAD_DOBACK024_20250930.txt',
-        tipo: 'estabilidad',
-        vehiculoId: 'DOBACK024',
-        fechaSubida: new Date().toISOString(),
-        vehicle_name: 'DOBACK024'
-      },
-      {
-        id: 2,
-        nombre: 'GPS_DOBACK024_20250930.txt',
-        tipo: 'gps',
-        vehiculoId: 'DOBACK024',
-        fechaSubida: new Date().toISOString(),
-        vehicle_name: 'DOBACK024'
-      }
-    ];
-
-    res.json({
-      success: true,
-      files: mockFiles
-    });
-  } catch (error) {
-    logger.error('Error obteniendo archivos:', error);
-    res.status(500).json({
-      error: 'Error obteniendo archivos',
-      details: (error as Error).message
-    });
-  }
-});
-
 // Endpoint para análisis integral de archivos CMadrid
 router.get('/analyze-cmadrid', async (req, res) => {
   try {
@@ -865,11 +831,17 @@ router.get('/files', async (req, res) => {
       });
     }
 
-    const files = fs.readdirSync(uploadsDir).map(filename => ({
-      name: filename,
-      size: fs.statSync(path.join(uploadsDir, filename)).size,
-      uploadedAt: fs.statSync(path.join(uploadsDir, filename)).mtime
-    }));
+    const files = fs.readdirSync(uploadsDir).map(filename => {
+      const stats = fs.statSync(path.join(uploadsDir, filename));
+      const typeMatch = filename.match(/^(ESTABILIDAD|GPS|ROTATIVO|CAN)_/i);
+
+      return {
+        name: filename,
+        size: stats.size,
+        uploadDate: stats.mtime.toISOString(),
+        type: typeMatch ? typeMatch[1].toLowerCase() : 'desconocido'
+      };
+    });
 
     res.json({
       success: true,

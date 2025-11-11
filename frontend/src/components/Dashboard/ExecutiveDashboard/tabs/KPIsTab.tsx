@@ -7,8 +7,8 @@ import {
     TruckIcon
 } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
-import { usePDFExport } from '../../../../hooks/usePDFExport';
 import { useKPIs } from '../../../../hooks/useKPIs';
+import { usePDFExport } from '../../../../hooks/usePDFExport';
 import { EventDetail } from '../../../../services/kpiService';
 import { logger } from '../../../../utils/logger';
 import { normalizeStabilityMetrics } from '../../../../utils/normalizeKPIs';
@@ -71,24 +71,43 @@ export const KPIsTab: React.FC = () => {
             {/* Botón Exportar PDF */}
             <div className="mb-4 flex justify-end">
                 <button
-                    onClick={() => exportEnhancedTabToPDF(
-                        'kpis-tab-content',
-                        'Reporte_KPIs_Ejecutivos',
-                        {
-                            title: 'KPIs Ejecutivos - Dashboard Bomberos',
-                            subtitle: `Generado: ${new Date().toLocaleString('es-ES')}`,
-                            kpis: {
-                                horasConduccion: activity?.driving_hours_formatted || '00:00:00',
-                                kmRecorridos: activity?.total_km?.toFixed(1) || '0',
-                                velocidadPromedio: avgSpeed.toFixed(1),
-                                tiempoRotativo: getStateDuration('EMERGENCIA', 'formatted'),
-                                incidenciasTotales: stabilityNormalized.total_incidents,
-                                graves: stabilityNormalized.critical,
-                                moderadas: stabilityNormalized.moderate,
-                                leves: stabilityNormalized.light
+                    onClick={() => exportEnhancedTabToPDF({
+                        tabName: 'KPIs Ejecutivos',
+                        tabIndex: 0,
+                        subtitle: `Generado: ${new Date().toLocaleString('es-ES')}`,
+                        kpis: [
+                            {
+                                title: 'Horas de Conducción',
+                                value: activity?.driving_hours_formatted || '00:00:00',
+                                subtitle: 'Tiempo total de conducción',
+                                icon: '⏱️'
+                            },
+                            {
+                                title: 'Kilómetros Recorridos',
+                                value: `${Number(activity?.km_total ?? 0).toFixed(1)} km`,
+                                subtitle: 'Distancia total recorrida',
+                                icon: '🚒'
+                            },
+                            {
+                                title: 'Velocidad Promedio',
+                                value: `${avgSpeed.toFixed(1)} km/h`,
+                                subtitle: 'Velocidad media de la flota',
+                                icon: '📈'
+                            },
+                            {
+                                title: 'Índice de Estabilidad',
+                                value: `${(((quality?.indice_promedio || 0)) * 100).toFixed(1)}%`,
+                                subtitle: `${quality?.calificacion || 'N/A'} ${quality?.estrellas || ''}`,
+                                icon: '🛡️'
+                            },
+                            {
+                                title: 'Incidencias (SI < 0.50)',
+                                value: stabilityNormalized.total_incidents,
+                                subtitle: `Graves: ${stabilityNormalized.critical} · Moderadas: ${stabilityNormalized.moderate} · Leves: ${stabilityNormalized.light}`,
+                                icon: '⚠️'
                             }
-                        }
-                    )}
+                        ]
+                    })}
                     disabled={isExporting}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
@@ -148,11 +167,25 @@ export const KPIsTab: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-1 gap-3">
                         <KPICard
+                            title="Tiempo Total (Claves 0-5)"
+                            value={states?.total_time_formatted || '00:00:00'}
+                            icon={<ClockIcon className="h-5 w-5" />}
+                            colorClass="text-slate-600"
+                            subtitle="Duración acumulada de todas las claves"
+                        />
+                        <KPICard
                             title="Clave 0 (Taller)"
                             value={getStateDuration(0)}
                             icon={<ExclamationTriangleIcon className="h-5 w-5" />}
                             colorClass="text-red-600"
                             subtitle="Mantenimiento"
+                        />
+                        <KPICard
+                            title="Clave 1 (Operativo en Parque)"
+                            value={getStateDuration(1)}
+                            icon={<ClockIcon className="h-5 w-5" />}
+                            colorClass="text-blue-600"
+                            subtitle="Unidad disponible en parque"
                         />
                         <KPICard
                             title="Clave 2 (Emergencia)"
@@ -169,11 +202,11 @@ export const KPIsTab: React.FC = () => {
                             subtitle="En siniestro (parado >1min)"
                         />
                         <KPICard
-                            title="Clave 5 (Regreso sin Rotativo)"
+                            title="Clave 5 (Regreso al Parque)"
                             value={getStateDuration(5)}
                             icon={<ClockIcon className="h-5 w-5" />}
                             colorClass="text-green-600"
-                            subtitle="Vuelta al parque"
+                            subtitle="Regreso sin rotativo"
                         />
                     </div>
                 </div>

@@ -17,10 +17,15 @@
  * - Notificaciones contextualizadas con recomendaciones accionables
  */
 
-import { PrismaClient } from '@prisma/client';
+import { AlertSeverity, AlertStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+const isAlertStatus = (value?: string): value is AlertStatus =>
+    !!value && Object.values(AlertStatus).includes(value as AlertStatus);
+
+const isAlertSeverity = (value?: string): value is AlertSeverity =>
+    !!value && Object.values(AlertSeverity).includes(value as AlertSeverity);
 
 export class AlertService {
     /**
@@ -86,7 +91,7 @@ export class AlertService {
                         update: {
                             missingFiles: missingTypes,
                             uploadedFiles: uploadedTypes,
-                            status: 'PENDING',
+                            status: AlertStatus.PENDING,
                             severity,
                             updatedAt: new Date()
                         },
@@ -97,7 +102,7 @@ export class AlertService {
                             expectedFiles: expectedFileTypes,
                             missingFiles: missingTypes,
                             uploadedFiles: uploadedTypes,
-                            status: 'PENDING',
+                            status: AlertStatus.PENDING,
                             severity
                         },
                         include: {
@@ -128,12 +133,12 @@ export class AlertService {
     /**
      * Calcular severidad según cantidad de archivos faltantes
      */
-    private static calculateSeverity(missing: number, total: number): string {
+    private static calculateSeverity(missing: number, total: number): AlertSeverity {
         const percentage = (missing / total) * 100;
-        if (percentage >= 75) return 'CRITICAL';  // 3-4 archivos faltantes
-        if (percentage >= 50) return 'ERROR';     // 2 archivos faltantes
-        if (percentage >= 25) return 'WARNING';   // 1 archivo faltante
-        return 'INFO';
+        if (percentage >= 75) return AlertSeverity.CRITICAL;  // 3-4 archivos faltantes
+        if (percentage >= 50) return AlertSeverity.ERROR;     // 2 archivos faltantes
+        if (percentage >= 25) return AlertSeverity.WARNING;   // 1 archivo faltante
+        return AlertSeverity.INFO;
     }
 
     /**
@@ -193,7 +198,7 @@ export class AlertService {
                 data: {
                     notifiedAt: new Date(),
                     notifiedUsers: notifiedUserIds,
-                    status: 'NOTIFIED'
+                    status: AlertStatus.NOTIFIED
                 }
             });
 
@@ -222,11 +227,11 @@ export class AlertService {
                 organizationId
             };
 
-            if (filters?.status) {
+            if (isAlertStatus(filters?.status)) {
                 where.status = filters.status;
             }
 
-            if (filters?.severity) {
+            if (isAlertSeverity(filters?.severity)) {
                 where.severity = filters.severity;
             }
 
@@ -261,7 +266,7 @@ export class AlertService {
                             name: true
                         }
                     },
-                    ResolvedByUser: {
+                    User: {
                         select: {
                             id: true,
                             name: true,
@@ -274,7 +279,13 @@ export class AlertService {
                 }
             });
 
-            return alerts;
+            return alerts.map(alert => {
+                const { User, ...rest } = alert as typeof alert & { User?: any };
+                return {
+                    ...rest,
+                    resolvedByUser: User
+                };
+            });
         } catch (error) {
             logger.error('❌ Error obteniendo alertas', error);
             throw error;
@@ -293,7 +304,7 @@ export class AlertService {
             const alert = await prisma.missingFileAlert.update({
                 where: { id: alertId },
                 data: {
-                    status: 'RESOLVED',
+                    status: AlertStatus.RESOLVED,
                     resolvedAt: new Date(),
                     resolvedBy: userId,
                     resolutionNotes: notes
@@ -301,7 +312,13 @@ export class AlertService {
                 include: {
                     Vehicle: true,
                     Organization: true,
-                    ResolvedByUser: true
+                    User: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
                 }
             });
 
@@ -311,7 +328,11 @@ export class AlertService {
                 vehicleId: alert.vehicleId
             });
 
-            return alert;
+            const { User, ...rest } = alert as typeof alert & { User?: any };
+            return {
+                ...rest,
+                resolvedByUser: User
+            };
         } catch (error) {
             logger.error('❌ Error resolviendo alerta', error);
             throw error;
@@ -326,7 +347,7 @@ export class AlertService {
             const alert = await prisma.missingFileAlert.update({
                 where: { id: alertId },
                 data: {
-                    status: 'IGNORED',
+                    status: AlertStatus.IGNORED,
                     resolvedBy: userId,
                     resolvedAt: new Date()
                 }
@@ -358,20 +379,20 @@ export class AlertService {
                 prisma.missingFileAlert.count({
                     where: {
                         organizationId,
-                        status: { in: ['PENDING', 'NOTIFIED'] }
+                        status: { in: [AlertStatus.PENDING, AlertStatus.NOTIFIED] }
                     }
                 }),
                 prisma.missingFileAlert.count({
                     where: {
                         organizationId,
-                        severity: 'CRITICAL',
-                        status: { in: ['PENDING', 'NOTIFIED'] }
+                        severity: AlertSeverity.CRITICAL,
+                        status: { in: [AlertStatus.PENDING, AlertStatus.NOTIFIED] }
                     }
                 }),
                 prisma.missingFileAlert.count({
                     where: {
                         organizationId,
-                        status: 'RESOLVED',
+                        status: AlertStatus.RESOLVED,
                         resolvedAt: {
                             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                         }
@@ -384,9 +405,11 @@ export class AlertService {
                 by: ['vehicleId'],
                 where: {
                     organizationId,
-                    status: { in: ['PENDING', 'NOTIFIED'] }
+                    status: { in: [AlertStatus.PENDING, AlertStatus.NOTIFIED] }
                 },
-                _count: true
+                _count: {
+                    _all: true
+                }
             });
 
             return {
@@ -396,7 +419,7 @@ export class AlertService {
                 resolvedLast7Days,
                 alertsByVehicle: alertsByVehicle.map(item => ({
                     vehicleId: item.vehicleId,
-                    count: item._count
+                    count: item._count._all
                 }))
             };
         } catch (error) {

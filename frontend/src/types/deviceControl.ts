@@ -62,6 +62,15 @@ export interface DGTVehicleCategory {
     };
 }
 
+export type SpeedViolationRoadType =
+    | 'AUTOPISTA_AUTOVIA'
+    | 'AUTOPISTA_URBANA'
+    | 'CARRETERA_ARCEN_PAVIMENTADO'
+    | 'RESTO_VIAS_FUERA_POBLADO'
+    | 'CONVENCIONAL_SEPARACION_FISICA'
+    | 'CONVENCIONAL_SIN_SEPARACION'
+    | 'VIA_SIN_PAVIMENTAR';
+
 export interface SpeedViolation {
     id: string;
     vehicleId: string;
@@ -74,5 +83,5 @@ export interface SpeedViolation {
     violationType: 'grave' | 'moderado' | 'leve';
     rotativoOn: boolean;
     inPark: boolean;
-    roadType: 'urban' | 'interurban' | 'highway';
+    roadType: SpeedViolationRoadType;
 }

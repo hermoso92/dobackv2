@@ -18,13 +18,13 @@ router.get('/debug-sessions', async (req, res) => {
             take: 5,
             orderBy: { startTime: 'desc' },
             include: {
-                vehicle: {
+                Vehicle: {
                     select: {
                         name: true,
                         licensePlate: true
                     }
                 },
-                gpsMeasurements: {
+                GpsMeasurement: {
                     select: {
                         latitude: true,
                         longitude: true,
@@ -37,15 +37,15 @@ router.get('/debug-sessions', async (req, res) => {
                 },
                 _count: {
                     select: {
-                        gpsMeasurements: true
+                        GpsMeasurement: true
                     }
                 }
             }
         });
 
         // Calcular distancia usando la nueva fórmula
-        const sessionsWithDistance = sessions.map(session => {
-            const points = session.gpsMeasurements || [];
+        const sessionsWithDistance = sessions.map((session: any) => {
+            const points = session.GpsMeasurement || [];
             let totalDistance = 0;
 
             for (let i = 1; i < points.length; i++) {
@@ -77,10 +77,10 @@ router.get('/debug-sessions', async (req, res) => {
 
             return {
                 id: session.id,
-                vehicleName: session.vehicle?.name || 'Desconocido',
+                vehicleName: session.Vehicle?.name || 'Desconocido',
                 startTime: session.startTime,
                 endTime: session.endTime,
-                gpsPoints: session._count.gpsMeasurements,
+                gpsPoints: session._count?.GpsMeasurement ?? 0,
                 calculatedDistance: Math.round(totalDistance * 100) / 100,
                 status: session.status
             };
@@ -128,13 +128,13 @@ router.get('/debug-sessions', async (req, res) => {
             take: 5,
             orderBy: { startTime: 'desc' },
             include: {
-                vehicle: {
+                Vehicle: {
                     select: {
                         name: true,
                         licensePlate: true
                     }
                 },
-                gpsMeasurements: {
+                GpsMeasurement: {
                     select: {
                         latitude: true,
                         longitude: true,
@@ -147,15 +147,15 @@ router.get('/debug-sessions', async (req, res) => {
                 },
                 _count: {
                     select: {
-                        gpsMeasurements: true
+                        GpsMeasurement: true
                     }
                 }
             }
         });
 
         // Calcular distancia usando la nueva fórmula
-        const sessionsWithDistance = sessions.map(session => {
-            const points = session.gpsMeasurements || [];
+        const sessionsWithDistance = sessions.map((session: any) => {
+            const points = session.GpsMeasurement || [];
             let totalDistance = 0;
 
             for (let i = 1; i < points.length; i++) {
@@ -187,10 +187,10 @@ router.get('/debug-sessions', async (req, res) => {
 
             return {
                 id: session.id,
-                vehicleName: session.vehicle?.name || 'Desconocido',
+                vehicleName: session.Vehicle?.name || 'Desconocido',
                 startTime: session.startTime,
                 endTime: session.endTime,
-                gpsPoints: session._count.gpsMeasurements,
+                gpsPoints: session._count?.GpsMeasurement ?? 0,
                 calculatedDistance: Math.round(totalDistance * 100) / 100,
                 status: session.status
             };
@@ -218,6 +218,7 @@ router.get('/debug-sessions', async (req, res) => {
 router.get('/sessions', authenticate, validateOrganization, attachOrg, telemetryController.getSessions);
 router.get('/sessions/:id', authenticate, validateOrganization, attachOrg, telemetryController.getSession);
 router.get('/sessions/:id/points', authenticate, validateOrganization, attachOrg, telemetryController.getSessionPoints);
+router.get('/sessions/:id/speed-violations', authenticate, validateOrganization, attachOrg, telemetryController.getSessionSpeedViolations);
 
 // Rutas de eventos
 router.get('/events', authenticate, attachOrg, telemetryController.getEvents);

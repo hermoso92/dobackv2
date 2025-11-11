@@ -1,5 +1,4 @@
 import {
-import { logger } from '../utils/logger';
     Close as CloseIcon,
     ExpandLess as ExpandLessIcon,
     ExpandMore as ExpandMoreIcon,

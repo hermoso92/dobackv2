@@ -51,9 +51,8 @@ export const useKPIs = () => {
 
             logger.info('Cargando KPIs con filtros', { apiFilters });
 
-            // Cargar resumen completo
-            // Forzar recálculo al cambiar filtros para evitar cache viejo en servidor
-            const summary = await kpiService.getCompleteSummary({ ...apiFilters, force: true } as any);
+            // Cargar resumen completo (permitir uso de caché del backend para evitar timeouts)
+            const summary = await kpiService.getCompleteSummary(apiFilters);
 
             setKpis(summary);
             logger.info('KPIs cargados exitosamente');

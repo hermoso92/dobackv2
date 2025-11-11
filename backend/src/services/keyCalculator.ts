@@ -24,8 +24,6 @@ interface TiemposPorClave {
     clave2_formateado: string;
     clave3_segundos: number;
     clave3_formateado: string;
-    clave4_segundos: number;
-    clave4_formateado: string;
     clave5_segundos: number;
     clave5_formateado: string;
     total_segundos: number;
@@ -53,8 +51,6 @@ function crearTiemposVacios(): TiemposPorClave {
         clave2_formateado: '00:00:00',
         clave3_segundos: 0,
         clave3_formateado: '00:00:00',
-        clave4_segundos: 0,
-        clave4_formateado: '00:00:00',
         clave5_segundos: 0,
         clave5_formateado: '00:00:00',
         total_segundos: 0,
@@ -111,12 +107,28 @@ export async function calcularTiemposPorClave(
 
         // Calcular tiempos desde segmentos persistidos
         const tiempos = {
-            clave0: 0, clave1: 0, clave2: 0, clave3: 0, clave4: 0, clave5: 0
-        };
+            clave0: 0,
+            clave1: 0,
+            clave2: 0,
+            clave3: 0,
+            clave5: 0
+        } as Record<'clave0' | 'clave1' | 'clave2' | 'clave3' | 'clave5', number>;
 
         segmentos.forEach((segmento: any) => {
             const duracionSegundos = (segmento.endTime.getTime() - segmento.startTime.getTime()) / 1000;
-            tiempos[`clave${segmento.clave}` as keyof typeof tiempos] += duracionSegundos;
+            const clave = Number(segmento.clave);
+            const key = clave === 4 ? 'clave5' : (`clave${clave}` as keyof typeof tiempos);
+
+            if (!(key in tiempos)) {
+                logger.warn('⚠️ Segmento con clave desconocida detectado, reasignando a clave5', {
+                    clave,
+                    sessionIds
+                });
+                tiempos.clave5 += duracionSegundos;
+                return;
+            }
+
+            tiempos[key] += duracionSegundos;
         });
 
         logger.info('🔍 DEBUG: Tiempos por clave calculados:', {
@@ -124,11 +136,10 @@ export async function calcularTiemposPorClave(
             clave1: tiempos.clave1,
             clave2: tiempos.clave2,
             clave3: tiempos.clave3,
-            clave4: tiempos.clave4,
             clave5: tiempos.clave5
         });
 
-        const totalSegundos = tiempos.clave0 + tiempos.clave1 + tiempos.clave2 + tiempos.clave3 + tiempos.clave4 + tiempos.clave5;
+        const totalSegundos = tiempos.clave0 + tiempos.clave1 + tiempos.clave2 + tiempos.clave3 + tiempos.clave5;
 
         logger.info(`✅ Tiempos calculados desde segmentos: ${totalSegundos}s total`);
 
@@ -141,8 +152,6 @@ export async function calcularTiemposPorClave(
             clave2_formateado: formatearTiempo(tiempos.clave2),
             clave3_segundos: tiempos.clave3,
             clave3_formateado: formatearTiempo(tiempos.clave3),
-            clave4_segundos: tiempos.clave4,
-            clave4_formateado: formatearTiempo(tiempos.clave4),
             clave5_segundos: tiempos.clave5,
             clave5_formateado: formatearTiempo(tiempos.clave5),
             total_segundos: totalSegundos,

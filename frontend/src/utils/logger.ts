@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { logger } from '../utils/logger';
 
 const LOG_LEVELS = {
     DEBUG: 0,
@@ -9,6 +8,13 @@ const LOG_LEVELS = {
 };
 
 const CURRENT_LOG_LEVEL = LOG_LEVELS.INFO;
+
+const CONSOLE_METHODS: Record<keyof typeof LOG_LEVELS, (message?: any, ...optional: any[]) => void> = {
+    DEBUG: console.debug.bind(console),
+    INFO: console.info.bind(console),
+    WARN: console.warn.bind(console),
+    ERROR: console.error.bind(console)
+};
 
 const IGNORED_PATHS = [
     '/api/auth/verify',
@@ -29,25 +35,36 @@ const IGNORED_MESSAGES = [
     'Ya hay una redirección en curso'
 ];
 
+const logToConsole = (level: keyof typeof LOG_LEVELS, message: string, data?: unknown) => {
+    const formattedMessage = `[${level}] ${message}`;
+    const consoleMethod = CONSOLE_METHODS[level];
+
+    if (data !== undefined) {
+        consoleMethod(formattedMessage, data);
+    } else {
+        consoleMethod(formattedMessage);
+    }
+};
+
 export const logger = {
-    debug: (message: string, data?: any) => {
+    debug: (message: string, data?: unknown) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.DEBUG && !IGNORED_MESSAGES.includes(message)) {
-            logger.debug(`[DEBUG] ${message}`, data || '');
+            logToConsole('DEBUG', message, data);
         }
     },
-    info: (message: string, data?: any) => {
+    info: (message: string, data?: unknown) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO && !IGNORED_MESSAGES.includes(message)) {
-            console.log(`[INFO] ${message}`, data || '');
+            logToConsole('INFO', message, data);
         }
     },
-    warn: (message: string, data?: any) => {
+    warn: (message: string, data?: unknown) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.WARN && !IGNORED_MESSAGES.includes(message)) {
-            logger.warn(`[WARN] ${message}`, data || '');
+            logToConsole('WARN', message, data);
         }
     },
-    error: (message: string, data?: any) => {
+    error: (message: string, data?: unknown) => {
         if (CURRENT_LOG_LEVEL <= LOG_LEVELS.ERROR && !IGNORED_MESSAGES.includes(message)) {
-            logger.error(`[ERROR] ${message}`, data || '');
+            logToConsole('ERROR', message, data);
         }
     }
 };

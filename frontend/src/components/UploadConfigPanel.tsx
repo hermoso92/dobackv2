@@ -4,9 +4,7 @@
  * Permite configurar las reglas de procesamiento directamente desde la UI.
  */
 
-import { logger } from '../utils/logger';
 import {
-import { logger } from '../utils/logger';
     CheckCircle as CheckCircleIcon,
     ExpandMore as ExpandMoreIcon,
     Refresh as RefreshIcon,
@@ -34,6 +32,7 @@ import {
     Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { logger } from '../utils/logger';
 
 interface UploadConfig {
     requiredFiles: {

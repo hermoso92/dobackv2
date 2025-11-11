@@ -15,10 +15,13 @@ const BACKEND_URL = 'http://localhost:9998';
 const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots-test');
 
 // Credenciales de test
+// ... existing code ...
 const TEST_USER = {
-    email: 'antoniohermoso92@gmail.com',
-    password: 'admin123'
+    // cambio aquí
+    email: 'antoniohermoso92@manager.com',
+    password: 'password123'
 };
+// ... existing code ...
 
 // Crear directorio de screenshots
 if (!fs.existsSync(SCREENSHOTS_DIR)) {
@@ -30,9 +33,10 @@ async function testCompleto() {
     console.log('🚀 INICIANDO PRUEBAS COMPLETAS DE DOBACKSOFT');
     console.log('='.repeat(70) + '\n');
     
-    const browser = await chromium.launch({ 
-        headless: false,  // Mostrar navegador para ver las pruebas
-        slowMo: 500       // Ralentizar acciones para visualizar mejor
+    const headless = process.env.PLAYWRIGHT_HEADLESS !== 'false';
+    const browser = await chromium.launch({
+        headless,
+        slowMo: headless ? 0 : 500
     });
     const context = await browser.newContext({
         viewport: { width: 1920, height: 1080 }
@@ -40,6 +44,12 @@ async function testCompleto() {
     const page = await context.newPage();
     
     try {
+        const gotoDashboardTab = async (tabIndex) => {
+            const tabUrl = `${FRONTEND_URL}/dashboard?tab=${tabIndex}`;
+            await page.goto(tabUrl, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(2000);
+        };
+
         // ========================================
         // TEST 1: VERIFICAR BACKEND ONLINE
         // ========================================
@@ -97,17 +107,37 @@ async function testCompleto() {
             }
         }
         
-        // Esperar navegación
-        await page.waitForTimeout(3000);
+        // Esperar a que la sesión se persista
+        await page.waitForFunction(() => !!localStorage.getItem('auth_token'), { timeout: 15000 }).catch(() => {});
+        await page.waitForTimeout(1000);
         await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '03-post-login.png') });
-        
-        // Verificar si hay token en localStorage
-        const token = await page.evaluate(() => localStorage.getItem('token'));
-        if (token) {
-            console.log('   ✅ Login exitoso - Token obtenido');
+
+        // Verificar si hay tokens y usuario en localStorage o cookies de sesión
+        const sessionData = await page.evaluate(() => ({
+            access: localStorage.getItem('auth_token'),
+            refresh: localStorage.getItem('refresh_token'),
+            user: localStorage.getItem('auth_user'),
+            authTokens: localStorage.getItem('authTokens'),
+            cookies: document.cookie
+        }));
+
+        const hasLegacyTokens = sessionData.access && sessionData.refresh && sessionData.user;
+        const hasNewAuthToken = (() => {
+            try {
+                if (!sessionData.authTokens) return false;
+                const parsed = JSON.parse(sessionData.authTokens);
+                return Boolean(parsed?.accessToken && parsed?.refreshToken);
+            } catch (e) {
+                return false;
+            }
+        })();
+        const hasSessionCookie = sessionData.cookies?.includes('sessionId=');
+
+        if (hasLegacyTokens || hasNewAuthToken || hasSessionCookie) {
+            console.log('   ✅ Login exitoso - Sesión detectada');
             console.log('   📸 Screenshots: 02-formulario-login.png, 03-post-login.png\n');
         } else {
-            console.log('   ⚠️  Login completado pero no se encontró token\n');
+            console.log('   ⚠️  Login completado pero no se encontraron tokens esperados\n');
         }
         
         // ========================================
@@ -115,13 +145,7 @@ async function testCompleto() {
         // ========================================
         console.log('📊 TEST 4: Navegando a Panel de Control...');
         
-        // Buscar y hacer click en "Panel de Control" o "Dashboard"
-        try {
-            await page.click('text=/Panel de Control|Dashboard/i');
-            await page.waitForTimeout(2000);
-        } catch (error) {
-            console.log('   ℹ️  Ya estamos en el Panel de Control');
-        }
+        await gotoDashboardTab(0);
         
         await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '04-panel-control.png') });
         console.log('   ✅ Panel de Control visible');
@@ -182,81 +206,67 @@ async function testCompleto() {
         }
         
         // ========================================
-        // TEST 7: PESTAÑA ESTABILIDAD
+        // TEST 7: NAVEGAR A PUNTOS NEGROS
         // ========================================
-        console.log('📊 TEST 7: Navegando a Estabilidad...');
+        console.log('📍 TEST 7: Navegando a Puntos Negros...');
         
         try {
-            await page.click('text=/Estabilidad/i');
-            await page.waitForTimeout(3000);
-            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '07-estabilidad.png') });
-            console.log('   ✅ Pestaña Estabilidad cargada');
-            console.log('   📸 Screenshot: 07-estabilidad.png\n');
-            
-            // Verificar si hay eventos
-            const hasEvents = await page.evaluate(() => {
-                return document.body.textContent.includes('eventos') || 
-                       document.body.textContent.includes('SI') ||
-                       document.querySelector('[class*="event"], [class*="chart"], canvas');
-            });
-            
-            if (hasEvents) {
-                console.log('   ✅ Eventos de estabilidad detectados\n');
-            } else {
-                console.log('   ℹ️  No se detectaron eventos de estabilidad\n');
-            }
+            await gotoDashboardTab(2);
+            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '07-puntos-negros.png') });
+            console.log('   ✅ Tab Puntos Negros cargado');
+            console.log('   📸 Screenshot: 07-puntos-negros.png\n');
         } catch (error) {
-            console.log('   ⚠️  No se pudo acceder a Estabilidad:', error.message, '\n');
+            console.log('   ⚠️  No se pudo cargar Puntos Negros:', error.message, '\n');
         }
         
         // ========================================
-        // TEST 8: PESTAÑA TELEMETRÍA
+        // TEST 8: NAVEGAR A VELOCIDAD
         // ========================================
-        console.log('📡 TEST 8: Navegando a Telemetría...');
+        console.log('🚦 TEST 8: Navegando a Velocidad...');
         
         try {
-            await page.click('text=/Telemetr[íi]a|CAN|GPS/i');
-            await page.waitForTimeout(3000);
-            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '08-telemetria.png') });
-            console.log('   ✅ Pestaña Telemetría cargada');
-            console.log('   📸 Screenshot: 08-telemetria.png\n');
+            await gotoDashboardTab(3);
+            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '08-velocidad.png') });
+            console.log('   ✅ Tab Velocidad cargado');
+            console.log('   📸 Screenshot: 08-velocidad.png\n');
         } catch (error) {
-            console.log('   ⚠️  No se pudo acceder a Telemetría:', error.message, '\n');
+            console.log('   ⚠️  No se pudo cargar Velocidad:', error.message, '\n');
         }
         
         // ========================================
-        // TEST 9: CLAVES OPERACIONALES
+        // TEST 9: NAVEGAR A SESIONES & RUTAS
         // ========================================
-        console.log('🔑 TEST 9: Verificando Claves Operacionales...');
+        console.log('🗺️ TEST 9: Navegando a Sesiones & Rutas...');
         
-        // Volver al Panel de Control
         try {
-            await page.click('text=/Panel de Control|Dashboard/i');
+            await gotoDashboardTab(4);
             await page.waitForTimeout(2000);
+            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '09-sesiones-rutas.png') });
+            console.log('   ✅ Sesiones & Rutas cargado');
+            console.log('   📸 Screenshot: 09-sesiones-rutas.png\n');
         } catch (error) {
-            // Ya estamos en el dashboard
+            console.log('   ⚠️  No se pudo cargar Sesiones & Rutas:', error.message, '\n');
         }
+
+        // ========================================
+        // TEST 10: NAVEGAR A UPLOAD
+        // ========================================
+        console.log('📤 TEST 10: Navegando a Upload...');
         
-        // Buscar referencias a claves operacionales
-        const hasClavesOperacionales = await page.evaluate(() => {
-            const text = document.body.textContent.toLowerCase();
-            return text.includes('clave') && text.includes('operacional') ||
-                   text.includes('taller') || text.includes('parque') ||
-                   text.includes('emergencia') || text.includes('incendio');
-        });
-        
-        if (hasClavesOperacionales) {
-            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '09-claves-operacionales.png') });
-            console.log('   ✅ Claves Operacionales detectadas en dashboard');
-            console.log('   📸 Screenshot: 09-claves-operacionales.png\n');
-        } else {
-            console.log('   ℹ️  No se detectaron Claves Operacionales en la vista actual\n');
+        try {
+            await page.goto(`${FRONTEND_URL}/upload`, { waitUntil: 'networkidle' });
+            await page.waitForTimeout(2000);
+            await page.screenshot({ path: path.join(SCREENSHOTS_DIR, '10-upload.png') });
+            console.log('   ✅ Página de Upload cargada');
+            console.log('   📸 Screenshot: 10-upload.png\n');
+        } catch (error) {
+            console.log('   ⚠️  No se pudo acceder a Upload:', error.message, '\n');
         }
         
         // ========================================
-        // TEST 10: EXPORTACIÓN PDF
+        // TEST 11: EXPORTACIÓN PDF
         // ========================================
-        console.log('📄 TEST 10: Probando exportación PDF...');
+        console.log('📄 TEST 11: Probando exportación PDF...');
         
         try {
             const exportButton = await page.$('button:has-text("PDF"), button:has-text("Exportar"), [class*="export"]');
@@ -280,11 +290,24 @@ async function testCompleto() {
         }
         
         // ========================================
-        // TEST 11: ENDPOINTS API DE CLAVES
+        // TEST 12: ENDPOINTS API
         // ========================================
-        console.log('🔌 TEST 11: Verificando endpoints API...');
+        console.log('🔌 TEST 12: Verificando endpoints API...');
         
-        const authToken = await page.evaluate(() => localStorage.getItem('token'));
+        const authToken = await page.evaluate(() => {
+            const legacy = localStorage.getItem('auth_token');
+            if (legacy) return legacy;
+            try {
+                const stored = localStorage.getItem('authTokens');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    return parsed?.accessToken ?? null;
+                }
+            } catch (error) {
+                // ignore parse errors
+            }
+            return null;
+        });
         
         if (authToken) {
             const endpoints = [
@@ -324,9 +347,9 @@ async function testCompleto() {
         }
         
         // ========================================
-        // TEST 12: SCREENSHOT FINAL
+        // TEST 13: SCREENSHOT FINAL
         // ========================================
-        console.log('📸 TEST 12: Capturando estado final...');
+        console.log('📸 TEST 13: Capturando estado final...');
         
         await page.screenshot({ 
             path: path.join(SCREENSHOTS_DIR, '10-dashboard-final.png'),

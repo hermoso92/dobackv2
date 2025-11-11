@@ -118,7 +118,7 @@ export class AdvancedKPICalculationService {
             const vehicleStates = await this.calculateVehicleStates(sessionData, zones);
 
             // 6. Calcular KPIs
-            const kpiData = this.calculateKPIs(vehicleStates, sessionData.stabilityEvents);
+            const kpiData = this.calculateKPIs(vehicleStates, sessionData.stabilityEvents, sessionData.speedViolations);
 
             // 7. Obtener y aplicar segmentos operacionales reales
             await this.applyOperationalSegments(sessions.map(s => s.id), kpiData);
@@ -199,7 +199,7 @@ export class AdvancedKPICalculationService {
      * Obtiene todos los datos necesarios de las sesiones
      */
     private async getSessionData(sessionIds: string[]) {
-        const [gpsPoints, rotativoEvents, stabilityEvents] = await Promise.all([
+        const [gpsPoints, rotativoEvents, stabilityEvents, speedViolations] = await Promise.all([
             prisma.gpsMeasurement.findMany({
                 where: { sessionId: { in: sessionIds } },
                 orderBy: { timestamp: 'asc' }
@@ -211,6 +211,9 @@ export class AdvancedKPICalculationService {
             prisma.stability_events.findMany({
                 where: { session_id: { in: sessionIds } },
                 orderBy: { timestamp: 'asc' }
+            }),
+            prisma.speedViolation.findMany({
+                where: { sessionId: { in: sessionIds } }
             })
         ]);
 
@@ -218,8 +221,9 @@ export class AdvancedKPICalculationService {
         const validGPSPoints = this.validateAndFilterGPSData(gpsPoints);
 
         logger.info(`[AdvancedKPI] Datos GPS: ${gpsPoints.length} originales, ${validGPSPoints.length} válidos`);
+        logger.info(`[AdvancedKPI] Violaciones de velocidad persistidas: ${speedViolations.length}`);
 
-        return { gpsPoints: validGPSPoints, rotativoEvents, stabilityEvents };
+        return { gpsPoints: validGPSPoints, rotativoEvents, stabilityEvents, speedViolations };
     }
 
     /**
@@ -362,13 +366,13 @@ export class AdvancedKPICalculationService {
             const isInside = await this.isPointInZone(lat, lon, zone.id);
             if (isInside) {
                 if (zone.type === 'PARK') {
-                return 'parque';
-            }
+                    return 'parque';
+                }
                 if (zone.type === 'WORKSHOP') {
-                return 'taller';
-            }
+                    return 'taller';
+                }
                 if (zone.type === 'SENSITIVE') {
-                return 'zona_sensible';
+                    return 'zona_sensible';
                 }
             }
         }
@@ -383,7 +387,7 @@ export class AdvancedKPICalculationService {
             return await this.postGISService.isPointInZone(lon, lat, zoneId, this.organizationId);
         } catch (error) {
             logger.warn(`[AdvancedKPI] Error verificando punto en zona:`, error);
-        return false;
+            return false;
         }
     }
 
@@ -435,7 +439,18 @@ export class AdvancedKPICalculationService {
     /**
      * Calcula los KPIs basándose en los estados del vehículo
      */
-    private calculateKPIs(vehicleStates: VehicleState[], stabilityEvents: any[]): AdvancedKPIData {
+    private calculateKPIs(
+        vehicleStates: VehicleState[],
+        stabilityEvents: any[],
+        speedViolations: Array<{
+            violationType: string;
+            speed: number;
+            speedLimit: number;
+            excess: number;
+            inPark: boolean;
+            rotativoOn: boolean;
+        }> = []
+    ): AdvancedKPIData {
         const kpi: AdvancedKPIData = {
             // Inicializar todos los valores en 0
             tiempoEnParque: 0, tiempoEnTaller: 0, tiempoFueraParque: 0, tiempoEnZonaSensible: 0,
@@ -553,6 +568,24 @@ export class AdvancedKPICalculationService {
 
         // Calcular tiempo total
         kpi.totalTiempo = kpi.tiempoEnParque + kpi.tiempoEnTaller + kpi.tiempoFueraParque + kpi.tiempoEnZonaSensible;
+
+        // Integrar violaciones persistidas
+        if (speedViolations.length > 0) {
+            const leves = speedViolations.filter(v => v.violationType === 'leve').length;
+            const moderadas = speedViolations.filter(v => v.violationType === 'moderada').length;
+            const graves = speedViolations.filter(v => v.violationType === 'grave').length;
+            const criticas = speedViolations.filter(v => v.violationType === 'critica' || v.violationType === 'crítica').length;
+
+            kpi.excesosVelocidadLeves = leves;
+            kpi.excesosVelocidadModerados = moderadas;
+            kpi.excesosVelocidadGraves = graves;
+            kpi.excesosVelocidadMuyGraves = criticas;
+
+            const maxPersistedSpeed = Math.max(...speedViolations.map(v => v.speed || 0));
+            if (maxPersistedSpeed > kpi.maxVelocidadAlcanzada) {
+                kpi.maxVelocidadAlcanzada = maxPersistedSpeed;
+            }
+        }
 
         // Procesar eventos de estabilidad con correlación de ubicación
         this.processStabilityEvents(stabilityEvents, kpi, vehicleStates);

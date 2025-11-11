@@ -12,10 +12,29 @@ export interface TelemetrySessionDTO {
         minLng: number;
         maxLng: number;
     };
+    route?: {
+        distanceMeters: number | null;
+        durationSeconds: number | null;
+        confidence: number | null;
+        source?: 'google' | 'osrm' | 'raw';
+        persistedViolations?: number;
+        google?: {
+            polyline?: string;
+            travelAdvisories?: string[];
+            routeLabels?: string[];
+            warnings?: string[];
+        } | null;
+        osrm?: {
+            geometry?: any;
+        } | null;
+    };
     summary: {
         km: number;
         avgSpeed?: number;
         maxSpeed?: number;
+        durationMinutes?: number;
+        source?: 'google' | 'osrm' | 'raw';
+        violationsCount?: number;
         eventsBySeverity: {
             LOW: number;
             MEDIUM: number;
@@ -23,6 +42,27 @@ export interface TelemetrySessionDTO {
             CRITICAL: number;
         };
     };
+}
+
+export interface SpeedViolationDTO {
+    id: string;
+    orgId: string;
+    sessionId: string;
+    vehicleId: string;
+    timestamp: string;
+    lat: number;
+    lon: number;
+    snappedLat?: number;
+    snappedLon?: number;
+    speed: number;
+    speedLimit: number;
+    excess: number;
+    violationType: string;
+    roadType: string;
+    source: string;
+    confidence: string;
+    placeId?: string;
+    metadata?: Record<string, unknown> | null;
 }
 
 export interface TelemetryPointDTO {

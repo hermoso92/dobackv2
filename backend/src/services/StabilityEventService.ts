@@ -53,6 +53,8 @@ export interface StabilityEvent {
         roll: number | null;
         ay: number;
         yaw: number;
+        samples?: number;
+        durationMs?: number;
     };
     can: {
         engineRPM: number;
@@ -240,8 +242,88 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
     }
 
     // Configuración del algoritmo
-    const eventWindow = 30000; // 30 segundos para agrupar eventos
-    const eventDistance = 50; // 50 metros para agrupar eventos espacialmente
+    const CLUSTER_TIME_WINDOW_MS = 120000; // 2 minutos de ventana temporal
+    const CLUSTER_DISTANCE_METERS = 1000; // 1 km base para agrupar eventos
+    const DISTANCE_TOLERANCE_MULTIPLIER = 3; // Tolerancia extra basada en velocidad estimada
+
+    const severityPriority: Record<'GRAVE' | 'MODERADA' | 'LEVE', number> = {
+        GRAVE: 3,
+        MODERADA: 2,
+        LEVE: 1
+    };
+
+    type EventSeverity = 'GRAVE' | 'MODERADA' | 'LEVE';
+
+    type CandidatePoint = {
+        timestamp: Date;
+        severity: EventSeverity;
+        tipo: string;
+        si: number;
+        roll: number | null;
+        ay: number;
+        yaw: number;
+        lat: number;
+        lon: number;
+        can: {
+            engineRPM: number;
+            vehicleSpeed: number;
+            rotativo: boolean;
+        };
+    };
+
+    type EventCluster = {
+        startTimestamp: number;
+        lastTimestamp: number;
+        startDate: Date;
+        lastDate: Date;
+        lastPoint: {
+            lat: number;
+            lon: number;
+            speed: number;
+        };
+        representative: CandidatePoint;
+        tipos: Set<string>;
+        samples: number;
+    };
+
+    let currentCluster: EventCluster | null = null;
+    let clustersCreated = 0;
+    let mergedSamples = 0;
+
+    const finalizeCluster = () => {
+        if (!currentCluster) {
+            return;
+        }
+
+        const cluster = currentCluster;
+        const durationMs = Math.max(0, cluster.lastTimestamp - cluster.startTimestamp);
+        const representative = cluster.representative;
+        const tipos = Array.from(cluster.tipos);
+
+        generated.push({
+            id: `${sessionId}-${representative.timestamp.toISOString()}-${cluster.samples}`,
+            sessionId,
+            timestamp: representative.timestamp,
+            lat: representative.lat,
+            lon: representative.lon,
+            level: representative.severity,
+            perc: Math.round(representative.si * 100),
+            tipos,
+            valores: {
+                si: representative.si,
+                roll: representative.roll,
+                ay: representative.ay,
+                yaw: representative.yaw,
+                samples: cluster.samples,
+                durationMs
+            },
+            can: representative.can
+        });
+
+        mergedSamples += Math.max(0, cluster.samples - 1);
+        clustersCreated += 1;
+        currentCluster = null;
+    };
 
     // Crear mapas para búsqueda eficiente
     const gpsMap = new Map<string, GPSPoint>();
@@ -405,58 +487,93 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
             });
         }
 
-        // Agrupación optimizada: buscar solo en los últimos 10 eventos
-        let merged = false;
-        const searchLimit = Math.min(generated.length, 10);
-        for (let j = generated.length - 1; j >= generated.length - searchLimit && j >= 0; j--) {
-            const prevEvent = generated[j];
-            const prevTime = new Date(prevEvent.timestamp).getTime();
-            const dist = haversine(
-                { lat: prevEvent.lat, lon: prevEvent.lon },
-                { lat: gps.latitude, lon: gps.longitude }
-            );
-
-            if (Math.abs(currentTime - prevTime) <= eventWindow && dist <= eventDistance) {
-                // ✅ AGRUPAR TIPOS SEGÚN REGLAS M3
-                prevEvent.tipos = Array.from(new Set([...prevEvent.tipos, tipoEvento]));
-                // Actualizar severidad si es más grave
-                const prioridad = { 'GRAVE': 3, 'MODERADA': 2, 'LEVE': 1 };
-                if (prioridad[severidad] > prioridad[prevEvent.level as keyof typeof prioridad]) {
-                    prevEvent.level = severidad;
-                }
-                merged = true;
-                break;
-            }
-
-            // Si el evento anterior está fuera de la ventana temporal, no seguir buscando
-            if (currentTime - prevTime > eventWindow) break;
-        }
-
-        if (merged) continue;
-
-        // ✅ CREAR NUEVO EVENTO SEGÚN REGLAS M3
-        generated.push({
-            id: `${point.timestamp}-${gps.latitude}-${gps.longitude}-${severidad}`,
-            sessionId,
+        const candidate: CandidatePoint = {
             timestamp: new Date(point.timestamp),
+            severity: severidad,
+            tipo: tipoEvento,
+            si: point.si,
+            roll: point.roll,
+            ay: point.ay,
+            yaw: point.gz,
             lat: gps.latitude,
             lon: gps.longitude,
-            level: severidad, // ✅ USAR SEVERIDAD M3
-            perc: Math.round(si * 100), // Convertir a porcentaje directo (0=crítico, 1=estable)
-            tipos: [tipoEvento], // ✅ USAR TIPO M3
-            valores: {
-                si: point.si, // ✅ SI OBLIGATORIO
-                roll: point.roll,
-                ay: point.ay,
-                yaw: point.gz
-            },
             can: {
                 engineRPM: canInfo.engineRPM,
                 vehicleSpeed: canInfo.vehicleSpeed,
                 rotativo: canInfo.rotativo
             }
-        });
+        };
+
+        if (!currentCluster) {
+            currentCluster = {
+                startTimestamp: candidate.timestamp.getTime(),
+                lastTimestamp: candidate.timestamp.getTime(),
+                startDate: candidate.timestamp,
+                lastDate: candidate.timestamp,
+                lastPoint: {
+                    lat: candidate.lat,
+                    lon: candidate.lon,
+                    speed: candidate.can.vehicleSpeed
+                },
+                representative: candidate,
+                tipos: new Set([candidate.tipo]),
+                samples: 1
+            };
+            continue;
+        }
+
+        const timeDiff = candidate.timestamp.getTime() - currentCluster.lastTimestamp;
+        const distance = haversine(
+            { lat: currentCluster.lastPoint.lat, lon: currentCluster.lastPoint.lon },
+            { lat: candidate.lat, lon: candidate.lon }
+        );
+
+        const referenceSpeed = candidate.can.vehicleSpeed || currentCluster.representative.can.vehicleSpeed || 0;
+        const expectedMeters = (referenceSpeed * (timeDiff / 3600000)) * 1000;
+        const dynamicDistanceLimit = Math.max(CLUSTER_DISTANCE_METERS, expectedMeters * DISTANCE_TOLERANCE_MULTIPLIER);
+
+        if (timeDiff <= CLUSTER_TIME_WINDOW_MS && distance <= dynamicDistanceLimit) {
+            currentCluster.lastTimestamp = candidate.timestamp.getTime();
+            currentCluster.lastDate = candidate.timestamp;
+            currentCluster.lastPoint = {
+                lat: candidate.lat,
+                lon: candidate.lon,
+                speed: candidate.can.vehicleSpeed
+            };
+            currentCluster.samples += 1;
+            currentCluster.tipos.add(candidate.tipo);
+
+            const currentPriority = severityPriority[currentCluster.representative.severity];
+            const candidatePriority = severityPriority[candidate.severity];
+            const isCandidateMoreSevere = candidatePriority > currentPriority;
+            const isSameSeverityButWorse = candidatePriority === currentPriority && candidate.si < currentCluster.representative.si;
+
+            if (isCandidateMoreSevere || isSameSeverityButWorse) {
+                currentCluster.representative = candidate;
+            }
+
+            continue;
+        }
+
+        finalizeCluster();
+
+        currentCluster = {
+            startTimestamp: candidate.timestamp.getTime(),
+            lastTimestamp: candidate.timestamp.getTime(),
+            startDate: candidate.timestamp,
+            lastDate: candidate.timestamp,
+            lastPoint: {
+                lat: candidate.lat,
+                lon: candidate.lon,
+                speed: candidate.can.vehicleSpeed
+            },
+            representative: candidate,
+            tipos: new Set([candidate.tipo]),
+            samples: 1
+        };
     }
+
+    finalizeCluster();
 
     logger.info('Eventos de estabilidad generados optimizados', {
         sessionId,
@@ -465,11 +582,13 @@ export async function generateStabilityEvents(sessionId: string): Promise<{ even
         criticalPointsProcessed: criticalPoints.length,
         gpsPoints: gpsData.length,
         canPoints: canData.length,
+        clustersCreated,
+        mergedSamples,
+        compressionRatio: clustersCreated > 0 ? Number((criticalPoints.length / clustersCreated).toFixed(2)) : null,
         eventsByLevel: {
-            critical: generated.filter(e => e.level === 'critical').length,
-            danger: generated.filter(e => e.level === 'danger').length,
-            moderate: generated.filter(e => e.level === 'moderate').length,
-            punto_interes: generated.filter(e => e.level === 'punto_interes').length
+            GRAVE: generated.filter(e => e.level === 'GRAVE').length,
+            MODERADA: generated.filter(e => e.level === 'MODERADA').length,
+            LEVE: generated.filter(e => e.level === 'LEVE').length
         },
         eventsByCause: generated.reduce((acc, event) => {
             const cause = event.tipos[0] || 'unknown';

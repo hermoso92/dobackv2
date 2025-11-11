@@ -93,21 +93,66 @@ i18n
                 translation: {
                     loading: 'Cargando...',
                     error: 'Error',
-                    welcome: 'Bienvenido'
+                    welcome: 'Bienvenido',
+                    login_marketing_product: 'Plataforma integral para la gestión y monitoreo inteligente de flotas y vehículos.',
+                    login_feature_heading: 'Características Principales',
+                    login_feat_monitor: 'Monitorear el estado y ubicación de tus vehículos.',
+                    login_feat_alerts: 'Gestionar alertas, eventos y mantenimientos de forma centralizada.',
+                    login_feat_reports: 'Visualizar reportes avanzados y análisis de estabilidad.',
+                    login_feat_security: 'Optimizar la seguridad y eficiencia operativa de tu flota.',
+                    login_feat_access: 'Acceso seguro y personalizado para cada usuario.',
+                    login_benefit_heading: 'Beneficios',
+                    login_benefit_efficiency: 'Aumento de la eficiencia operativa',
+                    login_benefit_cost: 'Reducción de costos operativos',
+                    login_benefit_security: 'Mayor seguridad y control',
+                    login_footer_text: 'Plataforma desarrollada por Cosigein SL para la gestión moderna de movilidad y transporte.',
+                    login_email: 'Correo electrónico',
+                    login_password: 'Contraseña',
+                    login_button: 'Iniciar sesión'
                 }
             },
             en: {
                 translation: {
                     loading: 'Loading...',
                     error: 'Error',
-                    welcome: 'Welcome'
+                    welcome: 'Welcome',
+                    login_marketing_product: 'Comprehensive platform for intelligent fleet and vehicle management.',
+                    login_feature_heading: 'Key Features',
+                    login_feat_monitor: 'Monitor the status and location of your vehicles.',
+                    login_feat_alerts: 'Manage alerts, events, and maintenance from a single place.',
+                    login_feat_reports: 'View advanced reports and stability analysis.',
+                    login_feat_security: 'Optimize fleet safety and operational efficiency.',
+                    login_feat_access: 'Secure, role-based access for every user.',
+                    login_benefit_heading: 'Benefits',
+                    login_benefit_efficiency: 'Increased operational efficiency',
+                    login_benefit_cost: 'Reduced operational costs',
+                    login_benefit_security: 'Greater safety and control',
+                    login_footer_text: 'Platform developed by Cosigein SL for modern mobility and transport management.',
+                    login_email: 'Email',
+                    login_password: 'Password',
+                    login_button: 'Log in'
                 }
             },
             fr: {
                 translation: {
                     loading: 'Chargement...',
                     error: 'Erreur',
-                    welcome: 'Bienvenue'
+                    welcome: 'Bienvenue',
+                    login_marketing_product: 'Plateforme complète pour la gestion intelligente des flottes et des véhicules.',
+                    login_feature_heading: 'Fonctionnalités clés',
+                    login_feat_monitor: 'Surveillez l’état et la localisation de vos véhicules.',
+                    login_feat_alerts: 'Gérez alertes, événements et maintenance depuis un seul endroit.',
+                    login_feat_reports: 'Affichez des rapports avancés et des analyses de stabilité.',
+                    login_feat_security: 'Optimisez la sécurité et l’efficacité opérationnelle de votre flotte.',
+                    login_feat_access: 'Accès sécurisé et personnalisé pour chaque utilisateur.',
+                    login_benefit_heading: 'Avantages',
+                    login_benefit_efficiency: 'Efficacité opérationnelle accrue',
+                    login_benefit_cost: 'Réduction des coûts opérationnels',
+                    login_benefit_security: 'Plus grande sécurité et contrôle',
+                    login_footer_text: 'Plateforme développée par Cosigein SL pour la mobilité et le transport modernes.',
+                    login_email: 'Courriel',
+                    login_password: 'Mot de passe',
+                    login_button: 'Connexion'
                 }
             }
         },

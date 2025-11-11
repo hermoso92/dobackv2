@@ -200,7 +200,8 @@ const corsConfig = {
         'Accept',
         'Origin',
         'Cache-Control',
-        'Pragma'
+        'Pragma',
+        'X-Organization-Id'
     ],
     credentials: true,
     exposedHeaders: ['Content-Length', 'X-Request-Id']

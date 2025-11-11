@@ -1,6 +1,6 @@
 
-import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
+import { logger } from '../utils/logger';
 import { AICacheService } from './AICacheService';
 
 
@@ -15,36 +15,43 @@ interface AIAnalysis {
 export class AIService {
     async analyzeStabilityData(organizationId: string, days: number = 30): Promise<AIAnalysis> {
         try {
-            // OPTIMIZACIÓN: Verificar caché primero
+            // OPTIMIZACIï¿½N: Verificar cachï¿½ primero
             const cacheKey = { days };
             const cachedData = await AICacheService.getFromCache(organizationId, 'stability_analysis', cacheKey);
             if (cachedData) {
-                logger.info('Retornando análisis de estabilidad desde caché', { organizationId, days });
+                logger.info('Retornando anï¿½lisis de estabilidad desde cachï¿½', { organizationId, days });
                 return cachedData;
             }
 
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - days);
 
-            // OPTIMIZACIÓN: Usar datos ya procesados y agregaciones de la BD
+            // OPTIMIZACIï¿½N: Usar datos ya procesados y agregaciones de la BD
             const sessions = await prisma.session.findMany({
                 where: {
                     organizationId,
                     startTime: { gte: startDate }
                 },
                 include: {
-                    vehicle: true,
+                    Vehicle: {
+                        select: {
+                            id: true,
+                            name: true,
+                            licensePlate: true
+                        }
+                    },
                     stability_events: {
                         select: {
                             id: true,
                             type: true,
                             severity: true,
                             timestamp: true,
-                            location: true,
-                            description: true
+                            lat: true,
+                            lon: true,
+                            details: true
                         }
                     },
-                    stabilityMeasurements: {
+                    StabilityMeasurement: {
                         select: {
                             isDRSHigh: true,
                             isLTRCritical: true,
@@ -52,25 +59,19 @@ export class AIService {
                             timestamp: true
                         }
                     },
-                    gpsMeasurements: {
+                    GpsMeasurement: {
                         select: {
                             latitude: true,
                             longitude: true,
                             speed: true,
                             timestamp: true
                         }
-                    },
-                    _count: {
-                        select: {
-                            stabilityMeasurements: true,
-                            gpsMeasurements: true
-                        }
                     }
                 },
                 orderBy: { startTime: 'desc' }
             });
 
-            // OPTIMIZACIÓN: Usar solo los campos necesarios para análisis
+            // OPTIMIZACIï¿½N: Usar solo los campos necesarios para anï¿½lisis
             const stabilityEvents = await prisma.stability_events.findMany({
                 where: {
                     Session: {
@@ -83,13 +84,12 @@ export class AIService {
                     type: true,
                     severity: true,
                     timestamp: true,
-                    location: true,
-                    description: true,
+                    lat: true,
+                    lon: true,
+                    details: true,
                     Session: {
-                        select: {
-                            id: true,
-                            vehicleId: true,
-                            vehicle: {
+                        include: {
+                            Vehicle: {
                                 select: {
                                     id: true,
                                     name: true,
@@ -107,7 +107,7 @@ export class AIService {
             const vehicleSpecificRecommendations = await this.generateVehicleSpecificRecommendations(organizationId);
             const recommendations = [...generalRecommendations, ...vehicleSpecificRecommendations];
 
-            // OPTIMIZACIÓN: Estadísticas más detalladas usando datos procesados
+            // OPTIMIZACIï¿½N: Estadï¿½sticas mï¿½s detalladas usando datos procesados
             const criticalEvents = stabilityEvents.filter(e =>
                 e.type === 'CURVA_PELIGROSA' ||
                 e.type === 'FRENADA_BRUSCA' ||
@@ -126,7 +126,8 @@ export class AIService {
             }, {} as Record<string, number>);
 
             const totalMeasurements = sessions.reduce((sum, session) =>
-                sum + session._count.stabilityMeasurements + session._count.gpsMeasurements, 0
+                sum + (session.StabilityMeasurement?.length ?? 0) + (session.GpsMeasurement?.length ?? 0),
+                0
             );
 
             const vehiclesWithEvents = new Set(stabilityEvents.map(e => e.Session.vehicleId));
@@ -152,7 +153,7 @@ export class AIService {
                 statistics
             };
 
-            // OPTIMIZACIÓN: Guardar en caché para futuras consultas
+            // OPTIMIZACIï¿½N: Guardar en cachï¿½ para futuras consultas
             await AICacheService.saveToCache(organizationId, 'stability_analysis', cacheKey, result);
 
             return result;
@@ -179,7 +180,12 @@ export class AIService {
                 include: {
                     Session: {
                         include: {
-                            vehicle: true
+                            Vehicle: {
+                                select: {
+                                    id: true,
+                                    name: true
+                                }
+                            }
                         }
                     }
                 }
@@ -207,7 +213,7 @@ export class AIService {
 
             const vehicleEvents = recentEvents.reduce((acc: any, event) => {
                 const vehicleId = event.Session.vehicleId;
-                const vehicleName = event.Session.vehicle.name;
+                const vehicleName = event.Session.Vehicle?.name || 'VehÃ­culo';
                 if (!acc[vehicleId]) {
                     acc[vehicleId] = { id: vehicleId, name: vehicleName, count: 0 };
                 }
@@ -224,7 +230,7 @@ export class AIService {
                     total: recentCount,
                     trend,
                     changePercent: Number(changePercent),
-                    period: '7 días'
+                    period: '7 dï¿½as'
                 },
                 eventsByType,
                 topVehicles,
@@ -232,7 +238,7 @@ export class AIService {
             };
 
         } catch (error) {
-            logger.error('Error analizando eventos críticos', { error, organizationId });
+            logger.error('Error analizando eventos crï¿½ticos', { error, organizationId });
             throw error;
         }
     }
@@ -247,8 +253,8 @@ export class AIService {
                 suggestions: []
             };
 
-            // Análisis específico de vehículo individual
-            if (lowerMessage.includes('dobac') || (lowerMessage.includes('vehículo') && (lowerMessage.includes('022') || lowerMessage.includes('027') || lowerMessage.includes('028') || lowerMessage.includes('029')))) {
+            // Anï¿½lisis especï¿½fico de vehï¿½culo individual
+            if (lowerMessage.includes('dobac') || (lowerMessage.includes('vehï¿½culo') && (lowerMessage.includes('022') || lowerMessage.includes('027') || lowerMessage.includes('028') || lowerMessage.includes('029')))) {
                 const vehicleId = this.extractVehicleId(lowerMessage);
                 if (vehicleId) {
                     const vehicleAnalysis = await this.analyzeSpecificVehicle(organizationId, vehicleId);
@@ -256,16 +262,16 @@ export class AIService {
                     response.data = vehicleAnalysis.data;
                     response.suggestions = vehicleAnalysis.suggestions;
                 } else {
-                    response.text = 'Por favor, especifica el vehículo que quieres analizar (ej: "DOBACK022" o "análisis del vehículo DOBACK027").';
+                    response.text = 'Por favor, especifica el vehï¿½culo que quieres analizar (ej: "DOBACK022" o "anï¿½lisis del vehï¿½culo DOBACK027").';
                 }
             }
-            else if (lowerMessage.includes('evento') || lowerMessage.includes('crítico') || lowerMessage.includes('alerta')) {
+            else if (lowerMessage.includes('evento') || lowerMessage.includes('crï¿½tico') || lowerMessage.includes('alerta')) {
                 const analysis = await this.analyzeCriticalEvents(organizationId);
 
                 if (analysis.summary.total === 0) {
-                    response.text = 'No se han registrado eventos críticos en los últimos 7 días. La flota está operando de manera segura.';
+                    response.text = 'No se han registrado eventos crï¿½ticos en los ï¿½ltimos 7 dï¿½as. La flota estï¿½ operando de manera segura.';
                 } else {
-                    response.text = `Análisis de eventos críticos en los últimos 7 días:\n\n`;
+                    response.text = `Anï¿½lisis de eventos crï¿½ticos en los ï¿½ltimos 7 dï¿½as:\n\n`;
                     response.text += `?? **Total de eventos:** ${analysis.summary.total}\n`;
                     response.text += `?? **Tendencia:** ${analysis.summary.trend === 'increasing' ? '?? Creciente' : analysis.summary.trend === 'decreasing' ? '?? Decreciente' : '?? Estable'}\n`;
 
@@ -273,22 +279,22 @@ export class AIService {
                         response.text += `?? **Cambio:** ${analysis.summary.changePercent > 0 ? '+' : ''}${analysis.summary.changePercent}%\n`;
                     }
 
-                    // Análisis por tipo de evento
+                    // Anï¿½lisis por tipo de evento
                     if (Object.keys(analysis.eventsByType).length > 0) {
-                        response.text += `\n?? **Tipos de eventos más frecuentes:**\n`;
+                        response.text += `\n?? **Tipos de eventos mï¿½s frecuentes:**\n`;
                         Object.entries(analysis.eventsByType)
                             .sort(([, a], [, b]) => (b as number) - (a as number))
                             .slice(0, 3)
                             .forEach(([type, count]) => {
-                                response.text += `• ${type}: ${count} eventos\n`;
+                                response.text += `ï¿½ ${type}: ${count} eventos\n`;
                             });
                     }
 
-                    // Vehículos con más eventos
+                    // Vehï¿½culos con mï¿½s eventos
                     if (analysis.topVehicles.length > 0) {
-                        response.text += `\n?? **Vehículos con mayor incidencia:**\n`;
+                        response.text += `\n?? **Vehï¿½culos con mayor incidencia:**\n`;
                         analysis.topVehicles.slice(0, 3).forEach((vehicle: { name: string; count: number }) => {
-                            response.text += `• ${vehicle.name}: ${vehicle.count} eventos\n`;
+                            response.text += `ï¿½ ${vehicle.name}: ${vehicle.count} eventos\n`;
                         });
                     }
                 }
@@ -299,51 +305,50 @@ export class AIService {
                     response.suggestions.push({
                         id: 'review-driving-patterns',
                         type: 'action',
-                        title: 'Revisar patrones de conducción',
-                        description: 'Analizar las sesiones con más eventos para identificar causas',
+                        title: 'Revisar patrones de conducciï¿½n',
+                        description: 'Analizar las sesiones con mï¿½s eventos para identificar causas',
                         priority: 'high',
                         actionable: true,
                         confidence: 90,
-                        reasoning: ['Tendencia creciente detectada', 'Requiere atención inmediata'],
+                        reasoning: ['Tendencia creciente detectada', 'Requiere atenciï¿½n inmediata'],
                         estimatedImpact: [
-                            { metric: 'Eventos críticos', change: -20, direction: 'decrease' }
+                            { metric: 'Eventos crï¿½ticos', change: -20, direction: 'decrease' }
                         ]
                     });
                 }
             }
-            else if (lowerMessage.includes('vehículo') || lowerMessage.includes('vehiculo') || lowerMessage.includes('flota')) {
+            else if (lowerMessage.includes('vehï¿½culo') || lowerMessage.includes('vehiculo') || lowerMessage.includes('flota')) {
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
                 const vehicles = await prisma.vehicle.findMany({
                     where: { organizationId, active: true },
                     include: {
-                        _count: {
-                            select: {
-                                sessions: {
-                                    where: {
-                                        startTime: {
-                                            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                                        }
-                                    }
+                        Session: {
+                            where: {
+                                startTime: {
+                                    gte: sevenDaysAgo
                                 }
-                            }
+                            },
+                            select: { id: true }
                         }
                     }
                 });
 
-                const activeLast7Days = vehicles.filter(v => v._count.sessions > 0).length;
+                const activeLast7Days = vehicles.filter(v => v.Session.length > 0).length;
 
                 response.text = `Estado de la flota:\n\n`;
-                response.text += `?? **Total de vehículos activos:** ${vehicles.length}\n`;
-                response.text += `? **Vehículos con actividad (7 días):** ${activeLast7Days}\n`;
+                response.text += `?? **Total de vehï¿½culos activos:** ${vehicles.length}\n`;
+                response.text += `? **Vehï¿½culos con actividad (7 dï¿½as):** ${activeLast7Days}\n`;
                 response.text += `?? **Tasa de actividad:** ${((activeLast7Days / vehicles.length) * 100).toFixed(1)}%\n\n`;
 
                 if (activeLast7Days > 0) {
-                    response.text += `?? **Vehículos más activos:**\n`;
+                    response.text += `?? **Vehï¿½culos mï¿½s activos:**\n`;
                     vehicles
-                        .filter(v => v._count.sessions > 0)
-                        .sort((a, b) => b._count.sessions - a._count.sessions)
+                        .filter(v => v.Session.length > 0)
+                        .sort((a, b) => b.Session.length - a.Session.length)
                         .slice(0, 3)
                         .forEach(vehicle => {
-                            response.text += `• ${vehicle.name}: ${vehicle._count.sessions} sesiones\n`;
+                            response.text += `ï¿½ ${vehicle.name}: ${vehicle.Session.length} sesiones\n`;
                         });
                 }
 
@@ -357,8 +362,8 @@ export class AIService {
                     response.suggestions.push({
                         id: 'review-inactive-vehicles',
                         type: 'maintenance',
-                        title: 'Revisar vehículos inactivos',
-                        description: `${vehicles.length - activeLast7Days} vehículos no han tenido actividad reciente`,
+                        title: 'Revisar vehï¿½culos inactivos',
+                        description: `${vehicles.length - activeLast7Days} vehï¿½culos no han tenido actividad reciente`,
                         priority: 'medium',
                         actionable: true,
                         confidence: 85,
@@ -369,7 +374,7 @@ export class AIService {
                     });
                 }
             }
-            else if (lowerMessage.includes('sesión') || lowerMessage.includes('sesion') || lowerMessage.includes('viaje')) {
+            else if (lowerMessage.includes('sesiï¿½n') || lowerMessage.includes('sesion') || lowerMessage.includes('viaje')) {
                 const last7Days = new Date();
                 last7Days.setDate(last7Days.getDate() - 7);
 
@@ -379,11 +384,10 @@ export class AIService {
                         startTime: { gte: last7Days }
                     },
                     include: {
-                        vehicle: true,
-                        _count: {
+                        Vehicle: {
                             select: {
-                                stabilityMeasurements: true,
-                                gpsMeasurements: true
+                                id: true,
+                                name: true
                             }
                         }
                     }
@@ -396,27 +400,27 @@ export class AIService {
                     return sum;
                 }, 0) / sessions.length / 60000;
 
-                response.text = `Análisis de sesiones (últimos 7 días):\n\n`;
+                response.text = `Anï¿½lisis de sesiones (ï¿½ltimos 7 dï¿½as):\n\n`;
                 response.text += `?? **Total de sesiones:** ${sessions.length}\n`;
 
                 if (avgDuration > 0) {
-                    response.text += `?? **Duración promedio:** ${avgDuration.toFixed(0)} minutos\n`;
+                    response.text += `?? **Duraciï¿½n promedio:** ${avgDuration.toFixed(0)} minutos\n`;
                 }
 
-                // Sesiones por vehículo
+                // Sesiones por vehï¿½culo
                 const sessionsByVehicle = sessions.reduce((acc: any, session) => {
-                    const vehicleName = session.vehicle.name;
+                    const vehicleName = session.Vehicle?.name || 'VehÃ­culo';
                     acc[vehicleName] = (acc[vehicleName] || 0) + 1;
                     return acc;
                 }, {});
 
                 if (Object.keys(sessionsByVehicle).length > 0) {
-                    response.text += `\n?? **Sesiones por vehículo:**\n`;
+                    response.text += `\n?? **Sesiones por vehï¿½culo:**\n`;
                     Object.entries(sessionsByVehicle)
                         .sort(([, a], [, b]) => (b as number) - (a as number))
                         .slice(0, 3)
                         .forEach(([vehicle, count]) => {
-                            response.text += `• ${vehicle}: ${count} sesiones\n`;
+                            response.text += `ï¿½ ${vehicle}: ${count} sesiones\n`;
                         });
                 }
 
@@ -430,12 +434,12 @@ export class AIService {
                     response.suggestions.push({
                         id: 'check-vehicle-activity',
                         type: 'investigation',
-                        title: 'Verificar actividad de vehículos',
+                        title: 'Verificar actividad de vehï¿½culos',
                         description: 'No se han registrado sesiones recientes',
                         priority: 'high',
                         actionable: true,
                         confidence: 95,
-                        reasoning: ['Falta de actividad reciente', 'Posible problema técnico'],
+                        reasoning: ['Falta de actividad reciente', 'Posible problema tï¿½cnico'],
                         estimatedImpact: [
                             { metric: 'Disponibilidad', change: 25, direction: 'increase' }
                         ]
@@ -443,28 +447,28 @@ export class AIService {
                 }
             }
             else {
-                // Respuesta genérica mejorada con datos específicos
+                // Respuesta genï¿½rica mejorada con datos especï¿½ficos
                 const analysis = await this.analyzeStabilityData(organizationId, 7);
 
-                response.text = `Análisis general del sistema (últimos 7 días):\n\n`;
+                response.text = `Anï¿½lisis general del sistema (ï¿½ltimos 7 dï¿½as):\n\n`;
                 response.text += `?? **Sesiones procesadas:** ${analysis.statistics.totalSessions}\n`;
                 response.text += `?? **Eventos detectados:** ${analysis.statistics.totalEvents}\n`;
                 response.text += `?? **Patrones identificados:** ${analysis.patterns.length}\n`;
                 response.text += `?? **Recomendaciones generadas:** ${analysis.recommendations.length}\n`;
 
                 if (analysis.statistics.totalEvents > 0) {
-                    response.text += `\n?? **Promedio de eventos por sesión:** ${analysis.statistics.avgEventsPerSession.toFixed(1)}\n`;
+                    response.text += `\n?? **Promedio de eventos por sesiï¿½n:** ${analysis.statistics.avgEventsPerSession.toFixed(1)}\n`;
                 }
 
                 if (analysis.statistics.criticalEvents > 0) {
-                    response.text += `?? **Eventos críticos:** ${analysis.statistics.criticalEvents}\n`;
+                    response.text += `?? **Eventos crï¿½ticos:** ${analysis.statistics.criticalEvents}\n`;
                 }
 
-                response.text += `?? **Vehículos activos:** ${analysis.statistics.activeVehicles}\n`;
+                response.text += `?? **Vehï¿½culos activos:** ${analysis.statistics.activeVehicles}\n`;
 
                 response.data = analysis.statistics;
 
-                // Agregar sugerencias basadas en el análisis
+                // Agregar sugerencias basadas en el anï¿½lisis
                 if (analysis.recommendations.length > 0) {
                     response.suggestions.push(...analysis.recommendations.slice(0, 2));
                 }
@@ -483,7 +487,7 @@ export class AIService {
     }
 
     private extractVehicleId(message: string): string | null {
-        // Extraer ID de vehículo del mensaje - soporte para diferentes formatos
+        // Extraer ID de vehï¿½culo del mensaje - soporte para diferentes formatos
         const patterns = [
             /dobac(\d{3})/i,           // dobac022, dobac027, etc.
             /doback(\d{3})/i,          // doback022, doback027, etc.
@@ -512,7 +516,7 @@ export class AIService {
 
             if (!vehicle) {
                 return {
-                    text: `No se encontró el vehículo ${vehicleId} en la flota.`,
+                    text: `No se encontrï¿½ el vehï¿½culo ${vehicleId} en la flota.`,
                     data: null,
                     suggestions: []
                 };
@@ -527,29 +531,23 @@ export class AIService {
                     startTime: { gte: last7Days }
                 },
                 include: {
-                    stability_events: true,
-                    _count: {
-                        select: {
-                            stabilityMeasurements: true,
-                            gpsMeasurements: true
-                        }
-                    }
+                    stability_events: true
                 }
             });
 
             const events = sessions.flatMap(s => s.stability_events);
             const criticalEvents = events.filter(e => e.type === 'CURVA_PELIGROSA' || e.type === 'FRENADA_BRUSCA');
 
-            let text = `Análisis específico del vehículo ${vehicleId}:\n\n`;
-            text += `?? **Sesiones (7 días):** ${sessions.length}\n`;
+            let text = `Anï¿½lisis especï¿½fico del vehï¿½culo ${vehicleId}:\n\n`;
+            text += `?? **Sesiones (7 dï¿½as):** ${sessions.length}\n`;
             text += `?? **Total de eventos:** ${events.length}\n`;
-            text += `?? **Eventos críticos:** ${criticalEvents.length}\n`;
+            text += `?? **Eventos crï¿½ticos:** ${criticalEvents.length}\n`;
 
             if (events.length > 0) {
-                text += `?? **Eventos por sesión:** ${(events.length / sessions.length).toFixed(1)}\n`;
+                text += `?? **Eventos por sesiï¿½n:** ${(events.length / sessions.length).toFixed(1)}\n`;
             }
 
-            // Análisis por tipo de evento
+            // Anï¿½lisis por tipo de evento
             const eventsByType = events.reduce((acc: Record<string, number>, event) => {
                 acc[event.type] = (acc[event.type] || 0) + 1;
                 return acc;
@@ -560,7 +558,7 @@ export class AIService {
                 Object.entries(eventsByType)
                     .sort(([, a], [, b]) => (b as number) - (a as number))
                     .forEach(([type, count]) => {
-                        text += `• ${type}: ${count} eventos\n`;
+                        text += `ï¿½ ${type}: ${count} eventos\n`;
                     });
             }
 
@@ -570,12 +568,12 @@ export class AIService {
                 suggestions.push({
                     id: 'vehicle-critical-events',
                     type: 'maintenance',
-                    title: 'Revisión urgente del vehículo',
-                    description: `${vehicleId} presenta ${criticalEvents.length} eventos críticos`,
+                    title: 'Revisiï¿½n urgente del vehï¿½culo',
+                    description: `${vehicleId} presenta ${criticalEvents.length} eventos crï¿½ticos`,
                     priority: 'high',
                     actionable: true,
                     confidence: 95,
-                    reasoning: ['Alto número de eventos críticos', 'Requiere intervención inmediata'],
+                    reasoning: ['Alto nï¿½mero de eventos crï¿½ticos', 'Requiere intervenciï¿½n inmediata'],
                     estimatedImpact: [
                         { metric: 'Seguridad', change: 30, direction: 'increase' }
                     ]
@@ -586,14 +584,14 @@ export class AIService {
                 suggestions.push({
                     id: 'vehicle-driving-patterns',
                     type: 'training',
-                    title: 'Capacitación específica del conductor',
-                    description: 'Revisar técnicas de conducción para este vehículo',
+                    title: 'Capacitaciï¿½n especï¿½fica del conductor',
+                    description: 'Revisar tï¿½cnicas de conducciï¿½n para este vehï¿½culo',
                     priority: 'medium',
                     actionable: true,
                     confidence: 80,
-                    reasoning: ['Alta tasa de eventos por sesión', 'Posible problema de conducción'],
+                    reasoning: ['Alta tasa de eventos por sesiï¿½n', 'Posible problema de conducciï¿½n'],
                     estimatedImpact: [
-                        { metric: 'Eventos por sesión', change: -25, direction: 'decrease' }
+                        { metric: 'Eventos por sesiï¿½n', change: -25, direction: 'decrease' }
                     ]
                 });
             }
@@ -613,9 +611,9 @@ export class AIService {
             };
 
         } catch (error) {
-            logger.error('Error analizando vehículo específico', { error, organizationId, vehicleId });
+            logger.error('Error analizando vehï¿½culo especï¿½fico', { error, organizationId, vehicleId });
             return {
-                text: 'Error al analizar el vehículo específico.',
+                text: 'Error al analizar el vehï¿½culo especï¿½fico.',
                 data: null,
                 suggestions: []
             };
@@ -675,8 +673,8 @@ export class AIService {
             patterns.push({
                 id: 'geographic-hotspot',
                 type: 'geographic',
-                title: 'Zonas críticas identificadas',
-                description: 'Se han detectado ' + locationClusters.length + ' zonas con alta concentración de eventos',
+                title: 'Zonas crï¿½ticas identificadas',
+                description: 'Se han detectado ' + locationClusters.length + ' zonas con alta concentraciï¿½n de eventos',
                 frequency: 0.8,
                 confidence: 80,
                 data: { locations: locationClusters }
@@ -696,8 +694,8 @@ export class AIService {
             insights.push({
                 id: 'event-rate',
                 type: 'metric',
-                title: 'Tasa de eventos por sesión',
-                description: 'Se detectan en promedio ' + avgEventsPerSession.toFixed(1) + ' eventos por sesión',
+                title: 'Tasa de eventos por sesiï¿½n',
+                description: 'Se detectan en promedio ' + avgEventsPerSession.toFixed(1) + ' eventos por sesiï¿½n',
                 severity: avgEventsPerSession > 5 ? 'high' : avgEventsPerSession > 2 ? 'medium' : 'low',
                 confidence: 90,
                 data: { avgEventsPerSession }
@@ -718,8 +716,8 @@ export class AIService {
             insights.push({
                 id: 'problematic-vehicles',
                 type: 'alert',
-                title: 'Vehículos con alta incidencia',
-                description: problematicVehicles + ' vehículo(s) presentan más de 10 eventos',
+                title: 'Vehï¿½culos con alta incidencia',
+                description: problematicVehicles + ' vehï¿½culo(s) presentan mï¿½s de 10 eventos',
                 severity: 'high',
                 confidence: 95,
                 data: { count: problematicVehicles }
@@ -738,19 +736,19 @@ export class AIService {
                 id: 'peak-hours-monitoring',
                 type: 'operational',
                 title: 'Reforzar monitoreo en horarios pico',
-                description: 'Implementar supervisión adicional durante las ' + temporalPattern.data.peakHours[0].hour + ':00 horas',
+                description: 'Implementar supervisiï¿½n adicional durante las ' + temporalPattern.data.peakHours[0].hour + ':00 horas',
                 priority: 'high',
                 actionable: true,
                 confidence: 85,
-                reasoning: ['Concentración de eventos en horarios específicos', 'Requiere atención preventiva'],
+                reasoning: ['Concentraciï¿½n de eventos en horarios especï¿½ficos', 'Requiere atenciï¿½n preventiva'],
                 estimatedImpact: [
-                    { metric: 'Eventos críticos', change: -20, direction: 'decrease' }
+                    { metric: 'Eventos crï¿½ticos', change: -20, direction: 'decrease' }
                 ],
                 vehicleSpecific: true,
                 steps: [
                     'Identificar conductores activos en horarios pico',
                     'Establecer alertas preventivas',
-                    'Revisar condiciones de tráfico en esos horarios'
+                    'Revisar condiciones de trï¿½fico en esos horarios'
                 ]
             });
         }
@@ -760,18 +758,18 @@ export class AIService {
             recommendations.push({
                 id: 'brake-training',
                 type: 'training',
-                title: 'Capacitación en frenado seguro',
-                description: 'Se recomienda formación específica en técnicas de frenado preventivo',
+                title: 'Capacitaciï¿½n en frenado seguro',
+                description: 'Se recomienda formaciï¿½n especï¿½fica en tï¿½cnicas de frenado preventivo',
                 priority: 'medium',
                 actionable: true,
                 confidence: 80,
-                reasoning: ['Predominancia de frenadas bruscas', 'Necesidad de mejora en técnicas de conducción'],
+                reasoning: ['Predominancia de frenadas bruscas', 'Necesidad de mejora en tï¿½cnicas de conducciï¿½n'],
                 estimatedImpact: [
                     { metric: 'Frenadas bruscas', change: -30, direction: 'decrease' }
                 ],
                 steps: [
-                    'Organizar sesión de formación',
-                    'Revisar casos específicos con conductores',
+                    'Organizar sesiï¿½n de formaciï¿½n',
+                    'Revisar casos especï¿½ficos con conductores',
                     'Establecer objetivos de mejora'
                 ]
             });
@@ -782,19 +780,19 @@ export class AIService {
             recommendations.push({
                 id: 'geofence-critical-zones',
                 type: 'safety',
-                title: 'Crear geocercas en zonas críticas',
-                description: 'Establecer alertas automáticas al circular por zonas de alta incidencia',
+                title: 'Crear geocercas en zonas crï¿½ticas',
+                description: 'Establecer alertas automï¿½ticas al circular por zonas de alta incidencia',
                 priority: 'high',
                 actionable: true,
                 confidence: 90,
-                reasoning: ['Zonas críticas identificadas', 'Necesidad de alertas preventivas'],
+                reasoning: ['Zonas crï¿½ticas identificadas', 'Necesidad de alertas preventivas'],
                 estimatedImpact: [
-                    { metric: 'Eventos en zonas críticas', change: -40, direction: 'decrease' }
+                    { metric: 'Eventos en zonas crï¿½ticas', change: -40, direction: 'decrease' }
                 ],
                 steps: [
-                    'Definir perímetros de zonas críticas',
+                    'Definir perï¿½metros de zonas crï¿½ticas',
                     'Configurar alertas de entrada/salida',
-                    'Establecer límites de velocidad específicos'
+                    'Establecer lï¿½mites de velocidad especï¿½ficos'
                 ]
             });
         }
@@ -804,19 +802,19 @@ export class AIService {
             recommendations.push({
                 id: 'comprehensive-review',
                 type: 'review',
-                title: 'Revisión integral del sistema',
-                description: 'Se detectan múltiples indicadores de atención prioritaria',
+                title: 'Revisiï¿½n integral del sistema',
+                description: 'Se detectan mï¿½ltiples indicadores de atenciï¿½n prioritaria',
                 priority: 'high',
                 actionable: true,
                 confidence: 95,
-                reasoning: ['Múltiples indicadores de alta severidad', 'Requiere intervención inmediata'],
+                reasoning: ['Mï¿½ltiples indicadores de alta severidad', 'Requiere intervenciï¿½n inmediata'],
                 estimatedImpact: [
-                    { metric: 'Indicadores críticos', change: -50, direction: 'decrease' }
+                    { metric: 'Indicadores crï¿½ticos', change: -50, direction: 'decrease' }
                 ],
                 steps: [
-                    'Auditoría completa de procedimientos',
-                    'Revisión de mantenimiento de vehículos',
-                    'Evaluación de formación de conductores'
+                    'Auditorï¿½a completa de procedimientos',
+                    'Revisiï¿½n de mantenimiento de vehï¿½culos',
+                    'Evaluaciï¿½n de formaciï¿½n de conductores'
                 ]
             });
         }
@@ -829,7 +827,7 @@ export class AIService {
             const vehicles = await prisma.vehicle.findMany({
                 where: { organizationId, active: true },
                 include: {
-                    sessions: {
+                    Session: {
                         where: {
                             startTime: {
                                 gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -845,46 +843,46 @@ export class AIService {
             const recommendations: any[] = [];
 
             for (const vehicle of vehicles) {
-                const events = vehicle.sessions.flatMap(s => s.stability_events);
+                const events = vehicle.Session.flatMap(s => s.stability_events);
                 const criticalEvents = events.filter(e => e.type === 'CURVA_PELIGROSA' || e.type === 'FRENADA_BRUSCA');
                 const eventsByType = events.reduce((acc: Record<string, number>, event) => {
                     acc[event.type] = (acc[event.type] || 0) + 1;
                     return acc;
                 }, {});
 
-                // Recomendación por alta incidencia de eventos críticos
+                // Recomendaciï¿½n por alta incidencia de eventos crï¿½ticos
                 if (criticalEvents.length > 5) {
                     recommendations.push({
                         id: `vehicle-${vehicle.id}-critical-review`,
                         type: 'maintenance',
-                        title: `Revisión urgente de ${vehicle.name}`,
-                        description: `${vehicle.name} presenta ${criticalEvents.length} eventos críticos en los últimos 7 días. Se requiere revisión inmediata del vehículo y evaluación del conductor.`,
+                        title: `Revisiï¿½n urgente de ${vehicle.name}`,
+                        description: `${vehicle.name} presenta ${criticalEvents.length} eventos crï¿½ticos en los ï¿½ltimos 7 dï¿½as. Se requiere revisiï¿½n inmediata del vehï¿½culo y evaluaciï¿½n del conductor.`,
                         priority: 'high',
                         actionable: true,
                         confidence: 95,
                         reasoning: [
-                            `Alto número de eventos críticos: ${criticalEvents.length}`,
-                            'Requiere intervención inmediata para garantizar seguridad',
-                            'Posible problema mecánico o de conducción'
+                            `Alto nï¿½mero de eventos crï¿½ticos: ${criticalEvents.length}`,
+                            'Requiere intervenciï¿½n inmediata para garantizar seguridad',
+                            'Posible problema mecï¿½nico o de conducciï¿½n'
                         ],
                         estimatedImpact: [
-                            { metric: 'Seguridad del vehículo', change: 40, direction: 'increase' },
-                            { metric: 'Eventos críticos', change: -60, direction: 'decrease' }
+                            { metric: 'Seguridad del vehï¿½culo', change: 40, direction: 'increase' },
+                            { metric: 'Eventos crï¿½ticos', change: -60, direction: 'decrease' }
                         ],
                         vehicleSpecific: true,
                         vehicleId: vehicle.id,
                         vehicleName: vehicle.name,
                         steps: [
-                            `Programar revisión mecánica completa de ${vehicle.name}`,
-                            'Documentar todos los eventos críticos del vehículo',
-                            'Evaluar conductor asignado y posibles problemas de conducción',
+                            `Programar revisiï¿½n mecï¿½nica completa de ${vehicle.name}`,
+                            'Documentar todos los eventos crï¿½ticos del vehï¿½culo',
+                            'Evaluar conductor asignado y posibles problemas de conducciï¿½n',
                             'Implementar monitoreo adicional temporal',
                             'Establecer protocolo de seguimiento post-mantenimiento'
                         ]
                     });
                 }
 
-                // Recomendación por tipo de evento predominante
+                // Recomendaciï¿½n por tipo de evento predominante
                 const dominantEventType = Object.entries(eventsByType)
                     .sort(([, a], [, b]) => (b as number) - (a as number))[0];
 
@@ -896,61 +894,61 @@ export class AIService {
                         recommendations.push({
                             id: `vehicle-${vehicle.id}-brake-training`,
                             type: 'training',
-                            title: `Capacitación en frenado seguro para ${vehicle.name}`,
-                            description: `${vehicle.name} presenta ${count} eventos de frenadas bruscas (${Math.round((count / events.length) * 100)}% del total). Se recomienda formación específica en técnicas de frenado preventivo.`,
+                            title: `Capacitaciï¿½n en frenado seguro para ${vehicle.name}`,
+                            description: `${vehicle.name} presenta ${count} eventos de frenadas bruscas (${Math.round((count / events.length) * 100)}% del total). Se recomienda formaciï¿½n especï¿½fica en tï¿½cnicas de frenado preventivo.`,
                             priority: 'medium',
                             actionable: true,
                             confidence: 85,
                             reasoning: [
                                 `Predominancia de frenadas bruscas: ${count} eventos`,
-                                'Necesidad de mejora en técnicas de conducción',
-                                'Posible problema de anticipación al volante'
+                                'Necesidad de mejora en tï¿½cnicas de conducciï¿½n',
+                                'Posible problema de anticipaciï¿½n al volante'
                             ],
                             estimatedImpact: [
                                 { metric: 'Frenadas bruscas', change: -35, direction: 'decrease' },
-                                { metric: 'Eficiencia de conducción', change: 20, direction: 'increase' }
+                                { metric: 'Eficiencia de conducciï¿½n', change: 20, direction: 'increase' }
                             ],
                             vehicleSpecific: true,
                             vehicleId: vehicle.id,
                             vehicleName: vehicle.name,
                             steps: [
-                                `Organizar sesión de formación específica para el conductor de ${vehicle.name}`,
-                                'Revisar casos específicos de frenadas bruscas del vehículo',
-                                'Implementar técnicas de frenado anticipado',
+                                `Organizar sesiï¿½n de formaciï¿½n especï¿½fica para el conductor de ${vehicle.name}`,
+                                'Revisar casos especï¿½ficos de frenadas bruscas del vehï¿½culo',
+                                'Implementar tï¿½cnicas de frenado anticipado',
                                 'Establecer objetivos de mejora mensuales',
-                                'Realizar seguimiento post-formación'
+                                'Realizar seguimiento post-formaciï¿½n'
                             ]
                         });
                     }
                 }
 
-                // Recomendación por alta tasa de eventos por sesión
-                const avgEventsPerSession = vehicle.sessions.length > 0 ? events.length / vehicle.sessions.length : 0;
+                // Recomendaciï¿½n por alta tasa de eventos por sesiï¿½n
+                const avgEventsPerSession = vehicle.Session.length > 0 ? events.length / vehicle.Session.length : 0;
                 if (avgEventsPerSession > 3) {
                     recommendations.push({
                         id: `vehicle-${vehicle.id}-driving-patterns`,
                         type: 'training',
-                        title: `Análisis de patrones de conducción de ${vehicle.name}`,
-                        description: `${vehicle.name} presenta una tasa alta de eventos por sesión (${avgEventsPerSession.toFixed(1)} eventos/sesión). Se requiere análisis profundo de patrones de conducción y posible reciclaje.`,
+                        title: `Anï¿½lisis de patrones de conducciï¿½n de ${vehicle.name}`,
+                        description: `${vehicle.name} presenta una tasa alta de eventos por sesiï¿½n (${avgEventsPerSession.toFixed(1)} eventos/sesiï¿½n). Se requiere anï¿½lisis profundo de patrones de conducciï¿½n y posible reciclaje.`,
                         priority: 'medium',
                         actionable: true,
                         confidence: 80,
                         reasoning: [
-                            `Alta tasa de eventos: ${avgEventsPerSession.toFixed(1)} eventos por sesión`,
-                            'Posible problema sistémico de conducción',
-                            'Necesidad de intervención formativa'
+                            `Alta tasa de eventos: ${avgEventsPerSession.toFixed(1)} eventos por sesiï¿½n`,
+                            'Posible problema sistï¿½mico de conducciï¿½n',
+                            'Necesidad de intervenciï¿½n formativa'
                         ],
                         estimatedImpact: [
-                            { metric: 'Eventos por sesión', change: -30, direction: 'decrease' },
-                            { metric: 'Calidad de conducción', change: 25, direction: 'increase' }
+                            { metric: 'Eventos por sesiï¿½n', change: -30, direction: 'decrease' },
+                            { metric: 'Calidad de conducciï¿½n', change: 25, direction: 'increase' }
                         ],
                         vehicleSpecific: true,
                         vehicleId: vehicle.id,
                         vehicleName: vehicle.name,
                         steps: [
-                            `Realizar análisis detallado de patrones de conducción de ${vehicle.name}`,
-                            'Identificar causas raíz de la alta incidencia de eventos',
-                            'Diseñar programa de reciclaje personalizado',
+                            `Realizar anï¿½lisis detallado de patrones de conducciï¿½n de ${vehicle.name}`,
+                            'Identificar causas raï¿½z de la alta incidencia de eventos',
+                            'Diseï¿½ar programa de reciclaje personalizado',
                             'Implementar monitoreo en tiempo real temporal',
                             'Evaluar resultados y ajustar estrategia'
                         ]
@@ -964,14 +962,14 @@ export class AIService {
             });
 
         } catch (error) {
-            logger.error('Error generando recomendaciones específicas de vehículos', { error, organizationId });
+            logger.error('Error generando recomendaciones especï¿½ficas de vehï¿½culos', { error, organizationId });
             return [];
         }
     }
 
     async explainSuggestion(organizationId: string, suggestionId: string, context?: any): Promise<any> {
         try {
-            // Obtener datos actuales para contextualizar la explicación
+            // Obtener datos actuales para contextualizar la explicaciï¿½n
             const analysis = await this.analyzeStabilityData(organizationId, 7);
             const criticalEvents = await this.analyzeCriticalEvents(organizationId);
 
@@ -981,91 +979,91 @@ export class AIService {
 
             switch (suggestionId) {
                 case 'review-driving-patterns':
-                    explanation = `**Análisis detallado de patrones de conducción:**\n\n`;
-                    explanation += `?? **Situación actual:** Se han detectado ${criticalEvents.summary.total} eventos críticos en los últimos 7 días, con una tendencia ${criticalEvents.summary.trend === 'increasing' ? 'creciente' : 'estable'}.\n\n`;
-                    explanation += `?? **Análisis de causas:**\n`;
-                    explanation += `• Los eventos se concentran principalmente en: ${Object.keys(criticalEvents.eventsByType).slice(0, 2).join(', ')}\n`;
-                    explanation += `• Los vehículos más afectados son: ${criticalEvents.topVehicles.slice(0, 2).map((v: any) => v.name).join(', ')}\n\n`;
+                    explanation = `**Anï¿½lisis detallado de patrones de conducciï¿½n:**\n\n`;
+                    explanation += `?? **Situaciï¿½n actual:** Se han detectado ${criticalEvents.summary.total} eventos crï¿½ticos en los ï¿½ltimos 7 dï¿½as, con una tendencia ${criticalEvents.summary.trend === 'increasing' ? 'creciente' : 'estable'}.\n\n`;
+                    explanation += `?? **Anï¿½lisis de causas:**\n`;
+                    explanation += `ï¿½ Los eventos se concentran principalmente en: ${Object.keys(criticalEvents.eventsByType).slice(0, 2).join(', ')}\n`;
+                    explanation += `ï¿½ Los vehï¿½culos mï¿½s afectados son: ${criticalEvents.topVehicles.slice(0, 2).map((v: any) => v.name).join(', ')}\n\n`;
                     explanation += `?? **Beneficios de implementar esta sugerencia:**\n`;
-                    explanation += `• Reducción estimada del 20% en eventos críticos\n`;
-                    explanation += `• Mejora en la seguridad operativa\n`;
-                    explanation += `• Optimización de recursos de mantenimiento\n\n`;
+                    explanation += `ï¿½ Reducciï¿½n estimada del 20% en eventos crï¿½ticos\n`;
+                    explanation += `ï¿½ Mejora en la seguridad operativa\n`;
+                    explanation += `ï¿½ Optimizaciï¿½n de recursos de mantenimiento\n\n`;
 
                     detailedSteps = [
-                        'Revisar sesiones con mayor número de eventos críticos',
-                        'Identificar patrones comunes en la conducción',
-                        'Analizar condiciones externas (tráfico, clima, rutas)',
+                        'Revisar sesiones con mayor nï¿½mero de eventos crï¿½ticos',
+                        'Identificar patrones comunes en la conducciï¿½n',
+                        'Analizar condiciones externas (trï¿½fico, clima, rutas)',
                         'Implementar alertas preventivas en tiempo real',
-                        'Programar sesiones de capacitación específicas'
+                        'Programar sesiones de capacitaciï¿½n especï¿½ficas'
                     ];
 
                     expectedResults = [
-                        { metric: 'Eventos críticos', current: criticalEvents.summary.total, expected: Math.round(criticalEvents.summary.total * 0.8) },
+                        { metric: 'Eventos crï¿½ticos', current: criticalEvents.summary.total, expected: Math.round(criticalEvents.summary.total * 0.8) },
                         { metric: 'Tasa de mejora', current: 0, expected: 20 }
                     ];
                     break;
 
                 case 'vehicle-critical-events':
-                    explanation = `**Revisión urgente de vehículo con alta incidencia:**\n\n`;
-                    explanation += `?? **Situación crítica:** Este vehículo presenta un número alarmante de eventos críticos que requiere atención inmediata.\n\n`;
+                    explanation = `**Revisiï¿½n urgente de vehï¿½culo con alta incidencia:**\n\n`;
+                    explanation += `?? **Situaciï¿½n crï¿½tica:** Este vehï¿½culo presenta un nï¿½mero alarmante de eventos crï¿½ticos que requiere atenciï¿½n inmediata.\n\n`;
                     explanation += `?? **Acciones recomendadas:**\n`;
-                    explanation += `• Revisión mecánica completa del sistema de frenos\n`;
-                    explanation += `• Inspección de amortiguadores y suspensión\n`;
-                    explanation += `• Verificación de neumáticos y presión\n`;
-                    explanation += `• Análisis del conductor asignado\n\n`;
+                    explanation += `ï¿½ Revisiï¿½n mecï¿½nica completa del sistema de frenos\n`;
+                    explanation += `ï¿½ Inspecciï¿½n de amortiguadores y suspensiï¿½n\n`;
+                    explanation += `ï¿½ Verificaciï¿½n de neumï¿½ticos y presiï¿½n\n`;
+                    explanation += `ï¿½ Anï¿½lisis del conductor asignado\n\n`;
 
                     detailedSteps = [
-                        'Programar revisión mecánica inmediata',
-                        'Documentar todos los eventos críticos',
-                        'Evaluar conductor y posibles problemas de conducción',
+                        'Programar revisiï¿½n mecï¿½nica inmediata',
+                        'Documentar todos los eventos crï¿½ticos',
+                        'Evaluar conductor y posibles problemas de conducciï¿½n',
                         'Implementar monitoreo adicional temporal',
                         'Establecer protocolo de seguimiento post-mantenimiento'
                     ];
 
                     expectedResults = [
-                        { metric: 'Seguridad del vehículo', current: 30, expected: 80 },
-                        { metric: 'Eventos críticos', current: 0, expected: -60 }
+                        { metric: 'Seguridad del vehï¿½culo', current: 30, expected: 80 },
+                        { metric: 'Eventos crï¿½ticos', current: 0, expected: -60 }
                     ];
                     break;
 
                 case 'brake-training':
-                    explanation = `**Programa de capacitación en frenado seguro:**\n\n`;
-                    explanation += `?? **Objetivo:** Reducir significativamente los eventos de frenadas bruscas mediante formación especializada.\n\n`;
+                    explanation = `**Programa de capacitaciï¿½n en frenado seguro:**\n\n`;
+                    explanation += `?? **Objetivo:** Reducir significativamente los eventos de frenadas bruscas mediante formaciï¿½n especializada.\n\n`;
                     explanation += `?? **Contenido del programa:**\n`;
-                    explanation += `• Técnicas de frenado anticipado\n`;
-                    explanation += `• Manejo en condiciones adversas\n`;
-                    explanation += `• Análisis de casos reales del sistema\n`;
-                    explanation += `• Simulaciones de situaciones críticas\n\n`;
+                    explanation += `ï¿½ Tï¿½cnicas de frenado anticipado\n`;
+                    explanation += `ï¿½ Manejo en condiciones adversas\n`;
+                    explanation += `ï¿½ Anï¿½lisis de casos reales del sistema\n`;
+                    explanation += `ï¿½ Simulaciones de situaciones crï¿½ticas\n\n`;
 
                     detailedSteps = [
                         'Identificar conductores con mayor incidencia de frenadas bruscas',
-                        'Diseñar programa de formación personalizado',
-                        'Realizar sesiones teóricas y prácticas',
-                        'Implementar seguimiento post-formación',
+                        'Diseï¿½ar programa de formaciï¿½n personalizado',
+                        'Realizar sesiones teï¿½ricas y prï¿½cticas',
+                        'Implementar seguimiento post-formaciï¿½n',
                         'Evaluar resultados y ajustar programa'
                     ];
 
                     expectedResults = [
                         { metric: 'Frenadas bruscas', current: 0, expected: -30 },
-                        { metric: 'Eficiencia de conducción', current: 0, expected: 15 }
+                        { metric: 'Eficiencia de conducciï¿½n', current: 0, expected: 15 }
                     ];
                     break;
 
                 default:
-                    explanation = `**Explicación detallada de la sugerencia:**\n\n`;
-                    explanation += `Esta sugerencia ha sido generada basándose en el análisis de los datos del sistema y los patrones detectados.\n\n`;
+                    explanation = `**Explicaciï¿½n detallada de la sugerencia:**\n\n`;
+                    explanation += `Esta sugerencia ha sido generada basï¿½ndose en el anï¿½lisis de los datos del sistema y los patrones detectados.\n\n`;
                     explanation += `?? **Contexto actual:**\n`;
-                    explanation += `• ${analysis.statistics.totalSessions} sesiones analizadas\n`;
-                    explanation += `• ${analysis.statistics.totalEvents} eventos detectados\n`;
-                    explanation += `• ${analysis.patterns.length} patrones identificados\n\n`;
-                    explanation += `?? **Implementación recomendada:**\n`;
+                    explanation += `ï¿½ ${analysis.statistics.totalSessions} sesiones analizadas\n`;
+                    explanation += `ï¿½ ${analysis.statistics.totalEvents} eventos detectados\n`;
+                    explanation += `ï¿½ ${analysis.patterns.length} patrones identificados\n\n`;
+                    explanation += `?? **Implementaciï¿½n recomendada:**\n`;
                     explanation += `Se sugiere seguir los pasos detallados y monitorear los resultados esperados.`;
 
                     detailedSteps = [
-                        'Revisar el análisis completo del sistema',
+                        'Revisar el anï¿½lisis completo del sistema',
                         'Identificar recursos necesarios',
-                        'Planificar implementación por fases',
-                        'Establecer métricas de seguimiento',
+                        'Planificar implementaciï¿½n por fases',
+                        'Establecer mï¿½tricas de seguimiento',
                         'Evaluar resultados y ajustar estrategia'
                     ];
             }
@@ -1076,15 +1074,15 @@ export class AIService {
                 detailedSteps,
                 expectedResults,
                 implementationTime: '1-2 semanas',
-                resourcesNeeded: ['Personal técnico', 'Herramientas de análisis', 'Tiempo de capacitación'],
-                successCriteria: 'Reducción del 20% en eventos críticos en 30 días'
+                resourcesNeeded: ['Personal tï¿½cnico', 'Herramientas de anï¿½lisis', 'Tiempo de capacitaciï¿½n'],
+                successCriteria: 'Reducciï¿½n del 20% en eventos crï¿½ticos en 30 dï¿½as'
             };
 
         } catch (error) {
             logger.error('Error explicando sugerencia', { error, organizationId, suggestionId });
             return {
                 suggestionId,
-                explanation: 'Error al generar la explicación detallada de la sugerencia.',
+                explanation: 'Error al generar la explicaciï¿½n detallada de la sugerencia.',
                 detailedSteps: [],
                 expectedResults: [],
                 implementationTime: 'Por determinar',
@@ -1143,12 +1141,12 @@ export class AIService {
             };
 
         } catch (error) {
-            logger.error('Error obteniendo estadísticas de IA', { error, organizationId });
+            logger.error('Error obteniendo estadï¿½sticas de IA', { error, organizationId });
             throw error;
         }
     }
 
-    // NUEVO: Método para calcular score de riesgo usando datos procesados
+    // NUEVO: Mï¿½todo para calcular score de riesgo usando datos procesados
     private calculateRiskScore(events: any[], totalSessions: number): number {
         if (totalSessions === 0) return 0;
 
@@ -1159,9 +1157,9 @@ export class AIService {
         const highEvents = events.filter(e => e.severity === 'HIGH').length;
         const mediumEvents = events.filter(e => e.severity === 'MEDIUM').length;
 
-        // Ponderación: Critical=10, High=5, Medium=2, Low=1
+        // Ponderaciï¿½n: Critical=10, High=5, Medium=2, Low=1
         const weightedScore = (criticalEvents * 10) + (highEvents * 5) + (mediumEvents * 2);
-        const maxPossibleScore = totalSessions * 10; // Asumiendo máximo 1 evento crítico por sesión
+        const maxPossibleScore = totalSessions * 10; // Asumiendo mï¿½ximo 1 evento crï¿½tico por sesiï¿½n
 
         // Normalizar a escala 0-100
         const riskScore = Math.min(100, (weightedScore / maxPossibleScore) * 100);
@@ -1169,14 +1167,14 @@ export class AIService {
         return Math.round(riskScore);
     }
 
-    // NUEVO: Método optimizado para análisis en tiempo real
+    // NUEVO: Mï¿½todo optimizado para anï¿½lisis en tiempo real
     async getOptimizedAnalysis(organizationId: string, timeWindow: '1h' | '24h' | '7d' | '30d' = '24h'): Promise<any> {
         try {
-            // OPTIMIZACIÓN: Verificar caché primero (TTL más corto para análisis en tiempo real)
+            // OPTIMIZACIï¿½N: Verificar cachï¿½ primero (TTL mï¿½s corto para anï¿½lisis en tiempo real)
             const cacheKey = { timeWindow };
             const cachedData = await AICacheService.getFromCache(organizationId, 'optimized_analysis', cacheKey);
             if (cachedData) {
-                logger.info('Retornando análisis optimizado desde caché', { organizationId, timeWindow });
+                logger.info('Retornando anï¿½lisis optimizado desde cachï¿½', { organizationId, timeWindow });
                 return cachedData;
             }
 
@@ -1200,7 +1198,7 @@ export class AIService {
                     startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             }
 
-            // OPTIMIZACIÓN: Consulta única con agregaciones
+            // OPTIMIZACIï¿½N: Consulta ï¿½nica con agregaciones
             const analysis = await prisma.stability_events.groupBy({
                 by: ['type', 'severity'],
                 where: {
@@ -1230,13 +1228,13 @@ export class AIService {
                 }, {} as Record<string, number>)
             };
 
-            // OPTIMIZACIÓN: Guardar en caché (TTL más corto para análisis en tiempo real)
+            // OPTIMIZACIï¿½N: Guardar en cachï¿½ (TTL mï¿½s corto para anï¿½lisis en tiempo real)
             await AICacheService.saveToCache(organizationId, 'optimized_analysis', cacheKey, result);
 
             return result;
 
         } catch (error) {
-            logger.error('Error en análisis optimizado', { error, organizationId, timeWindow });
+            logger.error('Error en anï¿½lisis optimizado', { error, organizationId, timeWindow });
             throw error;
         }
     }

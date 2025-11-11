@@ -3,13 +3,13 @@
  * Endpoints unificados para Eventos Críticos, Alertas y Mantenimiento
  */
 
-import { PrismaClient } from '@prisma/client';
+import { MaintenanceStatus, MaintenanceType, Prisma } from '@prisma/client';
 import { Request, Response, Router } from 'express';
+import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authenticate);
@@ -38,63 +38,54 @@ router.get('/critical-events', async (req: Request, res: Response) => {
             vehicleId
         });
 
-        // Construir filtros
-        const where: any = {
+        const limitNum = parseInt(limit as string, 10);
+        const offsetNum = parseInt(offset as string, 10);
+
+        const where: Prisma.stability_eventsWhereInput = {
             Session: {
-                vehicle: {
-                    organizationId
-                }
+                organizationId,
+                ...(vehicleId && typeof vehicleId === 'string'
+                    ? { vehicleId: vehicleId as string }
+                    : {})
             }
         };
 
         if (sessionId && typeof sessionId === 'string') {
-            where.session_id = sessionId;
+            where.session_id = sessionId as string;
         }
 
-        if (vehicleId && typeof vehicleId === 'string') {
-            where.Session = {
-                ...where.Session,
-                vehicleId
-            };
-        }
-
-        // Filtrar por severidad si se especifica
         if (severity && typeof severity === 'string' && severity !== 'ALL') {
             where.type = {
                 contains: severity.toLowerCase()
             };
         }
 
-        // Obtener eventos críticos con información de sesión y vehículo
-        const events = await prisma.$queryRaw<any[]>`
-            SELECT 
-                se.id,
-                se.session_id,
-                se.timestamp,
-                se.lat,
-                se.lon,
-                se.type,
-                se.details,
-                s."vehicleId",
-                v.name as vehicle_name,
-                v."dobackId" as vehicle_doback_id
-            FROM stability_events se
-            INNER JOIN "Session" s ON se.session_id = s.id
-            INNER JOIN "Vehicle" v ON s."vehicleId" = v.id
-            WHERE v."organizationId" = ${organizationId}
-            ${sessionId ? prisma.$queryRaw`AND se.session_id = ${sessionId}` : prisma.$queryRaw``}
-            ${vehicleId ? prisma.$queryRaw`AND s."vehicleId" = ${vehicleId}` : prisma.$queryRaw``}
-            ORDER BY se.timestamp DESC
-            LIMIT ${parseInt(limit as string)}
-            OFFSET ${parseInt(offset as string)}
-        `;
+        const [events, totalCount] = await Promise.all([
+            prisma.stability_events.findMany({
+                where,
+                include: {
+                    Session: {
+                        include: {
+                            Vehicle: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    dobackId: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: { timestamp: 'desc' },
+                take: limitNum,
+                skip: offsetNum
+            }),
+            prisma.stability_events.count({ where })
+        ]);
 
-        // Obtener conteo total
-        const totalCount = await prisma.stability_events.count({ where });
-
-        // Transformar eventos al formato esperado por el frontend
-        const transformedEvents = events.map((event: any) => {
-            const details = event.details || {};
+        const transformedEvents = events.map(event => {
+            const details = (event.details as any) || {};
+            const vehicle = event.Session?.Vehicle;
             return {
                 id: event.id,
                 sessionId: event.session_id,
@@ -107,13 +98,15 @@ router.get('/critical-events', async (req: Request, res: Response) => {
                 tipos: details?.tipos || [],
                 valores: details?.valores || {},
                 can: details?.can || {},
-                vehicle: {
-                    id: event.vehicleId,
-                    name: event.vehicle_name,
-                    dobackId: event.vehicle_doback_id
-                },
-                vehicleId: event.vehicleId,
-                vehicleName: event.vehicle_name,
+                vehicle: vehicle
+                    ? {
+                        id: vehicle.id,
+                        name: vehicle.name,
+                        dobackId: vehicle.dobackId
+                    }
+                    : null,
+                vehicleId: vehicle?.id,
+                vehicleName: vehicle?.name,
                 location: {
                     lat: event.lat,
                     lng: event.lon
@@ -187,18 +180,22 @@ router.get('/alerts', async (req: Request, res: Response) => {
         const recentEvents = await prisma.stability_events.findMany({
             where: {
                 Session: {
-                    vehicle: {
-                        organizationId
-                    }
+                    organizationId
                 },
                 timestamp: {
-                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Últimos 7 días
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                 }
             },
             include: {
                 Session: {
                     include: {
-                        vehicle: true
+                        Vehicle: {
+                            select: {
+                                id: true,
+                                name: true,
+                                dobackId: true
+                            }
+                        }
                     }
                 }
             },
@@ -210,7 +207,7 @@ router.get('/alerts', async (req: Request, res: Response) => {
 
         // Transformar eventos en alertas
         let alerts = recentEvents.map(event => {
-            const details = event.details as any;
+            const details = (event.details as any) || {};
             const level = details?.level || 'moderado';
 
             // Mapear nivel a severidad
@@ -239,11 +236,11 @@ router.get('/alerts', async (req: Request, res: Response) => {
                 id: event.id,
                 ruleId: 'auto-generated',
                 ruleName: `Alerta de Estabilidad Automática`,
-                vehicleId: event.session.vehicleId,
-                vehicleName: event.session.Vehicle.name,
+                vehicleId: event.Session?.vehicleId,
+                vehicleName: event.Session?.Vehicle?.name,
                 alertType,
                 severity: alertSeverity,
-                message: `${event.session.Vehicle.name} - ${level.toUpperCase()}: ${tipos.join(', ')}`,
+                message: `${event.Session?.Vehicle?.name || 'Vehículo'} - ${level.toUpperCase()}: ${tipos.join(', ')}`,
                 timestamp: event.timestamp.toISOString(),
                 status: 'active' as const,
                 data: {
@@ -336,29 +333,35 @@ router.get('/maintenance', async (req: Request, res: Response) => {
         });
 
         // Construir filtros
-        const where: any = {
-            vehicle: {
+        const maintenanceWhere: Prisma.MaintenanceRecordWhereInput = {
+            Vehicle: {
                 organizationId
             }
         };
 
         if (vehicleId && typeof vehicleId === 'string') {
-            where.vehicleId = vehicleId;
+            maintenanceWhere.vehicleId = vehicleId as string;
         }
 
-        if (type && typeof type === 'string' && type !== 'ALL') {
-            where.type = type;
+        if (type && typeof type === 'string' && type !== 'ALL' && Object.values(MaintenanceType).includes(type as MaintenanceType)) {
+            maintenanceWhere.tipo = type as MaintenanceType;
         }
 
-        if (status && typeof status === 'string' && status !== 'ALL') {
-            where.status = status;
+        if (status && typeof status === 'string' && status !== 'ALL' && Object.values(MaintenanceStatus).includes(status as MaintenanceStatus)) {
+            maintenanceWhere.estado = status as MaintenanceStatus;
         }
 
         // Obtener registros de mantenimiento
         const maintenanceRecords = await prisma.maintenanceRecord.findMany({
-            where,
+            where: maintenanceWhere,
             include: {
-                Vehicle: true
+                Vehicle: true,
+                User: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
             },
             orderBy: {
                 fecha: 'desc'
@@ -368,7 +371,7 @@ router.get('/maintenance', async (req: Request, res: Response) => {
         });
 
         // Obtener conteo total
-        const totalCount = await prisma.maintenanceRecord.count({ where });
+        const totalCount = await prisma.maintenanceRecord.count({ where: maintenanceWhere });
 
         // Transformar al formato esperado por el frontend
         const transformedRecords = maintenanceRecords.map(record => ({
@@ -378,11 +381,14 @@ router.get('/maintenance', async (req: Request, res: Response) => {
             type: record.tipo,
             title: record.descripcion,
             description: record.notas || record.descripcion,
-            priority: 'medium' as const, // Podríamos inferir esto del tipo
-            status: 'SCHEDULED', // El modelo actual no tiene status real, usar default
+            priority: record.prioridad,
+            status: record.estado,
             scheduledDate: record.fecha.toISOString(),
-            completedDate: record.completado ? record.fecha.toISOString() : undefined,
-            assignedTo: 'Sin asignar', // MaintenanceRecord no tiene este campo
+            completedDate:
+                record.estado === MaintenanceStatus.COMPLETED
+                    ? record.updatedAt.toISOString()
+                    : undefined,
+            assignedTo: record.User?.name || 'Sin asignar',
             department: 'Mantenimiento',
             cost: record.costo ? parseFloat(record.costo.toString()) : undefined,
             parts: Array.isArray(record.partes) ? record.partes : [],
@@ -394,11 +400,14 @@ router.get('/maintenance', async (req: Request, res: Response) => {
         // Calcular estadísticas
         const stats = {
             total: totalCount,
-            scheduled: maintenanceRecords.filter(r => !r.completado).length,
-            in_progress: 0, // No tenemos este dato
-            completed: maintenanceRecords.filter(r => r.completado).length,
-            cancelled: 0, // No tenemos este dato
-            totalCost: maintenanceRecords.reduce((sum, r) => sum + (r.costo ? parseFloat(r.costo.toString()) : 0), 0)
+            scheduled: maintenanceRecords.filter(r => r.estado === MaintenanceStatus.PENDING).length,
+            in_progress: maintenanceRecords.filter(r => r.estado === MaintenanceStatus.IN_PROGRESS).length,
+            completed: maintenanceRecords.filter(r => r.estado === MaintenanceStatus.COMPLETED).length,
+            cancelled: maintenanceRecords.filter(r => r.estado === MaintenanceStatus.CANCELLED).length,
+            totalCost: maintenanceRecords.reduce(
+                (sum, r) => sum + (r.costo ? parseFloat(r.costo.toString()) : 0),
+                0
+            )
         };
 
         logger.info('[Operations] Registros de mantenimiento obtenidos', {
@@ -450,6 +459,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         // Estadísticas de eventos críticos (últimos 30 días)
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
         const [
             totalCriticalEvents,
             criticalEventsToday,
@@ -457,44 +470,35 @@ router.get('/stats', async (req: Request, res: Response) => {
             activeMaintenanceTasks,
             completedMaintenanceTasks
         ] = await Promise.all([
-            prisma.$executeRaw`
-                SELECT COUNT(*) FROM stability_events se
-                INNER JOIN "Session" s ON se.session_id = s.id
-                INNER JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE v."organizationId" = ${organizationId}
-                AND se.timestamp >= ${thirtyDaysAgo}
-            ` as Promise<number>,
-            prisma.$executeRaw`
-                SELECT COUNT(*) FROM stability_events se
-                INNER JOIN "Session" s ON se.session_id = s.id
-                INNER JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE v."organizationId" = ${organizationId}
-                AND se.timestamp >= ${new Date(new Date().setHours(0, 0, 0, 0))}
-            ` as Promise<number>,
-            prisma.$executeRaw`
-                SELECT COUNT(*) FROM stability_events se
-                INNER JOIN "Session" s ON se.session_id = s.id
-                INNER JOIN "Vehicle" v ON s."vehicleId" = v.id
-                WHERE v."organizationId" = ${organizationId}
-                AND se.timestamp >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-            ` as Promise<number>,
-            prisma.maintenanceRecord.count({
+            prisma.stability_events.count({
                 where: {
-                    Vehicle: {
-                        organizationId
-                    },
-                    completado: false
+                    timestamp: { gte: thirtyDaysAgo },
+                    Session: { organizationId }
+                }
+            }),
+            prisma.stability_events.count({
+                where: {
+                    timestamp: { gte: startOfToday },
+                    Session: { organizationId }
+                }
+            }),
+            prisma.stability_events.count({
+                where: {
+                    timestamp: { gte: sevenDaysAgo },
+                    Session: { organizationId }
                 }
             }),
             prisma.maintenanceRecord.count({
                 where: {
-                    Vehicle: {
-                        organizationId
-                    },
-                    completado: true,
-                    fecha: {
-                        gte: thirtyDaysAgo
-                    }
+                    Vehicle: { organizationId },
+                    estado: MaintenanceStatus.IN_PROGRESS
+                }
+            }),
+            prisma.maintenanceRecord.count({
+                where: {
+                    Vehicle: { organizationId },
+                    estado: MaintenanceStatus.COMPLETED,
+                    updatedAt: { gte: thirtyDaysAgo }
                 }
             })
         ]);

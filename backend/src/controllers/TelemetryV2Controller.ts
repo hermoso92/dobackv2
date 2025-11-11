@@ -3,6 +3,7 @@ import { RadarAdapter } from '../adapters/radar.adapter';
 import {
     EventDTO,
     GeofenceDTO,
+    SpeedViolationDTO,
     TelemetryPointDTO,
     TelemetrySessionDTO
 } from '../types/telemetry';
@@ -59,17 +60,17 @@ export class TelemetryV2Controller {
             logger.info('Consultando sesiones con filtros', { where });
 
             // ✅ CHATGPT CRÍTICO 2: Paginación completa con total
-            const [sessions, total] = await Promise.all([
+            const [sessionsRaw, total] = await Promise.all([
                 prisma.session.findMany({
                     where,
                     include: {
-                        Vehicle: {  // ✅ Mayúscula
+                        Vehicle: {
                             select: {
                                 name: true,
                                 licensePlate: true
                             }
                         },
-                        GpsMeasurement: {  // ✅ Mayúscula
+                        GpsMeasurement: {
                             select: {
                                 latitude: true,
                                 longitude: true,
@@ -80,11 +81,7 @@ export class TelemetryV2Controller {
                                 timestamp: 'asc'
                             }
                         },
-                        _count: {
-                            select: {
-                                GpsMeasurement: true  // ✅ Mayúscula
-                            }
-                        }
+                        _count: true
                     },
                     orderBy: {
                         startTime: 'desc'
@@ -94,6 +91,8 @@ export class TelemetryV2Controller {
                 }),
                 prisma.session.count({ where })
             ]);
+
+            const sessions = sessionsRaw as any[];
 
             const totalPages = Math.ceil(total / Number(limit));
 
@@ -106,10 +105,13 @@ export class TelemetryV2Controller {
 
             const sessionsDTO: TelemetrySessionDTO[] = sessions.map(session => {
                 // Calcular bbox de los puntos GPS
-                const bbox = this.calculateBbox(session.GpsMeasurement || []);  // ✅ Mayúscula
+                const bbox = this.calculateBbox(session.GpsMeasurement || []);
 
+                const sessionCounts = (session as any)._count || {};
+                const persistedViolations = sessionCounts.speedViolations ?? sessionCounts.SpeedViolation ?? 0;
+                const route = this.buildRouteSummary(session, persistedViolations);
                 // Calcular resumen
-                const summary = this.calculateSessionSummary(session);
+                const summary = this.calculateSessionSummary(session, route, persistedViolations);
 
                 return {
                     id: session.id,
@@ -117,8 +119,9 @@ export class TelemetryV2Controller {
                     vehicleId: session.vehicleId,
                     startedAt: session.startTime.toISOString(),
                     endedAt: session.endTime?.toISOString(),
-                    pointsCount: session._count.GpsMeasurement,  // ✅ Mayúscula
+                    pointsCount: sessionCounts.GpsMeasurement ?? sessionCounts.gpsMeasurements ?? 0,
                     bbox,
+                    route,
                     summary
                 };
             });
@@ -175,28 +178,14 @@ export class TelemetryV2Controller {
                     organizationId: orgId
                 },
                 include: {
-                    vehicle: {
+                    Vehicle: {
                         select: {
                             name: true,
                             licensePlate: true
                         }
                     },
-                    gpsMeasurements: {
-                        select: {
-                            latitude: true,
-                            longitude: true,
-                            speed: true,
-                            timestamp: true
-                        },
-                        orderBy: {
-                            timestamp: 'asc'
-                        }
-                    },
-                    _count: {
-                        select: {
-                            gpsMeasurements: true
-                        }
-                    }
+                    GpsMeasurement: true,
+                    _count: true
                 }
             });
 
@@ -207,8 +196,11 @@ export class TelemetryV2Controller {
                 });
             }
 
-            const bbox = this.calculateBbox(session.GpsMeasurement || []);  // ✅ Mayúscula
-            const summary = this.calculateSessionSummary(session);
+            const bbox = this.calculateBbox((session as any).GpsMeasurement || []);
+            const sessionCounts = (session as any)._count || {};
+            const persistedViolations = sessionCounts.speedViolations ?? sessionCounts.SpeedViolation ?? 0;
+            const route = this.buildRouteSummary(session, persistedViolations);
+            const summary = this.calculateSessionSummary(session, route, persistedViolations);
 
             const sessionDTO: TelemetrySessionDTO = {
                 id: session.id,
@@ -216,8 +208,9 @@ export class TelemetryV2Controller {
                 vehicleId: session.vehicleId,
                 startedAt: session.startTime.toISOString(),
                 endedAt: session.endTime?.toISOString(),
-                pointsCount: session._count.GpsMeasurement,  // ✅ Mayúscula
+                pointsCount: sessionCounts.GpsMeasurement ?? sessionCounts.gpsMeasurements ?? 0,
                 bbox,
+                route,
                 summary
             };
 
@@ -314,6 +307,85 @@ export class TelemetryV2Controller {
     };
 
     /**
+     * GET /api/telemetry/sessions/:id/speed-violations
+     * Lista las violaciones de velocidad detectadas para una sesión
+     */
+    getSessionSpeedViolations = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { from, to, severity, source } = req.query;
+            const orgId = req.orgId || (req as any).user?.organizationId;
+
+            if (!orgId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Organization ID requerido'
+                });
+            }
+
+            const where: any = {
+                sessionId: id,
+                organizationId: orgId
+            };
+
+            if (severity) {
+                where.violationType = severity as string;
+            }
+
+            if (source) {
+                where.source = source as string;
+            }
+
+            if (from || to) {
+                where.timestamp = {} as any;
+                if (from) where.timestamp.gte = new Date(from as string);
+                if (to) where.timestamp.lte = new Date(to as string);
+            }
+
+            const violations = await (prisma as any).speedViolation.findMany({
+                where,
+                orderBy: { timestamp: 'asc' }
+            });
+
+            const dto: SpeedViolationDTO[] = violations.map((violation) => ({
+                id: violation.id,
+                orgId: violation.organizationId,
+                sessionId: violation.sessionId,
+                vehicleId: violation.vehicleId,
+                timestamp: violation.timestamp.toISOString(),
+                lat: violation.lat,
+                lon: violation.lon,
+                snappedLat: violation.snappedLat ?? undefined,
+                snappedLon: violation.snappedLon ?? undefined,
+                speed: violation.speed,
+                speedLimit: violation.speedLimit,
+                excess: violation.excess,
+                violationType: violation.violationType,
+                roadType: violation.roadType,
+                source: violation.source,
+                confidence: violation.confidence,
+                placeId: violation.placeId ?? undefined,
+                metadata: violation.metadata ?? undefined
+            }));
+
+            return res.json({
+                success: true,
+                count: dto.length,
+                data: dto
+            });
+        } catch (error: any) {
+            logger.error('Error obteniendo violaciones de velocidad', {
+                error: error.message,
+                sessionId: req.params.id
+            });
+            return res.status(500).json({
+                success: false,
+                error: 'Error al obtener las violaciones de velocidad'
+            });
+        }
+    };
+
+    /**
      * GET /api/telemetry/events/list
      * Obtiene eventos con filtros
      */
@@ -402,17 +474,17 @@ export class TelemetryV2Controller {
                 {
                     id: 'geofence-1',
                     name: 'Almacén Principal',
-                    provider: 'RADAR',
-                    type: 'POLYGON',
+                    provider: 'RADAR' as const,
+                    type: 'POLYGON' as const,
                     geometry: {
-                        type: 'Polygon',
+                        type: 'Polygon' as const,
                         coordinates: [[
                             [-3.7038, 40.4168],
                             [-3.7038, 40.4178],
                             [-3.7028, 40.4178],
                             [-3.7028, 40.4168],
                             [-3.7038, 40.4168]
-                        ]]
+                        ]] as [number, number][][]
                     },
                     tags: ['almacén', 'principal'],
                     version: 1
@@ -715,14 +787,67 @@ export class TelemetryV2Controller {
         return { minLat, maxLat, minLng, maxLng };
     }
 
-    private calculateSessionSummary(session: any): any {
-        const points = session.GpsMeasurement || [];  // ✅ Mayúscula
+    private buildRouteSummary(session: any, persistedViolations: number) {
+        try {
+            const geometryRaw = session.matchedgeometry || session.matchedGeometry;
+            const parsedGeometry = geometryRaw
+                ? typeof geometryRaw === 'string'
+                    ? JSON.parse(geometryRaw)
+                    : geometryRaw
+                : null;
+
+            const osrmGeometry = parsedGeometry?.osrmGeometry
+                || parsedGeometry?.geometry
+                || null;
+
+            return {
+                distanceMeters: session.matcheddistance ?? null,
+                durationSeconds: session.matchedduration ?? null,
+                confidence: session.matchedconfidence ?? null,
+                source: parsedGeometry?.source || (session.matcheddistance ? 'google' : 'osrm'),
+                persistedViolations,
+                google: parsedGeometry?.googlePolyline
+                    ? {
+                        polyline: parsedGeometry.googlePolyline,
+                        travelAdvisories: parsedGeometry.travelAdvisories,
+                        routeLabels: parsedGeometry.routeLabels,
+                        warnings: parsedGeometry.warnings
+                    }
+                    : null,
+                osrm: osrmGeometry
+                    ? {
+                        geometry: osrmGeometry
+                    }
+                    : null
+            };
+        } catch (error: any) {
+            logger.warn('⚠️ Error parseando geometry de la sesión', {
+                sessionId: session.id,
+                error: error.message
+            });
+            return {
+                distanceMeters: session.matcheddistance ?? null,
+                durationSeconds: session.matchedduration ?? null,
+                confidence: session.matchedconfidence ?? null,
+                source: session.matcheddistance ? 'google' : 'osrm',
+                persistedViolations,
+                google: null,
+                osrm: null
+            };
+        }
+    }
+
+    private calculateSessionSummary(session: any, route?: any, persistedViolations: number = 0): any {
+        const points = (session as any).GpsMeasurement || [];
 
         if (points.length === 0) {
             return {
                 km: 0,
                 avgSpeed: 0,
                 maxSpeed: 0,
+                durationMinutes: 0,
+                source: route?.source || 'raw',
+                violationsCount: persistedViolations,
                 eventsBySeverity: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 }
             };
         }
@@ -763,12 +888,47 @@ export class TelemetryV2Controller {
             }
         }
 
+        const distanceFromRoute = route?.distanceMeters ?? null;
+        const durationFromRoute = route?.durationSeconds ?? null;
+
+        const finalDistanceKm = distanceFromRoute !== null
+            ? Math.round((distanceFromRoute / 1000) * 100) / 100
+            : Math.round(totalDistance * 100) / 100;
+
+        const finalDurationMinutes = durationFromRoute !== null
+            ? Math.round((durationFromRoute / 60) * 100) / 100
+            : this.estimateDurationFromPoints(points);
+
+        const avgSpeedFromRoute = (distanceFromRoute !== null && durationFromRoute !== null && durationFromRoute > 0)
+            ? Math.round(((distanceFromRoute / 1000) / (durationFromRoute / 3600)) * 100) / 100
+            : validSpeedCount > 0
+                ? Math.round(totalSpeed / validSpeedCount * 100) / 100
+                : 0;
+
         return {
-            km: Math.round(totalDistance * 100) / 100, // Redondear a 2 decimales
-            avgSpeed: validSpeedCount > 0 ? Math.round(totalSpeed / validSpeedCount * 100) / 100 : 0,
+            km: finalDistanceKm,
+            avgSpeed: avgSpeedFromRoute,
             maxSpeed: Math.round(maxSpeed * 100) / 100,
+            durationMinutes: finalDurationMinutes,
+            source: route?.source || 'raw',
+            violationsCount: persistedViolations,
             eventsBySeverity: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 }
         };
+    }
+
+    private estimateDurationFromPoints(points: any[]): number {
+        if (points.length < 2) {
+            return 0;
+        }
+
+        const start = points[0]?.timestamp ? new Date(points[0].timestamp).getTime() : null;
+        const end = points[points.length - 1]?.timestamp ? new Date(points[points.length - 1].timestamp).getTime() : null;
+
+        if (!start || !end || end <= start) {
+            return 0;
+        }
+
+        return Math.round(((end - start) / 1000 / 60) * 100) / 100;
     }
 
     /**

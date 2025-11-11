@@ -1,8 +1,9 @@
+import { Prisma } from '@prisma/client';
 import { Router } from 'express';
-import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { validateOrganization } from '../middleware/validateOrganization';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -26,31 +27,45 @@ async function clusterEventsPostGIS(
     const { from, to, vehicleIds, severity, rotativo } = filters;
 
     // Construir WHERE dinámico
-    const conditions: string[] = [
-        'se.geog IS NOT NULL',
-        `s."organizationId" = '${organizationId}'`
+    const conditions: Prisma.Sql[] = [
+        Prisma.sql`se.geog IS NOT NULL`,
+        Prisma.sql`s."organizationId" = ${organizationId}`
     ];
 
     if (from && to) {
-        conditions.push(`se.timestamp >= '${new Date(from).toISOString()}'`);
-        conditions.push(`se.timestamp <= '${new Date(to).toISOString()}'`);
+        conditions.push(Prisma.sql`se.timestamp >= ${new Date(from).toISOString()}`);
+        conditions.push(Prisma.sql`se.timestamp <= ${new Date(to).toISOString()}`);
     }
 
     if (vehicleIds && vehicleIds.length > 0) {
-        const vehicleIdList = vehicleIds.map(id => `'${id}'`).join(',');
-        conditions.push(`s."vehicleId" IN (${vehicleIdList})`);
+        const vehicleIdList = Prisma.join(
+            vehicleIds.map(id => Prisma.sql`${id}`),
+            Prisma.sql`, `
+        );
+        conditions.push(Prisma.sql`s."vehicleId" IN (${vehicleIdList})`);
     }
 
-    const whereClause = conditions.join(' AND ');
+    if (severity && severity !== 'all') {
+        conditions.push(Prisma.sql`se.severity = ${severity.toUpperCase()}`);
+    }
+
+    if (rotativo && rotativo !== 'all') {
+        const rotativoValue = rotativo === 'on' ? 1 : 0;
+        conditions.push(Prisma.sql`COALESCE(se."rotativoState", 0) = ${rotativoValue}`);
+    }
+
+    const whereClause = Prisma.join(conditions, Prisma.sql` AND `);
+    const safeRadiusMeters = Math.max(5, Math.min(2000, Number.isFinite(radiusMeters) ? radiusMeters : 30));
 
     // Query PostGIS con ST_ClusterDBSCAN
-    const clusteredEvents = await prisma.$queryRawUnsafe(`
+    const clusteredEvents = await prisma.$queryRaw<any>(Prisma.sql`
         WITH event_data AS (
             SELECT 
                 se.id,
                 se.lat,
                 se.lon,
                 se.geog,
+                ST_Transform(se.geog::geometry, 3857) as geom_3857,
                 se.timestamp,
                 se.type,
                 se.details,
@@ -67,7 +82,7 @@ async function clusterEventsPostGIS(
         clustered AS (
             SELECT 
                 *,
-                ST_ClusterDBSCAN(geog::geometry, eps := ${radiusMeters}, minpoints := 1) OVER () as cluster_id
+                ST_ClusterDBSCAN(geom_3857, eps := ${safeRadiusMeters}, minpoints := 1) OVER () as cluster_id
             FROM event_data
         )
         SELECT 
@@ -97,7 +112,7 @@ async function clusterEventsPostGIS(
         WHERE cluster_id IS NOT NULL
         GROUP BY cluster_id
         ORDER BY frequency DESC, last_occurrence DESC
-    `) as any[];
+    `);
 
     // Transformar a formato esperado por el endpoint
     return clusteredEvents.map((cluster, idx) => {
@@ -125,42 +140,135 @@ async function clusterEventsPostGIS(
     });
 }
 
+function haversineDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const R = 6371000; // Radio de la Tierra en metros
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+function clusterEvents(events: any[], radiusMeters: number = 20): any[] {
+    const clusters: any[] = [];
+    const visited = new Set<number>();
+
+    const normalizeSeverity = (value: any): 'grave' | 'moderada' | 'leve' => {
+        const normalized = (value ?? 'leve').toString().toLowerCase();
+        if (normalized.includes('grave') || normalized.includes('criti')) {
+            return 'grave';
+        }
+        if (normalized.includes('moder')) {
+            return 'moderada';
+        }
+        return 'leve';
+    };
+
+    for (let i = 0; i < events.length; i++) {
+        if (visited.has(i)) continue;
+
+        const seed = events[i];
+        if (!seed || !Number.isFinite(seed.lat) || !Number.isFinite(seed.lng)) {
+            visited.add(i);
+            continue;
+        }
+
+        const queue: number[] = [i];
+        const clusterIndices: number[] = [];
+
+        while (queue.length > 0) {
+            const currentIdx = queue.pop()!;
+            if (visited.has(currentIdx)) continue;
+
+            const current = events[currentIdx];
+            if (!current || !Number.isFinite(current.lat) || !Number.isFinite(current.lng)) {
+                visited.add(currentIdx);
+                continue;
+            }
+
+            visited.add(currentIdx);
+            clusterIndices.push(currentIdx);
+
+            for (let j = 0; j < events.length; j++) {
+                if (visited.has(j)) continue;
+                const candidate = events[j];
+                if (!candidate || !Number.isFinite(candidate.lat) || !Number.isFinite(candidate.lng)) {
+                    continue;
+                }
+
+                const distance = haversineDistanceMeters(current.lat, current.lng, candidate.lat, candidate.lng);
+                if (distance <= radiusMeters) {
+                    queue.push(j);
+                }
+            }
+        }
+
+        if (clusterIndices.length === 0) {
+            continue;
+        }
+
+        const clusterEventsList = clusterIndices.map(idx => events[idx]);
+        const severityCounts = { grave: 0, moderada: 0, leve: 0 };
+        const vehicleIdsSet = new Set<string>();
+
+        let lastOccurrence: string | Date | undefined;
+
+        clusterEventsList.forEach(ev => {
+            const severity = normalizeSeverity(ev.severity);
+            severityCounts[severity] += 1;
+
+            if (ev.vehicleId) {
+                vehicleIdsSet.add(ev.vehicleId);
+            }
+
+            if (ev.timestamp) {
+                const currentTs = new Date(ev.timestamp).getTime();
+                const lastTs = lastOccurrence ? new Date(lastOccurrence).getTime() : -Infinity;
+                if (currentTs > lastTs) {
+                    lastOccurrence = ev.timestamp;
+                }
+            }
+        });
+
+        let dominantSeverity: 'grave' | 'moderada' | 'leve' = 'leve';
+        if (severityCounts.grave > 0) {
+            dominantSeverity = 'grave';
+        } else if (severityCounts.moderada > 0) {
+            dominantSeverity = 'moderada';
+        }
+
+        const centroidLat = clusterEventsList.reduce((acc, ev) => acc + Number(ev.lat || 0), 0) / clusterEventsList.length;
+        const centroidLng = clusterEventsList.reduce((acc, ev) => acc + Number(ev.lng || ev.lon || 0), 0) / clusterEventsList.length;
+
+        clusters.push({
+            id: `cluster_${clusters.length}`,
+            lat: centroidLat,
+            lng: centroidLng,
+            location: `${centroidLat.toFixed(4)}, ${centroidLng.toFixed(4)}`,
+            events: clusterEventsList,
+            severity_counts: severityCounts,
+            frequency: clusterEventsList.length,
+            vehicleIds: Array.from(vehicleIdsSet),
+            lastOccurrence,
+            dominantSeverity
+        });
+    }
+
+    return clusters;
+}
+
 /**
  * DEPRECATED: Fallback clustering JavaScript (solo para eventos sin geog)
  * Se mantiene por compatibilidad hasta migración geography completa
  */
 function clusterEventsFallback(events: any[], radiusMeters: number = 20): any[] {
-    const clusters: any[] = [];
-    const usedEvents = new Set<number>();
-
-    events.forEach((event, i) => {
-        if (usedEvents.has(i)) return;
-
-        const eventIds = new Set<string>();
-        eventIds.add(event.id);
-
-        const cluster: any = {
-            id: `fallback_cluster_${clusters.length}`,
-            lat: event.lat,
-            lng: event.lng,
-            location: event.location || 'Ubicación desconocida',
-            events: [event],
-            severity_counts: {
-                grave: event.severity === 'grave' ? 1 : 0,
-                moderada: event.severity === 'moderada' ? 1 : 0,
-                leve: event.severity === 'leve' ? 1 : 0
-            },
-            frequency: 1,
-            vehicleIds: [event.vehicleId],
-            lastOccurrence: event.timestamp,
-            dominantSeverity: event.severity || 'leve'
-        };
-
-        usedEvents.add(i);
-        clusters.push(cluster);
-    });
-
-    return clusters;
+    return clusterEvents(events, radiusMeters);
 }
 
 /**
@@ -190,7 +298,8 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
 
         // FASE 2: Usar clustering PostGIS nativo (mucho más eficiente)
         let filteredClusters: any[] = [];
-        
+        let eventosProcesados: any[] = [];
+
         if (mode !== 'single') {
             try {
                 // Intentar clustering PostGIS (requiere columna geog poblada)
@@ -209,10 +318,12 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
                 // Filtrar por frecuencia mínima
                 filteredClusters = filteredClusters.filter(cluster => cluster.frequency >= minFrequency);
 
+                eventosProcesados = filteredClusters.flatMap(cluster => Array.isArray(cluster.events) ? cluster.events : []);
+
                 logger.info(`Clusters PostGIS generados: ${filteredClusters.length}`);
             } catch (error) {
                 logger.warn('Error en clustering PostGIS, usando fallback JavaScript', { error });
-                
+
                 // Fallback: cargar eventos manualmente si falla PostGIS
                 let eventosDB;
                 if (from && to && vehicleIds && vehicleIds.length > 0) {
@@ -277,7 +388,7 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
                 // Aplicar filtros
                 let filteredEvents = eventos;
                 if (rotativoFilter !== 'all') {
-                    filteredEvents = filteredEvents.filter(e => 
+                    filteredEvents = filteredEvents.filter(e =>
                         rotativoFilter === 'on' ? e.rotativo : !e.rotativo
                     );
                 }
@@ -288,6 +399,7 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
                 // Usar fallback clustering
                 const clusters = clusterEventsFallback(filteredEvents, clusterRadius);
                 filteredClusters = clusters.filter(cluster => cluster.frequency >= minFrequency);
+                eventosProcesados = filteredEvents;
             }
         }
 
@@ -359,6 +471,8 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
                     dominantSeverity: e.severity
                 }));
 
+                eventosProcesados = eventosVel;
+
             } catch (fallbackErr) {
                 logger.error('[Hotspots] Error en fallback de velocidad:', fallbackErr);
             }
@@ -372,13 +486,14 @@ router.get('/critical-points', authenticate, validateOrganization, async (req, r
             return bWeight - aWeight;
         });
 
-        logger.info(`Clusters creados: ${filteredClusters.length} de ${eventos.length} eventos`);
+        const totalEventos = eventosProcesados.length;
+        logger.info(`Clusters creados: ${filteredClusters.length} de ${totalEventos} eventos procesados`);
 
         res.json({
             success: true,
             data: {
                 clusters: filteredClusters,
-                total_events: eventos.length,
+                total_events: totalEventos,
                 totalClusters: filteredClusters.length,
                 filters: {
                     severity: severityFilter,

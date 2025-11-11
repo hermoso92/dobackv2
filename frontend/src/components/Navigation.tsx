@@ -6,6 +6,7 @@ import {
     CloudUpload as CloudUploadIcon,
     Dashboard as DashboardIcon,
     LocationOn as GeofenceIcon,
+    LibraryBooks as DocumentationIcon,
     MenuBook as KnowledgeIcon,
     LocalFireDepartment as LogoIcon,
     Logout as LogoutIcon,
@@ -223,6 +224,12 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
             allowedRoles: [UserRole.MANAGER],
         },
         {
+            text: 'Documentación KPIs',
+            path: '/dashboard?tab=5',
+            icon: <DocumentationIcon fontSize="small" />,
+            allowedRoles: [UserRole.MANAGER],
+        },
+        {
             text: 'Subir Archivos',
             path: '/upload',
             icon: <CloudUploadIcon fontSize="small" />,
@@ -266,8 +273,8 @@ const Navigation: React.FC<NavigationProps> = ({ isMobile, isOpen, onToggle }) =
             const tabMatch = currentSearch.match(/tab=(\d+)/);
             if (tabMatch) {
                 const tabIndex = parseInt(tabMatch[1], 10);
-                // Si el tab es válido (0-4), retornar su posición en filteredNavItems
-                if (tabIndex >= 0 && tabIndex <= 4) {
+                // Si el tab es válido (0-5), retornar su posición en filteredNavItems
+                if (tabIndex >= 0 && tabIndex <= 5) {
                     return tabIndex;
                 }
             }

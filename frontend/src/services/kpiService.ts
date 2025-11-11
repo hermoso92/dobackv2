@@ -156,11 +156,12 @@ class KPIService {
                 `/api/kpis/summary${params}`
             );
 
-            if ((response as any).success !== undefined) {
-                const resp = response as unknown as { success: boolean; data: CompleteSummary };
-                if (resp.success && resp.data) return resp.data;
-            } else {
-                return response as unknown as CompleteSummary;
+            logger.info('🔍 DEBUG respuesta KPIs summary', { response });
+
+            const data = this.extractData<CompleteSummary>(response);
+
+            if (data) {
+                return data;
             }
 
             throw new Error('Invalid response from server');
@@ -208,23 +209,24 @@ class KPIService {
      * Retorna estructura vacía de estados
      */
     private getEmptyStatesSummary(): StatesSummary {
-        const stateNames = [
-            'Taller',
-            'Operativo en Parque',
-            'Salida en Emergencia',
-            'En Siniestro',
-            'Fin de Actuación',
-            'Regreso al Parque'
+        const defaultStates: Array<{ key: number; name: string }> = [
+            { key: 0, name: 'Taller' },
+            { key: 1, name: 'Operativo en Parque' },
+            { key: 2, name: 'Salida en Emergencia' },
+            { key: 3, name: 'En Siniestro' },
+            { key: 5, name: 'Regreso al Parque' }
         ];
 
+        const states = defaultStates.map(state => ({
+            key: state.key,
+            name: state.name,
+            duration_seconds: 0,
+            duration_formatted: '00:00:00',
+            count: 0
+        }));
+
         return {
-            states: stateNames.map((name, index) => ({
-                key: index,
-                name,
-                duration_seconds: 0,
-                duration_formatted: '00:00:00',
-                count: 0
-            })),
+            states,
             total_time_seconds: 0,
             total_time_formatted: '00:00:00',
             time_outside_station: 0,
@@ -274,6 +276,29 @@ class KPIService {
     calculateAverageSpeed(km: number, hours: number): number {
         if (hours === 0) return 0;
         return Math.round(km / hours);
+    }
+
+    /**
+     * Normaliza respuestas del apiService extrayendo la propiedad data cuando corresponda
+     */
+    private extractData<T>(response: unknown): T | null {
+        if (!response || typeof response !== 'object') {
+            return null;
+        }
+
+        const typedResponse = response as { success?: boolean; data?: unknown };
+
+        if (Object.prototype.hasOwnProperty.call(typedResponse, 'success')) {
+            if (typedResponse.success) {
+                if (typedResponse.data !== undefined) {
+                    return this.extractData<T>(typedResponse.data as unknown);
+                }
+                return null;
+            }
+            return null;
+        }
+
+        return response as T;
     }
 
     /**

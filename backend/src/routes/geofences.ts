@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { GeofenceMode, GeofenceType, PrismaClient } from '@prisma/client';
 import express, { Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { GeofenceData, geofenceService } from '../services/GeofenceService';
@@ -165,13 +165,7 @@ router.post('/create-real-data', async (req: Request, res: Response) => {
             organization = await prisma.organization.create({
                 data: {
                     name: 'Bomberos Madrid',
-                    description: 'Cuerpo de Bomberos del Ayuntamiento de Madrid',
-                    type: 'FIRE_DEPARTMENT',
-                    settings: {
-                        timezone: 'Europe/Madrid',
-                        language: 'es',
-                        theme: 'light'
-                    }
+                    apiKey: 'BOMBEROS-MADRID-DEFAULT'
                 }
             });
         }
@@ -188,8 +182,8 @@ router.post('/create-real-data', async (req: Request, res: Response) => {
                 data: {
                     name: geofenceData.name,
                     description: geofenceData.description,
-                    type: geofenceData.type,
-                    mode: geofenceData.mode,
+                    type: geofenceData.type as GeofenceType,
+                    mode: geofenceData.mode as GeofenceMode,
                     enabled: geofenceData.enabled,
                     live: geofenceData.live,
                     geometry: geofenceData.geometry,
@@ -256,11 +250,11 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId;
-        
+
         if (!organizationId) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                error: 'Organization ID is required' 
+                error: 'Organization ID is required'
             });
         }
 
@@ -285,6 +279,123 @@ router.post('/', async (req: Request, res: Response) => {
         res.status(500).json({
             success: false,
             error: error instanceof Error ? error.message : 'Error interno del servidor'
+        });
+    }
+});
+
+/**
+ * GET /api/geofences/events
+ * Obtener eventos de geocerca con filtros
+ */
+router.get('/events', async (req: Request, res: Response) => {
+    try {
+        const organizationId = (req as any).user.organizationId;
+        const { vehicleId, geofenceId, type, limit = '100', today } = req.query;
+
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Organization ID requerido'
+            });
+        }
+
+        const take = parseInt(limit as string) || 100;
+
+        const where: any = {
+            organizationId
+        };
+
+        if (vehicleId) {
+            where.vehicleId = vehicleId as string;
+        }
+
+        if (geofenceId) {
+            where.geofenceId = geofenceId as string;
+        }
+
+        if (type) {
+            where.type = type as string;
+        }
+
+        if (today === 'true') {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+            where.timestamp = {
+                gte: startOfDay,
+                lte: endOfDay
+            };
+        }
+
+        const events = await prisma.geofenceEvent.findMany({
+            where,
+            orderBy: { timestamp: 'desc' },
+            take,
+            include: {
+                Geofence: true,
+                Vehicle: {
+                    select: {
+                        id: true,
+                        name: true,
+                        identifier: true,
+                        licensePlate: true
+                    }
+                }
+            }
+        });
+
+        res.json({
+            success: true,
+            data: events,
+            count: events.length
+        });
+    } catch (error) {
+        logger.error('[GeofenceAPI] Error obteniendo eventos de geocerca:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+});
+
+/**
+ * GET /api/geofences/events/:vehicleId
+ * Obtener eventos de geocerca para un vehículo específico
+ */
+router.get('/events/:vehicleId', async (req: Request, res: Response) => {
+    try {
+        const { vehicleId } = req.params;
+        const organizationId = (req as any).user.organizationId;
+        const { from, to } = req.query;
+
+        let fromDate: Date | undefined;
+        let toDate: Date | undefined;
+
+        if (from) {
+            fromDate = new Date(from as string);
+        }
+        if (to) {
+            toDate = new Date(to as string);
+        }
+
+        const events = await geofenceService.getGeofenceEventsByVehicle(
+            vehicleId,
+            organizationId,
+            fromDate,
+            toDate
+        );
+
+        res.json({
+            success: true,
+            data: events,
+            count: events.length
+        });
+    } catch (error) {
+        logger.error('[GeofenceAPI] Error obteniendo eventos de geocerca por vehículo:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
         });
     }
 });
@@ -485,159 +596,6 @@ router.post('/import-radar', async (req: Request, res: Response) => {
     }
 });
 
-/**
- * GET /api/geofences/events
- * Obtener todos los eventos de geocerca de la organización
- */
-router.get('/events', async (req: Request, res: Response) => {
-    try {
-        const organizationId = (req as any).user.organizationId;
-        const { vehicleId, geofenceId, type, limit = '100' } = req.query;
-
-        const where: any = {
-            organizationId
-        };
-
-        if (vehicleId) {
-            where.vehicleId = vehicleId as string;
-        }
-
-        if (geofenceId) {
-            where.geofenceId = geofenceId as string;
-        }
-
-        if (type) {
-            where.type = type as string;
-        }
-
-        const events = await prisma.geofenceEvent.findMany({
-            where,
-            include: {
-                geofence: {
-                    select: {
-                        id: true,
-                        name: true,
-                        tag: true,
-                        type: true
-                    }
-                }
-            },
-            orderBy: { timestamp: 'desc' },
-            take: parseInt(limit as string)
-        });
-
-        res.json({
-            success: true,
-            data: events,
-            count: events.length
-        });
-    } catch (error) {
-        logger.error('[GeofenceAPI] Error obteniendo eventos de geocerca:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
-
-/**
- * GET /api/geofences/events/:vehicleId
- * Obtener eventos de geocerca para un vehículo específico
- */
-router.get('/events/:vehicleId', async (req: Request, res: Response) => {
-    try {
-        const { vehicleId } = req.params;
-        const organizationId = (req as any).user.organizationId;
-        const { from, to } = req.query;
-
-        let fromDate: Date | undefined;
-        let toDate: Date | undefined;
-
-        if (from) {
-            fromDate = new Date(from as string);
-        }
-        if (to) {
-            toDate = new Date(to as string);
-        }
-
-        const events = await geofenceService.getGeofenceEventsByVehicle(
-            vehicleId,
-            organizationId,
-            fromDate,
-            toDate
-        );
-
-        res.json({
-            success: true,
-            data: events,
-            count: events.length
-        });
-    } catch (error) {
-        logger.error('[GeofenceAPI] Error obteniendo eventos de geocerca:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
-
-/**
- * GET /api/geofences/events
- * Obtener eventos de geocercas (todos o filtrados)
- */
-router.get('/events', async (req: Request, res: Response) => {
-    try {
-        const organizationId = (req as any).user.organizationId;
-        const limit = parseInt(req.query.limit as string) || 100;
-        const today = req.query.today === 'true';
-
-        let whereClause: any = {
-            geofence: {
-                organizationId
-            }
-        };
-
-        // Si se pide solo eventos de hoy
-        if (today) {
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date();
-            endOfDay.setHours(23, 59, 59, 999);
-
-            whereClause.timestamp = {
-                gte: startOfDay,
-                lte: endOfDay
-            };
-        }
-
-        const events = await prisma.geofenceEvent.findMany({
-            where: whereClause,
-            orderBy: { timestamp: 'desc' },
-            take: limit,
-            include: {
-                geofence: true,
-                vehicle: {
-                    select: {
-                        id: true,
-                        name: true,
-                        dobackId: true
-                    }
-                }
-            }
-        });
-
-        res.json({
-            success: true,
-            data: events
-        });
-    } catch (error) {
-        logger.error('[GeofenceAPI] Error obteniendo eventos:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-});
 
 /**
  * POST /api/geofences/process-gps

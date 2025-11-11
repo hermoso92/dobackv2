@@ -1,12 +1,12 @@
 import { prisma } from '../../config/prisma';
 import { logger } from '../../utils/logger';
 import { googleRoadsService, GoogleSpeedLimitResult } from './GoogleRoadsService';
-import { tomTomSpeedLimitService, SpeedLimitResult as TomTomSpeedLimitResult } from './TomTomSpeedLimitService';
+import { SpeedLimitResult as TomTomSpeedLimitResult, tomTomSpeedLimitService } from './TomTomSpeedLimitService';
 
 // Tipo unificado que acepta tanto Google como TomTom
 export type SpeedLimitResult = GoogleSpeedLimitResult | TomTomSpeedLimitResult;
 
-export interface SpeedViolation {
+export interface DetectedSpeedViolation {
     timestamp: Date;
     lat: number;
     lon: number;
@@ -16,6 +16,10 @@ export interface SpeedViolation {
     roadType: string;
     confidence: string;
     source: string;
+    placeId?: string;
+    snappedLat?: number;
+    snappedLon?: number;
+    metadata?: Record<string, any>;
 }
 
 export class SpeedLimitService {
@@ -35,7 +39,7 @@ export class SpeedLimitService {
         if (this.USE_GOOGLE_ROADS) {
             try {
                 const googleResult = await googleRoadsService.getSpeedLimit(lat, lon, vehicleType);
-                
+
                 // Si Google devolvió un resultado con confianza alta o media, usarlo
                 if (googleResult.source === 'google' || googleResult.source === 'cache') {
                     return googleResult;
@@ -51,7 +55,7 @@ export class SpeedLimitService {
         if (this.USE_TOMTOM_FALLBACK) {
             try {
                 const tomtomResult = await tomTomSpeedLimitService.getSpeedLimit(lat, lon, vehicleType);
-                
+
                 if (tomtomResult.source === 'tomtom' || tomtomResult.source === 'cache') {
                     logger.info('Usando TomTom como fallback');
                     return tomtomResult;
@@ -72,8 +76,8 @@ export class SpeedLimitService {
     async detectViolations(
         gpsPoints: Array<{ lat: number; lon: number; timestamp: Date; speed: number }>,
         vehicleType: 'turismo' | 'camion' | 'emergencia' = 'emergencia'
-    ): Promise<SpeedViolation[]> {
-        const violations: SpeedViolation[] = [];
+    ): Promise<DetectedSpeedViolation[]> {
+        const violations: DetectedSpeedViolation[] = [];
 
         for (const point of gpsPoints) {
             // Obtener límite de velocidad para esta ubicación
@@ -90,10 +94,17 @@ export class SpeedLimitService {
 
             // Verificar si hay violación
             if (point.speed > effectiveSpeedLimit) {
+                const snappedLat = 'snappedLat' in speedLimitResult ? (speedLimitResult as GoogleSpeedLimitResult).snappedLat : undefined;
+                const snappedLon = 'snappedLon' in speedLimitResult ? (speedLimitResult as GoogleSpeedLimitResult).snappedLon : undefined;
+                const placeId = 'placeId' in speedLimitResult ? (speedLimitResult as GoogleSpeedLimitResult).placeId : undefined;
+
                 violations.push({
                     timestamp: point.timestamp,
                     lat: point.lat,
                     lon: point.lon,
+                    snappedLat,
+                    snappedLon,
+                    placeId,
                     speed: point.speed,
                     speedLimit: effectiveSpeedLimit,
                     excess: point.speed - effectiveSpeedLimit,
@@ -135,9 +146,9 @@ export class SpeedLimitService {
      */
     async cleanOldCache(): Promise<void> {
         await googleRoadsService.cleanOldCache();
-        
+
         if (this.USE_TOMTOM_FALLBACK) {
-        await tomTomSpeedLimitService.cleanOldCache();
+            await tomTomSpeedLimitService.cleanOldCache();
         }
     }
 

@@ -405,7 +405,7 @@ export class MassUploadController {
                 gx: Number(item.gx),
                 gy: Number(item.gy),
                 gz: Number(item.gz),
-                si: item.si ? Number(item.si) : 0,
+                si: normalizeUploadedSi(item.si),
                 accmag: item.accmag ? Number(item.accmag) : 0
             }));
 

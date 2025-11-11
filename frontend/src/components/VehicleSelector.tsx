@@ -1,6 +1,4 @@
-import { logger } from '../utils/logger';
 import {
-import { logger } from '../utils/logger';
     DirectionsCar as CarIcon
 } from '@mui/icons-material';
 import {
@@ -15,6 +13,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface Vehicle {
     id: string;

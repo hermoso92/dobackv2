@@ -5,6 +5,7 @@ import { DashboardErrorBoundary } from '../components/Dashboard/DashboardErrorBo
 import FilteredPageWrapper from '../components/filters/FilteredPageWrapper';
 import { OptimizedLoadingSpinner } from '../components/ui/OptimizedLoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
+import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { useFilteredDashboardData } from '../hooks/useFilteredData';
 import { useOptimizedDashboard } from '../hooks/useOptimizedDashboard';
 import { usePermissions } from '../hooks/usePermissions';
@@ -15,6 +16,9 @@ const EstadosYTiemposTab = lazy(() => import('../components/Dashboard/EstadosYTi
 const BlackSpotsTab = lazy(() => import('../components/stability/BlackSpotsTab'));
 const SpeedAnalysisTab = lazy(() => import('../components/speed/SpeedAnalysisTab'));
 const KPIsTab = lazy(() => import('../components/Dashboard/ExecutiveDashboard/tabs/KPIsTab'));
+const KPIDocumentationTab = lazy(() =>
+    import('../components/kpi/KPIDocumentationTab').then(module => ({ default: module.KPIDocumentationTab }))
+);
 
 // Import directo de SessionsAndRoutesView (no lazy por named export)
 import { SessionsAndRoutesView } from '../components/sessions/SessionsAndRoutesView';
@@ -44,6 +48,13 @@ const UnifiedDashboard: React.FC = () => {
     const { user, isAuthenticated } = useAuth();  // ✅ Añadido user
     const { isAdmin, isManager } = usePermissions();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { filters } = useGlobalFilters();
+
+    const selectedVehicleIds = filters.vehicles && filters.vehicles.length > 0
+        ? filters.vehicles
+        : undefined;
+    const startDate = filters.dateRange?.start;
+    const endDate = filters.dateRange?.end;
 
     // Usar hooks optimizados - SIN AUTO REFRESH
     const {
@@ -88,7 +99,7 @@ const UnifiedDashboard: React.FC = () => {
     useEffect(() => {
         if (tabFromUrl !== null) {
             const tabIndex = parseInt(tabFromUrl, 10);
-            if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
+            if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 5) {
                 setActiveTab(tabIndex);
             }
         }
@@ -165,6 +176,7 @@ const UnifiedDashboard: React.FC = () => {
                         <Tab label="Puntos Negros" />
                         <Tab label="Velocidad" />
                         <Tab label="Sesiones & Recorridos" />
+                        <Tab label="Documentación KPIs" />
                     </Tabs>
                     )}
 
@@ -187,9 +199,9 @@ const UnifiedDashboard: React.FC = () => {
                         <Suspense fallback={<OptimizedLoadingSpinner message="Cargando puntos negros..." variant="skeleton" />}>
                             <BlackSpotsTab 
                                 organizationId={user?.organizationId || ''}
-                                vehicleIds={undefined}
-                                startDate={undefined}
-                                endDate={undefined}
+                                vehicleIds={selectedVehicleIds}
+                                startDate={startDate}
+                                endDate={endDate}
                             />
                         </Suspense>
                     </TabPanel>
@@ -199,9 +211,9 @@ const UnifiedDashboard: React.FC = () => {
                         <Suspense fallback={<OptimizedLoadingSpinner message="Cargando análisis de velocidad..." variant="skeleton" />}>
                             <SpeedAnalysisTab 
                                 organizationId={user?.organizationId || ''}
-                                vehicleIds={undefined}
-                                startDate={undefined}
-                                endDate={undefined}
+                                vehicleIds={selectedVehicleIds}
+                                startDate={startDate}
+                                endDate={endDate}
                             />
                         </Suspense>
                     </TabPanel>
@@ -209,6 +221,13 @@ const UnifiedDashboard: React.FC = () => {
                     {/* Panel 5: Sesiones & Recorridos */}
                     <TabPanel value={activeTab} index={4}>
                         <SessionsAndRoutesView onSessionDataChange={() => { }} />
+                    </TabPanel>
+
+                    {/* Panel 6: Documentación KPIs */}
+                    <TabPanel value={activeTab} index={5}>
+                        <Suspense fallback={<OptimizedLoadingSpinner message="Cargando documentación de KPIs..." variant="skeleton" />}>
+                            <KPIDocumentationTab />
+                        </Suspense>
                     </TabPanel>
                 </Box>
             </DashboardErrorBoundary>

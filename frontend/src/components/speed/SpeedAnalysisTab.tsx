@@ -21,7 +21,7 @@ import { getOrganizationId } from '../../config/organization';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { apiService } from '../../services/api';
 import { EnhancedKPIData, EnhancedTabExportData } from '../../services/enhancedPDFExportService';
-import { SpeedViolation } from '../../types/deviceControl';
+import { SpeedViolation, SpeedViolationRoadType } from '../../types/deviceControl';
 import { logger } from '../../utils/logger';
 import LocationDisplay from '../LocationDisplay';
 import SpeedViolationPopup from '../SpeedViolationPopup';
@@ -48,10 +48,42 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
     startDate,
     endDate
 }) => {
+    const ROAD_TYPE_LABELS: Record<SpeedViolationRoadType, string> = {
+        AUTOPISTA_AUTOVIA: 'Autovía',
+        AUTOPISTA_URBANA: 'Autopista Urbana',
+        CARRETERA_ARCEN_PAVIMENTADO: 'Carretera con arcén pavimentado',
+        RESTO_VIAS_FUERA_POBLADO: 'Resto de vías fuera de poblado',
+        CONVENCIONAL_SEPARACION_FISICA: 'Carretera convencional dividida',
+        CONVENCIONAL_SIN_SEPARACION: 'Carretera convencional',
+        VIA_SIN_PAVIMENTAR: 'Vía sin pavimentar'
+    };
+
+    const ROAD_TYPE_OPTIONS: Array<{ value: SpeedViolationRoadType; label: string }> = Object.entries(ROAD_TYPE_LABELS).map(
+        ([value, label]) => ({ value: value as SpeedViolationRoadType, label })
+    );
+
+    type BackendSpeedViolation = Omit<SpeedViolation, 'violationType'> & {
+        violationType: 'grave' | 'moderada' | 'leve' | 'correcto';
+        roadType: SpeedViolationRoadType;
+    };
+
+    const normalizeBackendViolations = (data: BackendSpeedViolation[]): SpeedViolation[] => {
+        return data
+            .filter(violation =>
+                violation.violationType === 'grave' ||
+                violation.violationType === 'moderada' ||
+                violation.violationType === 'leve'
+            )
+            .map(violation => ({
+                ...violation,
+                violationType: violation.violationType === 'moderada' ? 'moderado' : violation.violationType
+            }));
+    };
+
     // Estados de filtros
     const [rotativoFilter, setRotativoFilter] = useState<'all' | 'on' | 'off'>('all');
     const [violationFilter, setViolationFilter] = useState<'all' | 'grave' | 'moderado' | 'leve'>('all');
-    const [roadTypeFilter, setRoadTypeFilter] = useState<'all' | 'urban' | 'interurban' | 'highway'>('all');
+    const [roadTypeFilter, setRoadTypeFilter] = useState<'all' | SpeedViolationRoadType>('all');
 
     // Estados de datos
     const [violations, setViolations] = useState<SpeedViolation[]>([]);
@@ -82,12 +114,16 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
 
             logger.info('Cargando datos de velocidad', { organizationId: validOrgId });
 
+            const violationFilterParam = violationFilter === 'moderado' ? 'moderada' : violationFilter;
             const params = new URLSearchParams({
                 organizationId: validOrgId,
                 rotativoOn: rotativoFilter,
-                violationType: violationFilter,
-                roadType: roadTypeFilter
+                violationType: violationFilterParam
             });
+
+            if (roadTypeFilter && roadTypeFilter !== 'all') {
+                params.append('roadType', roadTypeFilter);
+            }
 
             if (vehicleIds && vehicleIds.length > 0) {
                 params.append('vehicleIds', vehicleIds.join(','));
@@ -96,12 +132,13 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
             if (endDate) params.append('endDate', endDate);
 
             // Cargar violaciones
-            const violationsResponse = await apiService.get<{ violations: SpeedViolation[]; total: number; stats: any }>(
+            const violationsResponse = await apiService.get<{ violations: BackendSpeedViolation[]; total: number; stats: any }>(
                 `${SPEED_ENDPOINTS.VIOLATIONS}?${params.toString()}`
             );
 
             if (violationsResponse.success && violationsResponse.data) {
-                setViolations(violationsResponse.data.violations || []);
+                const normalizedViolations = normalizeBackendViolations(violationsResponse.data.violations || []);
+                setViolations(normalizedViolations);
             }
 
             // Cargar zonas críticas
@@ -151,16 +188,10 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
 
     // Obtener texto del tipo de vía
     const getRoadTypeText = (roadType: string): string => {
-        switch (roadType) {
-            case 'urban':
-                return 'Urbana';
-            case 'interurban':
-                return 'Interurbana';
-            case 'highway':
-                return 'Autopista';
-            default:
-                return 'Desconocida';
+        if (roadType && roadType in ROAD_TYPE_LABELS) {
+            return ROAD_TYPE_LABELS[roadType as SpeedViolationRoadType];
         }
+        return 'Tipo de vía no identificado';
     };
 
     // Manejar click en ranking
@@ -430,13 +461,15 @@ const SpeedAnalysisTab: React.FC<SpeedAnalysisTabProps> = ({
                         </label>
                         <select
                             value={roadTypeFilter}
-                            onChange={(e) => setRoadTypeFilter(e.target.value as any)}
+                            onChange={(e) => setRoadTypeFilter(e.target.value === 'all' ? 'all' : (e.target.value as SpeedViolationRoadType))}
                             className="w-full px-3 py-1 rounded-lg border border-slate-300 text-sm"
                         >
                             <option value="all">Todas</option>
-                            <option value="urban">Urbana</option>
-                            <option value="interurban">Interurbana</option>
-                            <option value="highway">Autopista</option>
+                            {ROAD_TYPE_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>

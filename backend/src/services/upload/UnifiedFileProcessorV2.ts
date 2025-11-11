@@ -31,6 +31,7 @@ import { parseRotativoRobust } from '../parsers/RobustRotativoParser';
 import { parseEstabilidadRobust } from '../parsers/RobustStabilityParser';
 
 // ✅ NUEVO: Utilidades y configuración
+import { VehicleStateTracker } from '../VehicleStateTracker';
 import { calculateDuration, formatDuration, formatTime } from './utils/formatters';
 
 const logger = createLogger('UnifiedFileProcessor-V2');
@@ -72,7 +73,30 @@ interface GrupoArchivos {
     };
 }
 
+interface VehicleStateInfo {
+    lastEndTime: Date | null;
+    accumulatedContinuitySeconds: number;
+    lastKnownPosition?: {
+        latitude: number;
+        longitude: number;
+        altitude?: number;
+        timestamp: Date;
+        source: 'GPS' | 'INFERRED';
+    };
+}
+
+interface ContinuityResult {
+    sessionAjustada: CorrelatedSession;
+    applied: boolean;
+    seconds: number;
+    notes: string[];
+}
+
 export class UnifiedFileProcessorV2 {
+    private readonly CONTINUITY_MAX_GAP_SECONDS = 30 * 60; // 30 minutos
+    private readonly CONTINUITY_RESET_SECONDS = 4 * 60 * 60; // 4 horas
+    private vehicleStates: Record<string, VehicleStateInfo> = {};
+
     /**
      * Procesa un conjunto de archivos (entrada principal)
      */
@@ -371,8 +395,11 @@ export class UnifiedFileProcessorV2 {
 
         for (const session of validationResult.validSessions) {
             try {
+                const continuity = this.aplicarContinuidad(vehicleId, session);
+                const sessionConContinuidad = continuity.sessionAjustada;
+
                 const result = await this.guardarSesion(
-                    session,
+                    sessionConContinuidad,
                     vehicleId,
                     userId,
                     organizationId,
@@ -382,72 +409,92 @@ export class UnifiedFileProcessorV2 {
 
                 sessionIds.push(result.sessionId);
 
+                const gpsMeasurementCount = result.gps.count;
+
+                if (sessionConContinuidad.gps) {
+                    sessionConContinuidad.gps.measurementCount = gpsMeasurementCount;
+                } else if (gpsMeasurementCount > 0) {
+                    sessionConContinuidad.gps = {
+                        sessionNumber: sessionConContinuidad.sessionNumber,
+                        startTime: sessionConContinuidad.startTime,
+                        endTime: sessionConContinuidad.endTime,
+                        measurementCount: gpsMeasurementCount
+                    } as any;
+                }
+
                 // ✅ NUEVO: Guardar detalles de la sesión CON información COMPLETA por archivo
-                const durationSeconds = calculateDuration(session.startTime, session.endTime);
+                const durationSeconds = calculateDuration(sessionConContinuidad.startTime, sessionConContinuidad.endTime);
 
                 sessionDetails.push({
-                    sessionNumber: session.sessionNumber,
+                    sessionNumber: sessionConContinuidad.sessionNumber,
                     sessionId: result.sessionId,
-                    startTime: session.startTime.toISOString(),
-                    endTime: session.endTime.toISOString(),
+                    startTime: sessionConContinuidad.startTime.toISOString(),
+                    endTime: sessionConContinuidad.endTime.toISOString(),
                     durationSeconds,
                     durationFormatted: formatDuration(durationSeconds),
                     measurements: result.measurementCount,
                     status: result.created ? 'CREADA' : 'OMITIDA',
                     reason: result.created ? 'Sesión nueva creada' : 'Sesión ya existía',
+                    continuityApplied: continuity.applied,
+                    continuitySeconds: continuity.seconds,
+                    continuityNotes: continuity.notes,
+                    gpsInferred: result.gps.inferred,
+                    gpsInferenceNotes: result.gps.inferenceNotes,
 
                     // ✅ Información DETALLADA por archivo
-                    estabilidad: session.estabilidad ? {
+                    estabilidad: sessionConContinuidad.estabilidad ? {
                         fileName: `ESTABILIDAD_${grupo.vehiculo}_${grupo.fecha}.txt`,
-                        sessionNumber: session.estabilidad.sessionNumber,
-                        startTime: formatTime(session.estabilidad.startTime),
-                        endTime: formatTime(session.estabilidad.endTime),
-                        durationSeconds: calculateDuration(session.estabilidad.startTime, session.estabilidad.endTime),
-                        durationFormatted: formatDuration(calculateDuration(session.estabilidad.startTime, session.estabilidad.endTime)),
-                        measurements: session.estabilidad.measurementCount || 0
+                        sessionNumber: sessionConContinuidad.estabilidad.sessionNumber,
+                        startTime: formatTime(sessionConContinuidad.estabilidad.startTime),
+                        endTime: formatTime(sessionConContinuidad.estabilidad.endTime),
+                        durationSeconds: calculateDuration(sessionConContinuidad.estabilidad.startTime, sessionConContinuidad.estabilidad.endTime),
+                        durationFormatted: formatDuration(calculateDuration(sessionConContinuidad.estabilidad.startTime, sessionConContinuidad.estabilidad.endTime)),
+                        measurements: sessionConContinuidad.estabilidad.measurementCount || 0
                     } : null,
 
-                    gps: session.gps ? {
+                    gps: sessionConContinuidad.gps ? {
                         fileName: `GPS_${grupo.vehiculo}_${grupo.fecha}.txt`,
-                        sessionNumber: session.gps.sessionNumber,
-                        startTime: formatTime(session.gps.startTime),
-                        endTime: formatTime(session.gps.endTime),
-                        durationSeconds: calculateDuration(session.gps.startTime, session.gps.endTime),
-                        durationFormatted: formatDuration(calculateDuration(session.gps.startTime, session.gps.endTime)),
-                        measurements: session.gps.measurementCount || 0
+                        sessionNumber: sessionConContinuidad.gps.sessionNumber,
+                        startTime: formatTime(sessionConContinuidad.gps.startTime),
+                        endTime: formatTime(sessionConContinuidad.gps.endTime),
+                        durationSeconds: calculateDuration(sessionConContinuidad.gps.startTime, sessionConContinuidad.gps.endTime),
+                        durationFormatted: formatDuration(calculateDuration(sessionConContinuidad.gps.startTime, sessionConContinuidad.gps.endTime)),
+                        measurements: sessionConContinuidad.gps.measurementCount || 0
                     } : null,
 
-                    rotativo: session.rotativo ? {
+                    rotativo: sessionConContinuidad.rotativo ? {
                         fileName: `ROTATIVO_${grupo.vehiculo}_${grupo.fecha}.txt`,
-                        sessionNumber: session.rotativo.sessionNumber,
-                        startTime: formatTime(session.rotativo.startTime),
-                        endTime: formatTime(session.rotativo.endTime),
-                        durationSeconds: calculateDuration(session.rotativo.startTime, session.rotativo.endTime),
-                        durationFormatted: formatDuration(calculateDuration(session.rotativo.startTime, session.rotativo.endTime)),
-                        measurements: session.rotativo.measurementCount || 0
+                        sessionNumber: sessionConContinuidad.rotativo.sessionNumber,
+                        startTime: formatTime(sessionConContinuidad.rotativo.startTime),
+                        endTime: formatTime(sessionConContinuidad.rotativo.endTime),
+                        durationSeconds: calculateDuration(sessionConContinuidad.rotativo.startTime, sessionConContinuidad.rotativo.endTime),
+                        durationFormatted: formatDuration(calculateDuration(sessionConContinuidad.rotativo.startTime, sessionConContinuidad.rotativo.endTime)),
+                        measurements: sessionConContinuidad.rotativo.measurementCount || 0
                     } : null,
 
                     // Mantener archivos simples por compatibilidad
                     archivos: {
-                        estabilidad: session.estabilidad ? `ESTABILIDAD_${grupo.vehiculo}_${grupo.fecha}.txt` : null,
-                        gps: session.gps ? `GPS_${grupo.vehiculo}_${grupo.fecha}.txt` : null,
-                        rotativo: session.rotativo ? `ROTATIVO_${grupo.vehiculo}_${grupo.fecha}.txt` : null
+                        estabilidad: sessionConContinuidad.estabilidad ? `ESTABILIDAD_${grupo.vehiculo}_${grupo.fecha}.txt` : null,
+                        gps: sessionConContinuidad.gps ? `GPS_${grupo.vehiculo}_${grupo.fecha}.txt` : null,
+                        rotativo: sessionConContinuidad.rotativo ? `ROTATIVO_${grupo.vehiculo}_${grupo.fecha}.txt` : null
                     }
                 });
 
                 // Acumular estadísticas (estimado)
-                if (session.estabilidad) estadisticas.estabilidadValida += session.estabilidad.measurementCount;
-                if (session.rotativo) estadisticas.rotativoValido += session.rotativo.measurementCount;
-                if (session.gps) {
-                    estadisticas.gpsValido += session.gps.measurementCount;
+                if (sessionConContinuidad.estabilidad) estadisticas.estabilidadValida += sessionConContinuidad.estabilidad.measurementCount;
+                if (sessionConContinuidad.rotativo) estadisticas.rotativoValido += sessionConContinuidad.rotativo.measurementCount;
+                if (gpsMeasurementCount > 0) {
+                    estadisticas.gpsValido += gpsMeasurementCount;
                 } else {
                     estadisticas.gpsSinSenal += 100; // Estimado
                 }
 
                 estadisticas.totalMediciones +=
-                    (session.estabilidad?.measurementCount || 0) +
-                    (session.gps?.measurementCount || 0) +
-                    (session.rotativo?.measurementCount || 0);
+                    (sessionConContinuidad.estabilidad?.measurementCount || 0) +
+                    (sessionConContinuidad.gps?.measurementCount || 0) +
+                    (sessionConContinuidad.rotativo?.measurementCount || 0);
+
+                this.actualizarEstadoVehiculo(vehicleId, sessionConContinuidad.endTime, continuity.seconds, result.gps.lastPoint);
 
             } catch (error: any) {
                 logger.error(`Error guardando sesión ${session.sessionNumber}`, error);
@@ -468,6 +515,9 @@ export class UnifiedFileProcessorV2 {
                 measurements: 0,
                 status: 'OMITIDA',
                 reason: invalidSession.invalidReason || 'Sesión inválida',
+                continuityApplied: false,
+                continuitySeconds: 0,
+                continuityNotes: [],
 
                 archivos: {
                     estabilidad: invalidSession.estabilidad ? `ESTABILIDAD_${grupo.vehiculo}_${grupo.fecha}.txt` : null,
@@ -498,7 +548,9 @@ export class UnifiedFileProcessorV2 {
 
     /**
      * Guarda una sesión correlacionada en la BD
-     * ✅ CHATGPT CRÍTICO 3: Wrapped en transaction para consistencia
+     * ✅ NUEVO: Transacción SOLO para crear la sesión
+     * ✅ Mediciones insertadas FUERA de la transacción, en lotes de 5000
+     * ✅ Si hay errores, marca la sesión como PARTIAL y continúa
      */
     private async guardarSesion(
         session: CorrelatedSession,
@@ -507,7 +559,23 @@ export class UnifiedFileProcessorV2 {
         organizationId: string,
         grupo: GrupoArchivos,
         baseDate: Date
-    ): Promise<{ sessionId: string; created: boolean; measurementCount: number }> {
+    ): Promise<{
+        sessionId: string;
+        created: boolean;
+        measurementCount: number;
+        gps: {
+            count: number;
+            inferred: boolean;
+            inferenceNotes: string[];
+            lastPoint?: {
+                latitude: number;
+                longitude: number;
+                altitude?: number;
+                timestamp: Date;
+                source: 'GPS' | 'INFERRED';
+            };
+        };
+    }> {
         logger.info(`   💾 Guardando sesión #${session.sessionNumber}...`);
 
         // Verificar si ya existe una sesión con mismo vehículo, número y fecha
@@ -540,85 +608,438 @@ export class UnifiedFileProcessorV2 {
             return {
                 sessionId: existing.id,
                 created: false,
-                measurementCount: existingMeasurementCount
+                measurementCount: existingMeasurementCount,
+                gps: {
+                    count: existing._count.GpsMeasurement,
+                    inferred: false,
+                    inferenceNotes: []
+                }
             };
         }
 
-        // ✅ CHATGPT CRÍTICO 3: Transaction para garantizar consistencia
-        // Si falla el guardado de mediciones o post-procesamiento, hacer rollback completo
-        return await prisma.$transaction(async (tx) => {
-            // Crear sesión
-            const dbSession = await tx.session.create({
-            data: {
-                vehicleId,
-                userId,
-                organizationId,
-                startTime: session.startTime,
-                endTime: session.endTime,
-                sessionNumber: session.sessionNumber,
-                sequence: session.sessionNumber,
-                source: 'UPLOAD_UNIFIED_V2',
-                status: 'ACTIVE',
-                type: 'ROUTINE',
-                    updatedAt: new Date()
-            }
-        });
+        const vehicleState = this.obtenerEstadoVehiculo(vehicleId);
+        const persistedState = await VehicleStateTracker.getState(vehicleId).catch(() => ({
+            vehicleId,
+            lastState: null,
+            lastSeenAt: null,
+            lastPosition: null,
+            lastGeofenceId: null,
+            inferred: false
+        }));
+        if (!vehicleState.lastKnownPosition && persistedState.lastPosition) {
+            this.vehicleStates[vehicleId] = {
+                ...vehicleState,
+                lastKnownPosition: persistedState.lastPosition,
+                lastEndTime: persistedState.lastSeenAt ?? vehicleState.lastEndTime ?? null
+            };
+        }
 
-        // Parsear y guardar mediciones de cada tipo
+        const gpsInferenceNotes: string[] = [];
+        let gpsInferenceApplied = false;
+        let gpsLastPoint: {
+            latitude: number;
+            longitude: number;
+            altitude?: number;
+            timestamp: Date;
+            source: 'GPS' | 'INFERRED';
+        } | undefined;
+
+        // ✅ NUEVO: Transaction SOLO para crear la sesión (rápida y sin timeout)
+        let dbSession;
+        try {
+            dbSession = await prisma.$transaction(async (tx) => {
+                return await tx.session.create({
+                    data: {
+                        vehicleId,
+                        userId,
+                        organizationId,
+                        startTime: session.startTime,
+                        endTime: session.endTime,
+                        sessionNumber: session.sessionNumber,
+                        sequence: session.sessionNumber,
+                        source: 'UPLOAD_UNIFIED_V2',
+                        status: 'ACTIVE',
+                        type: 'ROUTINE',
+                        updatedAt: new Date()
+                    }
+                });
+            }, {
+                timeout: 10000, // 10 segundos (suficiente para crear una sesión)
+                maxWait: 5000
+            });
+        } catch (error: any) {
+            logger.error(`   ❌ Error creando sesión ${session.sessionNumber}:`, error);
+            throw error; // Si falla la creación de sesión, lanzar error (no continuar)
+        }
+
+        logger.info(`   ✅ Sesión ${session.sessionNumber} creada: ${dbSession.id}`);
+
+        // ✅ NUEVO: Insertar mediciones FUERA de la transacción, en lotes pequeños
         let measurementCount = 0;
+        let hasErrors = false;
+        const errors: string[] = [];
+
+        // Parsear datos ANTES de insertar (para tener todo preparado)
+        const puntosGPS: any[] = [];
+        const medicionesEstabilidad: any[] = [];
+        const medicionesRotativo: any[] = [];
 
         if (session.gps && grupo.archivos.gps) {
-            const result = parseGPSRobust(grupo.archivos.gps, baseDate);
-            const puntosSesion = result.puntos.filter(p =>
-                p.timestamp >= session.startTime && p.timestamp <= session.endTime
-            );
+            try {
+                const result = parseGPSRobust(grupo.archivos.gps, baseDate);
+                const puntosSesion = result.puntos.filter(p =>
+                    p.timestamp >= session.startTime && p.timestamp <= session.endTime
+                );
+                if (puntosSesion.length > 0) {
+                    const puntosInterpolados = interpolarGPS(puntosSesion);
+                    puntosGPS.push(...puntosInterpolados);
+                    const ultimo = puntosInterpolados[puntosInterpolados.length - 1];
+                    gpsLastPoint = {
+                        latitude: ultimo.latitude,
+                        longitude: ultimo.longitude,
+                        altitude: ultimo.altitude,
+                        timestamp: ultimo.timestamp,
+                        source: 'GPS'
+                    };
+                }
+            } catch (error: any) {
+                logger.error(`   ⚠️ Error parseando GPS para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error parseando GPS: ${error.message}`);
+            }
+        }
 
-            if (puntosSesion.length > 0) {
-                const puntosInterpolados = interpolarGPS(puntosSesion);
-                    await this.guardarMedicionesGPSArrayTx(tx, dbSession.id, puntosInterpolados);
-                measurementCount += puntosInterpolados.length;
+        const tieneRotativo = !!session.rotativo && !!grupo.archivos.rotativo;
+
+        if (puntosGPS.length === 0 && tieneRotativo) {
+            if (vehicleState.lastKnownPosition) {
+                const inferidos = this.generarPuntosGPSInferidos(
+                    session.startTime,
+                    session.endTime,
+                    vehicleState.lastKnownPosition
+                );
+                puntosGPS.push(...inferidos);
+                gpsInferenceApplied = true;
+                gpsLastPoint = {
+                    latitude: vehicleState.lastKnownPosition.latitude,
+                    longitude: vehicleState.lastKnownPosition.longitude,
+                    altitude: vehicleState.lastKnownPosition.altitude,
+                    timestamp: session.endTime,
+                    source: 'INFERRED'
+                };
+                gpsInferenceNotes.push(
+                    `Coordenadas inferidas a partir de la última posición conocida (${vehicleState.lastKnownPosition.latitude.toFixed(5)}, ${vehicleState.lastKnownPosition.longitude.toFixed(5)}) del ${vehicleState.lastKnownPosition.timestamp.toISOString()}.`
+                );
+                if (Array.isArray(session.observations)) {
+                    session.observations.push('GPS inferido automáticamente por falta de señal.');
+                } else {
+                    session.observations = ['GPS inferido automáticamente por falta de señal.'];
+                }
+                logger.warn(`   ⚠️ Sesión ${session.sessionNumber} sin GPS; se aplicó fallback con última posición conocida.`);
+            } else {
+                const referencePosition = persistedState.lastPosition || { latitude: 0, longitude: 0, altitude: 0 };
+                const inferidos = this.generarPuntosGPSInferidos(
+                    session.startTime,
+                    session.endTime,
+                    referencePosition
+                );
+                puntosGPS.push(...inferidos);
+                gpsLastPoint = {
+                    latitude: referencePosition.latitude,
+                    longitude: referencePosition.longitude,
+                    altitude: referencePosition.altitude,
+                    timestamp: session.endTime,
+                    source: 'INFERRED'
+                };
+                gpsInferenceNotes.push('No se encontró posición previa reciente; se usó la última posición persistida o (0,0).');
+                if (Array.isArray(session.observations)) {
+                    session.observations.push('Sesión sin GPS y sin posiciones previas conocidas. Se usó posición persistida o (0,0).');
+                } else {
+                    session.observations = ['Sesión sin GPS y sin posiciones previas conocidas. Se usó posición persistida o (0,0).'];
+                }
+                logger.warn(`   ⚠️ Sesión ${session.sessionNumber} sin GPS ni posición previa conocida. Se aplicó posición por defecto (0,0).`);
             }
         }
 
         if (session.estabilidad && grupo.archivos.estabilidad) {
-            const result = parseEstabilidadRobust(grupo.archivos.estabilidad, baseDate);
-            const medicionesSesion = result.mediciones.filter(m =>
-                m.timestamp >= session.startTime && m.timestamp <= session.endTime
-            );
-
-            if (medicionesSesion.length > 0) {
-                    await this.guardarMedicionesEstabilidadArrayTx(tx, dbSession.id, medicionesSesion);
-                measurementCount += medicionesSesion.length;
+            try {
+                const result = parseEstabilidadRobust(grupo.archivos.estabilidad, baseDate);
+                const medicionesSesion = result.mediciones.filter(m =>
+                    m.timestamp >= session.startTime && m.timestamp <= session.endTime
+                );
+                if (medicionesSesion.length > 0) {
+                    medicionesEstabilidad.push(...medicionesSesion);
+                }
+            } catch (error: any) {
+                logger.error(`   ⚠️ Error parseando Estabilidad para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error parseando Estabilidad: ${error.message}`);
             }
         }
 
         if (session.rotativo && grupo.archivos.rotativo) {
-            const result = parseRotativoRobust(grupo.archivos.rotativo, baseDate);
-            const medicionesSesion = result.mediciones.filter(m =>
-                m.timestamp >= session.startTime && m.timestamp <= session.endTime
-            );
-
-            if (medicionesSesion.length > 0) {
-                    await this.guardarMedicionesRotativoArrayTx(tx, dbSession.id, medicionesSesion);
-                measurementCount += medicionesSesion.length;
+            try {
+                const result = parseRotativoRobust(grupo.archivos.rotativo, baseDate);
+                const medicionesSesion = result.mediciones.filter(m =>
+                    m.timestamp >= session.startTime && m.timestamp <= session.endTime
+                );
+                if (medicionesSesion.length > 0) {
+                    medicionesRotativo.push(...medicionesSesion);
+                }
+            } catch (error: any) {
+                logger.error(`   ⚠️ Error parseando Rotativo para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error parseando Rotativo: ${error.message}`);
             }
         }
 
-            logger.info(`   ✅ Sesión ${session.sessionNumber} guardada en transaction: ${dbSession.id}`);
+        // Insertar mediciones GPS
+        if (puntosGPS.length > 0) {
+            try {
+                await this.guardarMedicionesGPSArray(dbSession.id, puntosGPS);
+                measurementCount += puntosGPS.length;
+                logger.info(`   ✅ ${puntosGPS.length} mediciones GPS guardadas`);
+            } catch (error: any) {
+                logger.error(`   ❌ Error guardando mediciones GPS para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error guardando GPS: ${error.message}`);
+            }
+        }
 
-        return {
+        // Insertar mediciones Estabilidad
+        if (medicionesEstabilidad.length > 0) {
+            try {
+                await this.guardarMedicionesEstabilidadArray(dbSession.id, medicionesEstabilidad);
+                measurementCount += medicionesEstabilidad.length;
+                logger.info(`   ✅ ${medicionesEstabilidad.length} mediciones Estabilidad guardadas`);
+            } catch (error: any) {
+                logger.error(`   ❌ Error guardando mediciones Estabilidad para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error guardando Estabilidad: ${error.message}`);
+            }
+        }
+
+        // Insertar mediciones Rotativo
+        if (medicionesRotativo.length > 0) {
+            try {
+                await this.guardarMedicionesRotativoArray(dbSession.id, medicionesRotativo);
+                measurementCount += medicionesRotativo.length;
+                logger.info(`   ✅ ${medicionesRotativo.length} mediciones Rotativo guardadas`);
+            } catch (error: any) {
+                logger.error(`   ❌ Error guardando mediciones Rotativo para sesión ${session.sessionNumber}:`, error);
+                hasErrors = true;
+                errors.push(`Error guardando Rotativo: ${error.message}`);
+            }
+        }
+
+        // Si hubo errores, marcar sesión como PARTIAL
+        if (hasErrors) {
+            try {
+                await prisma.session.update({
+                    where: { id: dbSession.id },
+                    data: {
+                        status: 'PARTIAL' as any, // TODO: reemplazar por enum Prisma cuando se regenere el cliente
+                        updatedAt: new Date()
+                    }
+                });
+                logger.warn(`   ⚠️ Sesión ${session.sessionNumber} marcada como PARTIAL debido a errores: ${errors.join('; ')}`);
+            } catch (error: any) {
+                logger.error(`   ❌ Error marcando sesión como PARTIAL:`, error);
+            }
+        }
+
+        const response = {
             sessionId: dbSession.id,
             created: true,
-            measurementCount
+            measurementCount,
+            gps: {
+                count: puntosGPS.length,
+                inferred: gpsInferenceApplied,
+                inferenceNotes: gpsInferenceNotes,
+                lastPoint: gpsLastPoint
+            }
         };
-        }, {
-            timeout: 60000, // 1 minuto
-            maxWait: 5000   // Esperar máximo 5s para lock
+
+        await VehicleStateTracker.updateStateFromSession(dbSession.id).catch(error => {
+            logger.warn('   ⚠️ No se pudo actualizar VehicleStateTracker', { sessionId: dbSession.id, error: error?.message });
         });
+
+        return response;
+    }
+
+    private obtenerEstadoVehiculo(vehicleId: string): VehicleStateInfo {
+        if (!this.vehicleStates[vehicleId]) {
+            this.vehicleStates[vehicleId] = {
+                lastEndTime: null,
+                accumulatedContinuitySeconds: 0
+            };
+        }
+        return this.vehicleStates[vehicleId];
+    }
+
+    private aplicarContinuidad(vehicleId: string, session: CorrelatedSession): ContinuityResult {
+        const state = this.obtenerEstadoVehiculo(vehicleId);
+        const notes: string[] = [];
+
+        if (!state.lastEndTime) {
+            const sessionClone: CorrelatedSession = {
+                ...session,
+                observations: [...session.observations]
+            };
+            return {
+                sessionAjustada: sessionClone,
+                applied: false,
+                seconds: 0,
+                notes
+            };
+        }
+
+        const gapSeconds = (session.startTime.getTime() - state.lastEndTime.getTime()) / 1000;
+
+        if (gapSeconds <= 0) {
+            const sessionClone: CorrelatedSession = {
+                ...session,
+                observations: [...session.observations]
+            };
+            return {
+                sessionAjustada: sessionClone,
+                applied: false,
+                seconds: 0,
+                notes
+            };
+        }
+
+        if (gapSeconds > this.CONTINUITY_RESET_SECONDS) {
+            const sessionClone: CorrelatedSession = {
+                ...session,
+                observations: [
+                    ...session.observations,
+                    `⏱️ Reinicio de continuidad tras ${Math.round(gapSeconds / 60)} minutos.`
+                ]
+            };
+            return {
+                sessionAjustada: sessionClone,
+                applied: false,
+                seconds: 0,
+                notes: [`Reinicio detectado tras ${Math.round(gapSeconds / 60)} minutos sin actividad.`]
+            };
+        }
+
+        if (gapSeconds > this.CONTINUITY_MAX_GAP_SECONDS) {
+            const sessionClone: CorrelatedSession = {
+                ...session,
+                observations: [
+                    ...session.observations,
+                    `⏱️ Hueco de ${Math.round(gapSeconds / 60)} minutos sin cubrir (mayor que umbral).`
+                ]
+            };
+            return {
+                sessionAjustada: sessionClone,
+                applied: false,
+                seconds: 0,
+                notes: [`No se aplicó continuidad: hueco de ${Math.round(gapSeconds / 60)} minutos supera el umbral.`]
+            };
+        }
+
+        const adjustedStartTime = state.lastEndTime;
+        const sessionClone: CorrelatedSession = {
+            ...session,
+            startTime: adjustedStartTime,
+            durationSeconds: calculateDuration(adjustedStartTime, session.endTime),
+            observations: [
+                ...session.observations,
+                `🔄 Continuidad aplicada: se cubrió hueco de ${Math.round(gapSeconds / 60)} minutos sin datos.`
+            ]
+        };
+
+        notes.push(`Continuidad aplicada para ${gapSeconds} segundos sin datos.`);
+
+        return {
+            sessionAjustada: sessionClone,
+            applied: true,
+            seconds: gapSeconds,
+            notes
+        };
+    }
+
+    private actualizarEstadoVehiculo(
+        vehicleId: string,
+        newEndTime: Date,
+        continuitySeconds: number,
+        lastGpsPoint?: {
+            latitude: number;
+            longitude: number;
+            altitude?: number;
+            timestamp: Date;
+            source: 'GPS' | 'INFERRED';
+        }
+    ): void {
+        const state = this.obtenerEstadoVehiculo(vehicleId);
+        state.lastEndTime = newEndTime;
+        state.accumulatedContinuitySeconds += continuitySeconds;
+        if (lastGpsPoint && (lastGpsPoint.latitude !== 0 || lastGpsPoint.longitude !== 0 || lastGpsPoint.source === 'GPS')) {
+            state.lastKnownPosition = {
+                latitude: lastGpsPoint.latitude,
+                longitude: lastGpsPoint.longitude,
+                altitude: lastGpsPoint.altitude,
+                timestamp: lastGpsPoint.timestamp,
+                source: lastGpsPoint.source
+            };
+        }
+        this.vehicleStates[vehicleId] = state;
+    }
+
+    private generarPuntosGPSInferidos(
+        startTime: Date,
+        endTime: Date,
+        reference: {
+            latitude: number;
+            longitude: number;
+            altitude?: number;
+        }
+    ): Array<{
+        timestamp: Date;
+        latitude: number;
+        longitude: number;
+        altitude: number;
+        hdop: number;
+        speed: number;
+        satellites: number;
+        source: 'INFERRED';
+    }> {
+        const altitude = reference.altitude ?? 0;
+        const safeEndTime =
+            endTime.getTime() === startTime.getTime()
+                ? new Date(endTime.getTime() + 1000)
+                : endTime;
+
+        return [
+            {
+                timestamp: startTime,
+                latitude: reference.latitude,
+                longitude: reference.longitude,
+                altitude,
+                hdop: 99,
+                speed: 0,
+                satellites: 0,
+                source: 'INFERRED'
+            },
+            {
+                timestamp: safeEndTime,
+                latitude: reference.latitude,
+                longitude: reference.longitude,
+                altitude,
+                hdop: 99,
+                speed: 0,
+                satellites: 0,
+                source: 'INFERRED'
+            }
+        ];
     }
 
     /**
      * Guarda array de mediciones GPS en BD
+     * ✅ NUEVO: Fuera de transacción, en lotes de 5000
      */
     private async guardarMedicionesGPSArray(
         sessionId: string,
@@ -626,8 +1047,8 @@ export class UnifiedFileProcessorV2 {
     ): Promise<void> {
         if (puntos.length === 0) return;
 
-        // Insertar en lotes
-        const batchSize = 1000;
+        // Insertar en lotes de 5000
+        const batchSize = 5000;
         for (let i = 0; i < puntos.length; i += batchSize) {
             const batch = puntos.slice(i, i + batchSize);
 
@@ -648,39 +1069,10 @@ export class UnifiedFileProcessorV2 {
         }
     }
 
-    /**
-     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
-     */
-    private async guardarMedicionesGPSArrayTx(
-        tx: any,
-        sessionId: string,
-        puntos: any[]
-    ): Promise<void> {
-        if (puntos.length === 0) return;
-
-        const batchSize = 1000;
-        for (let i = 0; i < puntos.length; i += batchSize) {
-            const batch = puntos.slice(i, i + batchSize);
-
-            await tx.gpsMeasurement.createMany({
-                data: batch.map(p => ({
-                    sessionId,
-                    timestamp: p.timestamp,
-                    latitude: p.latitude,
-                    longitude: p.longitude,
-                    altitude: p.altitude,
-                    hdop: p.hdop || 0,
-                    speed: p.speed || 0,
-                    satellites: p.satellites || 0,
-                    updatedAt: new Date()
-                })),
-                skipDuplicates: true
-            });
-        }
-    }
 
     /**
      * Guarda array de mediciones de ESTABILIDAD en BD
+     * ✅ NUEVO: Fuera de transacción, en lotes de 5000
      */
     private async guardarMedicionesEstabilidadArray(
         sessionId: string,
@@ -688,7 +1080,7 @@ export class UnifiedFileProcessorV2 {
     ): Promise<void> {
         if (mediciones.length === 0) return;
 
-        const batchSize = 1000;
+        const batchSize = 5000;
         for (let i = 0; i < mediciones.length; i += batchSize) {
             const batch = mediciones.slice(i, i + batchSize);
 
@@ -724,54 +1116,10 @@ export class UnifiedFileProcessorV2 {
         }
     }
 
-    /**
-     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
-     */
-    private async guardarMedicionesEstabilidadArrayTx(
-        tx: any,
-        sessionId: string,
-        mediciones: any[]
-    ): Promise<void> {
-        if (mediciones.length === 0) return;
-
-        const batchSize = 1000;
-        for (let i = 0; i < mediciones.length; i += batchSize) {
-            const batch = mediciones.slice(i, i + batchSize);
-
-            await tx.stabilityMeasurement.createMany({
-                data: batch.map(m => ({
-                    sessionId,
-                    timestamp: m.timestamp,
-                    ax: m.ax,
-                    ay: m.ay,
-                    az: m.az,
-                    gx: m.gx,
-                    gy: m.gy,
-                    gz: m.gz,
-                    roll: m.roll,
-                    updatedAt: new Date(),
-                    pitch: m.pitch,
-                    yaw: m.yaw,
-                    timeantwifi: m.timeantwifi,
-                    si: m.si || 0,
-                    accmag: m.accmag || 0,
-                    microsds: m.microsds || 0,
-                    usciclo1: m.usciclo1 || 0,
-                    usciclo2: m.usciclo2 || 0,
-                    usciclo3: m.usciclo3 || 0,
-                    usciclo4: m.usciclo4 || 0,
-                    usciclo5: m.usciclo5 || 0,
-                    usciclo6: m.usciclo6 || 0,
-                    usciclo7: m.usciclo7 || 0,
-                    usciclo8: m.usciclo8 || 0
-                })),
-                skipDuplicates: true
-            });
-        }
-    }
 
     /**
      * Guarda array de mediciones de ROTATIVO en BD
+     * ✅ NUEVO: Fuera de transacción, en lotes de 5000
      */
     private async guardarMedicionesRotativoArray(
         sessionId: string,
@@ -779,7 +1127,7 @@ export class UnifiedFileProcessorV2 {
     ): Promise<void> {
         if (mediciones.length === 0) return;
 
-        const batchSize = 1000;
+        const batchSize = 5000;
         for (let i = 0; i < mediciones.length; i += batchSize) {
             const batch = mediciones.slice(i, i + batchSize);
 
@@ -795,31 +1143,6 @@ export class UnifiedFileProcessorV2 {
         }
     }
 
-    /**
-     * ✅ CHATGPT CRÍTICO 3: Versión con transaction
-     */
-    private async guardarMedicionesRotativoArrayTx(
-        tx: any,
-        sessionId: string,
-        mediciones: any[]
-    ): Promise<void> {
-        if (mediciones.length === 0) return;
-
-        const batchSize = 1000;
-        for (let i = 0; i < mediciones.length; i += batchSize) {
-            const batch = mediciones.slice(i, i + batchSize);
-
-            await tx.rotativoMeasurement.createMany({
-                data: batch.map(m => ({
-                    sessionId,
-                    timestamp: m.timestamp,
-                    state: m.state,
-                    key: m.key
-                })),
-                skipDuplicates: true
-            });
-        }
-    }
 
     /**
      * Agrupa archivos por vehículo y fecha

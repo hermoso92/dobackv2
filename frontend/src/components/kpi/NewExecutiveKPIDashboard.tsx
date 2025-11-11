@@ -1,4 +1,5 @@
 import {
+    BookOpenIcon,
     ChartBarIcon,
     ClockIcon,
     CpuChipIcon,
@@ -30,6 +31,7 @@ import { SessionsAndRoutesView, useRouteExportFunction } from '../sessions/Sessi
 import SpeedAnalysisTab from '../speed/SpeedAnalysisTab';
 import BlackSpotsTab from '../stability/BlackSpotsTab';
 import { Button } from '../ui/Button';
+import { KPIDocumentationTab } from './KPIDocumentationTab';
 
 // Componente de tarjeta KPI (estilo original)
 const KPICard: React.FC<{
@@ -543,8 +545,8 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                             description: 'Tiempo en servicio externo fuera del parque. Incluye emergencias, servicios y otros desplazamientos oficiales.'
                         },
                         {
-                            title: 'Tiempo en Taller (Clave 4)',
-                            value: getStateDuration(4),
+                            title: 'Tiempo en Taller (Clave 0)',
+                            value: getStateDuration(0),
                             category: 'warning',
                             description: 'Tiempo total en mantenimiento preventivo o correctivo. Vehiculos no disponibles para servicio.'
                         },
@@ -606,9 +608,9 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                                 content: [
                                     'Clave 1 - En Parque: Vehiculo en base, disponible para respuesta inmediata',
                                     'Clave 2 - Emergencia con Rotativo: Respuesta prioritaria con senalizacion activa',
-                                    'Clave 3 - Fuera de Parque: En servicio externo, emergencias o traslados',
-                                    'Clave 4 - En Taller: Mantenimiento preventivo o correctivo, no disponible',
-                                    'Clave 5 - Sin Rotativo: Servicios programados sin caracter urgente'
+                                    'Clave 3 - En Siniestro: Intervencion con vehículo parado y rotativo activo',
+                                    'Clave 0 - Taller: Mantenimiento preventivo o correctivo, no disponible',
+                                    'Clave 5 - Regreso al Parque: Servicios o traslados sin rotativo'
                                 ]
                             },
                             {
@@ -937,18 +939,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                                 subtitle="En siniestro (parado >1min)"
                             />
                             <KPICard
-                                title="Clave 4 (Retirada)"
-                                value={getStateDuration(4)}
-                                icon={<ClockIcon className="h-5 w-5" />}
-                                colorClass="text-blue-600"
-                                subtitle="Fin de actuación"
-                            />
-                            <KPICard
-                                title="Clave 5 (Sin Rotativo)"
+                                title="Clave 5 (Regreso al Parque)"
                                 value={getStateDuration(5)}
                                 icon={<ClockIcon className="h-5 w-5" />}
                                 colorClass="text-orange-600"
-                                subtitle="Servicios programados"
+                                subtitle="Regreso sin rotativo"
                             />
                             <KPICard
                                 title="Tiempo Fuera Parque"
@@ -1067,7 +1062,8 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
         { label: 'Sesiones & Recorridos', icon: <TruckIcon className="h-5 w-5" /> },
         { label: 'Sistema de Alertas', icon: <ExclamationTriangleIcon className="h-5 w-5" /> },
         { label: 'Tracking de Procesamiento', icon: <CpuChipIcon className="h-5 w-5" /> },
-        { label: 'Reportes', icon: <DocumentTextIcon className="h-5 w-5" /> }
+        { label: 'Reportes', icon: <DocumentTextIcon className="h-5 w-5" /> },
+        { label: 'Documentación KPIs', icon: <BookOpenIcon className="h-5 w-5" /> }
     ];
 
     if (loading) {
@@ -1287,6 +1283,11 @@ export const NewExecutiveKPIDashboard: React.FC = () => {
                 {activeTab === 7 && (
                     <div className="h-full w-full bg-white overflow-auto">
                         <DashboardReportsTab />
+                    </div>
+                )}
+                {activeTab === 8 && (
+                    <div className="h-full w-full bg-white overflow-auto">
+                        <KPIDocumentationTab />
                     </div>
                 )}
             </div>

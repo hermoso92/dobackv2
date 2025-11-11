@@ -66,6 +66,7 @@ import stabilityEventsRoutes from './stabilityEvents';
 // Rutas de módulos de emergencia - Bomberos Madrid
 import { TelemetryV2Controller } from '../controllers/TelemetryV2Controller';
 import { logger } from '../utils/logger';
+import { haversineDistance } from '../services/parsers/gpsUtils';
 import alertEscalationRoutes from './alertEscalation';
 import emergencyDashboardRoutes from './emergencyDashboard';
 import emergencyReportsRoutes from './emergencyReports';
@@ -81,6 +82,30 @@ import vehicleRoutes from './vehicles';
 import zonesRoutes from './zones';
 
 const router = Router();
+
+function formatDuration(totalSeconds: number): string {
+    if (totalSeconds <= 0) {
+        return '0m';
+    }
+
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts: string[] = [];
+    if (days > 0) {
+        parts.push(`${days}d`);
+    }
+    if (hours > 0) {
+        parts.push(`${hours}h`);
+    }
+    if (minutes > 0 || parts.length === 0) {
+        parts.push(`${minutes}m`);
+    }
+
+    return parts.join(' ');
+}
 
 // Rutas de autenticación
 router.use('/auth', authRoutes);
@@ -193,24 +218,82 @@ router.get('/sessions/ranking', authenticate, attachOrg, async (req, res) => {
                 : 0;
 
             const durationHours = duration / 3600;
-            const durationFormatted = `${Math.floor(durationHours)}h ${Math.floor((duration % 3600) / 60)}m`;
+            const durationFormatted = formatDuration(duration);
 
             // Calcular distancia, velocidad promedio y máxima desde GPS
             const gpsPoints = await prisma.gpsMeasurement.findMany({
                 where: { sessionId: session.id },
-                select: { speed: true }
+                select: {
+                    latitude: true,
+                    longitude: true,
+                    speed: true,
+                    timestamp: true
+                },
+                orderBy: { timestamp: 'asc' }
             });
 
-            const avgSpeed = gpsPoints.length > 0
-                ? gpsPoints.reduce((sum, p) => sum + (p.speed || 0), 0) / gpsPoints.length
+            type ValidGpsPoint = {
+                latitude: number;
+                longitude: number;
+                speed: number | null;
+            };
+
+            const validPoints: ValidGpsPoint[] = gpsPoints
+                .filter((point): point is ValidGpsPoint => {
+                    if (
+                        point.latitude === null ||
+                        point.longitude === null ||
+                        point.latitude === undefined ||
+                        point.longitude === undefined
+                    ) {
+                        return false;
+                    }
+
+                    if (point.latitude === 0 && point.longitude === 0) {
+                        return false;
+                    }
+
+                    if (point.latitude < 36 || point.latitude > 44) {
+                        return false;
+                    }
+
+                    if (point.longitude < -10 || point.longitude > 5) {
+                        return false;
+                    }
+
+                    return Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
+                });
+
+            let distanceMeters = 0;
+            for (let i = 1; i < validPoints.length; i += 1) {
+                const prev = validPoints[i - 1];
+                const curr = validPoints[i];
+                const segmentMeters = haversineDistance(prev.latitude, prev.longitude, curr.latitude, curr.longitude);
+                if (Number.isFinite(segmentMeters) && segmentMeters <= 10000) {
+                    distanceMeters += segmentMeters;
+                }
+            }
+
+            const distanceKmRaw = distanceMeters / 1000;
+            const distance = Math.round(distanceKmRaw * 100) / 100;
+
+            const speedSamples = validPoints
+                .map((point) => (point.speed !== null && point.speed !== undefined && Number.isFinite(point.speed) ? point.speed : null))
+                .filter((speed): speed is number => speed !== null && speed >= 0);
+
+            const maxSpeed = speedSamples.length > 0
+                ? Math.max(...speedSamples)
                 : 0;
 
-            const maxSpeed = gpsPoints.length > 0
-                ? Math.max(...gpsPoints.map(p => p.speed || 0))
+            const avgSpeedFromSamples = speedSamples.length > 0
+                ? speedSamples.reduce((sum, value) => sum + value, 0) / speedSamples.length
                 : 0;
 
-            // Calcular distancia aproximada (basada en puntos GPS)
-            const distance = duration > 0 ? (avgSpeed * duration / 3600) : 0;
+            const avgSpeedFromDistance = durationHours > 0
+                ? distanceKmRaw / durationHours
+                : 0;
+
+            const avgSpeed = avgSpeedFromSamples > 0 ? avgSpeedFromSamples : avgSpeedFromDistance;
 
             // Obtener eventos de estabilidad para esta sesión
             const eventCount = await prisma.stability_events.count({

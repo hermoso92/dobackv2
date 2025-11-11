@@ -43,6 +43,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FEATURE_FLAGS, isFeatureEnabled } from '../config/features';
 import { apiService } from '../services/api';
 import { logger } from '../utils/logger';
+import { useAuth } from '../hooks/useAuth';
+import { authService } from '../services/auth';
 import { SimpleProcessingReport } from './SimpleProcessingReport';
 import { UploadConfigPanel } from './UploadConfigPanel';
 
@@ -112,6 +114,12 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const FileUploadManager: React.FC = () => {
+    const { user } = useAuth();
+    const currentUser = user ?? authService.getCurrentUser();
+    const isAdmin = currentUser?.role === 'ADMIN';
+    const isManager = currentUser?.role === 'MANAGER';
+    const canManageDatabase = isAdmin || isManager;
+
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
@@ -698,17 +706,18 @@ const FileUploadManager: React.FC = () => {
                         Sube archivos individuales o procesa automáticamente todos los vehículos de CMadrid
                     </Typography>
                 </Box>
-                {/* Botón Borrar Todo - Solo ADMIN */}
-                <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => setShowDeleteAllConfirmation(true)}
-                    disabled={isDeletingAll}
-                    sx={{ whiteSpace: 'nowrap' }}
-                >
-                    {isDeletingAll ? 'Eliminando...' : 'Borrar Todos los Datos'}
-                </Button>
+                {canManageDatabase && (
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => setShowDeleteAllConfirmation(true)}
+                        disabled={isDeletingAll}
+                        sx={{ whiteSpace: 'nowrap' }}
+                    >
+                        {isDeletingAll ? 'Eliminando...' : 'Borrar Todos los Datos'}
+                    </Button>
+                )}
             </Box>
 
             {/* ✅ NUEVO: Reglas de Correlación */}
@@ -1333,24 +1342,28 @@ const FileUploadManager: React.FC = () => {
                             Controles de Procesamiento
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                            <Button
-                                variant="outlined"
-                                color="warning"
-                                onClick={() => setShowCleanDBConfirmation(true)}
-                                disabled={isProcessingAuto || isRegeneratingEvents || isCleaningDB}
-                                startIcon={<DeleteIcon />}
-                            >
-                                {isCleaningDB ? 'Limpiando...' : 'Limpiar Base de Datos'}
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="info"
-                                onClick={handleRegenerateEvents}
-                                disabled={isProcessingAuto || isRegeneratingEvents}
-                                startIcon={isRegeneratingEvents ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
-                            >
-                                {isRegeneratingEvents ? 'Regenerando...' : 'Regenerar Eventos'}
-                            </Button>
+                            {canManageDatabase && (
+                                <Button
+                                    variant="outlined"
+                                    color="warning"
+                                    onClick={() => setShowCleanDBConfirmation(true)}
+                                    disabled={isProcessingAuto || isRegeneratingEvents || isCleaningDB}
+                                    startIcon={<DeleteIcon />}
+                                >
+                                    {isCleaningDB ? 'Limpiando...' : 'Limpiar Base de Datos'}
+                                </Button>
+                            )}
+                            {isAdmin && (
+                                <Button
+                                    variant="outlined"
+                                    color="info"
+                                    onClick={handleRegenerateEvents}
+                                    disabled={isProcessingAuto || isRegeneratingEvents}
+                                    startIcon={isRegeneratingEvents ? <CircularProgress size={20} /> : <AutoAwesomeIcon />}
+                                >
+                                    {isRegeneratingEvents ? 'Regenerando...' : 'Regenerar Eventos'}
+                                </Button>
+                            )}
                             <Button
                                 variant="contained"
                                 color="primary"
@@ -1556,7 +1569,7 @@ const FileUploadManager: React.FC = () => {
             />
 
             {/* Modal de Confirmación de Borrado Total */}
-            {showDeleteAllConfirmation && (
+            {canManageDatabase && showDeleteAllConfirmation && (
                 <Box
                     sx={{
                         position: 'fixed',
@@ -1621,7 +1634,7 @@ const FileUploadManager: React.FC = () => {
             )}
 
             {/* Modal de Confirmación para Limpiar Base de Datos */}
-            {showCleanDBConfirmation && (
+            {canManageDatabase && showCleanDBConfirmation && (
                 <Box
                     sx={{
                         position: 'fixed',

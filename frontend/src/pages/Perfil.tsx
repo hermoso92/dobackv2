@@ -1,6 +1,4 @@
-import { logger } from '../utils/logger';
 import {
-import { logger } from '../utils/logger';
     Edit as EditIcon,
     ExitToApp as LogoutIcon,
     Person as PersonIcon,
@@ -21,6 +19,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from "../i18n";
+import { logger } from '../utils/logger';
 
 const Perfil = () => {
     const { user, logout } = useAuth();

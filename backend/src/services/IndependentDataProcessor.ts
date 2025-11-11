@@ -435,7 +435,7 @@ export class IndependentDataProcessor {
                 gx: Number(data.gx),
                 gy: Number(data.gy),
                 gz: Number(data.gz),
-                si: data.si ? Number(data.si) : 0,
+                si: normalizeUploadedSi(data.si),
                 accmag: data.accmag ? Number(data.accmag) : 0,
                 sourceFile: fileName,
                 createdAt: new Date(),

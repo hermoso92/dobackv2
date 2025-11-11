@@ -31,6 +31,7 @@ model Organization {
   User                  User[]
   Vehicle               Vehicle[]
   zones                 Zone[]
+  speedViolations       SpeedViolation[]
 }
 
 model User {
@@ -121,6 +122,7 @@ model Vehicle {
   RealtimePosition      RealtimePosition[]
   Session               Session[]
   SugerenciaIA          SugerenciaIA[]
+  speedViolations       SpeedViolation[]
   Organization          Organization            @relation(fields: [organizationId], references: [id])
   Park                  Park?                   @relation(fields: [parkId], references: [id])
   User                  User?                   @relation(fields: [userId], references: [id])
@@ -167,6 +169,7 @@ model Session {
   stability_events         stability_events[]
   OperationalStateSegments OperationalStateSegment[]
   ProcessingLogs           ProcessingLog[]
+  speedViolations          SpeedViolation[]
 }
 
 model Geofence {
@@ -939,22 +942,37 @@ model GeofenceUsageLog {
 model SpeedViolation {
   id            String   @id @default(dbgenerated("gen_random_uuid()"))
   sessionId     String
+  vehicleId     String
+  organizationId String
   timestamp     DateTime @db.Timestamptz(6)
   lat           Float
   lon           Float
+  snappedLat    Float?
+  snappedLon    Float?
   speed         Float
   speedLimit    Float
   excess        Float
   violationType String // 'correcto' | 'leve' | 'moderada' | 'grave'
   roadType      String // 'urban' | 'interurban' | 'highway'
+  source        String   @default("google") // 'google' | 'cache' | 'tomtom' | 'default'
+  confidence    String   @default("unknown") // 'high' | 'medium' | 'low' | 'unknown'
+  placeId       String?
+  metadata      Json?
   rotativoOn    Boolean
   inPark        Boolean
   createdAt     DateTime @default(now())
+
+  Session       Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  Vehicle       Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  Organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@index([sessionId, violationType])
   @@index([timestamp])
   @@index([violationType])
+  @@index([organizationId])
+  @@index([vehicleId])
+  @@index([organizationId, timestamp])
   @@map("speed_violations")
 }
 
@@ -990,6 +1008,7 @@ enum SessionStatus {
   CANCELLED
   ERROR
   PAUSED
+  PARTIAL
 }
 
 enum SessionType {
